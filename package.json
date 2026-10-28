@@ -26,7 +26,8 @@
     "data:bootstrap": "turbo run build --filter=@football/domain && pnpm --filter @football/server exec tsx --env-file-if-exists=.env src/providers/bootstrap-api-football.ts",
     "data:local": "turbo run build --filter=@football/domain && pnpm --filter @football/server exec tsx src/providers/import-local-players.ts",
     "data:extract": "node scripts/extract-local-players.mjs",
-    "data:update": "pnpm --filter @football/server exec tsx src/providers/prepare-source-update.ts && pnpm data:local && pnpm --filter @football/server exec tsx ../../scripts/update-player-appearance.mts"
+    "data:update": "pnpm --filter @football/server exec tsx src/providers/prepare-source-update.ts && pnpm data:local && pnpm --filter @football/server exec tsx ../../scripts/update-player-appearance.mts",
+    "dev:online": "turbo run dev --filter=@football/client"
   },
   "devDependencies": {
     "@commitlint/cli": "^20.0.0",

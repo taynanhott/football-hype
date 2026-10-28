@@ -47,6 +47,11 @@ if (import.meta.env.DEV && import.meta.env.VITE_USE_EMULATORS === 'true') {
   connectFirestoreEmulator(db, '127.0.0.1', 8080);
 }
 const siteKey = import.meta.env.VITE_FIREBASE_APPCHECK_SITE_KEY as string | undefined;
+if (import.meta.env.DEV && import.meta.env.VITE_FIREBASE_APPCHECK_DEBUG === 'true') {
+  (
+    self as typeof self & { FIREBASE_APPCHECK_DEBUG_TOKEN?: boolean }
+  ).FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+}
 const appCheck = siteKey
   ? initializeAppCheck(app, {
       provider: new ReCaptchaEnterpriseProvider(siteKey),

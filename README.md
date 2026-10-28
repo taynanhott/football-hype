@@ -1,4 +1,4 @@
-# Linha de Fundo · Football Manager Brasil
+# Football Hype · Football Manager Brasil
 
 Jogo de gestão de futebol com interface em português, cartas de atletas e estádio 3D. A versão local inclui carreira solo, ligas multiplayer, temporadas, mercado, finanças e melhorias de estádio e CT. Há integração Firebase e importação de dados reais. Arquivos de publicação estão preparados; nenhum deploy foi realizado.
 
@@ -16,6 +16,40 @@ Configure o Firebase Web em apps/client/.env.local, ative o provedor Google e au
 No PowerShell com scripts bloqueados, use `pnpm.cmd` em vez de `pnpm`. O servidor usa a porta 2567, e o client usa 5173. O endpoint `GET /health` informa o estado do servidor.
 
 A criação e o acesso às carreiras exigem Google. A sessão local pode continuar sem internet enquanto a conexão e a sessão permanecerem válidas. O progresso fica em `apps/server/.local/leagues`, em arquivos compactados. Não apague essa pasta para preservar suas carreiras. Uma liga solo e uma multiplayer podem ser mantidas simultaneamente por treinador. A identidade do treinador é o UID da conta Google. O diretório de dados pode ser alterado com DATA_DIR; a base real desta instalação usa .local/real-leagues, mantendo as carreiras anteriores intactas.
+
+## Desenvolver a interface usando a carreira online
+
+Para usar a mesma carreira do site publicado, execute somente a interface:
+
+```powershell
+cd "C:\Users\tayna\OneDrive\Área de Trabalho\football-hype"
+pnpm install --frozen-lockfile
+pnpm dev:online
+```
+
+Se a instalação copiada apresentar módulos ausentes, reinstale no PowerShell com um cache fora do OneDrive:
+
+```powershell
+pnpm install --force --frozen-lockfile --virtual-store-dir "$env:LOCALAPPDATA\football-hype\pnpm-virtual-store"
+```
+
+Abra http://localhost:5173 e entre com a mesma conta Google usada no site. As ações afetam a carreira real no servidor; a interface local não cria uma cópia dos dados.
+
+Em `apps/client/.env.development.local` (arquivo local ignorado pelo Git), configure:
+
+```dotenv
+VITE_USE_DEV_GAME_PROXY=true
+DEV_GAME_SERVER_TARGET=https://football-hype-server.onrender.com
+DEV_GAME_SERVER_ORIGIN=https://football-hype.taynanzhott.workers.dev
+VITE_FIREBASE_APPCHECK_DEBUG=true
+VITE_USE_EMULATORS=false
+```
+
+Mantenha a configuração pública do Firebase em `apps/client/.env`. O proxy de desenvolvimento encaminha HTTP e WebSocket para o servidor publicado, mantendo os tokens de login e App Check. A chave privada de administrador não é necessária para desenvolver somente a interface.
+
+Na primeira execução, autorize `localhost` em Firebase Authentication → Configurações → Domínios autorizados. Abra o console do navegador (F12) e copie o valor de `App Check debug token` diretamente para Firebase App Check → Aplicativos → menu do aplicativo → Gerenciar tokens de depuração. Guarde esse token somente no seu ambiente; não publique nem envie para o repositório. Recarregue a página após registrar o token. Esse modo de depuração é ativado apenas em desenvolvimento e não faz parte do build de produção.
+
+Para desenvolver o servidor e usar dados locais separados, o comando continua sendo `pnpm dev`. O servidor local com `STORE=file` não contém as carreiras salvas no Firestore de produção.
 
 ## Como jogar
 

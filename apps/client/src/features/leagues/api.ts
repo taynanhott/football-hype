@@ -3,7 +3,11 @@ import { playerSchema } from '@football/shared';
 
 export const serverUrl = z
   .url()
-  .parse(import.meta.env.VITE_GAME_SERVER_URL ?? 'ws://127.0.0.1:2567');
+  .parse(
+    import.meta.env.DEV && import.meta.env.VITE_USE_DEV_GAME_PROXY === 'true'
+      ? (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/__game'
+      : (import.meta.env.VITE_GAME_SERVER_URL ?? 'ws://127.0.0.1:2567'),
+  );
 export const testAuth =
   import.meta.env.MODE === 'test' && import.meta.env.VITE_TEST_AUTH === 'true';
 export const firebaseEnabled = Boolean(
