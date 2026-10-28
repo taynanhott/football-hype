@@ -13,3 +13,9 @@ test-results/
 .local/
 
 data/.backups/
+
+.test-temp/
+*.log
+*service-account*.json
+*.pem
+*.key
