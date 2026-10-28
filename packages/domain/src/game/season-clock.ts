@@ -46,7 +46,7 @@ export function realFixtureTime(
   pending: readonly Fixture[],
   fixture: Fixture,
 ): number | undefined {
-  if (state.mode !== 'multiplayer' || !state.seasonClock) return undefined;
+  if (!state.seasonClock) return undefined;
   let at = state.nextScheduledAt;
   for (const batch of scheduledBatches(pending)) {
     if (batch.some((item) => item.id === fixture.id)) return at;

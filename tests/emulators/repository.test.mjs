@@ -37,7 +37,7 @@ test('repositório Firestore persiste snapshots, eventos e vínculos transaciona
   assert.deepEqual(loaded.state, next);
   assert.deepEqual(loaded.events, [event]);
   assert.equal((await repository.forUser(userId))[0].id, state.id);
-  assert.equal((await repository.due(next.nextScheduledAt)).includes(state.id), false);
+  assert.equal((await repository.due(next.nextScheduledAt)).includes(state.id), true);
   const online = unwrap(
     createWorld({
       id: randomUUID(),

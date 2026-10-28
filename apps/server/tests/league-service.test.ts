@@ -4,7 +4,14 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { LeagueService } from '../src/application/league-service.js';
 import { LocalLeagueRepository } from '../src/repositories/local-league-repository.js';
-import { IDS } from '../../../tests/fixtures/domain.js';
+import { IDS, unwrap } from '../../../tests/fixtures/domain.js';
+import {
+  createWorld,
+  playNextBatch,
+  pendingFixtures,
+  realFixtureTime,
+  nextRealMatchTime,
+} from '@football/domain';
 
 const now = Date.parse('2026-10-26T15:00:00Z');
 const host = { userId: IDS.user, name: 'Host', guest: true };
@@ -78,24 +85,63 @@ describe('serviço autoritativo de ligas', () => {
     await expect(repository.append(id, 0, saved.state, saved.events[0])).rejects.toThrow('mudou');
     await expect(repository.create(saved.state)).rejects.toThrow('já participa');
   });
-  it('executa sem jogadores conectados, evita duplicação e recupera horários vencidos à noite', async () => {
-    let clock = now;
-    const repository = new LocalLeagueRepository(undefined);
-    const service = new LeagueService(repository, () => clock);
-    const id = await service.create(host, { mode: 'multiplayer' });
-    await service.tick();
-    expect((await service.snapshot(id, host.userId)).state.round).toBe(0);
-    clock = (await service.snapshot(id, host.userId)).state.nextScheduledAt;
-    await Promise.all([service.tick(), service.tick()]);
-    expect((await service.snapshot(id, host.userId)).state.round).toBe(1);
-    const first = (await service.snapshot(id, host.userId)).state;
-    expect(first.results.every((result) => result.startedAt === clock)).toBe(true);
-    clock = Date.parse('2026-10-27T04:00:00Z');
-    await service.tick();
-    const caughtUp = (await service.snapshot(id, host.userId)).state;
-    expect(caughtUp.round).toBe(6);
-    expect(caughtUp.nextScheduledAt).toBe(Date.parse('2026-10-27T11:00:00Z'));
-    await service.tick();
-    expect((await service.snapshot(id, host.userId)).state.round).toBe(caughtUp.round);
-  });
+  it.each(['offline', 'multiplayer'] as const)(
+    'executa %s sem jogadores conectados, evita duplicação e recupera horários vencidos à noite',
+    async (mode) => {
+      let clock = now;
+      const repository = new LocalLeagueRepository(undefined);
+      const service = new LeagueService(repository, () => clock);
+      const id = await service.create(host, { mode });
+      await service.tick();
+      expect((await service.snapshot(id, host.userId)).state.round).toBe(0);
+      clock = (await service.snapshot(id, host.userId)).state.nextScheduledAt;
+      await Promise.all([service.tick(), service.tick()]);
+      expect((await service.snapshot(id, host.userId)).state.round).toBe(1);
+      const first = (await service.snapshot(id, host.userId)).state;
+      expect(first.results.every((result) => result.startedAt === clock)).toBe(true);
+      clock = Date.parse('2026-10-27T04:00:00Z');
+      await service.tick();
+      const caughtUp = (await service.snapshot(id, host.userId)).state;
+      expect(caughtUp.round).toBe(6);
+      expect(caughtUp.nextScheduledAt).toBe(Date.parse('2026-10-27T11:00:00Z'));
+      await service.tick();
+      expect((await service.snapshot(id, host.userId)).state.round).toBe(caughtUp.round);
+    },
+  );
+  it.each(['snapshot', 'tick'] as const)(
+    'ativa o relógio de uma carreira solo existente via %s, preservando o time e os resultados',
+    async (trigger) => {
+      const repository = new LocalLeagueRepository(undefined);
+      const legacy = unwrap(
+        playNextBatch(
+          unwrap(
+            createWorld({
+              id: IDS.league,
+              userId: host.userId,
+              name: 'Carreira existente',
+              mode: 'offline',
+              now,
+            }),
+          ),
+          now - 100000,
+        ),
+      );
+      legacy.nextScheduledAt = now + 365 * 86400000;
+      await repository.create(legacy);
+      const service = new LeagueService(repository, () => now);
+      if (trigger === 'snapshot') await service.snapshot(legacy.id, host.userId);
+      else await service.tick();
+      const saved = (await repository.load(legacy.id))!.state;
+      expect(saved.seasonClock).toBe(1);
+      expect(saved.nextScheduledAt).toBe(nextRealMatchTime(now));
+      expect(saved.results).toEqual(legacy.results);
+      expect(saved.fixtures).toEqual(legacy.fixtures);
+      expect(saved.players).toEqual(legacy.players);
+      expect(saved.participants.map((member) => member.clubId)).toEqual(
+        legacy.participants.map((member) => member.clubId),
+      );
+      const fixture = pendingFixtures(saved)[0]!;
+      expect(realFixtureTime(saved, pendingFixtures(saved), fixture)).toBe(saved.nextScheduledAt);
+    },
+  );
 });

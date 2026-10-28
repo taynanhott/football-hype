@@ -171,15 +171,15 @@ export class FirestoreLeagueRepository implements LeagueRepository {
     const states = await Promise.all(ids.map((id) => this.load(id)));
     return states.flatMap((saved) => (saved && !saved.state.deletedAt ? [saved.state] : []));
   }
-  async online(): Promise<readonly string[]> {
-    const docs = await this.db.collection('leagues').where('mode', '==', 'multiplayer').get();
+  async active(): Promise<readonly string[]> {
+    const docs = await this.db.collection('leagues').where('status', '==', 'active').get();
     return docs.docs.filter((doc) => doc.get('status') !== 'deleted').map((doc) => doc.id);
   }
   async due(now: number): Promise<readonly string[]> {
     const documents = await this.db
       .collection('leagues')
       .where('status', '==', 'active')
-      .where('mode', '==', 'multiplayer')
+      .where('mode', 'in', ['offline', 'multiplayer'])
       .where('nextScheduledAt', '<=', now)
       .limit(100)
       .get();

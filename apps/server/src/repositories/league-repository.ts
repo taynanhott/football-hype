@@ -5,6 +5,6 @@ export interface LeagueRepository {
   create(state: WorldState): Promise<void>;
   append(id: string, expectedRevision: number, state: WorldState, event: GameEvent): Promise<void>;
   forUser(userId: string): Promise<readonly WorldState[]>;
-  online(): Promise<readonly string[]>;
+  active(): Promise<readonly string[]>;
   due(now: number): Promise<readonly string[]>;
 }

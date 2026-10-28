@@ -149,9 +149,9 @@ export class LocalLeagueRepository implements LeagueRepository {
       )
       .map((league) => league.state);
   }
-  async online(): Promise<readonly string[]> {
+  async active(): Promise<readonly string[]> {
     return [...this.leagues.values()]
-      .filter((l) => !l.state.deletedAt && l.state.mode === 'multiplayer')
+      .filter((l) => !l.state.deletedAt && l.state.status === 'active')
       .map((l) => l.state.id);
   }
   async due(now: number): Promise<readonly string[]> {
@@ -160,7 +160,6 @@ export class LocalLeagueRepository implements LeagueRepository {
         (league) =>
           !league.state.deletedAt &&
           league.state.status === 'active' &&
-          league.state.mode === 'multiplayer' &&
           league.state.nextScheduledAt <= now,
       )
       .map((league) => league.state.id);

@@ -109,6 +109,8 @@ export class LeagueService {
       state = {
         ...state,
         inviteCode: randomUUID(),
+        seasonClock: 1,
+        nextScheduledAt: nextRealMatchTime(this.now()),
         participants: state.participants.map((member) => ({ ...member, lastSeenAt: this.now() })),
       };
       await this.repository.create(state);
@@ -149,6 +151,28 @@ export class LeagueService {
     if (!applied.ok) throw new Error(applied.error.message);
     await this.repository.append(previous.id, previous.revision, applied.value, event.value);
     this.updates.emit(previous.id);
+  }
+  private async ensureSeasonClock(id: string) {
+    await this.serial(id, async () => {
+      const saved = await this.repository.load(id);
+      if (
+        !saved ||
+        saved.state.deletedAt ||
+        saved.state.seasonClock ||
+        saved.state.status !== 'active'
+      )
+        return;
+      await this.commit(
+        saved.state,
+        {
+          ...saved.state,
+          seasonClock: 1,
+          nextScheduledAt: nextRealMatchTime(this.now()),
+        },
+        saved.state.administratorId,
+        'Relógio online ativado para a carreira',
+      );
+    });
   }
   private async expire(id: string) {
     await this.serial(id, async () => {
@@ -338,6 +362,8 @@ export class LeagueService {
       !saved.state.participants.some((member) => member.userId === userId)
     )
       throw new Error('Acesso negado');
+    await this.ensureSeasonClock(id);
+    saved = (await this.repository.load(id)) ?? saved;
     if (
       saved.state.round === 0 &&
       saved.state.results.length === 0 &&
@@ -495,22 +521,9 @@ export class LeagueService {
     });
   }
   async tick(): Promise<void> {
-    for (const id of await this.repository.online()) {
+    for (const id of await this.repository.active()) {
       await this.expire(id);
-      await this.serial(id, async () => {
-        const saved = await this.repository.load(id);
-        if (!saved || saved.state.seasonClock || saved.state.status !== 'active') return;
-        await this.commit(
-          saved.state,
-          {
-            ...saved.state,
-            seasonClock: 1,
-            nextScheduledAt: nextRealMatchTime(this.now()),
-          },
-          saved.state.administratorId,
-          'Relógio online ativado',
-        );
-      });
+      await this.ensureSeasonClock(id);
     }
     for (const id of await this.repository.due(this.now())) {
       for (let count = 0; count < 8; count++) {
@@ -520,7 +533,6 @@ export class LeagueService {
           if (
             !current ||
             current.deletedAt ||
-            current.mode !== 'multiplayer' ||
             current.status !== 'active' ||
             current.nextScheduledAt > this.now()
           )

@@ -30,7 +30,7 @@ O estado persistido guarda `seasonClock` e `nextScheduledAt` (horário real); `l
 
 O servidor verifica rodadas vencidas a cada 30 segundos enquanto está ativo, sem depender de conexões de jogadores. O processamento revalida a revisão e o horário para evitar simulação duplicada. Após uma interrupção, recupera até oito horários vencidos por liga a cada chamada, inclusive de madrugada, preservando os horários originais nos resultados. Novas chamadas continuam a recuperação. Isso não substitui a disponibilidade do servidor: durante uma indisponibilidade os resultados só serão calculados quando ele voltar.
 
-Ligas online antigas recebem o novo relógio na primeira verificação, com início no próximo horário real disponível; partidas já realizadas são preservadas. O modo offline continua sob avanço manual. O fim de temporada continua exigindo iniciar a próxima temporada.
+Ligas online antigas recebem o novo relógio na primeira verificação, com início no próximo horário real disponível; partidas já realizadas são preservadas. As carreiras solo hospedadas também recebem o relógio online; a distinção solo/multiplayer controla a participação, não o avanço automático. O fim de temporada continua exigindo iniciar a próxima temporada.
 
 ## Cloudflare: interface e agendador
 
