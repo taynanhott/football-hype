@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { randomUUID } from 'node:crypto';
+import { randomUUID, randomInt } from 'node:crypto';
 import {
   applyEvent,
   playNextBatch,
@@ -69,15 +69,34 @@ export class LeagueService {
         })),
     };
   }
+  async draw(identity: Identity, input: unknown) {
+    const { mode, division } = z
+      .object({ mode: z.enum(['offline', 'multiplayer']), division: z.enum(['A', 'B', 'C', 'D']) })
+      .parse(input);
+    if (!this.repository.reserveDraw) throw new Error('Sorteio indisponível neste servidor');
+    const clubs = (await this.catalog()).clubs.filter((club) => club.division === division);
+    if (!clubs.length) throw new Error('Esta divisão não possui clubes');
+    return this.repository.reserveDraw(identity.userId, mode, {
+      leagueId: randomUUID(),
+      clubId: clubs[randomInt(clubs.length)]!.id,
+      division,
+    });
+  }
   async create(identity: Identity, input: unknown): Promise<string> {
     return this.serial(`membership:${identity.userId}`, async () => {
       const options = connectOptionsSchema.parse(input);
-      const current = (await this.repository.forUser(identity.userId)).find(
-        (league) => league.mode === options.mode,
-      );
+      const draw = await this.repository.getDraw?.(identity.userId, options.mode);
+      if (draw) {
+        options.clubId = draw.clubId;
+        options.assignment = 'chosen';
+      }
+      const memberships = this.repository.summariesForUser
+        ? await this.repository.summariesForUser(identity.userId)
+        : await this.repository.forUser(identity.userId);
+      const current = memberships.find((league) => league.mode === options.mode);
       if (current) return current.id;
       const generated = createWorld({
-        id: randomUUID(),
+        id: draw?.leagueId ?? randomUUID(),
         userId: identity.userId,
         name: options.name,
         mode: options.mode,
@@ -118,6 +137,7 @@ export class LeagueService {
     });
   }
   async list(userId: string) {
+    if (this.repository.summariesForUser) return this.repository.summariesForUser(userId);
     for (const state of await this.repository.forUser(userId)) await this.expire(state.id);
     return (await this.repository.forUser(userId)).map((state) => ({
       id: state.id,
@@ -154,7 +174,7 @@ export class LeagueService {
   }
   private async ensureSeasonClock(id: string) {
     await this.serial(id, async () => {
-      const saved = await this.repository.load(id);
+      const saved = await this.repository.load(id, { eventPatches: false });
       if (
         !saved ||
         saved.state.deletedAt ||
@@ -175,14 +195,14 @@ export class LeagueService {
     });
   }
   private async expire(id: string) {
-    await this.serial(id, async () => {
-      const saved = await this.repository.load(id);
-      if (!saved || saved.state.deletedAt || saved.state.mode !== 'multiplayer') return;
+    return this.serial(id, async () => {
+      const saved = await this.repository.load(id, { eventPatches: false });
+      if (!saved || saved.state.deletedAt || saved.state.mode !== 'multiplayer') return saved;
       const state = saved.state;
       const participants = state.participants.map((p) =>
         p.lastSeenAt === undefined ? { ...p, lastSeenAt: this.now() } : p,
       );
-      if (!state.inviteCode || state.participants.some((p) => p.lastSeenAt === undefined))
+      if (!state.inviteCode || state.participants.some((p) => p.lastSeenAt === undefined)) {
         await this.commit(
           state,
           {
@@ -196,12 +216,15 @@ export class LeagueService {
           state.administratorId,
           'Participantes e convite da liga atualizados',
         );
+        return this.repository.load(id, { eventPatches: false });
+      }
+      return saved;
     });
   }
   async touch(id: string, userId: string) {
     await this.expire(id);
     await this.serial(id, async () => {
-      const saved = await this.repository.load(id);
+      const saved = await this.repository.load(id, { eventPatches: false });
       const state = saved?.state;
       const member = state?.participants.find((p) => p.userId === userId);
       if (!state || state.deletedAt || !member)
@@ -223,7 +246,7 @@ export class LeagueService {
   async invitation(id: string, input: unknown) {
     const { code } = z.object({ code: z.string() }).parse(input);
     await this.expire(id);
-    const state = (await this.repository.load(id))?.state;
+    const state = (await this.repository.load(id, { eventPatches: false }))?.state;
     if (!state || state.deletedAt || state.mode !== 'multiplayer' || state.inviteCode !== code)
       throw new Error('Convite inválido');
     return {
@@ -242,7 +265,7 @@ export class LeagueService {
     const data = z.object({ code: z.string(), clubId: z.uuid().optional() }).parse(input);
     await this.expire(id);
     await this.serial(id, async () => {
-      const state = (await this.repository.load(id))?.state;
+      const state = (await this.repository.load(id, { eventPatches: false }))?.state;
       if (
         !state ||
         state.deletedAt ||
@@ -289,7 +312,7 @@ export class LeagueService {
       .parse(input);
     await this.serial(`membership:${data.userId}`, () =>
       this.serial(id, async () => {
-        const state = (await this.repository.load(id))?.state;
+        const state = (await this.repository.load(id, { eventPatches: false }))?.state;
         if (!state || state.deletedAt || state.administratorId !== identity.userId)
           throw new Error('Somente o administrador pode aprovar');
         const request = state.requests.find((p) => p.userId === data.userId);
@@ -329,7 +352,12 @@ export class LeagueService {
   }
   async leave(id: string, userId: string, remove = false) {
     await this.serial(id, async () => {
-      const state = (await this.repository.load(id))?.state;
+      if (remove && this.repository.remove) {
+        await this.repository.remove(id, userId, this.now());
+        this.updates.emit(id);
+        return;
+      }
+      const state = (await this.repository.load(id, { eventPatches: false }))?.state;
       if (!state || state.deletedAt || !state.participants.some((p) => p.userId === userId))
         throw new Error('Acesso negado');
       if (remove && state.administratorId !== userId)
@@ -354,16 +382,17 @@ export class LeagueService {
     });
   }
   async snapshot(id: string, userId: string, roomId = ''): Promise<GameSnapshot> {
-    await this.expire(id);
-    let saved = await this.repository.load(id);
+    let saved = await this.expire(id);
     if (
       !saved ||
       saved.state.deletedAt ||
       !saved.state.participants.some((member) => member.userId === userId)
     )
       throw new Error('Acesso negado');
-    await this.ensureSeasonClock(id);
-    saved = (await this.repository.load(id)) ?? saved;
+    if (!saved.state.seasonClock && saved.state.status === 'active') {
+      await this.ensureSeasonClock(id);
+      saved = (await this.repository.load(id, { eventPatches: false })) ?? saved;
+    }
     if (
       saved.state.round === 0 &&
       saved.state.results.length === 0 &&
@@ -371,7 +400,7 @@ export class LeagueService {
       Object.values(saved.state.chemistry).every((players) => Object.keys(players).length === 0)
     ) {
       await this.serial(id, async () => {
-        const current = await this.repository.load(id);
+        const current = await this.repository.load(id, { eventPatches: false });
         if (
           !current ||
           current.state.round !== 0 ||
@@ -387,7 +416,7 @@ export class LeagueService {
           'Entrosamento inicial dos titulares restaurado',
         );
       });
-      saved = (await this.repository.load(id)) ?? saved;
+      saved = (await this.repository.load(id, { eventPatches: false })) ?? saved;
     }
     if (
       saved.state.round === 0 &&
@@ -395,7 +424,7 @@ export class LeagueService {
       saved.state.competitionRulesVersion !== SEASON_CALENDAR_VERSION
     ) {
       await this.serial(id, async () => {
-        const current = await this.repository.load(id);
+        const current = await this.repository.load(id, { eventPatches: false });
         if (
           !current ||
           current.state.round !== 0 ||
@@ -428,7 +457,7 @@ export class LeagueService {
           'Calendário da temporada ajustado para 11 de janeiro',
         );
       });
-      saved = (await this.repository.load(id)) ?? saved;
+      saved = (await this.repository.load(id, { eventPatches: false })) ?? saved;
     }
     const state = saved.state;
     const tables = Object.fromEntries(
@@ -468,9 +497,9 @@ export class LeagueService {
     };
   }
   async command(id: string, userId: string, input: unknown, scheduled = false): Promise<void> {
-    if (!scheduled) await this.touch(id, userId);
+    if (!scheduled) await this.expire(id);
     await this.serial(id, async () => {
-      const saved = await this.repository.load(id);
+      const saved = await this.repository.load(id, { eventPatches: false });
       if (!saved || saved.state.deletedAt) throw new Error('Liga não encontrada');
       if (
         scheduled &&
@@ -488,6 +517,14 @@ export class LeagueService {
         throw new Error('Aguarde o encerramento dos 90 segundos da rodada');
       const event = executeCommand(saved.state, command, userId, this.now(), randomUUID());
       if (!event.ok) throw new Error(event.error.message);
+      // Persist presence together with the command instead of writing the world twice.
+      if (!scheduled) {
+        event.value.patch.participants = (
+          event.value.patch.participants ?? saved.state.participants
+        ).map((member) =>
+          member.userId === userId ? { ...member, lastSeenAt: this.now() } : member,
+        );
+      }
       const applied = applyEvent(saved.state, event.value);
       if (!applied.ok) throw new Error(applied.error.message);
       await this.repository.append(id, saved.state.revision, applied.value, event.value);
@@ -529,7 +566,7 @@ export class LeagueService {
       for (let count = 0; count < 8; count++) {
         let progressed = false;
         await this.serial(id, async () => {
-          const current = (await this.repository.load(id))?.state;
+          const current = (await this.repository.load(id, { eventPatches: false }))?.state;
           if (
             !current ||
             current.deletedAt ||
@@ -555,8 +592,7 @@ export class LeagueService {
   }
 
   async search(id: string, userId: string, query: string) {
-    await this.expire(id);
-    const saved = await this.repository.load(id);
+    const saved = await this.expire(id);
     if (
       !saved ||
       saved.state.deletedAt ||

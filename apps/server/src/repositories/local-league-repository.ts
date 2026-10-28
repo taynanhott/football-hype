@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import {
   appendFile,
   mkdir,
@@ -7,6 +8,7 @@ import {
   writeFile,
   stat,
   truncate,
+  unlink,
 } from 'node:fs/promises';
 import { join } from 'node:path';
 import { gzip, gunzipSync } from 'node:zlib';
@@ -18,9 +20,10 @@ import {
   type GameEvent,
   type WorldState,
 } from '@football/shared';
-import type { LeagueRepository, SavedLeague } from './league-repository.js';
+import type { LeagueRepository, SavedLeague, DrawReservation } from './league-repository.js';
 
 export class LocalLeagueRepository implements LeagueRepository {
+  private readonly draws = new Map<string, DrawReservation>();
   private readonly leagues = new Map<string, SavedLeague>();
   private readonly fileVersions = new Map<string, string>();
   private readonly operations = new Map<string, Promise<unknown>>();
@@ -83,6 +86,51 @@ export class LocalLeagueRepository implements LeagueRepository {
     }
     return this.leagues.get(id);
   }
+  private drawKey(userId: string, mode: string) {
+    return createHash('sha256')
+      .update(userId + ':' + mode)
+      .digest('hex');
+  }
+  async getDraw(
+    userId: string,
+    mode: 'offline' | 'multiplayer',
+  ): Promise<DrawReservation | undefined> {
+    const key = this.drawKey(userId, mode);
+    if (this.directory) {
+      try {
+        return JSON.parse(
+          await readFile(join(this.directory, key + '.draw.json'), 'utf8'),
+        ) as DrawReservation;
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+      }
+    }
+    return this.draws.get(key);
+  }
+  async reserveDraw(
+    userId: string,
+    mode: 'offline' | 'multiplayer',
+    draw: DrawReservation,
+  ): Promise<DrawReservation> {
+    const key = this.drawKey(userId, mode);
+    return this.serial('draw:' + key, async () => {
+      if ((await this.forUser(userId)).some((state) => state.mode === mode))
+        throw new Error('Você já possui uma carreira neste modo. Continue sua carreira.');
+      const previous = await this.getDraw(userId, mode);
+      if (previous) return previous;
+      if (this.directory) {
+        const file = join(this.directory, key + '.draw.json');
+        try {
+          await writeFile(file, JSON.stringify(draw), { flag: 'wx' });
+        } catch (error) {
+          if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error;
+          return (await this.getDraw(userId, mode))!;
+        }
+      }
+      this.draws.set(key, draw);
+      return draw;
+    });
+  }
   async create(state: WorldState): Promise<void> {
     if (
       this.leagues.has(state.id) ||
@@ -139,6 +187,20 @@ export class LocalLeagueRepository implements LeagueRepository {
       this.fileVersions.set(id, `${base.mtimeMs}:${base.size}:${journal.mtimeMs}:${journal.size}`);
     }
     this.leagues.set(id, saved);
+    if (state.deletedAt) {
+      for (const member of previous.state.participants) {
+        const draw = await this.getDraw(member.userId, state.mode);
+        if (draw?.leagueId !== id) continue;
+        const key = this.drawKey(member.userId, state.mode);
+        this.draws.delete(key);
+        if (this.directory)
+          await unlink(join(this.directory, key + '.draw.json')).catch(
+            (error: NodeJS.ErrnoException) => {
+              if (error.code !== 'ENOENT') throw error;
+            },
+          );
+      }
+    }
   }
   async forUser(userId: string): Promise<readonly WorldState[]> {
     return [...this.leagues.values()]

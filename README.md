@@ -27,10 +27,10 @@ pnpm install --frozen-lockfile
 pnpm dev:online
 ```
 
-Se a instalação copiada apresentar módulos ausentes, reinstale no PowerShell com um cache fora do OneDrive:
+Se a instalação copiada apresentar módulos ausentes, execute a reinstalação no seu próprio terminal. Para evitar bloqueios do OneDrive, use um cache fora da pasta sincronizada:
 
 ```powershell
-pnpm install --force --frozen-lockfile --virtual-store-dir "$env:LOCALAPPDATA\football-hype\pnpm-virtual-store"
+pnpm install --force --frozen-lockfile --virtual-store-dir="C:/Users/tayna/AppData/Local/football-hype-native/pnpm-virtual-store"
 ```
 
 Abra http://localhost:5173 e entre com a mesma conta Google usada no site. As ações afetam a carreira real no servidor; a interface local não cria uma cópia dos dados.

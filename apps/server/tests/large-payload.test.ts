@@ -40,6 +40,9 @@ class Collection {
   doc(id: string) {
     return this.db.doc(`${this.path}/${id}`);
   }
+  select() {
+    return this;
+  }
   orderBy() {
     return this;
   }
@@ -64,8 +67,24 @@ class MemoryDb {
   doc(path: string) {
     return new Ref(this, path);
   }
-  async getAll(...refs: Ref[]) {
-    return Promise.all(refs.map((ref) => ref.get()));
+  readonly masks: string[][] = [];
+  async getAll(...args: (Ref | { fieldMask: string[] })[]) {
+    const options = args.find((arg) => !(arg instanceof Ref)) as
+      { fieldMask: string[] } | undefined;
+    if (options) this.masks.push(options.fieldMask);
+    return Promise.all(
+      args
+        .filter((arg): arg is Ref => arg instanceof Ref)
+        .map(async (ref) => {
+          const data = this.docs.get(ref.path);
+          return new Snapshot(
+            ref,
+            data && options
+              ? Object.fromEntries(options.fieldMask.map((key) => [key, data[key]]))
+              : data,
+          );
+        }),
+    );
   }
   batch() {
     const writes: [Ref, Data][] = [];
@@ -87,6 +106,8 @@ class MemoryDb {
   async runTransaction<T>(
     fn: (transaction: {
       get: (ref: Ref) => Promise<Snapshot>;
+      getAll: (...args: (Ref | { fieldMask: string[] })[]) => Promise<Snapshot[]>;
+      update: (ref: Ref, data: Data) => void;
       set: (ref: Ref, data: Data, options?: { merge?: boolean }) => void;
       create: (ref: Ref, data: Data) => void;
     }) => Promise<T>,
@@ -94,6 +115,10 @@ class MemoryDb {
     const writes: [Ref, Data][] = [];
     const result = await fn({
       get: (ref) => ref.get(),
+      getAll: (...args) => this.getAll(...args),
+      update: (ref, data) => {
+        writes.push([ref, { ...this.docs.get(ref.path), ...data }]);
+      },
       set: (ref, data, options) => {
         writes.push([ref, options?.merge ? { ...this.docs.get(ref.path), ...data } : data]);
       },
@@ -126,6 +151,8 @@ describe('payloads grandes das trajetórias', () => {
       rating: 6.5,
     }));
     await repository.create(state);
+    expect((await repository.load(state.id, { eventPatches: false }))?.state).toBe(state);
+    expect(db.masks).toEqual([['revision', 'status']]);
     const before = db.docs.get(`leagues/${state.id}`)!;
     expect((before.partIds as string[]).length).toBeGreaterThan(1);
     expect(db.batchSizes.every((size) => size <= 4_800_000)).toBe(true);
@@ -154,5 +181,25 @@ describe('payloads grandes das trajetórias', () => {
     await repository.append(state.id, 0, next, event);
     expect((await repository.load(state.id))?.state).toEqual(next);
     expect((await repository.load(state.id))?.events).toEqual([event]);
+    await expect(repository.remove(state.id, 'intruso', Date.now())).rejects.toThrow(
+      'Acesso negado',
+    );
+    const payload = db.docs.get(`leagues/${state.id}`)!.payload;
+    const batches = db.batchSizes.length;
+    await repository.remove(state.id, 'large-state', Date.now());
+    expect(db.docs.get(`leagues/${state.id}`)!.payload).toBe(payload);
+    expect(db.batchSizes).toHaveLength(batches);
+    expect(db.docs.get('memberships/large-state')?.offline).toBeNull();
+    expect(await repository.load(state.id)).toBeUndefined();
+    expect(await repository.load(state.id, { eventPatches: false })).toBeUndefined();
+    await expect(
+      repository.append(
+        state.id,
+        2,
+        { ...next, revision: 3 },
+        { ...event, id: randomUUID(), sequence: 3 },
+      ),
+    ).rejects.toThrow('mudou');
+    expect(db.docs.get(`leagues/${state.id}`)!.status).toBe('deleted');
   });
 });

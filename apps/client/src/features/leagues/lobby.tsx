@@ -1,6 +1,6 @@
 import { BrandMark } from '../../ui/brand-mark';
 import { Select, Option } from '../../ui/select';
-import { useState } from 'react';
+import { useState, useEffect, useRef, type CSSProperties } from 'react';
 import { z } from 'zod';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createLeague, firebaseEnabled, listLeagues, loadCatalog, request } from './api';
@@ -45,29 +45,36 @@ export function Lobby() {
       </header>
       {!session.user ? (
         <div className="login-welcome">
-          <span className="eyebrow">SEU CLUBE. SUA HISTÓRIA.</span>
-          <h1>
-            O próximo grande
-            <br />
-            técnico é você.
-          </h1>
-          <p>Entre com o Google para escolher seu clube e continuar suas carreiras.</p>
-          <div className="login-pixel-ball">
-            <DivisionBadge division="★" />
+          <div className="stadium-art" aria-hidden="true">
+            <div className="pitch-lines">
+              <i />
+              <b />
+            </div>
+            <div className="stadium-ticket">
+              <BrandMark size={64} />
+              <span>ACESSO DO TÉCNICO</span>
+              <strong>2026</strong>
+              <small>VESTIÁRIO · ÁREA TÉCNICA</small>
+            </div>
           </div>
-          <button
-            className="primary"
-            disabled={busy || session.loading || !firebaseEnabled}
-            onClick={() => void login()}
-          >
-            {session.loading ? 'Conectando…' : busy ? 'Abrindo Google…' : 'Entrar com Google'}
-          </button>
-          {!firebaseEnabled && <p>Configure o Firebase para habilitar o acesso.</p>}
-          {(error || session.error) && (
-            <p className="form-error" role="alert">
-              {error || session.error}
-            </p>
-          )}
+          <div className="login-access">
+            <span className="eyebrow">ÁREA DO TÉCNICO</span>
+            <h2>Acesse seu vestiário</h2>
+            <p>Entre para continuar suas carreiras e criar novas ligas.</p>
+            <button
+              className="primary"
+              disabled={busy || session.loading || !firebaseEnabled}
+              onClick={() => void login()}
+            >
+              {session.loading ? 'Conectando…' : busy ? 'Abrindo Google…' : 'Entrar com Google'}
+            </button>
+            {!firebaseEnabled && <p>Configure o Firebase para habilitar o acesso.</p>}
+            {(error || session.error) && (
+              <p className="form-error" role="alert">
+                {error || session.error}
+              </p>
+            )}
+          </div>
         </div>
       ) : (
         <AuthenticatedLobby user={session.user} />
@@ -76,6 +83,33 @@ export function Lobby() {
   );
 }
 function AuthenticatedLobby({ user }: { user: { uid: string; name: string } }) {
+  const stripRef = useRef<HTMLDivElement>(null);
+  const [landingStart, setLandingStart] = useState(0);
+  const [reservation, setReservation] = useState<{
+    leagueId: string;
+    clubId: string;
+    division: string;
+  } | null>(null);
+  const [boundLeague, setBoundLeague] = useState('');
+  const binding = useRef(false);
+  const [creating, setCreating] = useState(false);
+  const [choice, setChoice] = useState<'chosen' | 'random'>('chosen');
+  const [settling, setSettling] = useState(false);
+  const [spinning, setSpinning] = useState(false);
+  const [roll, setRoll] = useState<string[]>([]);
+  const [rolled, setRolled] = useState(false);
+  const [confirmation, setConfirmation] = useState<{
+    id: string;
+    action: 'leave' | 'delete';
+  } | null>(null);
+  useEffect(() => {
+    if (!spinning || !settling) return;
+    const timer = window.setTimeout(() => {
+      setSpinning(false);
+      setRolled(true);
+    }, 3200);
+    return () => window.clearTimeout(timer);
+  }, [spinning, settling]);
   const [division, setDivision] = useState('A');
   const [mode, setMode] = useState<'offline' | 'multiplayer'>('offline');
   const [teamId, setTeamId] = useState('');
@@ -92,6 +126,7 @@ function AuthenticatedLobby({ user }: { user: { uid: string; name: string } }) {
   const queryClient = useQueryClient();
   const catalog = useQuery({
     queryKey: ['club-catalog'],
+    enabled: creating,
     queryFn: loadCatalog,
     staleTime: 60000,
     retry: false,
@@ -100,22 +135,82 @@ function AuthenticatedLobby({ user }: { user: { uid: string; name: string } }) {
     queryKey: ['leagues', user.uid],
     queryFn: listLeagues,
     retry: false,
-    refetchInterval: 10000,
+    staleTime: 30000,
   });
   const teams = (catalog.data?.clubs ?? []).filter((club) => club.division === division);
   const selected = teams.find((club) => club.id === teamId) ?? teams[0];
   const existingMode = leagues.data?.find((league) => league.mode === mode);
+  async function spin() {
+    if (
+      !teams.length ||
+      spinning ||
+      boundLeague ||
+      reservation ||
+      existingMode ||
+      binding.current ||
+      leagues.isPending ||
+      leagues.isError
+    )
+      return;
+    binding.current = true;
+    setError('');
+    setSettling(false);
+    setRolled(false);
+    setRoll(
+      Array.from({ length: Math.max(85, teams.length * 4) }, (_, i) => teams[i % teams.length]!.id),
+    );
+    setSpinning(true);
+    useGameStore.setState({ busy: true });
+    try {
+      const draw = z
+        .object({ leagueId: z.uuid(), clubId: z.uuid(), division: z.string() })
+        .parse(
+          await request('/api/draw', { method: 'POST', body: JSON.stringify({ mode, division }) }),
+        );
+      const available = (catalog.data?.clubs ?? []).filter(
+        (club) => club.division === draw.division,
+      );
+      if (!available.some((club) => club.id === draw.clubId))
+        throw new Error('O clube reservado não está no catálogo. Atualize a página.');
+      const transform = stripRef.current ? getComputedStyle(stripRef.current).transform : 'none';
+      const offset = transform === 'none' ? 0 : new DOMMatrixReadOnly(transform).m41;
+      setLandingStart(offset);
+      setReservation(draw);
+      setDivision(draw.division);
+      const strip = Array.from({ length: 85 }, (_, i) => available[i % available.length]!.id);
+      strip[60] = draw.clubId;
+      setRoll(strip);
+      setTeamId(draw.clubId);
+      setSettling(true);
+    } catch (reason) {
+      setSpinning(false);
+      setSettling(false);
+      setRoll([]);
+      setError(
+        reason instanceof Error
+          ? reason.message
+          : 'Não foi possível confirmar o sorteio. Tente novamente para recuperar o mesmo clube reservado.',
+      );
+    } finally {
+      binding.current = false;
+      useGameStore.setState({ busy: false });
+    }
+  }
   async function start() {
-    if (!selected) return;
+    if (!selected || spinning || binding.current) return;
     setError('');
     try {
       useGameStore.setState({ busy: true });
-      const id = await createLeague(
-        `${selected.name} · ${mode === 'offline' ? 'Carreira' : 'Amigos'}`,
-        mode,
-        selected.id,
-        'chosen',
-      );
+      const id =
+        boundLeague ||
+        existingMode?.id ||
+        (await createLeague(
+          `${selected.name} · ${mode === 'offline' ? 'Carreira' : 'Amigos'}`,
+          mode,
+          selected.id,
+          'chosen',
+        ));
+      setBoundLeague(id);
       await connect(id);
       await queryClient.invalidateQueries({ queryKey: ['leagues', user.uid] });
     } catch (reason) {
@@ -124,17 +219,14 @@ function AuthenticatedLobby({ user }: { user: { uid: string; name: string } }) {
     }
   }
   async function manage(id: string, action: 'leave' | 'delete') {
-    if (
-      !window.confirm(
-        action === 'delete'
-          ? 'Excluir esta liga para todos os participantes?'
-          : 'Abandonar a liga? Um bot assumirá seu clube e a vaga será liberada.',
-      )
-    )
-      return;
     try {
+      setConfirmation(null);
       await request(`/api/leagues/${id}/${action}`, { method: 'POST' });
-      await queryClient.invalidateQueries({ queryKey: ['leagues'] });
+      queryClient.setQueryData<Awaited<ReturnType<typeof listLeagues>>>(
+        ['leagues', user.uid],
+        (previous) => previous?.filter((league) => league.id !== id),
+      );
+      void queryClient.invalidateQueries({ queryKey: ['leagues', user.uid] });
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Falha ao alterar liga');
     }
@@ -149,24 +241,79 @@ function AuthenticatedLobby({ user }: { user: { uid: string; name: string } }) {
     }
   }
   return (
-    <main className="club-selection">
-      <div className="club-selection-heading">
-        <div>
-          <span className="eyebrow">BEM-VINDO, {user.name.toUpperCase()}</span>
-          <h1>Escolha as suas cores.</h1>
-          <p>Um escudo. Uma torcida. Uma nova história para escrever.</p>
+    <main
+      className={`club-selection ${creating && choice === 'chosen' ? 'manual-team-screen' : ''}`}
+    >
+      {!creating && (
+        <div className="career-toolbar">
+          <span>
+            <Icon name="shield" /> {user.name}
+          </span>
+          <button className="secondary" onClick={() => void logout()}>
+            Sair da conta
+          </button>
         </div>
-        <button className="secondary" onClick={() => void logout()}>
-          Sair da conta
-        </button>
-      </div>
+      )}
+      {!creating && (
+        <div className="career-actions">
+          <button
+            onClick={() => {
+              setReservation(null);
+              setBoundLeague('');
+              setRolled(false);
+              setRoll([]);
+              setTeamId('');
+              setMode('offline');
+              setCreating(true);
+            }}
+          >
+            <Icon name="trophy" />
+            <strong>Nova carreira solo</strong>
+            <small>Comande seu clube e dispute cada título.</small>
+            <span>Criar carreira →</span>
+          </button>
+          <button
+            onClick={() => {
+              setBoundLeague('');
+              setRolled(false);
+              setRoll([]);
+              setTeamId('');
+              setMode('multiplayer');
+              setCreating(true);
+            }}
+          >
+            <Icon name="ball" />
+            <strong>Nova liga multiplayer</strong>
+            <small>Seus amigos. Seus rivais. A mesma disputa.</small>
+            <span>Criar liga →</span>
+          </button>
+          <button onClick={() => setJoining(true)}>
+            <Icon name="handshake" />
+            <strong>Entrar com convite</strong>
+            <small>Entre na liga dos seus amigos.</small>
+            <span>Usar convite →</span>
+          </button>
+        </div>
+      )}
+      {error && (
+        <p className="form-error" role="alert">
+          {error}
+        </p>
+      )}
       {leagues.isLoading && <p>Carregando suas carreiras…</p>}
       {leagues.error && (
         <p role="alert" className="form-error">
-          {leagues.error.message}
+          Não foi possível carregar suas carreiras. O servidor não respondeu a tempo.
+          <button
+            className="secondary"
+            disabled={leagues.isFetching}
+            onClick={() => void leagues.refetch()}
+          >
+            {leagues.isFetching ? 'Consultando…' : 'Tentar novamente'}
+          </button>
         </p>
       )}
-      {Boolean(leagues.data?.length) && (
+      {!creating && Boolean(leagues.data?.length) && (
         <section className="saved-leagues panel">
           <h2>Suas carreiras</h2>
           {leagues.data?.map((league) => (
@@ -184,12 +331,18 @@ function AuthenticatedLobby({ user }: { user: { uid: string; name: string } }) {
                 </span>
               </button>
               {league.mode === 'multiplayer' && (
-                <button disabled={busy} onClick={() => void manage(league.id, 'leave')}>
+                <button
+                  disabled={busy}
+                  onClick={() => setConfirmation({ id: league.id, action: 'leave' })}
+                >
                   Abandonar liga
                 </button>
               )}
               {league.administratorId === user.uid && (
-                <button disabled={busy} onClick={() => void manage(league.id, 'delete')}>
+                <button
+                  disabled={busy}
+                  onClick={() => setConfirmation({ id: league.id, action: 'delete' })}
+                >
                   Excluir liga
                 </button>
               )}
@@ -197,103 +350,217 @@ function AuthenticatedLobby({ user }: { user: { uid: string; name: string } }) {
           ))}
         </section>
       )}
-      <div className="division-picker" role="group" aria-label="Divisão brasileira">
-        {['A', 'B', 'C', 'D'].map((value) => (
-          <button
-            key={value}
-            aria-pressed={division === value}
-            onClick={() => {
-              setDivision(value);
-              setTeamId('');
-            }}
-          >
-            <DivisionBadge division={value} />
-            <span>
-              Série {value}
-              <small>
-                {catalog.data?.clubs.filter((club) => club.division === value).length ?? 0} clubes
-              </small>
-            </span>
-          </button>
-        ))}
-      </div>
-      <div className="club-selection-body">
-        <section className="club-picker" aria-label={`Clubes da Série ${division}`}>
-          {catalog.isLoading && <p>Carregando escudos…</p>}
-          {catalog.error && <p role="alert">{catalog.error.message}</p>}
-          {!catalog.isLoading && !teams.length && (
-            <div className="panel empty-state">
-              <h2>Série {division}</h2>
-              <p>Esta divisão ainda não está na base importada.</p>
-            </div>
-          )}
-          {teams.map((club) => (
+      {!creating && leagues.isSuccess && !leagues.data?.length && (
+        <div className="career-empty">
+          <Icon name="trophy" />
+          <p>Suas carreiras aparecerão aqui.</p>
+          <small>Escolha um modo acima para entrar em campo.</small>
+        </div>
+      )}
+      {creating && (
+        <section className="creation-workspace">
+          <div className="career-toolbar">
             <button
-              className="club-choice"
-              key={club.id}
-              aria-pressed={selected?.id === club.id}
-              onClick={() => setTeamId(club.id)}
+              className="secondary"
+              disabled={busy || spinning}
+              onClick={() => setCreating(false)}
             >
-              <PixelBadge name={club.name} {...(club.crestUrl ? { url: club.crestUrl } : {})} />
-              <strong>{club.name}</strong>
+              ← Suas carreiras
             </button>
-          ))}
-        </section>
-        <aside className="panel club-confirmation">
-          {selected ? (
-            <>
-              <PixelBadge
-                name={selected.name}
-                {...(selected.crestUrl ? { url: selected.crestUrl } : {})}
-                size={112}
-              />
-              <span className="eyebrow">BRASIL · SÉRIE {division}</span>
-              <h2>{selected.name}</h2>
-            </>
-          ) : (
-            <h2>Escolha seu clube</h2>
-          )}
-          <div className="segmented">
+            <strong>{mode === 'offline' ? 'Nova carreira solo' : 'Nova liga multiplayer'}</strong>
+          </div>
+          <div className="division-picker" role="group" aria-label="Divisão brasileira">
+            {['A', 'B', 'C', 'D'].map((value) => (
+              <button
+                key={value}
+                disabled={spinning || busy || Boolean(boundLeague || reservation)}
+                aria-pressed={division === value}
+                onClick={() => {
+                  setDivision(value);
+                  setTeamId('');
+                  setRolled(false);
+                  setRoll([]);
+                }}
+              >
+                <DivisionBadge division={value} />
+                <span>
+                  Série {value}
+                  <small>
+                    {catalog.data?.clubs.filter((club) => club.division === value).length ?? 0}{' '}
+                    clubes
+                  </small>
+                </span>
+              </button>
+            ))}
+          </div>
+          <div className="segmented choice-method">
             <button
-              className={mode === 'offline' ? 'selected' : ''}
-              onClick={() => setMode('offline')}
+              disabled={busy || spinning || Boolean(boundLeague || reservation)}
+              className={choice === 'chosen' ? 'selected' : ''}
+              onClick={() => setChoice('chosen')}
             >
-              Carreira solo
+              Escolher meu time
             </button>
             <button
-              className={mode === 'multiplayer' ? 'selected' : ''}
-              onClick={() => setMode('multiplayer')}
+              disabled={busy || spinning || Boolean(boundLeague || reservation)}
+              className={choice === 'random' ? 'selected' : ''}
+              onClick={() => setChoice('random')}
             >
-              Liga com amigos
+              Sortear na roleta
             </button>
           </div>
-          <button
-            className="primary full"
-            disabled={busy || !selected || Boolean(existingMode)}
-            onClick={() => void start()}
-          >
-            {existingMode
-              ? 'Continue sua carreira acima'
-              : busy
-                ? 'Preparando sua carreira…'
-                : 'Começar minha história'}
-            <Icon name="arrow" />
-          </button>
-          <button className="secondary full" onClick={() => setJoining(true)}>
-            Tenho um convite
-          </button>
-          <p className="form-note">
-            Uma carreira solo e uma liga com amigos por conta. As carreiras vinculadas aparecem
-            acima.
-          </p>
-          {error && (
-            <p className="form-error" role="alert">
-              {error}
-            </p>
+          {choice === 'random' && !rolled && (
+            <div className="roulette-panel">
+              <div className="roulette-window">
+                <div className="roulette-pointer" />
+                <div
+                  ref={stripRef}
+                  style={
+                    {
+                      '--roulette-cycle': `${-teams.length * 140}px`,
+                      '--roulette-start': `${landingStart}px`,
+                    } as CSSProperties
+                  }
+                  className={`roulette-strip ${spinning && !settling ? 'roulette-waiting' : settling || rolled ? 'rolling' : ''}`}
+                >
+                  {roll.map((id, i) => {
+                    const team = teams.find((t) => t.id === id);
+                    return (
+                      <div className="roulette-card" key={i}>
+                        <PixelBadge
+                          name={team?.name ?? ''}
+                          {...(team?.crestUrl ? { url: team.crestUrl } : {})}
+                          size={64}
+                        />
+                        <strong>{team?.name}</strong>
+                      </div>
+                    );
+                  })}
+                </div>
+                {!roll.length && (
+                  <span className="roulette-placeholder">O próximo escudo pode ser o seu.</span>
+                )}
+              </div>
+              <button
+                className="primary"
+                disabled={
+                  busy ||
+                  spinning ||
+                  !teams.length ||
+                  Boolean(boundLeague) ||
+                  Boolean(existingMode) ||
+                  leagues.isPending ||
+                  leagues.isError
+                }
+                onClick={() => void spin()}
+              >
+                {spinning
+                  ? settling
+                    ? 'Revelando seu clube…'
+                    : 'Reservando seu clube…'
+                  : busy
+                    ? 'Vinculando seu clube…'
+                    : existingMode
+                      ? 'Você já possui uma carreira neste modo'
+                      : 'Girar roleta'}
+              </button>
+              {rolled && <strong role="status">Seu clube: {selected?.name}</strong>}
+            </div>
           )}
-        </aside>
-      </div>
-      <footer className="lobby-footer">{catalog.data?.source}</footer>
+          <div
+            className={`club-selection-body ${choice === 'random' ? 'selection-result' : 'selection-manual'}`}
+          >
+            {choice === 'chosen' && (
+              <section className="club-picker" aria-label={`Clubes da Série ${division}`}>
+                {catalog.isLoading && <p>Carregando escudos…</p>}
+                {catalog.error && <p role="alert">{catalog.error.message}</p>}
+                {!catalog.isLoading && !teams.length && (
+                  <div className="panel empty-state">
+                    <h2>Série {division}</h2>
+                    <p>Esta divisão ainda não está na base importada.</p>
+                  </div>
+                )}
+                {teams.map((club) => (
+                  <button
+                    className="club-choice"
+                    key={club.id}
+                    aria-pressed={selected?.id === club.id}
+                    onClick={() => setTeamId(club.id)}
+                  >
+                    <PixelBadge
+                      name={club.name}
+                      {...(club.crestUrl ? { url: club.crestUrl } : {})}
+                    />
+                    <strong>{club.name}</strong>
+                  </button>
+                ))}
+              </section>
+            )}
+            {(choice === 'chosen' || rolled) && (
+              <aside className="panel club-confirmation">
+                {selected ? (
+                  <>
+                    <PixelBadge
+                      name={selected.name}
+                      {...(selected.crestUrl ? { url: selected.crestUrl } : {})}
+                      size={112}
+                    />
+                    <span className="eyebrow">BRASIL · SÉRIE {division}</span>
+                    <h2>{selected.name}</h2>
+                  </>
+                ) : (
+                  <h2>Escolha seu clube</h2>
+                )}
+                <button
+                  className="primary full"
+                  disabled={
+                    busy ||
+                    spinning ||
+                    (choice === 'random' && !rolled) ||
+                    !selected ||
+                    leagues.isPending ||
+                    leagues.isError
+                  }
+                  onClick={() => void start()}
+                >
+                  {busy ? 'Preparando sua carreira…' : 'Iniciar carreira'}
+                  <Icon name="arrow" />
+                </button>
+              </aside>
+            )}
+          </div>
+          <footer className="lobby-footer">{catalog.data?.source}</footer>
+        </section>
+      )}
+      {confirmation && (
+        <div className="modal-backdrop">
+          <section
+            className="panel invite-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Confirmar alteração da carreira"
+          >
+            <Icon name="shield" />
+            <h2>
+              {confirmation.action === 'delete' ? 'Excluir esta liga?' : 'Abandonar esta liga?'}
+            </h2>
+            <p>
+              {confirmation.action === 'delete'
+                ? 'A carreira será excluída para todos os participantes.'
+                : 'Um bot assumirá seu clube e a vaga será liberada.'}
+            </p>
+            <button
+              className="primary"
+              onClick={() => void manage(confirmation.id, confirmation.action)}
+            >
+              Confirmar
+            </button>
+            <button className="secondary" onClick={() => setConfirmation(null)}>
+              Cancelar
+            </button>
+          </section>
+        </div>
+      )}
       {joining && (
         <div className="modal-backdrop">
           <section

@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { gzip, gunzipSync } from 'node:zlib';
+import { gzip, gunzip } from 'node:zlib';
 import { promisify } from 'node:util';
 import {
   getFirestore,
@@ -15,13 +15,19 @@ import {
   type WorldState,
 } from '@football/shared';
 import { firebaseApp } from '../auth/identity.js';
-import type { LeagueRepository, SavedLeague } from './league-repository.js';
+import type {
+  LeagueRepository,
+  SavedLeague,
+  LeagueSummary,
+  DrawReservation,
+} from './league-repository.js';
 
 // Keep individual documents below Firestore's limit as match histories grow.
 const PART_SIZE = 600_000;
 const compress = promisify(gzip);
+const decompress = promisify(gunzip);
 async function pack(value: unknown, version: string) {
-  const bytes = await compress(JSON.stringify(value));
+  const bytes = await compress(JSON.stringify(value), { level: 1 });
   const parts: { id: string; payload: Buffer }[] = [];
   if (bytes.length > PART_SIZE)
     for (let i = 0; i < bytes.length; i += PART_SIZE)
@@ -37,6 +43,9 @@ async function pack(value: unknown, version: string) {
 function metadata(state: WorldState) {
   return {
     name: state.name,
+    season: state.season,
+    round: state.round,
+    administratorId: state.administratorId,
     mode: state.mode,
     revision: state.revision,
     status: state.deletedAt ? 'deleted' : state.status,
@@ -64,7 +73,7 @@ export class FirestoreLeagueRepository implements LeagueRepository {
       );
     }
     if (!Buffer.isBuffer(payload)) throw new Error('Snapshot inválido');
-    return JSON.parse(gunzipSync(payload).toString('utf8')) as unknown;
+    return JSON.parse((await decompress(payload)).toString('utf8')) as unknown;
   }
   private async writeParts(ref: DocumentReference, packed: Awaited<ReturnType<typeof pack>>) {
     // Upload immutable chunks in bounded batches, then atomically publish their pointers.
@@ -76,13 +85,30 @@ export class FirestoreLeagueRepository implements LeagueRepository {
       await batch.commit();
     }
   }
-  async load(id: string): Promise<SavedLeague | undefined> {
-    const document = await this.db.doc(`leagues/${id}`).get();
-    if (!document.exists) return undefined;
+  async load(id: string, options?: { eventPatches?: boolean }): Promise<SavedLeague | undefined> {
+    const ref = this.db.doc(`leagues/${id}`);
     const cached = this.cache.get(id);
-    if (cached && cached.state.revision === document.get('revision')) return cached;
+    if (options?.eventPatches === false && cached) {
+      // Reading the full document also transfers its compressed world payload.
+      const [version] = await this.db.getAll(ref, { fieldMask: ['revision', 'status'] });
+      if (!version?.exists || version.get('status') === 'deleted') return undefined;
+      if (cached.state.revision === version.get('revision')) return cached;
+    }
+    const document = await ref.get();
+    if (!document.exists || document.get('status') === 'deleted') return undefined;
     const events = await document.ref
       .collection('events')
+      .select(
+        'id',
+        'sequence',
+        'occurredAt',
+        'actorId',
+        'type',
+        'message',
+        'amount',
+        'balances',
+        ...(options?.eventPatches === false ? [] : ['payload', 'partIds']),
+      )
       .orderBy('sequence', 'desc')
       .limit(100)
       .get();
@@ -93,7 +119,10 @@ export class FirestoreLeagueRepository implements LeagueRepository {
           const { payload: _payload, partIds: _parts, ...entry } = event.data();
           void _payload;
           void _parts;
-          return gameEventSchema.parse({ ...entry, patch: await this.unpack(event) });
+          return gameEventSchema.parse({
+            ...entry,
+            patch: options?.eventPatches === false ? {} : await this.unpack(event),
+          });
         }),
       ),
     };
@@ -111,6 +140,7 @@ export class FirestoreLeagueRepository implements LeagueRepository {
       transaction.create(ref, { ...metadata(state), ...packed.fields });
       transaction.set(membership, { [state.mode]: state.id }, { merge: true });
     });
+    this.cache.set(state.id, { state, events: [] });
   }
   async append(
     id: string,
@@ -128,7 +158,7 @@ export class FirestoreLeagueRepository implements LeagueRepository {
     await Promise.all([this.writeParts(ref, packed), this.writeParts(eventRef, packedEvent)]);
     await this.db.runTransaction(async (transaction) => {
       const current = await transaction.get(ref);
-      if (current.get('revision') !== expectedRevision)
+      if (current.get('status') === 'deleted' || current.get('revision') !== expectedRevision)
         throw new Error('A liga mudou. Atualize e tente novamente');
       const previousIds = current.get('participantIds') as string[];
       const previous = { participants: previousIds.map((userId) => ({ userId })) };
@@ -163,12 +193,110 @@ export class FirestoreLeagueRepository implements LeagueRepository {
     if (cached?.state.revision === expectedRevision)
       this.cache.set(id, { state, events: [...cached.events, event].slice(-100) });
   }
+  async getDraw(
+    userId: string,
+    mode: 'offline' | 'multiplayer',
+  ): Promise<DrawReservation | undefined> {
+    const membership = await this.db.doc(`memberships/${userId}`).get();
+    return membership.get(mode + 'Draw') as DrawReservation | undefined;
+  }
+  async reserveDraw(
+    userId: string,
+    mode: 'offline' | 'multiplayer',
+    draw: DrawReservation,
+  ): Promise<DrawReservation> {
+    return this.db.runTransaction(async (transaction) => {
+      const ref = this.db.doc(`memberships/${userId}`);
+      const current = await transaction.get(ref);
+      if (current.get(mode))
+        throw new Error('Você já possui uma carreira neste modo. Continue sua carreira.');
+      const reserved = current.get(mode + 'Draw') as DrawReservation | undefined;
+      if (reserved) return reserved;
+      transaction.set(ref, { [mode + 'Draw']: draw }, { merge: true });
+      return draw;
+    });
+  }
+  async remove(id: string, userId: string, now: number): Promise<void> {
+    const ref = this.db.doc(`leagues/${id}`);
+    await this.db.runTransaction(async (transaction) => {
+      const [current] = await transaction.getAll(ref, {
+        fieldMask: ['administratorId', 'participantIds', 'mode', 'revision', 'status'],
+      });
+      const participants = current?.get('participantIds') as string[] | undefined;
+      if (
+        !current?.exists ||
+        current.get('status') === 'deleted' ||
+        !participants?.includes(userId)
+      )
+        throw new Error('Acesso negado');
+      if (current.get('administratorId') !== userId)
+        throw new Error('Somente o administrador pode excluir');
+      const mode = current.get('mode') as string;
+      const memberships = await transaction.getAll(
+        ...participants.map((member) => this.db.doc(`memberships/${member}`)),
+      );
+      // A tombstone makes the world inaccessible without rewriting its payload.
+      transaction.update(ref, {
+        status: 'deleted',
+        deletedAt: now,
+        participantIds: [],
+        revision: Number(current.get('revision')) + 1,
+      });
+      for (const membership of memberships)
+        if (membership.get(mode) === id)
+          transaction.set(membership.ref, { [mode]: null, [mode + 'Draw']: null }, { merge: true });
+    });
+    this.cache.delete(id);
+  }
+  async summariesForUser(userId: string): Promise<readonly LeagueSummary[]> {
+    const membership = await this.db.doc(`memberships/${userId}`).get();
+    const ids = [membership.get('offline'), membership.get('multiplayer')].filter(
+      (id): id is string => typeof id === 'string',
+    );
+    if (!ids.length) return [];
+    const documents = await this.db.getAll(...ids.map((id) => this.db.doc(`leagues/${id}`)), {
+      fieldMask: ['name', 'mode', 'season', 'round', 'administratorId', 'status', 'participantIds'],
+    });
+    const summaries = await Promise.all(
+      documents.map(async (document) => {
+        if (!document.exists || document.get('status') === 'deleted') return undefined;
+        const members = document.get('participantIds') as string[] | undefined;
+        if (!members?.includes(userId)) return undefined;
+        if (
+          document.get('season') === undefined ||
+          document.get('round') === undefined ||
+          document.get('administratorId') === undefined
+        ) {
+          // Backfill legacy summaries once, without overwriting a concurrent save.
+          const saved = await this.load(document.id, { eventPatches: false });
+          if (!saved || saved.state.deletedAt) return undefined;
+          const { id, name, mode, season, round, administratorId } = saved.state;
+          await this.db.runTransaction(async (transaction) => {
+            const ref = this.db.doc(`leagues/${id}`);
+            const current = await transaction.get(ref);
+            if (current.exists && current.get('revision') === saved.state.revision)
+              transaction.update(ref, { season, round, administratorId });
+          });
+          return { id, name, mode, season, round, administratorId };
+        }
+        return {
+          id: document.id,
+          name: document.get('name') as LeagueSummary['name'],
+          mode: document.get('mode') as LeagueSummary['mode'],
+          season: document.get('season') as LeagueSummary['season'],
+          round: document.get('round') as LeagueSummary['round'],
+          administratorId: document.get('administratorId') as string,
+        };
+      }),
+    );
+    return summaries.filter((summary): summary is LeagueSummary => summary !== undefined);
+  }
   async forUser(userId: string): Promise<readonly WorldState[]> {
     const membership = await this.db.doc(`memberships/${userId}`).get();
     const ids = [membership.get('offline'), membership.get('multiplayer')].filter(
       (id): id is string => typeof id === 'string',
     );
-    const states = await Promise.all(ids.map((id) => this.load(id)));
+    const states = await Promise.all(ids.map((id) => this.load(id, { eventPatches: false })));
     return states.flatMap((saved) => (saved && !saved.state.deletedAt ? [saved.state] : []));
   }
   async active(): Promise<readonly string[]> {

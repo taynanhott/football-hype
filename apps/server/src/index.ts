@@ -47,7 +47,16 @@ async function body(request: IncomingMessage): Promise<unknown> {
   }
   return chunks.length ? JSON.parse(Buffer.concat(chunks).toString('utf8')) : {};
 }
+const requestStarts = new WeakMap<ServerResponse, number>();
 function respond(response: ServerResponse, status: number, value: unknown): void {
+  const started = requestStarts.get(response);
+  if (started !== undefined) {
+    const prior = response.getHeader('Server-Timing');
+    response.setHeader(
+      'Server-Timing',
+      [prior, 'total;dur=' + (performance.now() - started).toFixed(1)].filter(Boolean).join(', '),
+    );
+  }
   response.writeHead(status, {
     'Content-Type': 'application/json',
     'Cache-Control': 'no-store',
@@ -56,6 +65,7 @@ function respond(response: ServerResponse, status: number, value: unknown): void
   response.end(JSON.stringify(value));
 }
 const http = createServer((request, response) => {
+  requestStarts.set(response, performance.now());
   void (async () => {
     const origin = request.headers.origin;
     if (origin && !origins.has(origin)) {
@@ -106,11 +116,17 @@ const http = createServer((request, response) => {
       respond(response, 200, await service.catalog());
       return;
     }
+    const authStarted = performance.now();
     const identity = await authenticate({
       token: request.headers.authorization?.replace(/^Bearer /, ''),
       appCheckToken: request.headers['x-firebase-appcheck'],
       guestId: request.headers['x-guest-id'],
     });
+    response.setHeader('Server-Timing', 'auth;dur=' + (performance.now() - authStarted).toFixed(1));
+    if (url.pathname === '/api/draw' && request.method === 'POST') {
+      respond(response, 200, await service.draw(identity, await body(request)));
+      return;
+    }
     if (url.pathname === '/api/leagues' && request.method === 'POST') {
       respond(response, 201, { id: await service.create(identity, await body(request)) });
       return;
