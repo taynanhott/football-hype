@@ -1,0 +1,8 @@
+{
+  "name": "football-hype",
+  "compatibility_date": "2026-10-28",
+  "assets": {
+    "directory": "./apps/client/dist",
+    "not_found_handling": "single-page-application"
+  }
+}
