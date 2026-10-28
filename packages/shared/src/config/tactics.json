@@ -1,0 +1,12 @@
+{
+  "chemistryMatches": 5,
+  "chemistryBase": 0.98,
+  "relatedPositionFactor": 0.85,
+  "wrongPositionFactor": 0.65,
+  "goalkeeperMismatchFactor": 0.35,
+  "fatigueInjuryScale": 0.2,
+  "consecutiveInjuryScale": 0.008,
+  "shortRestInjuryScale": 0.035,
+  "safeRestHours": 72,
+  "maximumInjuryChance": 0.5
+}

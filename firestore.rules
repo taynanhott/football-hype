@@ -1,0 +1,20 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /leagues/{leagueId} {
+      allow read: if request.auth != null && request.auth.uid in resource.data.participantIds;
+      allow write: if false;
+      match /events/{eventId} {
+        allow read: if request.auth != null && request.auth.uid in get(/databases/$(database)/documents/leagues/$(leagueId)).data.participantIds;
+        allow write: if false;
+      }
+    }
+    match /memberships/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if false;
+    }
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

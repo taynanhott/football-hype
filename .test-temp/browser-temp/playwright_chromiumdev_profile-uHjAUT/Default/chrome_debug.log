@@ -1,0 +1,5 @@
+[1027/164114.910:WARNING:net\dns\dns_config_service_win.cc:607] Failed to read DnsConfig.
+[1027/164115.391:INFO:CONSOLE:23497] "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold", source:  (23497)
+[1027/164115.420:INFO:CONSOLE:121443] "Uncaught TypeError: crypto.randomUUID is not a function", source:  (121443)
+[1027/164119.917:WARNING:net\dns\dns_config_service_win.cc:607] Failed to read DnsConfig.
+[1027/164129.922:WARNING:net\dns\dns_config_service_win.cc:607] Failed to read DnsConfig.

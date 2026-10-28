@@ -1,0 +1,8 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "football-season-scheduler",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-28",
+  "triggers": { "crons": ["* * * * *"] },
+  "vars": { "GAME_SERVER_URL": "https://configure-seu-servidor.example" },
+}

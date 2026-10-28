@@ -1,0 +1,1515 @@
+{
+  "Flamengo": {
+    "abbreviation": "FLA",
+    "pattern": "hoops",
+    "colors": [
+      "#D0102C",
+      "#141414"
+    ],
+    "support": 10,
+    "group": "CLUBS_A"
+  },
+  "Palmeiras": {
+    "abbreviation": "PAL",
+    "pattern": "solid",
+    "colors": [
+      "#0B6B3A",
+      "#F4F4F4"
+    ],
+    "support": 8,
+    "group": "CLUBS_A"
+  },
+  "Corinthians": {
+    "abbreviation": "COR",
+    "pattern": "solid",
+    "colors": [
+      "#F4F4F4",
+      "#141414"
+    ],
+    "support": 9,
+    "group": "CLUBS_A"
+  },
+  "São Paulo": {
+    "abbreviation": "SAO",
+    "pattern": "band",
+    "colors": [
+      "#F4F4F4",
+      "#D0102C",
+      "#141414"
+    ],
+    "support": 8,
+    "group": "CLUBS_A"
+  },
+  "Santos": {
+    "abbreviation": "SAN",
+    "pattern": "solid",
+    "colors": [
+      "#F4F4F4",
+      "#141414"
+    ],
+    "support": 6,
+    "group": "CLUBS_A"
+  },
+  "Fluminense": {
+    "abbreviation": "FLU",
+    "pattern": "vstripes",
+    "colors": [
+      "#7A1230",
+      "#0B6B3A",
+      "#F4F4F4"
+    ],
+    "support": 6,
+    "group": "CLUBS_A"
+  },
+  "Botafogo": {
+    "abbreviation": "BOT",
+    "pattern": "vstripes",
+    "colors": [
+      "#141414",
+      "#F4F4F4"
+    ],
+    "support": 6,
+    "group": "CLUBS_A"
+  },
+  "Vasco": {
+    "abbreviation": "VAS",
+    "pattern": "sash",
+    "colors": [
+      "#F4F4F4",
+      "#141414"
+    ],
+    "support": 7,
+    "group": "CLUBS_A"
+  },
+  "Grêmio": {
+    "abbreviation": "GRE",
+    "pattern": "vstripes",
+    "colors": [
+      "#1E8FD8",
+      "#141414",
+      "#1E8FD8",
+      "#F4F4F4"
+    ],
+    "support": 7,
+    "group": "CLUBS_A"
+  },
+  "Internacional": {
+    "abbreviation": "INT",
+    "pattern": "solid",
+    "colors": [
+      "#D8102C",
+      "#F4F4F4"
+    ],
+    "support": 7,
+    "group": "CLUBS_A"
+  },
+  "Cruzeiro": {
+    "abbreviation": "CRU",
+    "pattern": "solid",
+    "colors": [
+      "#1B3F9A",
+      "#F4F4F4"
+    ],
+    "support": 7,
+    "group": "CLUBS_A"
+  },
+  "Atlético-MG": {
+    "abbreviation": "CAM",
+    "pattern": "vstripes",
+    "colors": [
+      "#F4F4F4",
+      "#141414"
+    ],
+    "support": 7,
+    "group": "CLUBS_A"
+  },
+  "Athletico-PR": {
+    "abbreviation": "CAP",
+    "pattern": "hoops",
+    "colors": [
+      "#141414",
+      "#D0102C"
+    ],
+    "support": 5,
+    "group": "CLUBS_A"
+  },
+  "Bahia": {
+    "abbreviation": "BAH",
+    "pattern": "band",
+    "colors": [
+      "#F4F4F4",
+      "#005CA9",
+      "#D0102C"
+    ],
+    "support": 6,
+    "group": "CLUBS_A"
+  },
+  "Bragantino": {
+    "abbreviation": "RBB",
+    "pattern": "band",
+    "colors": [
+      "#F4F4F4",
+      "#D0102C",
+      "#F4F4F4"
+    ],
+    "support": 3,
+    "group": "CLUBS_A"
+  },
+  "Vitória": {
+    "abbreviation": "VIT",
+    "pattern": "vstripes",
+    "colors": [
+      "#D0102C",
+      "#141414"
+    ],
+    "support": 5,
+    "group": "CLUBS_A"
+  },
+  "Coritiba": {
+    "abbreviation": "CFC",
+    "pattern": "band",
+    "colors": [
+      "#F4F4F4",
+      "#0B6B3A",
+      "#F4F4F4"
+    ],
+    "support": 4,
+    "group": "CLUBS_A"
+  },
+  "Mirassol": {
+    "abbreviation": "MIR",
+    "pattern": "solid",
+    "colors": [
+      "#FFD200",
+      "#0B6B3A"
+    ],
+    "support": 2,
+    "group": "CLUBS_A"
+  },
+  "Remo": {
+    "abbreviation": "REM",
+    "pattern": "solid",
+    "colors": [
+      "#0B1F4B",
+      "#F4F4F4"
+    ],
+    "support": 5,
+    "group": "CLUBS_A"
+  },
+  "Chapecoense": {
+    "abbreviation": "CHA",
+    "pattern": "solid",
+    "colors": [
+      "#0B8A3E",
+      "#F4F4F4"
+    ],
+    "support": 3,
+    "group": "CLUBS_A"
+  },
+  "Sport": {
+    "abbreviation": "SPT",
+    "pattern": "hoops",
+    "colors": [
+      "#D0102C",
+      "#141414"
+    ],
+    "support": 5,
+    "group": "CLUBS_REL"
+  },
+  "Ceará": {
+    "abbreviation": "CEA",
+    "pattern": "vstripes",
+    "colors": [
+      "#141414",
+      "#F4F4F4"
+    ],
+    "support": 5,
+    "group": "CLUBS_REL"
+  },
+  "Fortaleza": {
+    "abbreviation": "FOR",
+    "pattern": "hoops3",
+    "colors": [
+      "#D0102C",
+      "#F4F4F4",
+      "#1B3F9A"
+    ],
+    "support": 5,
+    "group": "CLUBS_REL"
+  },
+  "Juventude": {
+    "abbreviation": "JUV",
+    "pattern": "vstripes",
+    "colors": [
+      "#0B6B3A",
+      "#F4F4F4"
+    ],
+    "support": 3,
+    "group": "CLUBS_REL"
+  },
+  "Goiás": {
+    "abbreviation": "GOI",
+    "pattern": "solid",
+    "colors": [
+      "#0B6B3A",
+      "#F4F4F4"
+    ],
+    "support": 4,
+    "lvl": 63,
+    "group": "CLUBS_B_GEN"
+  },
+  "Novorizontino": {
+    "abbreviation": "NOV",
+    "pattern": "solid",
+    "colors": [
+      "#FFD200",
+      "#141414"
+    ],
+    "support": 2,
+    "lvl": 63,
+    "group": "CLUBS_B_GEN"
+  },
+  "CRB": {
+    "abbreviation": "CRB",
+    "pattern": "hoops",
+    "colors": [
+      "#D0102C",
+      "#F4F4F4"
+    ],
+    "support": 3,
+    "lvl": 61,
+    "group": "CLUBS_B_GEN"
+  },
+  "Avaí": {
+    "abbreviation": "AVA",
+    "pattern": "vstripes",
+    "colors": [
+      "#1B6FC2",
+      "#F4F4F4"
+    ],
+    "support": 3,
+    "lvl": 61,
+    "group": "CLUBS_B_GEN"
+  },
+  "Criciúma": {
+    "abbreviation": "CRI",
+    "pattern": "vstripes",
+    "colors": [
+      "#FFD200",
+      "#141414"
+    ],
+    "support": 3,
+    "lvl": 62,
+    "group": "CLUBS_B_GEN"
+  },
+  "Cuiabá": {
+    "abbreviation": "CUI",
+    "pattern": "solid",
+    "colors": [
+      "#FFD200",
+      "#0B6B3A"
+    ],
+    "support": 2,
+    "lvl": 62,
+    "group": "CLUBS_B_GEN"
+  },
+  "Atlético-GO": {
+    "abbreviation": "ACG",
+    "pattern": "vstripes",
+    "colors": [
+      "#D0102C",
+      "#141414"
+    ],
+    "support": 3,
+    "lvl": 62,
+    "group": "CLUBS_B_GEN"
+  },
+  "Operário-PR": {
+    "abbreviation": "OPE",
+    "pattern": "vstripes",
+    "colors": [
+      "#141414",
+      "#F4F4F4"
+    ],
+    "support": 2,
+    "lvl": 60,
+    "group": "CLUBS_B_GEN"
+  },
+  "Vila Nova": {
+    "abbreviation": "VIL",
+    "pattern": "solid",
+    "colors": [
+      "#D0102C",
+      "#F4F4F4"
+    ],
+    "support": 3,
+    "lvl": 60,
+    "group": "CLUBS_B_GEN"
+  },
+  "América-MG": {
+    "abbreviation": "AME",
+    "pattern": "vstripes",
+    "colors": [
+      "#0B6B3A",
+      "#141414"
+    ],
+    "support": 3,
+    "lvl": 62,
+    "group": "CLUBS_B_GEN"
+  },
+  "Ponte Preta": {
+    "abbreviation": "PON",
+    "pattern": "sash",
+    "colors": [
+      "#F4F4F4",
+      "#141414"
+    ],
+    "support": 3,
+    "lvl": 59,
+    "group": "CLUBS_B_GEN"
+  },
+  "Botafogo-SP": {
+    "abbreviation": "BFS",
+    "pattern": "vstripes",
+    "colors": [
+      "#D0102C",
+      "#F4F4F4"
+    ],
+    "support": 2,
+    "lvl": 59,
+    "group": "CLUBS_B_GEN"
+  },
+  "Londrina": {
+    "abbreviation": "LON",
+    "pattern": "solid",
+    "colors": [
+      "#6CB4EE",
+      "#F4F4F4"
+    ],
+    "support": 2,
+    "lvl": 58,
+    "group": "CLUBS_B_GEN"
+  },
+  "Náutico": {
+    "abbreviation": "NAU",
+    "pattern": "vstripes",
+    "colors": [
+      "#D0102C",
+      "#F4F4F4"
+    ],
+    "support": 3,
+    "lvl": 59,
+    "group": "CLUBS_B_GEN"
+  },
+  "Athletic": {
+    "abbreviation": "ATH",
+    "pattern": "solid",
+    "colors": [
+      "#141414",
+      "#F4F4F4"
+    ],
+    "support": 1,
+    "lvl": 57,
+    "group": "CLUBS_B_GEN"
+  },
+  "São Bernardo": {
+    "abbreviation": "SBC",
+    "pattern": "hoops",
+    "colors": [
+      "#FFD200",
+      "#141414"
+    ],
+    "support": 1,
+    "lvl": 57,
+    "group": "CLUBS_B_GEN"
+  },
+  "ABC": {
+    "abbreviation": "ABC",
+    "pattern": "solid",
+    "colors": [
+      "#F4F4F4",
+      "#141414"
+    ],
+    "support": 3,
+    "lvl": 52,
+    "reg": "NE",
+    "group": "CLUBS_REG_GEN"
+  },
+  "América-RN": {
+    "abbreviation": "AMR",
+    "pattern": "solid",
+    "colors": [
+      "#D0102C",
+      "#F4F4F4"
+    ],
+    "support": 2,
+    "lvl": 50,
+    "reg": "NE",
+    "group": "CLUBS_REG_GEN"
+  },
+  "CSA": {
+    "abbreviation": "CSA",
+    "pattern": "hoops",
+    "colors": [
+      "#1B3F9A",
+      "#F4F4F4"
+    ],
+    "support": 3,
+    "lvl": 52,
+    "reg": "NE",
+    "group": "CLUBS_REG_GEN"
+  },
+  "Botafogo-PB": {
+    "abbreviation": "BPB",
+    "pattern": "vstripes",
+    "colors": [
+      "#141414",
+      "#F4F4F4"
+    ],
+    "support": 2,
+    "lvl": 52,
+    "reg": "NE",
+    "group": "CLUBS_REG_GEN"
+  },
+  "Treze": {
+    "abbreviation": "TRE",
+    "pattern": "vstripes",
+    "colors": [
+      "#141414",
+      "#F4F4F4"
+    ],
+    "support": 2,
+    "lvl": 49,
+    "reg": "NE",
+    "group": "CLUBS_REG_GEN"
+  },
+  "Confiança": {
+    "abbreviation": "CON",
+    "pattern": "solid",
+    "colors": [
+      "#1B3F9A",
+      "#F4F4F4"
+    ],
+    "support": 2,
+    "lvl": 50,
+    "reg": "NE",
+    "group": "CLUBS_REG_GEN"
+  },
+  "Sampaio Corrêa": {
+    "abbreviation": "SAM",
+    "pattern": "band",
+    "colors": [
+      "#0B6B3A",
+      "#FFD200",
+      "#D0102C"
+    ],
+    "support": 3,
+    "lvl": 51,
+    "reg": "NE",
+    "group": "CLUBS_REG_GEN"
+  },
+  "Ferroviário": {
+    "abbreviation": "FER",
+    "pattern": "hoops",
+    "colors": [
+      "#D0102C",
+      "#141414"
+    ],
+    "support": 2,
+    "lvl": 50,
+    "reg": "NE",
+    "group": "CLUBS_REG_GEN"
+  },
+  "Altos": {
+    "abbreviation": "ALT",
+    "pattern": "solid",
+    "colors": [
+      "#FFD200",
+      "#0B6B3A"
+    ],
+    "support": 1,
+    "lvl": 48,
+    "reg": "NE",
+    "group": "CLUBS_REG_GEN"
+  },
+  "Juazeirense": {
+    "abbreviation": "JUA",
+    "pattern": "solid",
+    "colors": [
+      "#FF7A00",
+      "#141414"
+    ],
+    "support": 1,
+    "lvl": 48,
+    "reg": "NE",
+    "group": "CLUBS_REG_GEN"
+  },
+  "Sergipe": {
+    "abbreviation": "SER",
+    "pattern": "vstripes",
+    "colors": [
+      "#D0102C",
+      "#F4F4F4"
+    ],
+    "support": 1,
+    "lvl": 47,
+    "reg": "NE",
+    "group": "CLUBS_REG_GEN"
+  },
+  "Moto Club": {
+    "abbreviation": "MOT",
+    "pattern": "vstripes",
+    "colors": [
+      "#D0102C",
+      "#141414"
+    ],
+    "support": 2,
+    "lvl": 48,
+    "reg": "NE",
+    "group": "CLUBS_REG_GEN"
+  },
+  "Tombense": {
+    "abbreviation": "TOM",
+    "pattern": "solid",
+    "colors": [
+      "#D0102C",
+      "#F4F4F4"
+    ],
+    "support": 1,
+    "lvl": 51,
+    "reg": "SSE",
+    "off": 1,
+    "group": "CLUBS_REG_GEN"
+  },
+  "Caxias": {
+    "abbreviation": "CAX",
+    "pattern": "solid",
+    "colors": [
+      "#7A1230",
+      "#F4F4F4"
+    ],
+    "support": 2,
+    "lvl": 52,
+    "reg": "SSE",
+    "group": "CLUBS_REG_GEN"
+  },
+  "Cianorte": {
+    "abbreviation": "CIA",
+    "pattern": "solid",
+    "colors": [
+      "#1B3F9A",
+      "#F4F4F4"
+    ],
+    "support": 1,
+    "lvl": 49,
+    "reg": "SSE",
+    "group": "CLUBS_REG_GEN"
+  },
+  "Volta Redonda": {
+    "abbreviation": "VOL",
+    "pattern": "solid",
+    "colors": [
+      "#FFD200",
+      "#141414"
+    ],
+    "support": 1,
+    "lvl": 53,
+    "reg": "SSE",
+    "group": "CLUBS_REG_GEN"
+  },
+  "Figueirense": {
+    "abbreviation": "FIG",
+    "pattern": "vstripes",
+    "colors": [
+      "#141414",
+      "#F4F4F4"
+    ],
+    "support": 3,
+    "lvl": 53,
+    "reg": "SSE",
+    "group": "CLUBS_REG_GEN"
+  },
+  "Ituano": {
+    "abbreviation": "ITU",
+    "pattern": "vstripes",
+    "colors": [
+      "#D0102C",
+      "#141414"
+    ],
+    "support": 1,
+    "lvl": 53,
+    "reg": "SSE",
+    "group": "CLUBS_REG_GEN"
+  },
+  "Paysandu": {
+    "abbreviation": "PAY",
+    "pattern": "vstripes",
+    "colors": [
+      "#6CB4EE",
+      "#F4F4F4"
+    ],
+    "support": 5,
+    "lvl": 54,
+    "reg": "N",
+    "group": "CLUBS_REG_GEN"
+  },
+  "Amazonas": {
+    "abbreviation": "AMZ",
+    "pattern": "vstripes",
+    "colors": [
+      "#FFD200",
+      "#141414"
+    ],
+    "support": 2,
+    "lvl": 53,
+    "reg": "N",
+    "group": "CLUBS_REG_GEN"
+  },
+  "Nacional-AM": {
+    "abbreviation": "NAM",
+    "pattern": "solid",
+    "colors": [
+      "#1B3F9A",
+      "#F4F4F4"
+    ],
+    "support": 2,
+    "lvl": 49,
+    "reg": "N",
+    "group": "CLUBS_REG_GEN"
+  },
+  "Águia de Marabá": {
+    "abbreviation": "AGU",
+    "pattern": "solid",
+    "colors": [
+      "#1B3F9A",
+      "#F4F4F4"
+    ],
+    "support": 1,
+    "lvl": 50,
+    "reg": "N",
+    "group": "CLUBS_REG_GEN"
+  },
+  "Porto Velho": {
+    "abbreviation": "POV",
+    "pattern": "solid",
+    "colors": [
+      "#D0102C",
+      "#F4F4F4"
+    ],
+    "support": 1,
+    "lvl": 47,
+    "reg": "N",
+    "group": "CLUBS_REG_GEN"
+  },
+  "GAS": {
+    "abbreviation": "GAS",
+    "pattern": "solid",
+    "colors": [
+      "#0B6B3A",
+      "#F4F4F4"
+    ],
+    "support": 1,
+    "lvl": 46,
+    "reg": "N",
+    "group": "CLUBS_REG_GEN"
+  },
+  "Trem": {
+    "abbreviation": "TRM",
+    "pattern": "vstripes",
+    "colors": [
+      "#D0102C",
+      "#F4F4F4"
+    ],
+    "support": 1,
+    "lvl": 46,
+    "reg": "N",
+    "group": "CLUBS_REG_GEN"
+  },
+  "Independência-AC": {
+    "abbreviation": "IND",
+    "pattern": "hoops",
+    "colors": [
+      "#0B6B3A",
+      "#F4F4F4"
+    ],
+    "support": 1,
+    "lvl": 46,
+    "reg": "N",
+    "group": "CLUBS_REG_GEN"
+  },
+  "Anápolis": {
+    "abbreviation": "ANA",
+    "pattern": "vstripes",
+    "colors": [
+      "#D0102C",
+      "#F4F4F4"
+    ],
+    "support": 1,
+    "lvl": 50,
+    "reg": "CO",
+    "group": "CLUBS_REG_GEN"
+  },
+  "Gama": {
+    "abbreviation": "GAM",
+    "pattern": "solid",
+    "colors": [
+      "#0B6B3A",
+      "#F4F4F4"
+    ],
+    "support": 2,
+    "lvl": 49,
+    "reg": "CO",
+    "group": "CLUBS_REG_GEN"
+  },
+  "Capital": {
+    "abbreviation": "CPT",
+    "pattern": "solid",
+    "colors": [
+      "#E0B000",
+      "#141414"
+    ],
+    "support": 1,
+    "lvl": 49,
+    "reg": "CO",
+    "group": "CLUBS_REG_GEN"
+  },
+  "Operário-MS": {
+    "abbreviation": "OMS",
+    "pattern": "vstripes",
+    "colors": [
+      "#141414",
+      "#F4F4F4"
+    ],
+    "support": 1,
+    "lvl": 49,
+    "reg": "CO",
+    "group": "CLUBS_REG_GEN"
+  },
+  "Rio Branco-ES": {
+    "abbreviation": "RBE",
+    "pattern": "vstripes",
+    "colors": [
+      "#141414",
+      "#F4F4F4"
+    ],
+    "support": 1,
+    "lvl": 48,
+    "reg": "CO",
+    "off": 1,
+    "group": "CLUBS_REG_GEN"
+  },
+  "Porto Vitória": {
+    "abbreviation": "PVT",
+    "pattern": "solid",
+    "colors": [
+      "#1B3F9A",
+      "#FFD200"
+    ],
+    "support": 1,
+    "lvl": 47,
+    "reg": "CO",
+    "off": 1,
+    "group": "CLUBS_REG_GEN"
+  },
+  "Araguaína": {
+    "abbreviation": "ARA",
+    "pattern": "solid",
+    "colors": [
+      "#FF7A00",
+      "#F4F4F4"
+    ],
+    "support": 1,
+    "lvl": 48,
+    "reg": "CO",
+    "group": "CLUBS_REG_GEN"
+  },
+  "Primavera": {
+    "abbreviation": "PRI",
+    "pattern": "solid",
+    "colors": [
+      "#0B6B3A",
+      "#FFD200"
+    ],
+    "support": 1,
+    "lvl": 48,
+    "reg": "CO",
+    "group": "CLUBS_REG_GEN"
+  },
+  "Portuguesa": {
+    "abbreviation": "LUS",
+    "pattern": "hoops",
+    "colors": [
+      "#D0102C",
+      "#0B6B3A"
+    ],
+    "support": 3,
+    "lvl": 50,
+    "reg": "SSE",
+    "add": 1,
+    "group": "CLUBS_REG_GEN"
+  },
+  "Brasiliense": {
+    "abbreviation": "BSE",
+    "pattern": "solid",
+    "colors": [
+      "#FFD200",
+      "#0B6B3A"
+    ],
+    "support": 2,
+    "lvl": 50,
+    "reg": "CO",
+    "add": 1,
+    "group": "CLUBS_REG_GEN"
+  },
+  "Luverdense": {
+    "abbreviation": "LUV",
+    "pattern": "solid",
+    "colors": [
+      "#0B6B3A",
+      "#F4F4F4"
+    ],
+    "support": 1,
+    "lvl": 49,
+    "reg": "CO",
+    "add": 1,
+    "group": "CLUBS_REG_GEN"
+  },
+  "Santa Cruz": {
+    "abbreviation": "STA",
+    "pattern": "hoops3",
+    "colors": [
+      "#D0102C",
+      "#141414",
+      "#F4F4F4"
+    ],
+    "support": 5,
+    "lvl": 51,
+    "reg": "NE",
+    "add": 1,
+    "group": "CLUBS_REG_GEN"
+  },
+  "Itabaiana": {
+    "abbreviation": "ITA",
+    "pattern": "solid",
+    "colors": [
+      "#1B3F9A",
+      "#F4F4F4"
+    ],
+    "support": 1,
+    "lvl": 51,
+    "reg": "NE",
+    "add": 1,
+    "group": "CLUBS_REG_GEN"
+  },
+  "Floresta": {
+    "abbreviation": "FLO",
+    "pattern": "vstripes",
+    "colors": [
+      "#0B6B3A",
+      "#F4F4F4"
+    ],
+    "support": 1,
+    "lvl": 51,
+    "reg": "NE",
+    "add": 1,
+    "group": "CLUBS_REG_GEN"
+  },
+  "Maranhão": {
+    "abbreviation": "MAC",
+    "pattern": "hoops3",
+    "colors": [
+      "#D0102C",
+      "#F4F4F4",
+      "#1B3F9A"
+    ],
+    "support": 2,
+    "lvl": 51,
+    "reg": "NE",
+    "add": 1,
+    "group": "CLUBS_REG_GEN"
+  },
+  "Guarani": {
+    "abbreviation": "GUA",
+    "pattern": "solid",
+    "colors": [
+      "#0B6B3A",
+      "#F4F4F4"
+    ],
+    "support": 4,
+    "lvl": 51,
+    "reg": "SSE",
+    "add": 1,
+    "group": "CLUBS_REG_GEN"
+  },
+  "Ferroviária": {
+    "abbreviation": "AFE",
+    "pattern": "solid",
+    "colors": [
+      "#7A1230",
+      "#F4F4F4"
+    ],
+    "support": 2,
+    "lvl": 51,
+    "reg": "SSE",
+    "add": 1,
+    "group": "CLUBS_REG_GEN"
+  },
+  "Inter de Limeira": {
+    "abbreviation": "INL",
+    "pattern": "vstripes",
+    "colors": [
+      "#141414",
+      "#F4F4F4"
+    ],
+    "support": 2,
+    "lvl": 51,
+    "reg": "SSE",
+    "add": 1,
+    "group": "CLUBS_REG_GEN"
+  },
+  "Brusque": {
+    "abbreviation": "BRU",
+    "pattern": "band",
+    "colors": [
+      "#FFD200",
+      "#D0102C",
+      "#0B6B3A"
+    ],
+    "support": 2,
+    "lvl": 51,
+    "reg": "SSE",
+    "add": 1,
+    "group": "CLUBS_REG_GEN"
+  },
+  "Barra": {
+    "abbreviation": "BAR",
+    "pattern": "solid",
+    "colors": [
+      "#6CB4EE",
+      "#F4F4F4"
+    ],
+    "support": 1,
+    "lvl": 51,
+    "reg": "SSE",
+    "add": 1,
+    "group": "CLUBS_REG_GEN"
+  },
+  "Ypiranga": {
+    "abbreviation": "YPI",
+    "pattern": "solid",
+    "colors": [
+      "#0B6B3A",
+      "#FFD200"
+    ],
+    "support": 1,
+    "lvl": 51,
+    "reg": "SSE",
+    "add": 1,
+    "group": "CLUBS_REG_GEN"
+  },
+  "Maringá": {
+    "abbreviation": "MGA",
+    "pattern": "solid",
+    "colors": [
+      "#1B3F9A",
+      "#F4F4F4"
+    ],
+    "support": 1,
+    "lvl": 51,
+    "reg": "SSE",
+    "add": 1,
+    "group": "CLUBS_REG_GEN"
+  },
+  "Peñarol": {
+    "abbreviation": "PEÑ",
+    "pattern": "vstripes",
+    "colors": [
+      "#FFD200",
+      "#141414"
+    ],
+    "support": 6,
+    "lvl": 69,
+    "nat": "URU",
+    "group": "CLUBS_F_GEN"
+  },
+  "Nacional": {
+    "abbreviation": "NAC",
+    "pattern": "solid",
+    "colors": [
+      "#F4F4F4",
+      "#1B3F9A"
+    ],
+    "support": 6,
+    "lvl": 68,
+    "nat": "URU",
+    "group": "CLUBS_F_GEN"
+  },
+  "Colo-Colo": {
+    "abbreviation": "COL",
+    "pattern": "solid",
+    "colors": [
+      "#F4F4F4",
+      "#141414"
+    ],
+    "support": 6,
+    "lvl": 67,
+    "nat": "CHI",
+    "group": "CLUBS_F_GEN"
+  },
+  "Universidad de Chile": {
+    "abbreviation": "UCH",
+    "pattern": "solid",
+    "colors": [
+      "#1B3F9A",
+      "#F4F4F4"
+    ],
+    "support": 5,
+    "lvl": 65,
+    "nat": "CHI",
+    "group": "CLUBS_F_GEN"
+  },
+  "Olimpia": {
+    "abbreviation": "OLI",
+    "pattern": "band",
+    "colors": [
+      "#F4F4F4",
+      "#141414",
+      "#F4F4F4"
+    ],
+    "support": 5,
+    "lvl": 67,
+    "nat": "PAR",
+    "group": "CLUBS_F_GEN"
+  },
+  "Cerro Porteño": {
+    "abbreviation": "CCP",
+    "pattern": "vstripes",
+    "colors": [
+      "#1B3F9A",
+      "#D0102C"
+    ],
+    "support": 5,
+    "lvl": 66,
+    "nat": "PAR",
+    "group": "CLUBS_F_GEN"
+  },
+  "Libertad": {
+    "abbreviation": "LIB",
+    "pattern": "vstripes",
+    "colors": [
+      "#141414",
+      "#F4F4F4"
+    ],
+    "support": 3,
+    "lvl": 65,
+    "nat": "PAR",
+    "group": "CLUBS_F_GEN"
+  },
+  "LDU Quito": {
+    "abbreviation": "LDU",
+    "pattern": "solid",
+    "colors": [
+      "#F4F4F4",
+      "#D0102C"
+    ],
+    "support": 5,
+    "lvl": 67,
+    "nat": "EQU",
+    "group": "CLUBS_F_GEN"
+  },
+  "Independiente del Valle": {
+    "abbreviation": "IDV",
+    "pattern": "vstripes",
+    "colors": [
+      "#141414",
+      "#1B3F9A"
+    ],
+    "support": 3,
+    "lvl": 68,
+    "nat": "EQU",
+    "group": "CLUBS_F_GEN"
+  },
+  "Barcelona SC": {
+    "abbreviation": "BSC",
+    "pattern": "solid",
+    "colors": [
+      "#FFD200",
+      "#141414"
+    ],
+    "support": 5,
+    "lvl": 65,
+    "nat": "EQU",
+    "group": "CLUBS_F_GEN"
+  },
+  "Universitario": {
+    "abbreviation": "UNI",
+    "pattern": "solid",
+    "colors": [
+      "#F2E6C8",
+      "#7A1230"
+    ],
+    "support": 5,
+    "lvl": 64,
+    "nat": "PER",
+    "group": "CLUBS_F_GEN"
+  },
+  "Alianza Lima": {
+    "abbreviation": "ALI",
+    "pattern": "vstripes",
+    "colors": [
+      "#0B1F4B",
+      "#F4F4F4"
+    ],
+    "support": 5,
+    "lvl": 63,
+    "nat": "PER",
+    "group": "CLUBS_F_GEN"
+  },
+  "Sporting Cristal": {
+    "abbreviation": "SCR",
+    "pattern": "solid",
+    "colors": [
+      "#6CB4EE",
+      "#F4F4F4"
+    ],
+    "support": 4,
+    "lvl": 63,
+    "nat": "PER",
+    "group": "CLUBS_F_GEN"
+  },
+  "Bolívar": {
+    "abbreviation": "BOL",
+    "pattern": "solid",
+    "colors": [
+      "#6CB4EE",
+      "#F4F4F4"
+    ],
+    "support": 4,
+    "lvl": 62,
+    "nat": "BOL",
+    "group": "CLUBS_F_GEN"
+  },
+  "The Strongest": {
+    "abbreviation": "TST",
+    "pattern": "vstripes",
+    "colors": [
+      "#FFD200",
+      "#141414"
+    ],
+    "support": 4,
+    "lvl": 61,
+    "nat": "BOL",
+    "group": "CLUBS_F_GEN"
+  },
+  "Paris Saint-Germain": {
+    "abbreviation": "PSG",
+    "pattern": "band",
+    "colors": [
+      "#0B1F4B",
+      "#D0102C",
+      "#0B1F4B"
+    ],
+    "support": 9,
+    "conf": "UEFA",
+    "nat": "FRA",
+    "real": 1,
+    "group": "INT_CLUBS"
+  },
+  "Deportivo Toluca": {
+    "abbreviation": "TOL",
+    "pattern": "solid",
+    "colors": [
+      "#D0102C",
+      "#F4F4F4"
+    ],
+    "support": 7,
+    "conf": "CON",
+    "nat": "MEX",
+    "real": 1,
+    "group": "INT_CLUBS"
+  },
+  "Mamelodi Sundowns": {
+    "abbreviation": "MSU",
+    "pattern": "solid",
+    "colors": [
+      "#FFD200",
+      "#0B6B3A"
+    ],
+    "support": 6,
+    "conf": "CAF",
+    "nat": "RSA",
+    "lvl": 71,
+    "real": 1,
+    "wasGen": 1,
+    "group": "INT_CLUBS"
+  },
+  "Al-Ahli Saudi": {
+    "abbreviation": "AHL",
+    "pattern": "solid",
+    "colors": [
+      "#0B6B3A",
+      "#F4F4F4"
+    ],
+    "support": 6,
+    "conf": "AFC",
+    "nat": "KSA",
+    "real": 1,
+    "group": "INT_CLUBS"
+  },
+  "Auckland FC": {
+    "abbreviation": "AFC",
+    "pattern": "solid",
+    "colors": [
+      "#0B1F4B",
+      "#9FD6F2"
+    ],
+    "support": 4,
+    "conf": "OFC",
+    "nat": "NZL",
+    "lvl": 62,
+    "real": 1,
+    "wasGen": 1,
+    "group": "INT_CLUBS"
+  },
+  "Real Madrid": {
+    "abbreviation": "RMA",
+    "pattern": "solid",
+    "colors": [
+      "#F4F4F4",
+      "#C9A227"
+    ],
+    "support": 10,
+    "conf": "UEFA",
+    "nat": "ESP",
+    "real": 1,
+    "group": "INT_CLUBS"
+  },
+  "Bayern Munich": {
+    "abbreviation": "BAY",
+    "pattern": "solid",
+    "colors": [
+      "#D0102C",
+      "#F4F4F4"
+    ],
+    "support": 9,
+    "conf": "UEFA",
+    "nat": "ALE",
+    "real": 1,
+    "group": "INT_CLUBS"
+  },
+  "Manchester City": {
+    "abbreviation": "MCI",
+    "pattern": "solid",
+    "colors": [
+      "#6CB4EE",
+      "#F4F4F4"
+    ],
+    "support": 9,
+    "conf": "UEFA",
+    "nat": "ING",
+    "real": 1,
+    "group": "INT_CLUBS"
+  },
+  "Liverpool": {
+    "abbreviation": "LIV",
+    "pattern": "solid",
+    "colors": [
+      "#D0102C",
+      "#F4F4F4"
+    ],
+    "support": 9,
+    "conf": "UEFA",
+    "nat": "ING",
+    "real": 1,
+    "group": "INT_CLUBS"
+  },
+  "Barcelona": {
+    "abbreviation": "BAR",
+    "pattern": "vstripes",
+    "colors": [
+      "#7A1230",
+      "#0B1F4B"
+    ],
+    "support": 9,
+    "conf": "UEFA",
+    "nat": "ESP",
+    "real": 1,
+    "group": "INT_CLUBS"
+  },
+  "Arsenal": {
+    "abbreviation": "ARS",
+    "pattern": "solid",
+    "colors": [
+      "#D0102C",
+      "#F4F4F4"
+    ],
+    "support": 8,
+    "conf": "UEFA",
+    "nat": "ING",
+    "real": 1,
+    "group": "INT_CLUBS"
+  },
+  "Inter Milan": {
+    "abbreviation": "INT",
+    "pattern": "vstripes",
+    "colors": [
+      "#1B3F9A",
+      "#141414"
+    ],
+    "support": 8,
+    "conf": "UEFA",
+    "nat": "ITA",
+    "real": 1,
+    "group": "INT_CLUBS"
+  },
+  "CD Cruz Azul": {
+    "abbreviation": "CAZ",
+    "pattern": "solid",
+    "colors": [
+      "#1B3F9A",
+      "#F4F4F4"
+    ],
+    "support": 6,
+    "conf": "CON",
+    "nat": "MEX",
+    "real": 1,
+    "group": "INT_CLUBS"
+  },
+  "Monterrey": {
+    "abbreviation": "MTY",
+    "pattern": "vstripes",
+    "colors": [
+      "#0B1F4B",
+      "#F4F4F4"
+    ],
+    "support": 6,
+    "conf": "CON",
+    "nat": "MEX",
+    "real": 1,
+    "group": "INT_CLUBS"
+  },
+  "Tigres UANL": {
+    "abbreviation": "TIG",
+    "pattern": "solid",
+    "colors": [
+      "#FFD200",
+      "#1B3F9A"
+    ],
+    "support": 6,
+    "conf": "CON",
+    "nat": "MEX",
+    "real": 1,
+    "group": "INT_CLUBS"
+  },
+  "Al Ahly": {
+    "abbreviation": "ALY",
+    "pattern": "solid",
+    "colors": [
+      "#D0102C",
+      "#F4F4F4"
+    ],
+    "support": 7,
+    "conf": "CAF",
+    "nat": "EGY",
+    "lvl": 72,
+    "real": 1,
+    "wasGen": 1,
+    "group": "INT_CLUBS"
+  },
+  "Pyramids": {
+    "abbreviation": "PYR",
+    "pattern": "solid",
+    "colors": [
+      "#0B1F4B",
+      "#F4F4F4"
+    ],
+    "support": 5,
+    "conf": "CAF",
+    "nat": "EGY",
+    "lvl": 70,
+    "real": 1,
+    "wasGen": 1,
+    "group": "INT_CLUBS"
+  },
+  "Espérance de Tunis": {
+    "abbreviation": "EST",
+    "pattern": "vstripes",
+    "colors": [
+      "#D0102C",
+      "#FFD200"
+    ],
+    "support": 6,
+    "conf": "CAF",
+    "nat": "TUN",
+    "lvl": 69,
+    "real": 1,
+    "wasGen": 1,
+    "group": "INT_CLUBS"
+  },
+  "Al-Hilal Saudi": {
+    "abbreviation": "HIL",
+    "pattern": "solid",
+    "colors": [
+      "#1B3F9A",
+      "#F4F4F4"
+    ],
+    "support": 8,
+    "conf": "AFC",
+    "nat": "KSA",
+    "real": 1,
+    "group": "INT_CLUBS"
+  },
+  "Al-Nassr": {
+    "abbreviation": "NAS",
+    "pattern": "solid",
+    "colors": [
+      "#FFD200",
+      "#1B3F9A"
+    ],
+    "support": 8,
+    "conf": "AFC",
+    "nat": "KSA",
+    "real": 1,
+    "group": "INT_CLUBS"
+  },
+  "Zamalek": {
+    "abbreviation": "ZAM",
+    "pattern": "band",
+    "colors": [
+      "#F4F4F4",
+      "#D0102C",
+      "#F4F4F4"
+    ],
+    "support": 7,
+    "conf": "CAF",
+    "nat": "EGY",
+    "real": 1,
+    "group": "INT_CLUBS"
+  },
+  "Al-Ittihad": {
+    "abbreviation": "ITT",
+    "pattern": "vstripes",
+    "colors": [
+      "#FFD200",
+      "#141414"
+    ],
+    "support": 8,
+    "conf": "AFC",
+    "nat": "KSA",
+    "real": 1,
+    "group": "INT_CLUBS"
+  },
+  "Al-Qadsiah Saudi": {
+    "abbreviation": "QAD",
+    "pattern": "halves",
+    "colors": [
+      "#D0102C",
+      "#FFD200"
+    ],
+    "support": 5,
+    "conf": "AFC",
+    "nat": "KSA",
+    "real": 1,
+    "group": "INT_CLUBS"
+  }
+}

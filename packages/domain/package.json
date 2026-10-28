@@ -1,0 +1,21 @@
+{
+  "name": "@football/domain",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@football/shared": "workspace:*",
+    "xstate": "^5.23.0",
+    "zod": "^4.1.0"
+  }
+}

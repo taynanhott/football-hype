@@ -1,0 +1,12 @@
+node_modules
+**/node_modules
+.git
+.local
+**/.local
+**/dist
+coverage
+test-results
+.env
+**/.env
+**/.env.*
+**/*service-account*.json

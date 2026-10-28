@@ -1,0 +1,12 @@
+{
+  "$schema": "https://turborepo.com/schema.json",
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**"],
+      "env": ["VITE_FIREBASE_*", "VITE_USE_EMULATORS", "VITE_GAME_SERVER_URL"]
+    },
+    "typecheck": { "dependsOn": ["^build"], "outputs": [] },
+    "dev": { "dependsOn": ["^build"], "cache": false, "persistent": true }
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "leagues",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "mode", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "nextScheduledAt", "order": "ASCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": [
+    { "collectionGroup": "leagues", "fieldPath": "payload", "indexes": [] },
+    { "collectionGroup": "events", "fieldPath": "payload", "indexes": [] }
+  ]
+}

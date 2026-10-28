@@ -1,0 +1,16 @@
+import { createRequire } from 'node:module';
+import { readFileSync, writeFileSync } from 'node:fs';
+import { createWorld, playNextBatch } from '../packages/domain/src/index.ts';
+import { IDS, unwrap } from '../tests/fixtures/domain.ts';
+import { RoundResults, MatchStatistics, PlayerRatings } from '../apps/client/src/features/matches/match-summary.tsx';
+const require = createRequire(new URL('../apps/client/package.json', import.meta.url));
+const React = require('react');
+const { renderToStaticMarkup } = require('react-dom/server');
+const now = Date.parse('2026-10-27T15:00:00Z');
+const state = unwrap(playNextBatch(unwrap(createWorld({id:IDS.league,userId:IDS.user,name:'Prévia',mode:'offline',now})), now));
+const result = state.results[0];
+if (!result) throw new Error('No match result');
+const props = {state,result,viewerClubId:result.awayId};
+const html = renderToStaticMarkup(React.createElement('main',{className:'match-center',style:{maxWidth:1100,margin:'24px auto',padding:16}},React.createElement(RoundResults,{...props,minute:90,onSelect:()=>{}}),React.createElement('div',{className:'match-report'},React.createElement(MatchStatistics,props),React.createElement(PlayerRatings,props))));
+writeFileSync(new URL('./match-summary-preview.html', import.meta.url),`<!doctype html><html lang="pt-BR"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>${readFileSync(new URL('../apps/client/src/ui/styles.css', import.meta.url),'utf8')}</style><body>${html}</body></html>`);
+console.log(`Rendered ${state.results.length} matches; ${Object.keys(result.ratings ?? {}).length} player ratings.`);

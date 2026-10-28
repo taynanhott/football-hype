@@ -1,0 +1,28 @@
+{
+  "age": {
+    "min": 14,
+    "max": 100
+  },
+  "overall": {
+    "min": 1,
+    "max": 99
+  },
+  "morale": {
+    "min": 0,
+    "max": 100
+  },
+  "fitness": {
+    "min": 0,
+    "max": 100
+  },
+  "shirtNumber": {
+    "min": 1,
+    "max": 99
+  },
+  "facilityLevel": {
+    "min": 1,
+    "max": 5
+  },
+  "nameMaxLength": 120,
+  "abbreviationMaxLength": 5
+}

@@ -1,0 +1,15 @@
+node_modules/
+dist/
+.turbo/
+.firebase/
+coverage/
+playwright-report/
+test-results/
+*-debug.log
+.env
+.env.*
+!.env.example
+*.tsbuildinfo
+.local/
+
+data/.backups/

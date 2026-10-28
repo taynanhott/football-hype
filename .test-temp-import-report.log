@@ -1,0 +1,1352 @@
+apps/functions                           | [WARN] Unsupported engine: wanted: {"node":"22"} (current: {"node":"v24.13.0","pnpm":"11.25.0"})
+{
+  "players": 14012,
+  "clubs": 697,
+  "freeAgents": 124,
+  "duplicates": 0,
+  "skipped": [],
+  "inactive": [
+    {
+      "id": 340950,
+      "reason": "Exclusão da configuração original"
+    },
+    {
+      "id": 641437424,
+      "reason": "Aposentado no arquivo"
+    }
+  ],
+  "unknownNationalities": [],
+  "divisions": {
+    "A": 20,
+    "B": 20,
+    "C": 20,
+    "D": 25,
+    "REGIONAL": 0
+  },
+  "partialSquads": [
+    {
+      "name": "Aalesund",
+      "players": 1
+    },
+    {
+      "name": "Aarhus GF",
+      "players": 4
+    },
+    {
+      "name": "Aberdeen",
+      "players": 1
+    },
+    {
+      "name": "Abha",
+      "players": 1
+    },
+    {
+      "name": "Académico de Viseu",
+      "players": 7
+    },
+    {
+      "name": "ACSC Arges",
+      "players": 1
+    },
+    {
+      "name": "ADO Den Haag",
+      "players": 1
+    },
+    {
+      "name": "AEK Larnaca",
+      "players": 1
+    },
+    {
+      "name": "AIK",
+      "players": 2
+    },
+    {
+      "name": "Ajman Club",
+      "players": 8
+    },
+    {
+      "name": "Akron Togliatti",
+      "players": 4
+    },
+    {
+      "name": "Al-Ahli SC",
+      "players": 1
+    },
+    {
+      "name": "Al-Ain FC",
+      "players": 6
+    },
+    {
+      "name": "Al-Arabi SC",
+      "players": 1
+    },
+    {
+      "name": "Al-Dhafra FC",
+      "players": 6
+    },
+    {
+      "name": "Al-Diriyah",
+      "players": 1
+    },
+    {
+      "name": "Al-Duhail SC",
+      "players": 1
+    },
+    {
+      "name": "Al-Faisaly",
+      "players": 2
+    },
+    {
+      "name": "Al-Fateh",
+      "players": 4
+    },
+    {
+      "name": "Al-Fayha",
+      "players": 5
+    },
+    {
+      "name": "Al-Hazem Sport",
+      "players": 2
+    },
+    {
+      "name": "Al-Jazira Club",
+      "players": 4
+    },
+    {
+      "name": "Al-Khaleej (Saihat)",
+      "players": 4
+    },
+    {
+      "name": "Al-Kholood",
+      "players": 3
+    },
+    {
+      "name": "Al-Nasr SC (UAE)",
+      "players": 4
+    },
+    {
+      "name": "Al-Okhdood",
+      "players": 2
+    },
+    {
+      "name": "Al-Rayyan SC",
+      "players": 4
+    },
+    {
+      "name": "Al-Riyadh Saudi",
+      "players": 3
+    },
+    {
+      "name": "Al-Sadd SC",
+      "players": 5
+    },
+    {
+      "name": "Al-Taawoun",
+      "players": 6
+    },
+    {
+      "name": "Al-Wahda FC",
+      "players": 3
+    },
+    {
+      "name": "Al-Wakrah SC",
+      "players": 1
+    },
+    {
+      "name": "Al-Wasl SC",
+      "players": 8
+    },
+    {
+      "name": "Alanyaspor",
+      "players": 4
+    },
+    {
+      "name": "Anorthosis Famagusta",
+      "players": 1
+    },
+    {
+      "name": "APOEL Nicósia",
+      "players": 4
+    },
+    {
+      "name": "Apollon Limassol",
+      "players": 1
+    },
+    {
+      "name": "Araz-Nakhchivan",
+      "players": 2
+    },
+    {
+      "name": "Arda Kardzhali",
+      "players": 1
+    },
+    {
+      "name": "Aris Limassol",
+      "players": 4
+    },
+    {
+      "name": "Aris Thessalonikis",
+      "players": 4
+    },
+    {
+      "name": "Arka Gdynia",
+      "players": 1
+    },
+    {
+      "name": "Arouca",
+      "players": 5
+    },
+    {
+      "name": "Asteras Aktor",
+      "players": 1
+    },
+    {
+      "name": "Atlante",
+      "players": 8
+    },
+    {
+      "name": "Atlas Guadalajara",
+      "players": 7
+    },
+    {
+      "name": "Atlético de San Luis",
+      "players": 10
+    },
+    {
+      "name": "Atromitos Atenas",
+      "players": 1
+    },
+    {
+      "name": "Austin",
+      "players": 5
+    },
+    {
+      "name": "Austria Vienna",
+      "players": 4
+    },
+    {
+      "name": "Avispa Fukuoka",
+      "players": 1
+    },
+    {
+      "name": "Baník Ostrava a.s",
+      "players": 4
+    },
+    {
+      "name": "Basaksehir FK",
+      "players": 9
+    },
+    {
+      "name": "Basel 1893",
+      "players": 9
+    },
+    {
+      "name": "Beijing Guoan",
+      "players": 2
+    },
+    {
+      "name": "BK Häcken",
+      "players": 1
+    },
+    {
+      "name": "Bodø/Glimt",
+      "players": 9
+    },
+    {
+      "name": "Botev Plovdiv",
+      "players": 3
+    },
+    {
+      "name": "Bröndby IF",
+      "players": 10
+    },
+    {
+      "name": "BSC Young Boys",
+      "players": 6
+    },
+    {
+      "name": "Bucheon FC 1995",
+      "players": 5
+    },
+    {
+      "name": "Cardiff City",
+      "players": 1
+    },
+    {
+      "name": "Casa Pia",
+      "players": 9
+    },
+    {
+      "name": "Caykur Rizespor",
+      "players": 6
+    },
+    {
+      "name": "Celtic",
+      "players": 13
+    },
+    {
+      "name": "Cercle Brugge",
+      "players": 4
+    },
+    {
+      "name": "Cerezo Osaka",
+      "players": 2
+    },
+    {
+      "name": "Cesena",
+      "players": 1
+    },
+    {
+      "name": "CFR Cluj",
+      "players": 5
+    },
+    {
+      "name": "Charleroi",
+      "players": 5
+    },
+    {
+      "name": "Charlotte",
+      "players": 7
+    },
+    {
+      "name": "Chengdu Rongcheng",
+      "players": 4
+    },
+    {
+      "name": "Cherno More Varna",
+      "players": 1
+    },
+    {
+      "name": "Chicago Fire Soccer",
+      "players": 6
+    },
+    {
+      "name": "Chongqing Tonglianglong",
+      "players": 1
+    },
+    {
+      "name": "Cincinnati",
+      "players": 10
+    },
+    {
+      "name": "Colorado Rapids",
+      "players": 4
+    },
+    {
+      "name": "Copenhagen",
+      "players": 9
+    },
+    {
+      "name": "Çorum FK",
+      "players": 2
+    },
+    {
+      "name": "CSKA 1948",
+      "players": 1
+    },
+    {
+      "name": "CSKA Sofia",
+      "players": 2
+    },
+    {
+      "name": "D.C. United",
+      "players": 2
+    },
+    {
+      "name": "Daejeon Hana Citizen",
+      "players": 3
+    },
+    {
+      "name": "de Foot Montréal",
+      "players": 9
+    },
+    {
+      "name": "Dinamo Makhachkala",
+      "players": 2
+    },
+    {
+      "name": "Djurgården",
+      "players": 1
+    },
+    {
+      "name": "Dunav Ruse",
+      "players": 1
+    },
+    {
+      "name": "Erzurumspor",
+      "players": 1
+    },
+    {
+      "name": "Estrela Amadora",
+      "players": 9
+    },
+    {
+      "name": "Fagiano Okayama",
+      "players": 4
+    },
+    {
+      "name": "Fatih Karagümrük",
+      "players": 1
+    },
+    {
+      "name": "FC Anyang",
+      "players": 3
+    },
+    {
+      "name": "FC Baniyas",
+      "players": 2
+    },
+    {
+      "name": "FC Imishli",
+      "players": 2
+    },
+    {
+      "name": "FC Seoul",
+      "players": 1
+    },
+    {
+      "name": "FC Shamakhi",
+      "players": 1
+    },
+    {
+      "name": "FC Tokyo",
+      "players": 1
+    },
+    {
+      "name": "FCSB",
+      "players": 7
+    },
+    {
+      "name": "FK Atyrau",
+      "players": 1
+    },
+    {
+      "name": "FK Baltika",
+      "players": 3
+    },
+    {
+      "name": "FK Cukaricki",
+      "players": 1
+    },
+    {
+      "name": "FK IMT Belgrad",
+      "players": 1
+    },
+    {
+      "name": "FK Mlada Boleslav",
+      "players": 1
+    },
+    {
+      "name": "FK Mladost Lucani",
+      "players": 2
+    },
+    {
+      "name": "FK Napredak Krusevac",
+      "players": 2
+    },
+    {
+      "name": "FK Nizhny Novgorod",
+      "players": 1
+    },
+    {
+      "name": "FK Novi Pazar",
+      "players": 1
+    },
+    {
+      "name": "FK Orenburg",
+      "players": 1
+    },
+    {
+      "name": "FK Partizan Belgrade",
+      "players": 6
+    },
+    {
+      "name": "FK Polissya Zhytomyr",
+      "players": 5
+    },
+    {
+      "name": "FK Qabala",
+      "players": 2
+    },
+    {
+      "name": "FK Rostov",
+      "players": 5
+    },
+    {
+      "name": "FK Sochi",
+      "players": 1
+    },
+    {
+      "name": "FK Spartak Subotica",
+      "players": 1
+    },
+    {
+      "name": "FK TSC Backa Topola",
+      "players": 1
+    },
+    {
+      "name": "FK Vojvodina Novi Sad",
+      "players": 2
+    },
+    {
+      "name": "FK Zeleznicar Pancevo",
+      "players": 1
+    },
+    {
+      "name": "Fortuna Sittard",
+      "players": 2
+    },
+    {
+      "name": "Fredrikstad",
+      "players": 3
+    },
+    {
+      "name": "Gamba Osaka",
+      "players": 3
+    },
+    {
+      "name": "Gaziantep FK",
+      "players": 3
+    },
+    {
+      "name": "GD Estoril Praia",
+      "players": 6
+    },
+    {
+      "name": "Gençlerbirliği",
+      "players": 3
+    },
+    {
+      "name": "GNK Dinamo Zagreb",
+      "players": 9
+    },
+    {
+      "name": "Go Ahead Eagles",
+      "players": 3
+    },
+    {
+      "name": "Górnik Zabrze",
+      "players": 3
+    },
+    {
+      "name": "Grasshopper Zurich",
+      "players": 1
+    },
+    {
+      "name": "Groningen",
+      "players": 3
+    },
+    {
+      "name": "Gwangju FC",
+      "players": 1
+    },
+    {
+      "name": "Hammarby IF",
+      "players": 3
+    },
+    {
+      "name": "Hapoel Beer Sheva",
+      "players": 1
+    },
+    {
+      "name": "Hapoel Ramat Gan",
+      "players": 2
+    },
+    {
+      "name": "Hapoel Tel Aviv",
+      "players": 1
+    },
+    {
+      "name": "Hatta Club",
+      "players": 4
+    },
+    {
+      "name": "Heart of Midlothian",
+      "players": 3
+    },
+    {
+      "name": "Heerenveen",
+      "players": 7
+    },
+    {
+      "name": "Henan FC",
+      "players": 5
+    },
+    {
+      "name": "HNK Gorica",
+      "players": 1
+    },
+    {
+      "name": "HNK Hajduk Split",
+      "players": 5
+    },
+    {
+      "name": "HNK Rijeka",
+      "players": 5
+    },
+    {
+      "name": "Houston Dynamo",
+      "players": 11
+    },
+    {
+      "name": "Hradec Kralove",
+      "players": 1
+    },
+    {
+      "name": "Incheon United",
+      "players": 1
+    },
+    {
+      "name": "Iraklis Salonica",
+      "players": 1
+    },
+    {
+      "name": "Ironi Kiryat Shmona",
+      "players": 2
+    },
+    {
+      "name": "Irtysh Pavlodar",
+      "players": 2
+    },
+    {
+      "name": "Jagiellonia Bialystok",
+      "players": 4
+    },
+    {
+      "name": "JEF United Chiba",
+      "players": 4
+    },
+    {
+      "name": "Jeju SK",
+      "players": 3
+    },
+    {
+      "name": "Jeonbuk Hyundai Motors",
+      "players": 3
+    },
+    {
+      "name": "KAA Gent",
+      "players": 6
+    },
+    {
+      "name": "Kairat Almaty",
+      "players": 2
+    },
+    {
+      "name": "Kalba FC",
+      "players": 8
+    },
+    {
+      "name": "Karmiotissa FC",
+      "players": 2
+    },
+    {
+      "name": "Karpaty Lviv",
+      "players": 4
+    },
+    {
+      "name": "Kashima Antlers",
+      "players": 6
+    },
+    {
+      "name": "Kasimpasa",
+      "players": 5
+    },
+    {
+      "name": "Kawasaki Frontale",
+      "players": 4
+    },
+    {
+      "name": "Kaysar Kyzylorda",
+      "players": 3
+    },
+    {
+      "name": "Kayserispor",
+      "players": 4
+    },
+    {
+      "name": "Khor Fakkan SSC",
+      "players": 2
+    },
+    {
+      "name": "Kolos Kovalivka",
+      "players": 1
+    },
+    {
+      "name": "Konyaspor",
+      "players": 5
+    },
+    {
+      "name": "Kristiansund",
+      "players": 1
+    },
+    {
+      "name": "Krylya Sovetov Samara",
+      "players": 1
+    },
+    {
+      "name": "Kryvbas Kryvyi Rig",
+      "players": 1
+    },
+    {
+      "name": "KV Mechelen",
+      "players": 3
+    },
+    {
+      "name": "KVC Westerlo",
+      "players": 8
+    },
+    {
+      "name": "Kyoto Purple Sanga",
+      "players": 9
+    },
+    {
+      "name": "LASK",
+      "players": 7
+    },
+    {
+      "name": "Lausanne-Sport",
+      "players": 3
+    },
+    {
+      "name": "Lech Poznan",
+      "players": 3
+    },
+    {
+      "name": "Lechia Gdansk",
+      "players": 2
+    },
+    {
+      "name": "Legia Warszawa",
+      "players": 4
+    },
+    {
+      "name": "Leicester City",
+      "players": 4
+    },
+    {
+      "name": "Levadiakos",
+      "players": 1
+    },
+    {
+      "name": "Levski Sofia",
+      "players": 4
+    },
+    {
+      "name": "Liaoning Tieren",
+      "players": 2
+    },
+    {
+      "name": "Lillestrøm",
+      "players": 2
+    },
+    {
+      "name": "Livyi Bereg Kyiv",
+      "players": 3
+    },
+    {
+      "name": "LNZ Cherkasy",
+      "players": 1
+    },
+    {
+      "name": "Lokomotiv Plovdiv",
+      "players": 2
+    },
+    {
+      "name": "Lokomotiv Sofia",
+      "players": 1
+    },
+    {
+      "name": "Ludogorets Razgrad",
+      "players": 3
+    },
+    {
+      "name": "Lugano",
+      "players": 4
+    },
+    {
+      "name": "Lusail SC",
+      "players": 1
+    },
+    {
+      "name": "Luzern",
+      "players": 4
+    },
+    {
+      "name": "Maccabi Haifa",
+      "players": 3
+    },
+    {
+      "name": "Maccabi Netanya",
+      "players": 1
+    },
+    {
+      "name": "Malmö Fotbollförening",
+      "players": 5
+    },
+    {
+      "name": "Marítimo",
+      "players": 4
+    },
+    {
+      "name": "Metalist 1925",
+      "players": 1
+    },
+    {
+      "name": "Middlesbrough",
+      "players": 5
+    },
+    {
+      "name": "Minnesota United",
+      "players": 7
+    },
+    {
+      "name": "Mito HollyHock",
+      "players": 1
+    },
+    {
+      "name": "Mjällby",
+      "players": 1
+    },
+    {
+      "name": "Molde Fotballklubb",
+      "players": 3
+    },
+    {
+      "name": "Moreirense",
+      "players": 8
+    },
+    {
+      "name": "Motherwell",
+      "players": 1
+    },
+    {
+      "name": "Motor Lublin",
+      "players": 2
+    },
+    {
+      "name": "Nagoya Grampus",
+      "players": 2
+    },
+    {
+      "name": "Nashville",
+      "players": 7
+    },
+    {
+      "name": "NEC Nijmegen",
+      "players": 3
+    },
+    {
+      "name": "Neftchi PFK",
+      "players": 3
+    },
+    {
+      "name": "Neom Sports",
+      "players": 9
+    },
+    {
+      "name": "New England Revolution",
+      "players": 10
+    },
+    {
+      "name": "Newcastle United Jets",
+      "players": 1
+    },
+    {
+      "name": "NK Istra 1961",
+      "players": 1
+    },
+    {
+      "name": "NK Lokomotiva Zagreb",
+      "players": 1
+    },
+    {
+      "name": "NK Veres Rivne",
+      "players": 4
+    },
+    {
+      "name": "Nordsjaelland",
+      "players": 4
+    },
+    {
+      "name": "Norwich City",
+      "players": 3
+    },
+    {
+      "name": "Obolon Kyiv",
+      "players": 1
+    },
+    {
+      "name": "Odense Boldklub",
+      "players": 1
+    },
+    {
+      "name": "OFK Beograd",
+      "players": 2
+    },
+    {
+      "name": "Okzhetpes Kokshetau",
+      "players": 2
+    },
+    {
+      "name": "Oleksandriya",
+      "players": 1
+    },
+    {
+      "name": "Olympiacos",
+      "players": 15
+    },
+    {
+      "name": "Olympiakos Nicosia",
+      "players": 3
+    },
+    {
+      "name": "Omonia Aradippou",
+      "players": 1
+    },
+    {
+      "name": "Omónia Nicósia",
+      "players": 2
+    },
+    {
+      "name": "Ordabasy Tschimkent",
+      "players": 2
+    },
+    {
+      "name": "Oud-Heverlee Leuven",
+      "players": 4
+    },
+    {
+      "name": "Pafos FC",
+      "players": 5
+    },
+    {
+      "name": "Palermo",
+      "players": 1
+    },
+    {
+      "name": "PEC Zwolle",
+      "players": 1
+    },
+    {
+      "name": "Philadelphia Union",
+      "players": 7
+    },
+    {
+      "name": "Piast Gliwice KS",
+      "players": 1
+    },
+    {
+      "name": "Pohang Steelers",
+      "players": 3
+    },
+    {
+      "name": "Portland Timbers",
+      "players": 12
+    },
+    {
+      "name": "Puebla",
+      "players": 7
+    },
+    {
+      "name": "Qarabağ FK",
+      "players": 4
+    },
+    {
+      "name": "Qatar SC",
+      "players": 1
+    },
+    {
+      "name": "Qingdao West Coast",
+      "players": 2
+    },
+    {
+      "name": "Queens Park Rangers",
+      "players": 4
+    },
+    {
+      "name": "Querétaro",
+      "players": 6
+    },
+    {
+      "name": "RAAL La Louvière",
+      "players": 2
+    },
+    {
+      "name": "Radomiak Radom",
+      "players": 4
+    },
+    {
+      "name": "Raków Częstochowa",
+      "players": 5
+    },
+    {
+      "name": "Randers",
+      "players": 1
+    },
+    {
+      "name": "Rangers",
+      "players": 9
+    },
+    {
+      "name": "Rapid 1923",
+      "players": 1
+    },
+    {
+      "name": "Rapid Vienna",
+      "players": 3
+    },
+    {
+      "name": "Red Bull New York",
+      "players": 10
+    },
+    {
+      "name": "Red Bull Salzburg",
+      "players": 9
+    },
+    {
+      "name": "RFK Akhmat Grozny",
+      "players": 3
+    },
+    {
+      "name": "Rodina Moscow",
+      "players": 1
+    },
+    {
+      "name": "Rosenborg Ballklub",
+      "players": 1
+    },
+    {
+      "name": "Royal Antwerp",
+      "players": 8
+    },
+    {
+      "name": "RSC Anderlecht",
+      "players": 9
+    },
+    {
+      "name": "Rubin Kazan",
+      "players": 9
+    },
+    {
+      "name": "Sabah FK",
+      "players": 3
+    },
+    {
+      "name": "Saint-Étienne",
+      "players": 2
+    },
+    {
+      "name": "Samsunspor",
+      "players": 7
+    },
+    {
+      "name": "San Diego",
+      "players": 7
+    },
+    {
+      "name": "San Jose Earthquakes",
+      "players": 5
+    },
+    {
+      "name": "Sanfrecce Hiroshima",
+      "players": 2
+    },
+    {
+      "name": "Sarpsborg 08",
+      "players": 1
+    },
+    {
+      "name": "Seattle Sounders",
+      "players": 13
+    },
+    {
+      "name": "Septemvri Sofia",
+      "players": 1
+    },
+    {
+      "name": "Servette",
+      "players": 3
+    },
+    {
+      "name": "Shabab Al-Ahli Club",
+      "players": 14
+    },
+    {
+      "name": "Shafa Baku",
+      "players": 1
+    },
+    {
+      "name": "Shandong Taishan",
+      "players": 3
+    },
+    {
+      "name": "Shanghai Port",
+      "players": 3
+    },
+    {
+      "name": "Shanghai Shenhua",
+      "players": 1
+    },
+    {
+      "name": "Sharjah FC",
+      "players": 6
+    },
+    {
+      "name": "Sheffield United",
+      "players": 1
+    },
+    {
+      "name": "Shenzhen Peng City",
+      "players": 1
+    },
+    {
+      "name": "Shimizu S-Pulse",
+      "players": 3
+    },
+    {
+      "name": "Silkeborg IF",
+      "players": 1
+    },
+    {
+      "name": "Sint-Truidense VV",
+      "players": 4
+    },
+    {
+      "name": "Sion",
+      "players": 2
+    },
+    {
+      "name": "SK Sigma Olomouc, a.s",
+      "players": 1
+    },
+    {
+      "name": "Slaven Belupo",
+      "players": 2
+    },
+    {
+      "name": "Slavia Sofia",
+      "players": 1
+    },
+    {
+      "name": "Slovan Liberec",
+      "players": 2
+    },
+    {
+      "name": "SM Caen",
+      "players": 1
+    },
+    {
+      "name": "Sönderjyske Fodbold",
+      "players": 1
+    },
+    {
+      "name": "Southampton",
+      "players": 4
+    },
+    {
+      "name": "Sparta Rotterdam",
+      "players": 5
+    },
+    {
+      "name": "Spartak Varna",
+      "players": 2
+    },
+    {
+      "name": "Sporting Kansas City",
+      "players": 8
+    },
+    {
+      "name": "Sportsklubben Brann",
+      "players": 1
+    },
+    {
+      "name": "St. Gallen 1879",
+      "players": 3
+    },
+    {
+      "name": "St. Louis City Soccer",
+      "players": 6
+    },
+    {
+      "name": "Standard Liège",
+      "players": 9
+    },
+    {
+      "name": "Stoke City",
+      "players": 2
+    },
+    {
+      "name": "Sturm Graz",
+      "players": 5
+    },
+    {
+      "name": "Sumqayit PFK",
+      "players": 3
+    },
+    {
+      "name": "Swansea City",
+      "players": 3
+    },
+    {
+      "name": "Thun",
+      "players": 2
+    },
+    {
+      "name": "Tianjin Jinmen Tiger",
+      "players": 1
+    },
+    {
+      "name": "Tijuana",
+      "players": 8
+    },
+    {
+      "name": "Tokyo Verdy",
+      "players": 1
+    },
+    {
+      "name": "Toronto",
+      "players": 11
+    },
+    {
+      "name": "Tromsø Idrettslag",
+      "players": 1
+    },
+    {
+      "name": "TSV Hartberg",
+      "players": 1
+    },
+    {
+      "name": "Turan-Tovuz IK",
+      "players": 2
+    },
+    {
+      "name": "Ulsan Hyundai",
+      "players": 5
+    },
+    {
+      "name": "Union Saint-Gilloise",
+      "players": 13
+    },
+    {
+      "name": "United FC (UAE)",
+      "players": 1
+    },
+    {
+      "name": "Universitatea Cluj",
+      "players": 1
+    },
+    {
+      "name": "Universitatea Craiova",
+      "players": 2
+    },
+    {
+      "name": "Urawa Red Diamonds",
+      "players": 2
+    },
+    {
+      "name": "Utrecht",
+      "players": 7
+    },
+    {
+      "name": "V-Varen Nagasaki",
+      "players": 6
+    },
+    {
+      "name": "Vejle Boldklub",
+      "players": 1
+    },
+    {
+      "name": "Viborg FF",
+      "players": 1
+    },
+    {
+      "name": "Viking Fotballklubb",
+      "players": 3
+    },
+    {
+      "name": "Viktoria Plzen",
+      "players": 8
+    },
+    {
+      "name": "Vissel Kobe",
+      "players": 6
+    },
+    {
+      "name": "Volos FC",
+      "players": 1
+    },
+    {
+      "name": "Watford",
+      "players": 1
+    },
+    {
+      "name": "West Bromwich Albion",
+      "players": 7
+    },
+    {
+      "name": "Widzew Lodz",
+      "players": 5
+    },
+    {
+      "name": "Wieczysta Krakow",
+      "players": 1
+    },
+    {
+      "name": "Wisla Plock",
+      "players": 1
+    },
+    {
+      "name": "Wolfsberger",
+      "players": 1
+    },
+    {
+      "name": "Wuhan Three Towns",
+      "players": 2
+    },
+    {
+      "name": "Yelimay Semey",
+      "players": 1
+    },
+    {
+      "name": "Yokohama F. Marinos",
+      "players": 2
+    },
+    {
+      "name": "Yunnan Yukun",
+      "players": 2
+    },
+    {
+      "name": "Zaglebie Lubin",
+      "players": 2
+    },
+    {
+      "name": "Zhejiang FC",
+      "players": 2
+    },
+    {
+      "name": "Zhenis Astana",
+      "players": 3
+    },
+    {
+      "name": "Zira FK",
+      "players": 5
+    },
+    {
+      "name": "Zorya Lugansk",
+      "players": 3
+    },
+    {
+      "name": "Zulte Waregem",
+      "players": 2
+    },
+    {
+      "name": "Zürich",
+      "players": 2
+    }
+  ],
+  "notes": [
+    "Os 20 participantes da Série C de 2026 foram separados do grupo Regional conforme o regulamento e a relação oficial da CBF.",
+    "Elencos incompletos são mantidos para consulta e mercado, sem completar com jogadores inventados."
+  ]
+}

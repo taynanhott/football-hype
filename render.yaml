@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: linha-de-fundo-server
+    runtime: node
+    plan: free
+    autoDeploy: false
+    buildCommand: npm install --global pnpm@11.25.0 && pnpm install --frozen-lockfile && pnpm build
+    startCommand: node apps/server/dist/index.js
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: 24.13.0
+      - key: NODE_ENV
+        value: production
+      - key: HOST
+        value: 0.0.0.0
+      - key: STORE
+        value: firestore
+      - key: REQUIRE_APP_CHECK
+        value: 'true'
+      - key: GCLOUD_PROJECT
+        sync: false
+      - key: CLIENT_ORIGIN
+        sync: false
+      - key: SCHEDULER_SECRET
+        sync: false
+      - key: GOOGLE_APPLICATION_CREDENTIALS
+        value: /etc/secrets/firebase-service-account.json

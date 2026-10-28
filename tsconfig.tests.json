@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "noEmit": true,
+    "types": ["node"],
+    "paths": {
+      "@football/shared": ["./packages/shared/src/index.ts"],
+      "@football/domain": ["./packages/domain/src/index.ts"]
+    }
+  },
+  "include": ["packages/**/*.test.ts", "apps/**/tests/**/*.test.ts", "tests/fixtures/**/*.ts"]
+}

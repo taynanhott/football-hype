@@ -1,0 +1,14 @@
+node_modules
+dist
+.turbo
+.firebase
+.local
+apps/client/public/decoders
+coverage
+playwright-report
+test-results
+pnpm-lock.yaml
+*-debug.log
+
+data/player-source.json
+data/player-database.json
