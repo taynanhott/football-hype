@@ -6,7 +6,7 @@ O jogo funciona localmente com dados fictícios, sem contas externas. Estes arqu
 
 1. Crie um projeto próprio no Firebase e registre um aplicativo Web.
 2. Ative Authentication com o provedor Google, Firestore e Hosting. Cadastre o domínio do Hosting nos domínios autorizados do Authentication.
-3. Ative App Check com reCAPTCHA v3. Cadastre também o domínio de produção no reCAPTCHA e habilite a proteção do Firestore.
+3. Registre o aplicativo Web no App Check com Fraud Defense (antigo reCAPTCHA Enterprise). Use uma chave Web baseada em pontuação, sem desafio de checkbox, e autorize o domínio de produção. A mesma chave pública registrada nesse provedor deve estar em `VITE_FIREBASE_APPCHECK_SITE_KEY` na configuração de build da interface. Habilite a proteção do Firestore após validar as métricas do App Check.
 4. Preencha `apps/client/.env.local` com sua configuração Web Firebase, `VITE_USE_EMULATORS=false`, `VITE_FIREBASE_APPCHECK_SITE_KEY` e o endereço WSS do servidor Render.
 5. Execute `pnpm build` e `pnpm exec firebase deploy --project SEU_PROJETO --only hosting,firestore`.
 

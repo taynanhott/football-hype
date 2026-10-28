@@ -9,7 +9,7 @@ import {
   type User,
 } from 'firebase/auth';
 import { connectFirestoreEmulator, doc, getFirestore, onSnapshot } from 'firebase/firestore';
-import { getToken, initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check';
+import { getToken, initializeAppCheck, ReCaptchaEnterpriseProvider } from 'firebase/app-check';
 import { z } from 'zod';
 
 const config = z
@@ -49,7 +49,7 @@ if (import.meta.env.DEV && import.meta.env.VITE_USE_EMULATORS === 'true') {
 const siteKey = import.meta.env.VITE_FIREBASE_APPCHECK_SITE_KEY as string | undefined;
 const appCheck = siteKey
   ? initializeAppCheck(app, {
-      provider: new ReCaptchaV3Provider(siteKey),
+      provider: new ReCaptchaEnterpriseProvider(siteKey),
       isTokenAutoRefreshEnabled: true,
     })
   : undefined;
