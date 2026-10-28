@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: linha-de-fundo-server
+    name: football-hype-server
     runtime: node
     plan: free
     autoDeploy: false
@@ -19,9 +19,9 @@ services:
       - key: REQUIRE_APP_CHECK
         value: 'true'
       - key: GCLOUD_PROJECT
-        sync: false
+        value: football-hype
       - key: CLIENT_ORIGIN
-        sync: false
+        value: https://football-hype.taynanzhott.workers.dev
       - key: SCHEDULER_SECRET
         sync: false
       - key: GOOGLE_APPLICATION_CREDENTIALS

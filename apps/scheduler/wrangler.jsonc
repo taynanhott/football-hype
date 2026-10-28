@@ -4,5 +4,5 @@
   "main": "src/index.ts",
   "compatibility_date": "2026-10-28",
   "triggers": { "crons": ["* * * * *"] },
-  "vars": { "GAME_SERVER_URL": "https://linha-de-fundo-server.onrender.com" },
+  "vars": { "GAME_SERVER_URL": "https://football-hype-server.onrender.com" },
 }
