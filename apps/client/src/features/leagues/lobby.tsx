@@ -1,3 +1,4 @@
+import { InviteDraw } from './invite-draw';
 import { GeneratedPerson } from '../../ui/person-avatar';
 import { BrandMark } from '../../ui/brand-mark';
 import { useState, useEffect, useRef, type CSSProperties } from 'react';
@@ -122,6 +123,8 @@ export function Lobby() {
 function AuthenticatedLobby({ user }: { user: { uid: string; name: string } }) {
   const stripRef = useRef<HTMLDivElement>(null);
   const [landingStart, setLandingStart] = useState(0);
+  const [landingEnd, setLandingEnd] = useState(0);
+  const [inviteResult, setInviteResult] = useState<{ id: string; clubId: string } | null>(null);
   const [reservation, setReservation] = useState<{
     leagueId: string;
     clubId: string;
@@ -145,7 +148,7 @@ function AuthenticatedLobby({ user }: { user: { uid: string; name: string } }) {
     const timer = window.setTimeout(() => {
       setSpinning(false);
       setRolled(true);
-    }, 3200);
+    }, 5100);
     return () => window.clearTimeout(timer);
   }, [spinning, settling]);
   const [division, setDivision] = useState('A');
@@ -228,8 +231,16 @@ function AuthenticatedLobby({ user }: { user: { uid: string; name: string } }) {
       setLandingStart(offset);
       setReservation(draw);
       setDivision(draw.division);
-      const strip = Array.from({ length: 85 }, (_, i) => available[i % available.length]!.id);
-      strip[60] = draw.clubId;
+      const landingIndex = Math.ceil(-offset / 140) + 20;
+      setLandingEnd(
+        -landingIndex * 140 +
+          (crypto.getRandomValues(new Uint32Array(1))[0]! / 4294967296 - 0.5) * 80,
+      );
+      const strip = Array.from(
+        { length: Math.max(85, landingIndex + 12) },
+        (_, i) => available[i % available.length]!.id,
+      );
+      strip[landingIndex] = draw.clubId;
       setRoll(strip);
       setTeamId(draw.clubId);
       setSettling(true);
@@ -359,6 +370,7 @@ function AuthenticatedLobby({ user }: { user: { uid: string; name: string } }) {
           <button
             disabled={actionsUnavailable || multiplayerFull}
             onClick={() => {
+              setInviteResult(null);
               setJoining(true);
             }}
           >
@@ -529,6 +541,8 @@ function AuthenticatedLobby({ user }: { user: { uid: string; name: string } }) {
                     {
                       '--roulette-cycle': `${-teams.length * 140}px`,
                       '--roulette-start': `${landingStart}px`,
+                      '--roulette-end': `${landingEnd}px`,
+                      '--roulette-speed': `${(teams.length * 140) / 1800}s`,
                     } as CSSProperties
                   }
                   className={`roulette-strip ${spinning && !settling ? 'roulette-waiting' : settling || rolled ? 'rolling' : ''}`}
@@ -711,23 +725,38 @@ function AuthenticatedLobby({ user }: { user: { uid: string; name: string } }) {
             </div>
           ) : (
             <div className="panel invite-random">
-              <Icon name="ball" size={48} />
+              <InviteDraw
+                clubs={invitation.clubs.filter((club) => !club.occupied)}
+                result={inviteResult?.clubId}
+                onFinish={() => {
+                  if (inviteResult) {
+                    void connect(inviteResult.id);
+                    void queryClient.invalidateQueries({ queryKey: ['leagues', user.uid] });
+                  }
+                }}
+              />
               <strong>Seu clube será sorteado entre os disponíveis</strong>
               <span>
                 {invitation.clubs.filter((club) => !club.occupied).length} clubes livres · sorteio
-                na aprovação da entrada
+                ao entrar na liga
               </span>
             </div>
           )}
           <button
             className="primary"
-            disabled={busy || !invitation || !invitation.clubs.some((club) => !club.occupied)}
+            disabled={
+              busy ||
+              !!inviteResult ||
+              !invitation.clubs.some((club) => !club.occupied) ||
+              (invitation.assignment === 'chosen' && !inviteClub)
+            }
             onClick={() => {
               const [id, invite] = code.trim().split(':');
               if (!id || !invite) {
                 setError('Cole o convite completo recebido do administrador');
                 return;
               }
+              useGameStore.setState({ busy: true });
               void request(`/api/leagues/${id}/request`, {
                 method: 'POST',
                 body: JSON.stringify({
@@ -737,23 +766,26 @@ function AuthenticatedLobby({ user }: { user: { uid: string; name: string } }) {
                     : {}),
                 }),
               })
-                .then((result) => {
-                  setJoining(false);
-                  if (z.object({ rejoined: z.boolean().optional() }).parse(result).rejoined) {
-                    void connect(id);
-                    void leagues.refetch();
-                    return;
+                .then(async (result) => {
+                  const joined = z.object({ clubId: z.string() }).parse(result);
+                  void queryClient.invalidateQueries({ queryKey: ['leagues', user.uid] });
+                  if (invitation.assignment === 'random') {
+                    setInviteResult({ id, clubId: joined.clubId });
+                  } else {
+                    await connect(id);
                   }
-                  setError('Solicitação enviada. Aguarde aprovação e atualize suas carreiras.');
                 })
                 .catch((reason: unknown) =>
                   setError(reason instanceof Error ? reason.message : 'Convite inválido'),
-                );
+                )
+                .finally(() => useGameStore.setState({ busy: false }));
             }}
           >
             {invitation.assignment === 'random'
-              ? 'Solicitar sorteio e entrada'
-              : 'Solicitar entrada'}
+              ? inviteResult
+                ? 'Clube sorteado'
+                : 'Sortear e entrar'
+              : 'Entrar na liga'}
           </button>
         </section>
       )}

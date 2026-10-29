@@ -1,3 +1,5 @@
+import { CoachAvatar } from '../../ui/coach-profile';
+import { defaultCoach } from '../../ui/coach-profile-storage';
 import { Icon } from '../../ui/icons';
 import { PixelBadge } from '../../ui/pixel-badge';
 import { Career } from './career';
@@ -12,7 +14,6 @@ export function LeagueSettings({ snapshot }: ViewProps) {
   const { state } = snapshot;
   const { userId, send, busy, disconnect, connected } = useGameStore();
   const [error, setError] = useState('');
-  const [chosen, setChosen] = useState<Record<string, string>>({});
   const [generated, setGenerated] = useState(false);
   const [copied, setCopied] = useState(false);
   const [working, setWorking] = useState(false);
@@ -77,7 +78,7 @@ export function LeagueSettings({ snapshot }: ViewProps) {
           <h2>Convites para a liga</h2>
           <p>
             {state.mode === 'multiplayer'
-              ? 'Gere o código e compartilhe com quem você quer na liga. O administrador aprova as solicitações de entrada.'
+              ? 'Gere o código e compartilhe com quem você quer na liga. A entrada pelo convite é imediata.'
               : 'Convites estão disponíveis nas ligas com amigos.'}
           </p>
           <button
@@ -134,10 +135,16 @@ export function LeagueSettings({ snapshot }: ViewProps) {
                   : {})}
                 size={36}
               />
+              <CoachAvatar
+                profile={{ ...defaultCoach, ...p.coach, name: p.coach?.name ?? 'Técnico' }}
+              />
               <span>
-                <a href={'#/trophies?club=' + p.clubId}>{state.clubs.byId[p.clubId]?.name}</a> ·{' '}
-                {p.userId === state.administratorId ? 'Administrador' : 'Treinador'} ·{' '}
-                {p.userId === userId ? 'Você' : p.userId.slice(0, 8)}
+                <strong>{p.coach?.name ?? (p.userId === userId ? 'Você' : 'Técnico')}</strong>
+                <br />
+                <a href={'#/trophies?club=' + p.clubId}>
+                  {state.clubs.byId[p.clubId]?.name}
+                </a> · {p.userId === state.administratorId ? 'Administrador' : 'Treinador'} ·{' '}
+                {p.userId === userId ? 'Você' : ''}
                 {admin && p.userId !== userId && (
                   <button
                     className="secondary"
@@ -243,59 +250,6 @@ export function LeagueSettings({ snapshot }: ViewProps) {
                   <Option value="random">Sortear time na divisão permitida</Option>
                 </Select>
               </label>
-              <h2>Solicitações de entrada</h2>
-              {!state.requests.length && <p>Nenhuma solicitação pendente.</p>}
-              {state.requests.map((r) => (
-                <div className="admission-row" key={r.userId}>
-                  <p>
-                    Treinador {r.userId.slice(0, 8)} · Solicitou{' '}
-                    {state.clubs.byId[r.clubId ?? '']?.name ?? 'sorteio'}
-                  </p>
-                  {state.admission.assignment === 'chosen' && (
-                    <Select
-                      aria-label={`Clube para ${r.userId}`}
-                      value={chosen[r.userId] ?? r.clubId ?? ''}
-                      onValueChange={(value) => setChosen({ ...chosen, [r.userId]: value })}
-                    >
-                      <Option value="">Escolha um clube</Option>
-                      {state.clubs.ids
-                        .filter((id) => {
-                          const c = state.clubs.byId[id];
-                          return (
-                            c?.country === 'BR' &&
-                            (!state.admission.division ||
-                              c.division === state.admission.division) &&
-                            !state.participants.some((p) => p.clubId === id) &&
-                            !Object.values(state.returningClubs ?? {}).includes(id)
-                          );
-                        })
-                        .map((id) => (
-                          <Option key={id} value={id}>
-                            {state.clubs.byId[id]?.name}
-                          </Option>
-                        ))}
-                    </Select>
-                  )}
-                  <button
-                    onClick={() =>
-                      void action('decide', {
-                        userId: r.userId,
-                        approve: true,
-                        ...((chosen[r.userId] ?? r.clubId)
-                          ? { clubId: chosen[r.userId] ?? r.clubId }
-                          : {}),
-                      })
-                    }
-                  >
-                    Aprovar entrada
-                  </button>
-                  <button
-                    onClick={() => void action('decide', { userId: r.userId, approve: false })}
-                  >
-                    Recusar
-                  </button>
-                </div>
-              ))}
             </>
           )}
         </section>

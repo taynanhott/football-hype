@@ -18001,3 +18001,38 @@ html {
   border: 0;
   border-radius: 3px;
 }
+
+/* Maintain velocity as the reserved result begins its gradual slowdown. */
+.roulette-strip.roulette-waiting {
+  animation-duration: var(--roulette-speed, 1.5s);
+}
+.roulette-strip.rolling {
+  animation: roulette-settle 5s cubic-bezier(0.25, 0.8, 0.45, 1) forwards;
+}
+@keyframes roulette-settle {
+  from {
+    transform: translateX(var(--roulette-start));
+  }
+  to {
+    transform: translateX(var(--roulette-end));
+  }
+}
+.roulette-strip.invite-draw-strip {
+  transform: translateX(0);
+}
+.invite-random {
+  min-width: 0;
+}
+.invite-random .roulette-panel {
+  width: 100%;
+}
+.league-member-row .coach-pixel-portrait {
+  width: 52px;
+  height: 64px;
+  flex: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .roulette-strip.rolling {
+    animation-duration: 0.01s;
+  }
+}

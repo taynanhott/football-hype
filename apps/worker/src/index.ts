@@ -99,7 +99,7 @@ export class GameHub extends DurableObject<Env> {
         return { id: await this.service.create(identity, await body()) };
     }
     const match =
-      /^\/api\/leagues\/([0-9a-f-]+)\/(preview|request|decide|leave|delete|reset|kick|players)$/.exec(
+      /^\/api\/leagues\/([0-9a-f-]+)\/(profile|preview|request|decide|leave|delete|reset|kick|players)$/.exec(
         url.pathname,
       );
     if (!match?.[1]) throw new Error('Não encontrado');
@@ -115,6 +115,9 @@ export class GameHub extends DurableObject<Env> {
       );
     if (request.method !== 'POST') throw new Error('Método não permitido');
     switch (match[2]) {
+      case 'profile':
+        await this.service.updateCoach(id, identity.userId, await body());
+        break;
       case 'preview':
         return this.service.invitation(id, await body(), identity.userId);
       case 'request':

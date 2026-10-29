@@ -24,6 +24,7 @@ import {
   pendingFixtures,
 } from '@football/domain';
 import {
+  coachProfileSchema,
   MATCH_DURATION_MS,
   commandSchema,
   connectOptionsSchema,
@@ -140,7 +141,7 @@ export class LeagueService {
       }
       if (options.assignment === 'random') {
         const available = state.clubs.ids.filter((id) => state.clubs.byId[id]?.country === 'BR');
-        const clubId = available[Math.floor(Math.random() * available.length)];
+        const clubId = available[randomInt(available.length)];
         if (clubId) state.participants = [{ userId: identity.userId, clubId, ready: false }];
       }
       state = {
@@ -253,7 +254,7 @@ export class LeagueService {
       const state = saved?.state;
       const member = state?.participants.find((p) => p.userId === userId);
       if (!state || state.deletedAt || !member)
-        throw new Error('Acesso negado. Solicite entrada por convite e aguarde aprovação');
+        throw new Error('Acesso negado. Entre na liga com um convite');
       if (this.now() - (member.lastSeenAt ?? 0) < 60000) return;
       await this.commit(
         state,
@@ -265,6 +266,33 @@ export class LeagueService {
         },
         userId,
         'Presença atualizada',
+      );
+    });
+  }
+  async updateCoach(id: string, userId: string, input: unknown) {
+    const coach = coachProfileSchema.parse(input);
+    return this.serial(id, async () => {
+      const state = (await this.repository.load(id, { eventPatches: false }))?.state;
+      if (!state || state.deletedAt || !state.participants.some((p) => p.userId === userId))
+        throw new Error('Acesso negado');
+      await this.commit(
+        state,
+        {
+          ...state,
+          clubs: {
+            ...state.clubs,
+            byId: {
+              ...state.clubs.byId,
+              [state.participants.find((p) => p.userId === userId)!.clubId]: {
+                ...state.clubs.byId[state.participants.find((p) => p.userId === userId)!.clubId]!,
+                coachName: coach.name,
+              },
+            },
+          },
+          participants: state.participants.map((p) => (p.userId === userId ? { ...p, coach } : p)),
+        },
+        userId,
+        'Perfil do técnico atualizado',
       );
     });
   }
@@ -317,7 +345,8 @@ export class LeagueService {
         data.code !== state.inviteCode
       )
         throw new Error('Convite inválido');
-      if (state.participants.some((p) => p.userId === identity.userId)) return;
+      const member = state.participants.find((p) => p.userId === identity.userId);
+      if (member) return { rejoined: true, clubId: member.clubId };
       const returningClub = state.returningClubs?.[identity.userId];
       if (returningClub) {
         this.availableClub(state, returningClub, identity.userId);
@@ -342,27 +371,38 @@ export class LeagueService {
           identity.userId,
           'Treinador retornou ao clube anterior',
         );
-        return { rejoined: true };
+        return { rejoined: true, clubId: returningClub };
       }
-      if (state.requests.length >= 100) throw new Error('Limite de solicitações atingido');
-      if (data.clubId && state.admission.assignment === 'chosen')
-        this.availableClub(state, data.clubId);
+      const available = state.clubs.ids.filter((clubId) => {
+        try {
+          this.availableClub(state, clubId);
+          return true;
+        } catch {
+          return false;
+        }
+      });
+      const clubId =
+        state.admission.assignment === 'random'
+          ? available.length
+            ? available[randomInt(available.length)]
+            : undefined
+          : data.clubId;
+      if (!clubId) throw new Error('Escolha um clube disponível');
+      this.availableClub(state, clubId);
       await this.commit(
         state,
         {
           ...state,
-          requests: [
-            ...state.requests.filter((p) => p.userId !== identity.userId),
-            {
-              userId: identity.userId,
-              requestedAt: this.now(),
-              ...(data.clubId ? { clubId: data.clubId } : {}),
-            },
+          participants: [
+            ...state.participants,
+            { userId: identity.userId, clubId, ready: false, lastSeenAt: this.now() },
           ],
+          requests: state.requests.filter((request) => request.userId !== identity.userId),
         },
         identity.userId,
-        'Nova solicitação de entrada',
+        'Entrada por convite',
       );
+      return { rejoined: true, clubId };
     });
   }
   private availableClub(state: import('@football/shared').WorldState, id: string, userId?: string) {
@@ -402,7 +442,7 @@ export class LeagueService {
           });
           const chosen =
             state.admission.assignment === 'random'
-              ? available[Math.floor(Math.random() * available.length)]
+              ? available[randomInt(available.length)]
               : (data.clubId ?? request.clubId);
           if (!chosen) throw new Error('Escolha um clube disponível ou use sorteio');
           this.availableClub(state, chosen);

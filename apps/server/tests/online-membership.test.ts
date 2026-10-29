@@ -20,8 +20,8 @@ async function setup() {
     },
   };
 }
-describe('convites, aprovação e vagas online', () => {
-  it('exige código e aprovação, permite reconectar e respeita divisão e sorteio', async () => {
+describe('convites e vagas online', () => {
+  it('entra imediatamente com código válido, permite reconectar e respeita divisão e sorteio', async () => {
     const { service, id, state } = await setup();
     await expect(service.join(id, guest)).rejects.toThrow('Acesso negado');
     await expect(service.requestEntry(id, guest, { code: 'errado' })).rejects.toThrow(
@@ -33,11 +33,8 @@ describe('convites, aprovação e vagas online', () => {
       assignment: 'random',
     });
     await service.requestEntry(id, guest, { code: state.inviteCode });
-    await expect(service.snapshot(id, guest.userId)).rejects.toThrow('Acesso negado');
-    await expect(
-      service.decide(id, guest, { userId: guest.userId, approve: true }),
-    ).rejects.toThrow('administrador');
-    await service.decide(id, host, { userId: guest.userId, approve: true });
+    expect((await service.snapshot(id, guest.userId)).state.requests).toHaveLength(0);
+
     await service.join(id, guest);
     const approved = (await service.snapshot(id, guest.userId)).state;
     const member = approved.participants.find((p) => p.userId === guest.userId);
@@ -54,7 +51,7 @@ describe('convites, aprovação e vagas online', () => {
       assignment: 'random',
     });
     await service.requestEntry(id, guest, { code: state.inviteCode });
-    await service.decide(id, host, { userId: guest.userId, approve: true });
+
     clock(start + 172800000 - 1);
     await service.touch(id, guest.userId);
     expect((await service.snapshot(id, host.userId)).state.participants).toHaveLength(2);
@@ -73,8 +70,7 @@ describe('convites, aprovação e vagas online', () => {
       assignment: 'random',
     });
     await service.requestEntry(id, guest, { code: state.inviteCode });
-    await service.decide(id, host, { userId: guest.userId, approve: true });
-    await expect(service.leave(id, guest.userId, true)).rejects.toThrow('administrador');
+
     await service.leave(id, guest.userId);
     expect(await service.list(guest.userId)).toHaveLength(0);
     await expect(service.snapshot(id, guest.userId)).rejects.toThrow('Acesso negado');
@@ -96,7 +92,7 @@ describe('convites, aprovação e vagas online', () => {
     const saved = (await repo.load(id))!;
     const humanClubs = new Set(saved.state.participants.map((participant) => participant.clubId));
     saved.state.results = saved.state.results.filter(
-      (result) => !humanClubs.has(result.homeId) && !humanClubs.has(result.awayId),
+      (result) => !humanClubs.has(result.homeId ?? '') && !humanClubs.has(result.awayId ?? ''),
     );
     expect(saved.state.results.length).toBeGreaterThan(0);
     await expect(service.command(id, host.userId, { type: 'advance' })).resolves.toBeTypeOf(

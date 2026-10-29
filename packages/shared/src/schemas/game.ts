@@ -136,12 +136,27 @@ export const matchResultSchema = z.strictObject({
     }),
   ),
 });
+export const coachProfileSchema = z.object({
+  name: z.string().trim().min(1).max(60),
+  skin: z.string().max(40),
+  hair: z.string().max(40),
+  beard: z.string().max(40),
+  outfit: z.string().max(40),
+  hairColor: z.string().max(40),
+  beardColor: z.string().max(40),
+  eyeColor: z.string().max(40),
+  secondary: z.string().max(40),
+  outfitStyle: z.string().max(40),
+  glasses: z.string().max(40),
+  glassesColor: z.string().max(40),
+});
 export const participantSchema = z.strictObject({
   userId: userIdSchema,
   clubId: entityIdSchema,
   ready: z.boolean(),
   lastSeenAt: countSchema.optional(),
   online: z.boolean().optional(),
+  coach: coachProfileSchema.optional(),
 });
 export const negotiationSchema = z.strictObject({
   expiresAt: z.number().optional(),

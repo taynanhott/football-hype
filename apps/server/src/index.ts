@@ -143,7 +143,7 @@ const http = createServer((request, response) => {
       return;
     }
     const action =
-      /^\/api\/leagues\/([0-9a-f-]+)\/(preview|request|decide|leave|delete|reset|kick)$/.exec(
+      /^\/api\/leagues\/([0-9a-f-]+)\/(profile|preview|request|decide|leave|delete|reset|kick)$/.exec(
         url.pathname,
       );
     if (action?.[1] && request.method === 'POST') {
@@ -161,6 +161,8 @@ const http = createServer((request, response) => {
         );
         return;
       }
+      if (action[2] === 'profile')
+        await service.updateCoach(id, identity.userId, await body(request));
       if (action[2] === 'kick') await service.kick(id, identity.userId, await body(request));
       if (action[2] === 'decide') await service.decide(id, identity, await body(request));
       if (action[2] === 'leave' || action[2] === 'delete')

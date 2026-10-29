@@ -25,6 +25,53 @@ afterEach(async () => {
 });
 
 describe('serviço autoritativo de ligas', () => {
+  it('salva entrada imediata e perfil do convidado após reiniciar o servidor', async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'football-invite-'));
+    directories.push(directory);
+    const repository = new LocalLeagueRepository(directory);
+    await repository.initialize();
+    const service = new LeagueService(repository, () => now);
+    const id = await service.create(host, { mode: 'multiplayer' });
+    const state = (await service.snapshot(id, host.userId)).state;
+    await service.command(id, host.userId, {
+      type: 'admission',
+      assignment: 'random',
+      division: null,
+    });
+    const joined = await service.requestEntry(id, guest, { code: state.inviteCode });
+    expect(joined?.clubId).toBeTruthy();
+    expect((await service.snapshot(id, guest.userId)).state.requests).toEqual([]);
+    expect(await service.requestEntry(id, guest, { code: state.inviteCode })).toEqual(joined);
+    const coach = {
+      name: 'Camila',
+      skin: '#c58d65',
+      hair: 'curto',
+      beard: 'nenhuma',
+      outfit: '#193e32',
+      hairColor: '#3c3129',
+      beardColor: '#3c3129',
+      eyeColor: '#234c40',
+      secondary: '#339c6b',
+      outfitStyle: 'agasalho',
+      glasses: 'nenhum',
+      glassesColor: '#222b30',
+    };
+    await service.updateCoach(id, guest.userId, coach);
+    await service.updateCoach(id, guest.userId, { ...coach, name: 'Camila Silva', hair: 'longo' });
+    await expect(service.updateCoach(id, 'intruso', coach)).rejects.toThrow('Acesso negado');
+    const reopened = new LocalLeagueRepository(directory);
+    await reopened.initialize();
+    const restored = new LeagueService(reopened, () => now);
+    expect((await restored.list(guest.userId)).map((league) => league.id)).toEqual([id]);
+    const member = (await restored.snapshot(id, guest.userId)).state.participants.find(
+      (p) => p.userId === guest.userId,
+    );
+    expect(member?.clubId).toBe(joined?.clubId);
+    expect(member?.coach).toEqual({ ...coach, name: 'Camila Silva', hair: 'longo' });
+    expect(
+      (await restored.snapshot(id, guest.userId)).state.clubs.byId[member!.clubId]?.coachName,
+    ).toBe('Camila Silva');
+  });
   it('sorteia um administrador entre os restantes e exclui a liga após a última saída', async () => {
     const repository = new LocalLeagueRepository(undefined);
     const service = new LeagueService(repository, () => now);
@@ -37,7 +84,6 @@ describe('serviço autoritativo de ligas', () => {
         (club) => !club.occupied,
       )!.id;
       await service.requestEntry(id, identity, { code, clubId });
-      await service.decide(id, host, { userId: identity.userId, approve: true, clubId });
     }
     await service.leave(id, host.userId);
     const remaining = (await service.snapshot(id, guest.userId)).state;
@@ -104,7 +150,7 @@ describe('serviço autoritativo de ligas', () => {
       assignment: 'random',
     });
     await service.requestEntry(world.id, guest, { code: saved.inviteCode });
-    await service.decide(world.id, host, { userId: guest.userId, approve: true });
+
     expect(
       (await service.snapshot(world.id, guest.userId)).state.participants.find(
         (member) => member.userId === guest.userId,
@@ -140,7 +186,7 @@ describe('serviço autoritativo de ligas', () => {
     const otherClub = initial.state.clubs.ids.find((clubId) => clubId !== oldClub)!;
     const code = initial.state.inviteCode!;
     await service.requestEntry(id, guest, { code, clubId: otherClub });
-    await service.decide(id, host, { userId: guest.userId, approve: true, clubId: otherClub });
+
     await service.leave(id, guest.userId, true);
     const preview = await service.invitation(id, { code }, guest.userId);
     expect(preview.clubs.map((club) => club.id)).toEqual([otherClub]);
@@ -151,6 +197,7 @@ describe('serviço autoritativo de ligas', () => {
     ).toBe(true);
     expect(await service.requestEntry(id, guest, { code, clubId: oldClub })).toEqual({
       rejoined: true,
+      clubId: otherClub,
     });
     expect(
       (await service.snapshot(id, guest.userId)).state.participants.find(
@@ -283,7 +330,7 @@ describe('serviço autoritativo de ligas', () => {
     const initial = (await service.snapshot(id, host.userId)).state;
     const available = initial.clubs.ids.find((clubId) => clubId !== own.clubId);
     await service.requestEntry(id, guest, { code: initial.inviteCode, clubId: available });
-    await service.decide(id, host, { userId: guest.userId, approve: true });
+
     await service.join(id, guest);
     await service.join(id, guest);
     expect((await service.snapshot(id, host.userId)).state.participants).toHaveLength(2);
@@ -295,7 +342,7 @@ describe('serviço autoritativo de ligas', () => {
     expect(snapshot.state.round).toBe(1);
     expect(snapshot.state.participants.every((participant) => !participant.ready)).toBe(true);
     expect(snapshot.tables['serie-a']).toHaveLength(20);
-    expect(snapshot.ledger).toHaveLength(5);
+    expect(snapshot.ledger).toHaveLength(4);
     await expect(
       service.command(id, host.userId, { type: 'hack', balance: 100 }),
     ).rejects.toThrow();

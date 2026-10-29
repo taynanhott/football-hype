@@ -1,3 +1,4 @@
+import { request } from '../features/leagues/api';
 import { CoachAvatar, CoachEditor } from './coach-profile';
 import { readCoach } from './coach-profile-storage';
 import { useSession } from '../features/auth/session';
@@ -60,7 +61,6 @@ function GameApp() {
     setLoadedProfileKey(profileKey);
     setCoach(readCoach(profileKey));
   }
-  const coachProfile = { ...coach, name: coach.name || user?.name || 'Treinador' };
 
   useLayoutEffect(() => {
     scrollPageToTop();
@@ -91,6 +91,25 @@ function GameApp() {
     clearError,
     connect,
   } = useGameStore();
+  const leagueId = snapshot?.state.id;
+  const remoteCoach = snapshot?.state.participants.find((p) => p.userId === userId)?.coach;
+  const coachProfile = remoteCoach ?? { ...coach, name: coach.name || user?.name || 'Técnico' };
+  useEffect(() => {
+    if (!leagueId || !connected) return;
+    const local = readCoach(profileKey);
+    if (remoteCoach) {
+      localStorage.setItem(profileKey, JSON.stringify(remoteCoach));
+    } else {
+      void request(`/api/leagues/${leagueId}/profile`, {
+        method: 'POST',
+        body: JSON.stringify({ ...local, name: local.name || user?.name || 'Técnico' }),
+      }).catch((reason: unknown) =>
+        useGameStore.setState({
+          error: reason instanceof Error ? reason.message : 'Falha ao salvar técnico',
+        }),
+      );
+    }
+  }, [leagueId, connected, profileKey, remoteCoach, user?.name]);
   const latestMatch = snapshot?.state.results
     .filter(
       (r) =>
@@ -138,7 +157,11 @@ function GameApp() {
       <CoachEditor
         key={profileKey}
         profile={coachProfile}
-        onSave={(profile) => {
+        onSave={async (profile) => {
+          await request(`/api/leagues/${state.id}/profile`, {
+            method: 'POST',
+            body: JSON.stringify(profile),
+          });
           localStorage.setItem(profileKey, JSON.stringify(profile));
           setCoach(profile);
         }}

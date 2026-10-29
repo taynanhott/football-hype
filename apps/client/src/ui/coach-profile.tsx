@@ -10,9 +10,11 @@ export function CoachEditor({
   onSave,
 }: {
   profile: CoachProfile;
-  onSave: (profile: CoachProfile) => void;
+  onSave: (profile: CoachProfile) => void | Promise<void>;
 }) {
   const [draft, setDraft] = useState(profile);
+  const [error, setError] = useState('');
+  const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const update = (patch: Partial<CoachProfile>) => {
     setDraft({ ...draft, ...patch });
@@ -21,12 +23,22 @@ export function CoachEditor({
   return (
     <form
       className="coach-editor"
-      onSubmit={(event) => {
+      onSubmit={async (event) => {
         event.preventDefault();
-        onSave({ ...draft, name: draft.name.trim() });
-        setSaved(true);
+        if (saving) return;
+        setSaving(true);
+        setError('');
+        try {
+          await onSave({ ...draft, name: draft.name.trim() });
+          setSaved(true);
+        } catch (reason) {
+          setError(reason instanceof Error ? reason.message : 'Falha ao salvar técnico');
+        } finally {
+          setSaving(false);
+        }
       }}
     >
+      {error && <p role="alert">{error}</p>}
       <div className="coach-preview">
         <CoachAvatar profile={draft} />
         <strong>{draft.name || 'Treinador'}</strong>
@@ -197,10 +209,10 @@ export function CoachEditor({
             </label>
           </div>
         </fieldset>
-        <button className="coach-save" type="submit">
+        <button className="coach-save" type="submit" disabled={saving}>
           Salvar treinador
         </button>
-        <span role="status">{saved ? '✓ Perfil salvo neste navegador' : ''}</span>
+        <span role="status">{saved ? '✓ Perfil salvo na carreira' : ''}</span>
       </div>
     </form>
   );
