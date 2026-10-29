@@ -1,4 +1,5 @@
 import { upgradeUnstartedCompetitions } from '../competitions/upgrade-formats.js';
+import { resolveRegionalQualifiers } from '../competitions/regional-qualifiers.js';
 import { advanceGameDays } from './daily-calendar.js';
 import { scheduledFixtures } from '../competitions/fixtures.js';
 import { normalizeRoundCalendar } from '../competitions/round-calendar.js';
@@ -327,6 +328,7 @@ export function playNextBatch(state: WorldState, processedAt: number): Result<Wo
       lastProcessedAt: scheduledAt,
     }),
   );
+  next = resolveRegionalQualifiers(next);
   if (!pendingFixtures(next).length) next = scheduleIntercontinental(next);
   next = normalizeRoundCalendar(next);
   const nextTime = pendingFixtures(next)[0]?.scheduledAt;

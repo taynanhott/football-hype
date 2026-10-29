@@ -58,3 +58,4 @@ export * from './competitions/upgrade-formats.js';
 
 export * from './competitions/competition-draws.js';
 export * from './competitions/cup-calendar.js';
+export * from './competitions/regional-qualifiers.js';

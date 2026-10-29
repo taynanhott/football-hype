@@ -1,4 +1,5 @@
 import { seasonStart } from '../competitions/season-calendar.js';
+import { scheduleRegionalQualifiers } from '../competitions/regional-qualifiers.js';
 import { prepareAcademy } from './academy.js';
 import { financialLimits, consumeTransferBudget } from '../finance/financial-management.js';
 import { manageClub, transferContext, upgradePrice } from './management.js';
@@ -789,6 +790,7 @@ function handleNewSeason({
             })),
         })),
         cups: state.cups,
+        ...(state.regionalQualifiers ? { regionalQualifiers: state.regionalQualifiers } : {}),
         ...(state.competitionNotes ? { competitionNotes: state.competitionNotes } : {}),
       },
     ],
@@ -800,6 +802,7 @@ function handleNewSeason({
     workload: {},
     participants: state.participants.map((member) => ({ ...member, ready: false })),
   };
+  next = scheduleRegionalQualifiers(state, next);
   type = 'season.started';
   message = `Temporada ${next.season} iniciada com acessos e descensos`;
   return success({ next, type, message, amount });

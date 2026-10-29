@@ -67,3 +67,11 @@ Cada sorteio tem um evento datado no calendário e um modal para consultar os pa
 Os dois vencedores da pré-Libertadores vão aos grupos da Libertadores e os dois perdedores à Sul-Americana. Os sorteios continentais aguardam o término da pré. O campeão da Sul-Americana recebe a vaga na Libertadores apenas na temporada seguinte. As listas fixas são usadas ao criar uma liga; as temporadas seguintes usam a classificação esportiva e os títulos.
 
 Ligas anteriores sem os eventos de sorteio mantêm sua estrutura; esta alteração não reinicia carreiras existentes.
+
+## Seletivas regionais nas próximas temporadas
+
+Em Torneios, as opções Seletiva do Nordeste, Seletiva Sul-Sudeste e Seletiva da Copa Verde permitem acompanhar as vagas da Série D. Na temporada atual, sem seletiva registrada, a interface informa que ela começa na próxima temporada.
+
+Na virada da temporada, após acessos e descensos, o campeão regional elegível garante uma vaga, seguido pelos clubes da Série B e da Série C por classificação anterior. Clubes da Série A são excluídos. Os clubes da Série D da região disputam as vagas restantes em turno único, sem mata-mata, com rodadas a cada três dias de jogo. Com quantidade ímpar, cada clube folga uma rodada. O prazo depende do tamanho do grupo: 13 clubes exigem 13 rodadas e 12 jogos por clube, sem limite artificial de 21 dias.
+
+Se todos os candidatos couberem nas vagas, eles entram diretamente; sem vagas restantes, não há jogos de seletiva naquela região. O sorteio da copa aguarda o encerramento de todos os jogos, recebe somente os classificados e mantém 16 participantes. A Série D nacional não é reativada para realizar a seletiva. As classificações e os jogos das seletivas concluídas são preservados no histórico da temporada.

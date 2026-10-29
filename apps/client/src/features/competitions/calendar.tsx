@@ -1,5 +1,5 @@
 import { CompetitionDrawCard } from './competition-draw-details';
-import { cupReturnDate } from '@football/domain';
+import { cupReturnDate, REGIONAL_QUALIFIERS } from '@football/domain';
 import { Icon } from '../../ui/icons';
 import { Select, Option } from '../../ui/select';
 import { useState } from 'react';
@@ -29,18 +29,28 @@ export function Calendar({ snapshot, club }: ViewProps) {
     ...(snapshot.state.seasonArchives ?? []).map((item) => item.season),
   ].sort((a, b) => b - a);
   const rule = COMPETITIONS.find((item) => item.id === competition);
-  const table = archive
-    ? rule?.format === 'league'
-      ? standings(
-          state.clubs.ids.filter((id) => state.clubs.byId[id]?.division === rule.division),
-          state.fixtures.filter(
-            (fixture) => fixture.competitionId === competition && !fixture.group,
-          ),
-          state.results,
-          rule.tieBreakers,
-        )
-      : undefined
-    : snapshot.tables[competition];
+  const qualifierRule = REGIONAL_QUALIFIERS.find((q) => q.id === competition);
+  const qualifier = (archive ? archive.regionalQualifiers : state.regionalQualifiers)?.find(
+    (q) => q.competitionId === competition,
+  );
+  const table = qualifier
+    ? standings(
+        qualifier.candidateIds,
+        state.fixtures.filter((f) => f.competitionId === competition),
+        state.results,
+      )
+    : archive
+      ? rule?.format === 'league'
+        ? standings(
+            state.clubs.ids.filter((id) => state.clubs.byId[id]?.division === rule.division),
+            state.fixtures.filter(
+              (fixture) => fixture.competitionId === competition && !fixture.group,
+            ),
+            state.results,
+            rule.tieBreakers,
+          )
+        : undefined
+      : snapshot.tables[competition];
   const knockoutFixtures: Fixture[] = state.cups
     .filter((node) => node.competitionId === competition && node.homeId && node.awayId)
     .flatMap((node) => {
@@ -129,6 +139,11 @@ export function Calendar({ snapshot, club }: ViewProps) {
                     {season}
                   </Option>
                 ))}
+                {REGIONAL_QUALIFIERS.map((q) => (
+                  <Option key={q.id} value={q.id}>
+                    {q.name}
+                  </Option>
+                ))}
               </Select>
             </label>
             <label>
@@ -200,7 +215,27 @@ export function Calendar({ snapshot, club }: ViewProps) {
           )}
         </p>
       )}
-      {pendingDraw ? (
+      {qualifierRule && (
+        <section className="panel">
+          <strong>
+            <Icon name="trophy" size={18} /> {qualifierRule.name}
+          </strong>
+          <p>
+            {qualifier
+              ? `${qualifier.candidateIds.length} clubes · ${qualifier.slots} vagas · Turno único · Sem mata-mata`
+              : 'A seletiva será criada no início da próxima temporada, após definir acessos, descensos e as vagas destinadas à Série D.'}
+          </p>
+          {qualifier && (
+            <p>
+              {qualifier.qualifiedIds !== undefined
+                ? `Classificação definida: ${qualifier.qualifiedIds.length} clube(s).`
+                : 'Os primeiros colocados conquistam as vagas. Um clube folga por rodada quando há número ímpar.'}{' '}
+              {qualifier.directIds.length} clubes já têm entrada direta na copa.
+            </p>
+          )}
+        </section>
+      )}
+      {qualifierRule && !qualifier ? null : pendingDraw ? (
         <CompetitionDrawCard state={state} draw={pendingDraw} />
       ) : activeTab === 'table' && table ? (
         <StandingsTable state={state} table={table} competitionId={competition} clubId={club.id} />

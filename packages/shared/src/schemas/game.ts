@@ -195,6 +195,18 @@ export const worldStateSchema = z.strictObject({
         results: z.array(matchResultSchema),
         cups: z.array(cupNodeSchema),
         competitionNotes: z.record(z.string(), z.string()).optional(),
+        regionalQualifiers: z
+          .array(
+            z.object({
+              competitionId: z.string(),
+              cupId: z.string(),
+              candidateIds: z.array(z.string()),
+              directIds: z.array(z.string()),
+              slots: z.number().int().nonnegative(),
+              qualifiedIds: z.array(z.string()).optional(),
+            }),
+          )
+          .optional(),
       }),
     )
     .optional(),
@@ -265,6 +277,18 @@ export const worldStateSchema = z.strictObject({
   calendarAnchor: z.object({ realAt: countSchema, gameAt: countSchema }).optional(),
   createdAt: countSchema,
   competitionNotes: z.record(z.string(), z.string()).optional(),
+  regionalQualifiers: z
+    .array(
+      z.object({
+        competitionId: z.string(),
+        cupId: z.string(),
+        candidateIds: z.array(z.string()),
+        directIds: z.array(z.string()),
+        slots: z.number().int().nonnegative(),
+        qualifiedIds: z.array(z.string()).optional(),
+      }),
+    )
+    .optional(),
   roundDates: z.record(z.string(), z.number()).optional(),
   roundCalendarVersion: z.number().optional(),
   competitionDraws: z

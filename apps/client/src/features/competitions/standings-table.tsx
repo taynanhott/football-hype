@@ -14,6 +14,7 @@ export function StandingsTable({ state, table, competitionId, clubId, group }: P
   const places = competitionId === 'serie-a' ? continentalPlaces(state) : [];
   const promotedD = competitionId === 'serie-d' ? regionalPromotions(state) : [];
   const rule = COMPETITIONS.find((item) => item.id === competitionId);
+  const qualifier = state.regionalQualifiers?.find((q) => q.competitionId === competitionId);
   const fixtures = new Map(
     state.fixtures
       .filter(
@@ -48,6 +49,9 @@ export function StandingsTable({ state, table, competitionId, clubId, group }: P
         },
       ]
     : [
+        ...(qualifier?.slots
+          ? [{ key: 'promotion', name: 'Vaga na copa regional', count: qualifier.slots }]
+          : []),
         ...(rule?.promote ? [{ key: 'promotion', name: 'Acesso', count: rule.promote }] : []),
         ...(rule?.continental
           ? [{ key: 'continental', name: 'Libertadores', count: rule.continental }]
@@ -60,6 +64,7 @@ export function StandingsTable({ state, table, competitionId, clubId, group }: P
           : []),
       ];
   function zone(index: number) {
+    if (qualifier) return index < qualifier.slots ? 'promotion' : '';
     if (group) return index < (rule?.advancement === 'mineiro' ? 1 : 2) ? 'promotion' : '';
     if (competitionId === 'serie-a') {
       const place = places.find((place) => place.clubId === table[index]?.id);
