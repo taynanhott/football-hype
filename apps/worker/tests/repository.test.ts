@@ -35,6 +35,10 @@ describe('Durable SQLite: atomicidade e recuperação', () => {
     const service = new LeagueService(repo, () => Date.parse('2026-10-28T15:00:00Z'), provider);
     const user = { userId: 'durable-test-user', name: 'Treinador', guest: true };
     try {
+      const soloId = await service.create(user, { mode: 'offline' });
+      const soloReload = new DurableLeagueRepository(sql, atomic);
+      expect((await soloReload.load(soloId))?.state.mode).toBe('offline');
+      await repo.remove(soloId, user.userId, Date.now());
       const draw = await service.draw(user, { mode: 'multiplayer', division: 'A' });
       expect(await service.draw(user, { mode: 'multiplayer', division: 'B' })).toEqual(draw);
       const id = await service.create(user, { mode: 'multiplayer' });

@@ -45,7 +45,10 @@ export class DurableLeagueRepository implements LeagueRepository {
   }
   private write(id: string, branch: string, value: unknown) {
     const json = JSON.stringify(value);
-    if (json === undefined) throw new Error('Estado inválido');
+    if (json === undefined) {
+      this.sql.exec('DELETE FROM chunks WHERE league_id=? AND branch=?', id, branch);
+      return;
+    }
     this.sql.exec('DELETE FROM chunks WHERE league_id=? AND branch=?', id, branch);
     for (let offset = 0; offset < json.length; offset += 32768)
       this.sql.exec(
