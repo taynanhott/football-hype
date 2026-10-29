@@ -41,11 +41,12 @@ export function pendingFixtures(state: WorldState): Fixture[] {
 }
 export function playNextBatch(state: WorldState, processedAt: number): Result<WorldState> {
   state = normalizeRoundCalendar(upgradeUnstartedCompetitions(state));
-  const pending = pendingFixtures(state);
+  let pending = pendingFixtures(state);
   const scheduledAt = pending[0]?.scheduledAt;
   if (scheduledAt === undefined)
     return failure(domainError('VALIDATION_ERROR', 'Não existem partidas pendentes'));
   state = settleMonthly(advanceGameDays(state, scheduledAt), scheduledAt);
+  pending = pendingFixtures(state);
   const batch = state.seasonClock
     ? scheduledBatches(pending)[0]!
     : pending.filter((fixture) => fixture.scheduledAt === scheduledAt);

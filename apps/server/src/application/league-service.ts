@@ -118,6 +118,7 @@ export class LeagueService {
         name: options.name,
         mode: options.mode,
         now: this.now(),
+        seed: randomInt(1, 2147483647),
         ...(options.clubId ? { clubId: options.clubId } : {}),
       });
       if (!generated.ok) throw new Error(generated.error.message);

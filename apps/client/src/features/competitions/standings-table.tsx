@@ -38,7 +38,9 @@ export function StandingsTable({ state, table, competitionId, clubId, group }: P
             competitionId === 'serie-c'
               ? 'Acesso à Série B'
               : rule?.advancement === 'sudamericana'
-                ? '1º: oitavas · 2º: playoff'
+                ? rule.groupCount === 4
+                  ? '1º: quartas · 2º: playoff'
+                  : '1º: oitavas · 2º: playoff'
                 : rule?.advancement === 'mineiro'
                   ? 'Líder e melhor segundo geral avançam'
                   : 'Classificados para o mata-mata',
@@ -137,7 +139,7 @@ export function StandingsTable({ state, table, competitionId, clubId, group }: P
                       <PixelBadge
                         name={team?.name ?? 'Clube'}
                         {...(team?.crestUrl ? { url: team.crestUrl } : {})}
-                        size={18}
+                        size={group && rule?.groupCount === 4 ? 24 : 18}
                       />
                       <span>{team?.name ?? 'Clube'}</span>
                       {places.find((place) => place.clubId === row.id)?.origin === 'title' && (

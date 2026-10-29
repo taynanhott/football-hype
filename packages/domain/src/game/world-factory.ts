@@ -1,4 +1,8 @@
 import {
+  fixedCupParticipants,
+  shuffleCupParticipants,
+} from '../competitions/fixed-participants.js';
+import {
   seasonStart,
   competitionDates,
   SEASON_CALENDAR_VERSION,
@@ -253,7 +257,7 @@ export function createWorld(input: {
     clubs.find((club) => club.id === input.clubId && club.country === 'BR') ?? clubs[0];
   if (!ownClub) return parseBoundary(worldStateSchema, null);
   const initialDate = seasonStart(new Date(input.now).getUTCFullYear());
-  const schedule = seasonSchedule(clubs, initialDate);
+  const schedule = seasonSchedule(clubs, initialDate, undefined, seed);
   return mapResult(
     parseBoundary(worldStateSchema, {
       id: input.id,
@@ -330,13 +334,16 @@ export function seasonSchedule(
     serieB?: readonly string[];
     preLibertadores?: readonly string[];
   }>,
+  drawSeed = start,
 ): {
   fixtures: Fixture[];
   cups: CupNode[];
   nextScheduledAt: number;
   competitionNotes: Record<string, string>;
   competitionRulesVersion: number;
+  competitionDraws: NonNullable<WorldState['competitionDraws']>;
 } {
+  const competitionDraws: NonNullable<WorldState['competitionDraws']> = [];
   const year = new Date(start).getUTCFullYear();
   const fixtures: Fixture[] = [];
   const cups: CupNode[] = [];
@@ -376,11 +383,54 @@ export function seasonSchedule(
   for (let index = 0; index < 32; index++)
     for (const ids of foreignByCountry.values()) if (ids[index]) foreignPool.push(ids[index]!);
   const usedForeign = new Set<string>();
+  if (!qualifications) {
+    const pre = fixedCupParticipants(clubs, 'pre-libertadores');
+    if (pre && !pre.missing.length) {
+      const ids = shuffleCupParticipants(pre.participants, drawSeed, 'pre-libertadores');
+      competitionDraws.push({
+        id: `draw:pre-libertadores:${year}`,
+        competitionId: 'pre-libertadores',
+        scheduledAt: seasonStart(year) + 86400000,
+        participantIds: pre.participants,
+        kind: 'knockout',
+        seed: drawSeed,
+      });
+      for (let i = 0; i < ids.length; i += 2)
+        cups.push({
+          id: `pre-libertadores:${i / 2}`,
+          competitionId: 'pre-libertadores',
+          round: 0,
+          homeId: ids[i]!,
+          awayId: ids[i + 1]!,
+          leftId: null,
+          rightId: null,
+          winnerId: null,
+          scheduledAt: competitionDates('pre-libertadores', year, 1)[0]!,
+          legs: 2,
+          label: 'Pré-Libertadores',
+        });
+    }
+  }
   for (const rule of cupRules) {
     let selected: string[] = [];
     const official = CUP_PARTICIPANTS_2026[rule.id];
     const genericRegional = ['copa-nordeste', 'copa-verde', 'copa-sul-sudeste'].includes(rule.id);
-    if (genericRegional) {
+    const fixed = !qualifications ? fixedCupParticipants(clubs, rule.id) : undefined;
+    if (fixed) {
+      if (fixed.missing.length) {
+        competitionNotes[rule.id] = 'Participantes ausentes na base: ' + fixed.missing.join(', ');
+        continue;
+      }
+      selected = shuffleCupParticipants(fixed.participants, drawSeed, rule.id);
+      competitionDraws.push({
+        id: `draw:${rule.id}:${year}`,
+        competitionId: rule.id,
+        scheduledAt: seasonStart(year) + (competitionDraws.length + 1) * 86400000,
+        participantIds: [...fixed.participants],
+        kind: rule.groupSize ? 'groups' : 'knockout',
+        seed: drawSeed,
+      });
+    } else if (genericRegional) {
       const pool = clubs.filter(
         (club) => club.country === 'BR' && club.division !== 'A' && club.playerIds.length >= 11,
       );
@@ -438,10 +488,12 @@ export function seasonSchedule(
         }
       }
       const needed = rule.teamCount - domestic.length;
-      const availableForeign = foreignPool.filter((id) => !usedForeign.has(id));
+      const availableForeign = foreignPool.filter(
+        (id) => !usedForeign.has(id) && !domestic.includes(id),
+      );
       const foreigners = availableForeign.slice(0, needed);
       selected = [...domestic, ...foreigners];
-      foreigners.forEach((id) => usedForeign.add(id));
+      selected.forEach((id) => usedForeign.add(id));
       if (selected.length < rule.teamCount) {
         competitionNotes[rule.id] = 'Base insuficiente para completar os grupos da competição.';
         continue;
@@ -500,6 +552,28 @@ export function seasonSchedule(
         .slice(0, rule.teamCount)
         .map((club) => club.id);
     }
+    if (
+      !fixed &&
+      selected.length === rule.teamCount &&
+      [
+        'copa-brasil',
+        'libertadores',
+        'sul-americana',
+        'copa-sul-sudeste',
+        'copa-nordeste',
+        'copa-verde',
+      ].includes(rule.id)
+    ) {
+      selected = shuffleCupParticipants(selected, drawSeed, rule.id);
+      competitionDraws.push({
+        id: `draw:${rule.id}:${year}`,
+        competitionId: rule.id,
+        scheduledAt: seasonStart(year) + (competitionDraws.length + 1) * 86400000,
+        participantIds: [...selected],
+        kind: rule.groupSize ? 'groups' : 'knockout',
+        seed: drawSeed,
+      });
+    }
     if (rule.groupSize) {
       if (selected.length !== rule.teamCount) {
         competitionNotes[rule.id] =
@@ -537,6 +611,7 @@ export function seasonSchedule(
   return {
     fixtures,
     cups,
+    competitionDraws,
     competitionNotes,
     competitionRulesVersion: SEASON_CALENDAR_VERSION,
     nextScheduledAt: Math.min(

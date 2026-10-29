@@ -55,3 +55,5 @@ export * from './game/daily-calendar.js';
 export * from './competitions/round-calendar.js';
 
 export * from './competitions/upgrade-formats.js';
+
+export * from './competitions/competition-draws.js';

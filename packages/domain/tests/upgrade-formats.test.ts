@@ -3,7 +3,7 @@ import { createWorld } from '../src/game/world-factory.js';
 import { groupFixtures } from '../src/competitions/cup-groups.js';
 import { upgradeUnstartedCompetitions } from '../src/competitions/upgrade-formats.js';
 import { seasonStart } from '../src/competitions/season-calendar.js';
-it.each(['libertadores', 'copa-nordeste', 'copa-verde', 'copa-sul-sudeste'])(
+it.each(['libertadores', 'sul-americana', 'copa-nordeste', 'copa-verde', 'copa-sul-sudeste'])(
   'converte %s de A–H para A–D e mantém o treinador',
   (competitionId) => {
     const world = createWorld({

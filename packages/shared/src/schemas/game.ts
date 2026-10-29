@@ -267,6 +267,19 @@ export const worldStateSchema = z.strictObject({
   competitionNotes: z.record(z.string(), z.string()).optional(),
   roundDates: z.record(z.string(), z.number()).optional(),
   roundCalendarVersion: z.number().optional(),
+  competitionDraws: z
+    .array(
+      z.object({
+        id: z.string(),
+        competitionId: z.string(),
+        scheduledAt: z.number(),
+        participantIds: z.array(z.string()),
+        completedAt: z.number().optional(),
+        kind: z.enum(['groups', 'knockout']),
+        seed: z.number(),
+      }),
+    )
+    .optional(),
   competitionRulesVersion: z.number().int().nonnegative().optional(),
   management: z
     .object({

@@ -29,6 +29,11 @@ function world() {
     scheduledAt: at(day),
   }));
   state.cups = [];
+  state.competitionDraws = [];
+  state.roundCalendarVersion = 1;
+  state.roundDates = Object.fromEntries(
+    state.fixtures.map((f) => ['serie-a:league:' + f.round, f.scheduledAt]),
+  );
   state.lastProcessedAt = at(11);
   const player = state.players.byId[club.playerIds[0]!]!;
   state.players = {
@@ -38,6 +43,42 @@ function world() {
   return { state, club, player };
 }
 describe('dias da temporada', () => {
+  it('treina no dia de sorteio com a carga e o plano individual selecionados, uma única vez', () => {
+    const { state, club, player } = world();
+    state.competitionDraws = [
+      {
+        id: 'draw-training',
+        competitionId: 'copa-brasil',
+        scheduledAt: at(11),
+        participantIds: [club.id],
+        kind: 'knockout',
+        seed: 1,
+        completedAt: at(11),
+      },
+    ];
+    const center = state.centers.byId[club.trainingCenterId]!;
+    state.centers = {
+      ...state.centers,
+      byId: {
+        ...state.centers.byId,
+        [center.id]: {
+          ...center,
+          operations: {
+            load: 'intense',
+            fitness: [],
+            medical: [],
+            syringe: false,
+            individual: [{ playerId: player.id, startedAt: at(11), endsAt: at(20) }],
+          },
+        },
+      },
+    };
+    const trained = advanceGameDays(state, at(12));
+    expect(trained.development[player.id]).toBeCloseTo(
+      (state.development[player.id] ?? 0) + 0.006 * center.levels.coaching * 1.5 * 1.5,
+    );
+    expect(advanceGameDays(trained, at(12))).toBe(trained);
+  });
   it('usa a mesma programação para o calendário e a simulação', () => {
     const { state, club } = world();
     expect(

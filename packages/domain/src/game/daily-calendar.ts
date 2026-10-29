@@ -1,3 +1,5 @@
+import { normalizeRoundCalendar } from '../competitions/round-calendar.js';
+import { realizeCompetitionDraws } from '../competitions/competition-draws.js';
 import { GAMEPLAY, type Fixture, type WorldState } from '@football/shared';
 import { scheduledFixtures } from '../competitions/fixtures.js';
 import { revalueGrowth } from '../players/development.js';
@@ -32,7 +34,7 @@ function routineAt(dates: Set<number>, day: number): DayRoutine {
 }
 
 /** Complete each elapsed game day once; manual and real-time advancement share this path. */
-export function advanceGameDays(state: WorldState, target: number): WorldState {
+function advanceGameDaysInternal(state: WorldState, target: number): WorldState {
   const start = gameDayStart(state.lastProcessedAt);
   const end = gameDayStart(target);
   if (end <= start) return finishIndividualCycles(state, target);
@@ -48,9 +50,14 @@ export function advanceGameDays(state: WorldState, target: number): WorldState {
   const centers = { ...state.centers.byId };
   const injuries = { ...state.injuries };
   const development = { ...state.development };
+  const drawDays = new Set(
+    (state.competitionDraws ?? []).map((draw) => gameDayStart(draw.scheduledAt)),
+  );
   for (let day = start; day < end; day += GAME_DAY_MS) {
     for (const center of Object.values(centers)) {
-      const routine = routineAt(dates.get(center.clubId) ?? new Set(), day);
+      const scheduledRoutine = routineAt(dates.get(center.clubId) ?? new Set(), day);
+      const routine =
+        drawDays.has(day) && scheduledRoutine !== 'match' ? 'training' : scheduledRoutine;
       const ops = center.operations ?? {
         load: 'moderate' as const,
         fitness: [],
@@ -184,5 +191,12 @@ export function realTimeGameDate(state: WorldState, nextGameAt: number, realNow:
   return Math.max(
     state.lastProcessedAt,
     Math.min(nextGameAt, anchor.gameAt + fraction * (nextGameAt - anchor.gameAt)),
+  );
+}
+
+export function advanceGameDays(state: WorldState, target: number): WorldState {
+  return realizeCompetitionDraws(
+    advanceGameDaysInternal(normalizeRoundCalendar(state), target),
+    target,
   );
 }

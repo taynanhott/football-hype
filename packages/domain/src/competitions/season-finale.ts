@@ -3,6 +3,7 @@ import { cupFinal } from './qualification.js';
 import { nextPlayingTime } from './calendar.js';
 
 export function applyPreLibertadores(state: WorldState): WorldState {
+  if (state.competitionDraws?.some((draw) => draw.competitionId === 'libertadores')) return state;
   let fixtures = state.fixtures;
   for (const node of state.cups.filter(
     (node) => node.competitionId === 'pre-libertadores' && node.winnerId && node.homeId,

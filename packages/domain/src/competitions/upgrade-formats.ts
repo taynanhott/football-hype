@@ -8,7 +8,8 @@ export function upgradeUnstartedCompetitions(state: WorldState): WorldState {
   let cups = state.cups;
   const changed = new Set<string>();
   const played = new Set(state.results.map((r) => r.fixtureId));
-  for (const id of ['libertadores', ...regional]) {
+  for (const id of ['libertadores', 'sul-americana', ...regional]) {
+    if (state.competitionDraws?.some((draw) => draw.competitionId === id)) continue;
     const current = fixtures.filter((f) => f.competitionId === id && f.group);
     if (
       !current.length ||

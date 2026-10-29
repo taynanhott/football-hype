@@ -2,7 +2,7 @@ import { seasonStart } from '../competitions/season-calendar.js';
 import { prepareAcademy } from './academy.js';
 import { financialLimits, consumeTransferBudget } from '../finance/financial-management.js';
 import { manageClub, transferContext, upgradePrice } from './management.js';
-import { continentalPlaces, regionalPromotions } from '../competitions/qualification.js';
+import { continentalPlaces, regionalPromotions, cupFinal } from '../competitions/qualification.js';
 import { scheduledFixtures } from '../competitions/fixtures.js';
 import {
   COMPETITIONS,
@@ -681,6 +681,8 @@ function handleNewSeason({
   const libertadores = slots
     .filter((place) => place.competition === 'libertadores')
     .map((place) => place.clubId);
+  const sulaChampion = cupFinal(state, 'sul-americana')?.winnerId;
+  if (sulaChampion && !libertadores.includes(sulaChampion)) libertadores.push(sulaChampion);
   const sulAmericana = slots
     .filter((place) => place.competition === 'sul-americana')
     .map((place) => place.clubId);

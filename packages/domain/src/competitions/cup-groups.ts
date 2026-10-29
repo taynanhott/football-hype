@@ -189,7 +189,7 @@ export function qualifyCupGroups(state: WorldState): WorldState {
           winnerId: null,
           scheduledAt: playoffDate,
           legs: 2,
-          label: 'Playoff das oitavas',
+          label: groups.length === 4 ? 'Playoff das quartas' : 'Playoff das oitavas',
         });
       });
       cups.push(...nodes.map((node) => ({ ...node, round: node.round + 1 })));

@@ -1,3 +1,4 @@
+import { CompetitionDrawCard } from './competition-draw-details';
 import { cupReturnDate } from '@football/domain';
 import { Icon } from '../../ui/icons';
 import { Select, Option } from '../../ui/select';
@@ -102,6 +103,11 @@ export function Calendar({ snapshot, club }: ViewProps) {
       )
     : [];
   const displayedFixtures = activeTab === 'next' ? nextRound : fixtures;
+  const pendingDraw = !archive
+    ? state.competitionDraws?.find(
+        (draw) => draw.competitionId === competition && draw.completedAt === undefined,
+      )
+    : undefined;
   const groups = cupGroupTables(state, competition);
   const knockoutReady = state.cups.some(
     (node) => node.competitionId === competition && node.homeId && node.awayId,
@@ -194,7 +200,9 @@ export function Calendar({ snapshot, club }: ViewProps) {
           )}
         </p>
       )}
-      {activeTab === 'table' && table ? (
+      {pendingDraw ? (
+        <CompetitionDrawCard state={state} draw={pendingDraw} />
+      ) : activeTab === 'table' && table ? (
         <StandingsTable state={state} table={table} competitionId={competition} clubId={club.id} />
       ) : activeTab === 'table' ? (
         <div className="cup-overview">
@@ -222,7 +230,7 @@ export function Calendar({ snapshot, club }: ViewProps) {
           )}
           {groups.length > 0 && activeCupStage === 'groups' ? (
             <div
-              className={`cup-group-tables ${competition === 'libertadores' ? 'libertadores-groups' : ''}`}
+              className={`cup-group-tables ${['libertadores', 'sul-americana', 'copa-nordeste', 'copa-verde', 'copa-sul-sudeste'].includes(competition) && groups.length === 4 ? 'libertadores-groups four-group-layout' : ''}`}
             >
               {groups.map(({ group, table }) => (
                 <StandingsTable

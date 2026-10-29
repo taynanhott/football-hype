@@ -100,7 +100,7 @@
     "name": "Sul-Americana",
     "format": "knockout",
     "division": null,
-    "teamCount": 32,
+    "teamCount": 16,
     "legs": 2,
     "promote": 0,
     "relegate": 0,
@@ -109,10 +109,10 @@
     "tieBreakers": ["points", "goalDifference", "goalsFor", "id"],
     "groupSize": 4,
     "groupLegs": 2,
-    "groupCount": 8,
+    "groupCount": 4,
     "groupMode": "internal",
     "finalLegs": 1,
-    "advancement": "sudamericana",
+    "advancement": "top-two",
     "regulationUrl": "https://cdn.conmebol.com/wp-content/uploads/2025/12/Manual-de-Clubes-CONMEBOL-Sudamericana-2026-ESP.pdf"
   },
   {

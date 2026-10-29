@@ -32,7 +32,12 @@ export function importDataset(state: WorldState, input: unknown): Result<WorldSt
         ),
       );
     const correctedClubs = correctSerieC2026(dataset.clubs);
-    const schedule = seasonSchedule(Object.values(correctedClubs.byId), state.createdAt);
+    const schedule = seasonSchedule(
+      Object.values(correctedClubs.byId),
+      state.createdAt,
+      undefined,
+      state.seed,
+    );
     const supplied = dataset.fixtures?.map((game) => {
       const count =
         Math.max(
@@ -70,6 +75,7 @@ export function importDataset(state: WorldState, input: unknown): Result<WorldSt
         fixtures,
         cups,
         competitionNotes: schedule.competitionNotes,
+        competitionDraws: schedule.competitionDraws,
         competitionRulesVersion: schedule.competitionRulesVersion,
         participants: state.participants.map((member) => ({ ...member, clubId: club.id })),
         nextScheduledAt: state.seasonClock

@@ -55,3 +55,13 @@ Referências: https://developers.cloudflare.com/durable-objects/platform/pricing
 ## Uso local em um comando
 
 Com apps/client/.env.development.local apontando DEV_GAME_SERVER_TARGET para http://127.0.0.1:8788 e VITE_GAME_TRANSPORT=cloudflare, execute pnpm dev:local na raiz. O comando inicia a interface em http://localhost:5173 e o Worker local em 8788. As carreiras ficam em apps/worker/.wrangler/state, separadas da produção. Login Google e App Check ainda precisam de internet e configuração Firebase para localhost. Para encerrar, pressione Ctrl+C no terminal.
+
+## Participantes e sorteios de novas ligas
+
+As listas iniciais das sete copas são definidas em `packages/shared/src/config/fixed-cup-entrants.ts`, conforme a seleção do proprietário do jogo. Nenhum clube ausente é substituído silenciosamente por outro. Os grupos e confrontos dependem da semente persistida de cada liga e não seguem a ordem das listas.
+
+Cada sorteio tem um evento datado no calendário e um modal para consultar os participantes e o resultado. O avanço dos dias registra a realização do sorteio; reconexões não refazem o resultado. As tabelas e partidas dessas copas são ocultadas na interface enquanto o sorteio está pendente.
+
+Os dois vencedores da pré-Libertadores vão aos grupos da Libertadores e os dois perdedores à Sul-Americana. Os sorteios continentais aguardam o término da pré. O campeão da Sul-Americana recebe a vaga na Libertadores apenas na temporada seguinte. As listas fixas são usadas ao criar uma liga; as temporadas seguintes usam a classificação esportiva e os títulos.
+
+Ligas anteriores sem os eventos de sorteio mantêm sua estrutura; esta alteração não reinicia carreiras existentes.
