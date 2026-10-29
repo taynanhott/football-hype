@@ -12,6 +12,8 @@ Este é o destino atual do backend. Oracle/PostgreSQL ficam como alternativa, se
 
 ## Publicar
 
+Para publicar a interface pelo Workers Builds, mantenha a raiz do repositório como diretório de trabalho e use `pnpm --filter @football/client... build` no build e `pnpm run deploy` na publicação. O Wrangler é uma dependência da raiz, que utiliza `wrangler.jsonc` para publicar os arquivos em `apps/client/dist`. O comando padrão `npx wrangler deploy` também encontra essa dependência após a instalação. O backend usa o comando separado abaixo.
+
 Execute `pnpm --filter @football/worker run deploy`. O comando prepara a base de jogadores como asset e publica código, binding e migração SQLite. Anote a URL `https://football-hype-game.SEUSUBDOMINIO.workers.dev` retornada. Não precisa de domínio comprado, chave de serviço Firebase, Docker ou senha de banco.
 
 Confira `https://URL_DO_WORKER/health`. No build da interface, configure:

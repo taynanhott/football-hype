@@ -8,6 +8,9 @@ importers:
 
   .:
     devDependencies:
+      wrangler:
+        specifier: ^4.0.0
+        version: 4.154.0(@cloudflare/workers-types@5.20261029.1)(@types/node@22.20.5)
       '@commitlint/cli':
         specifier: ^20.0.0
         version: 20.5.3(@types/node@22.20.5)(conventional-commits-parser@6.4.0)(typescript@5.9.3)

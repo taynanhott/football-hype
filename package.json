@@ -7,6 +7,7 @@
     "pnpm": ">=11 <12"
   },
   "scripts": {
+    "deploy": "wrangler deploy --config wrangler.jsonc",
     "dev": "turbo run dev",
     "assets": "node scripts/generate-models.mjs",
     "data:fetch": "pnpm --filter @football/server exec tsx --env-file-if-exists=.env src/providers/cli.ts",
@@ -31,6 +32,7 @@
     "dev:online": "turbo run dev --filter=@football/client"
   },
   "devDependencies": {
+    "wrangler": "^4.0.0",
     "@commitlint/cli": "^20.0.0",
     "@commitlint/config-conventional": "^20.0.0",
     "@eslint/js": "^9.39.0",
