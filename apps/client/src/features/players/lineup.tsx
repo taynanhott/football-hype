@@ -630,7 +630,7 @@ export function LineupEditor({ snapshot, club, center }: ViewProps) {
                               {state.injuries[player.id] && medicallyAvailable(state, player.id)
                                 ? 'Liberado para a próxima partida'
                                 : state.injuries[player.id]
-                                  ? `Lesionado · ${state.injuries[player.id]} jogos`
+                                  ? `Lesionado · ${state.injuries[player.id]} dias`
                                   : `Risco ${Math.round(risk * 100)}% · ${load?.consecutiveMatches ?? 0} jogos seguidos`}
                             </small>
                           </span>

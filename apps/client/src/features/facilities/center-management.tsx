@@ -117,7 +117,7 @@ export function CenterManagement({
                     <Option key={p.id} value={p.id}>
                       {p.name} ·{' '}
                       {medical
-                        ? `${state.injuries[p.id]} jogos de recuperação`
+                        ? `${state.injuries[p.id]} dias de recuperação`
                         : `${Math.round(p.fitness)}% de condição · OVR ${p.overall}`}
                     </Option>
                   ))}

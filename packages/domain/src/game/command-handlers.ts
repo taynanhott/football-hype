@@ -751,7 +751,12 @@ function handleNewSeason({
       ),
     },
     season: state.season + 1,
-    ...(state.seasonClock ? { nextScheduledAt: nextRealMatchTime(now) } : {}),
+    ...(state.seasonClock
+      ? {
+          nextScheduledAt: nextRealMatchTime(now),
+          calendarAnchor: { realAt: now, gameAt: seasonStart(state.season + 1) },
+        }
+      : {}),
     lastProcessedAt: seasonStart(state.season + 1),
     management: {
       ...state.management,

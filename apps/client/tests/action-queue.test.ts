@@ -102,6 +102,22 @@ describe('fila de ações com resposta local', () => {
     expect(view().snapshot.state.round).toBe(initial.round);
     expect(() => queue.enqueue(price(5000), randomUUID(), 1)).toThrow('rodada');
   });
+  it.each(['snapshot', 'ack'])(
+    'recupera uma confirmação atrasada por %s sem ficar preso em processamento',
+    (trigger) => {
+      const { queue, view } = setup();
+      const id = randomUUID();
+      queue.enqueue(price(5000), id, 1);
+      queue.stop('Sem confirmação');
+      const confirmed = applied(initial, price(5000), id);
+      if (trigger === 'ack') expect(queue.acknowledge(id, confirmed.state.revision)).toBe(true);
+      else expect(queue.accept(snapshot(confirmed.state, confirmed.event))).toBe(true);
+      if (trigger === 'ack') queue.accept(snapshot(confirmed.state, confirmed.event));
+      expect(view().pendingActions).toBe(0);
+      expect(view().busy).toBe(false);
+      expect(view().snapshot.state).toBe(confirmed.state);
+    },
+  );
   it('recupera a fila após recarregar sem aplicar duas vezes uma ação já confirmada', () => {
     let saved: import('../src/store/action-queue').PendingAction[] = [];
     const first = randomUUID();

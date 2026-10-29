@@ -286,7 +286,7 @@ export function Squad(props: ViewProps) {
                   : '—'}
               </p>
               {snapshot.state.injuries[selected.id] && (
-                <p className="negative">Lesionado: {snapshot.state.injuries[selected.id]} jogos</p>
+                <p className="negative">Lesionado: {snapshot.state.injuries[selected.id]} dias</p>
               )}
               <dl className="player-overview">
                 {[['Salário mensal', currency(selected.salary.cents)]].map(([label, value]) => (

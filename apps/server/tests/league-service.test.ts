@@ -25,6 +25,55 @@ afterEach(async () => {
 });
 
 describe('serviço autoritativo de ligas', () => {
+  it('antecipa a rodada e o calendário para todos os treinadores e desloca o próximo jogo', async () => {
+    const clock = Date.parse('2026-10-28T07:00:00-03:00');
+    const repository = new LocalLeagueRepository(undefined);
+    const state = unwrap(
+      createWorld({
+        id: IDS.league,
+        userId: host.userId,
+        name: 'Global',
+        mode: 'multiplayer',
+        now: clock,
+      }),
+    );
+    const clubId = state.clubs.ids.find((id) => id !== state.participants[0]!.clubId)!;
+    state.participants = [
+      ...state.participants,
+      { userId: guest.userId, clubId, ready: false, lastSeenAt: clock },
+    ];
+    state.calendarAnchor = { realAt: clock, gameAt: state.lastProcessedAt };
+    await repository.create(state);
+    const service = new LeagueService(repository, () => clock);
+    await service.command(state.id, host.userId, { type: 'advance' });
+    const first = await service.snapshot(state.id, host.userId);
+    const second = await service.snapshot(state.id, guest.userId);
+    expect(first.state).toEqual(second.state);
+    expect(first.state.round).toBe(1);
+    expect(first.state.lastProcessedAt).toBeGreaterThan(state.lastProcessedAt);
+    expect(first.state.nextScheduledAt).toBe(state.nextScheduledAt);
+  });
+  it('processa dias antes do horário real do jogo sem disputar a rodada antecipadamente', async () => {
+    let clock = Date.parse('2026-10-28T07:00:00-03:00');
+    const repository = new LocalLeagueRepository(undefined);
+    const service = new LeagueService(repository, () => clock);
+    const id = await service.create(host, { mode: 'offline' });
+    const before = (await repository.load(id))!.state;
+    before.fixtures = before.fixtures.map((fixture) => ({
+      ...fixture,
+      scheduledAt: fixture.scheduledAt + 14 * 86400000,
+    }));
+    before.cups = [];
+    clock += (before.nextScheduledAt - clock) / 2;
+    await service.tick();
+    const advanced = (await repository.load(id))!.state;
+    expect(advanced.lastProcessedAt).toBeGreaterThan(before.lastProcessedAt);
+    expect(advanced.lastProcessedAt).toBeLessThan(pendingFixtures(before)[0]!.scheduledAt);
+    expect(advanced.round).toBe(0);
+    expect(advanced.results).toHaveLength(0);
+    await service.tick();
+    expect((await repository.load(id))!.state.revision).toBe(advanced.revision);
+  });
   it('reconhece uma ação reenviada após reconectar sem aplicá-la novamente', async () => {
     const repository = new LocalLeagueRepository(undefined);
     const service = new LeagueService(repository, () => now);

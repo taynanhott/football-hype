@@ -17,6 +17,9 @@ import {
   seasonSchedule,
   SEASON_CALENDAR_VERSION,
   type DataProvider,
+  advanceGameDays,
+  realTimeGameDate,
+  pendingFixtures,
 } from '@football/domain';
 import {
   MATCH_DURATION_MS,
@@ -32,6 +35,7 @@ export class LeagueService {
   private readonly searchIndexes = new WeakMap<object, SearchTrie>();
   readonly updates = new EventBus<string>();
   private readonly queues = new Map<string, Promise<unknown>>();
+  private ticking: Promise<void> | undefined;
   constructor(
     private readonly repository: LeagueRepository,
     private readonly now: () => number = Date.now,
@@ -129,6 +133,7 @@ export class LeagueService {
         ...state,
         inviteCode: randomUUID(),
         seasonClock: 1,
+        calendarAnchor: { realAt: this.now(), gameAt: state.lastProcessedAt },
         nextScheduledAt: nextRealMatchTime(this.now()),
         participants: state.participants.map((member) => ({ ...member, lastSeenAt: this.now() })),
       };
@@ -178,7 +183,7 @@ export class LeagueService {
       if (
         !saved ||
         saved.state.deletedAt ||
-        saved.state.seasonClock ||
+        (saved.state.seasonClock && saved.state.calendarAnchor) ||
         saved.state.status !== 'active'
       )
         return;
@@ -187,7 +192,10 @@ export class LeagueService {
         {
           ...saved.state,
           seasonClock: 1,
-          nextScheduledAt: nextRealMatchTime(this.now()),
+          calendarAnchor: { realAt: this.now(), gameAt: saved.state.lastProcessedAt },
+          nextScheduledAt: saved.state.seasonClock
+            ? saved.state.nextScheduledAt
+            : nextRealMatchTime(this.now()),
         },
         saved.state.administratorId,
         'Relógio online ativado para a carreira',
@@ -389,7 +397,10 @@ export class LeagueService {
       !saved.state.participants.some((member) => member.userId === userId)
     )
       throw new Error('Acesso negado');
-    if (!saved.state.seasonClock && saved.state.status === 'active') {
+    if (
+      (!saved.state.seasonClock || !saved.state.calendarAnchor) &&
+      saved.state.status === 'active'
+    ) {
       await this.ensureSeasonClock(id);
       saved = (await this.repository.load(id, { eventPatches: false })) ?? saved;
     }
@@ -579,10 +590,40 @@ export class LeagueService {
       return revision;
     });
   }
-  async tick(): Promise<void> {
+  tick(): Promise<void> {
+    if (!this.ticking)
+      this.ticking = this.runTick().finally(() => {
+        this.ticking = undefined;
+      });
+    return this.ticking;
+  }
+  private async advanceCalendar(id: string) {
+    await this.serial(id, async () => {
+      const current = (await this.repository.load(id, { eventPatches: false }))?.state;
+      if (
+        !current ||
+        current.deletedAt ||
+        current.status !== 'active' ||
+        current.nextScheduledAt <= this.now()
+      )
+        return;
+      const nextGame = pendingFixtures(current)[0]?.scheduledAt;
+      if (nextGame === undefined) return;
+      const next = advanceGameDays(current, realTimeGameDate(current, nextGame, this.now()));
+      if (next === current) return;
+      await this.commit(
+        current,
+        next,
+        current.administratorId,
+        'Calendário avançado: treinos e recuperação processados',
+      );
+    });
+  }
+  private async runTick(): Promise<void> {
     for (const id of await this.repository.active()) {
       await this.expire(id);
       await this.ensureSeasonClock(id);
+      await this.advanceCalendar(id);
     }
     for (const id of await this.repository.due(this.now())) {
       for (let count = 0; count < 8; count++) {

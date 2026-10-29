@@ -260,6 +260,7 @@ export const worldStateSchema = z.strictObject({
   lastProcessedAt: countSchema,
   nextScheduledAt: countSchema,
   seasonClock: z.literal(1).optional(),
+  calendarAnchor: z.object({ realAt: countSchema, gameAt: countSchema }).optional(),
   createdAt: countSchema,
   competitionNotes: z.record(z.string(), z.string()).optional(),
   competitionRulesVersion: z.number().int().nonnegative().optional(),

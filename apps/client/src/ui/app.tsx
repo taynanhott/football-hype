@@ -209,11 +209,13 @@ function GameApp() {
       </aside>
       <div className="workspace">
         <div className="save-queue-status" role="status">
-          {pendingActions
-            ? `${pendingActions} ${pendingActions === 1 ? 'ação sincronizando' : 'ações sincronizando'}…`
-            : error
-              ? 'Confira a sincronização da carreira'
-              : '✓ Carreira sincronizada'}
+          {!connected
+            ? 'Reconecte para sincronizar a carreira'
+            : pendingActions
+              ? `${pendingActions} ${pendingActions === 1 ? 'ação sincronizando' : 'ações sincronizando'}…`
+              : error
+                ? 'Confira a sincronização da carreira'
+                : '✓ Carreira sincronizada'}
         </div>
         {!connected && (
           <div className="connection-banner">
@@ -232,11 +234,13 @@ function GameApp() {
               </span>
               <div>
                 <strong>
-                  {state.status === 'finished'
-                    ? 'Temporada encerrada'
-                    : busy
-                      ? 'O clube está em movimento…'
-                      : 'Preparado para o próximo desafio?'}
+                  {!connected
+                    ? 'Reconecte para conferir a rodada'
+                    : state.status === 'finished'
+                      ? 'Temporada encerrada'
+                      : busy
+                        ? 'O clube está em movimento…'
+                        : 'Preparado para o próximo desafio?'}
                 </strong>
                 <span>
                   {state.status === 'finished'

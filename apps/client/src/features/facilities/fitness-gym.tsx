@@ -185,7 +185,7 @@ export function FitnessGym({
                     </>
                   ) : medical ? (
                     <span className="medical-room-days">
-                      {snapshot.state.injuries[player.id] ?? 0} jogos de recuperação
+                      {snapshot.state.injuries[player.id] ?? 0} dias de recuperação
                     </span>
                   ) : (
                     <div

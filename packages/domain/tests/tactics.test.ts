@@ -459,10 +459,10 @@ describe('escalação, entrosamento e carga', () => {
       state.players.byId[id]?.potential ?? 99,
     );
     expect(state.workload[id]?.consecutiveMatches).toBe(5);
-    const rested = playNextBatch({ ...state, injuries: { [id]: 1 } }, now);
+    const rested = playNextBatch({ ...state, injuries: { [id]: 2 } }, now);
     if (!rested.ok) throw new Error(rested.error.message);
     expect(rested.value.workload[id]?.consecutiveMatches).toBe(0);
-    expect(rested.value.injuries[id]).toBe(0);
+    expect(rested.value.injuries[id]).toBe(1);
     expect(rested.value.chemistry[club.id]?.[id]).toBe(5);
   });
 });

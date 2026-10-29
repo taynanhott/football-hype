@@ -31,9 +31,19 @@ export class ActionQueue {
   accept(snapshot: GameSnapshot) {
     if (this.confirmed && snapshot.state.revision < this.confirmed.state.revision) return;
     this.confirmed = snapshot;
+    const recovered =
+      this.stopped &&
+      this.actions.some((action) => snapshot.ledger.some((event) => event.id === action.id));
+    if (recovered) {
+      this.stopped = false;
+      this.actions = this.actions.filter(
+        (action) => !snapshot.ledger.some((event) => event.id === action.id),
+      );
+    }
     this.complete();
     this.publish();
     this.pump();
+    return recovered;
   }
   enqueue(command: GameCommand, id: string, at: number) {
     if (!this.confirmed || this.stopped) throw new Error('Reconecte à liga para sincronizar');
@@ -51,11 +61,22 @@ export class ActionQueue {
     this.pump();
   }
   acknowledge(id: string, revision: number) {
-    if (this.active?.id !== id) return;
+    const recovered = this.stopped;
+    if (recovered) {
+      const action = this.actions.find((action) => action.id === id && action.sent);
+      if (!action) return false;
+      this.stopped = false;
+      this.active = action;
+    }
+    if (this.active?.id !== id) return false;
     this.active.revision = revision;
     this.complete();
     this.publish();
     this.pump();
+    return recovered;
+  }
+  get waitingForSnapshot() {
+    return this.active?.revision !== undefined;
   }
   reject(id: string, message: string) {
     if (this.active?.id !== id) return;

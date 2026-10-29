@@ -90,12 +90,16 @@ export const useGameStore = create<GameStore>((set, get) => ({
           activeId = requestId;
           clearTimeout(pending);
           room.send('command', { requestId, command });
-          pending = setTimeout(() => {
-            if (get().room !== room) return;
-            queue.stop(
-              'A sincronização não foi confirmada. Reconecte para conferir as ações salvas.',
-            );
-          }, 20000);
+          pending = setTimeout(
+            () => {
+              if (get().room !== room) return;
+              queue.stop(
+                'A sincronização não foi confirmada. Reconecte para conferir as ações salvas.',
+              );
+              set({ connected: false });
+            },
+            command.type === 'advance' || command.type === 'new-season' ? 120000 : 20000,
+          );
         },
         (view) => {
           if (get().room === room) set(view);
@@ -122,7 +126,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
           return;
         confirmed = snapshot;
         set({ clockOffset: (snapshot.serverTime ?? Date.now()) - Date.now() });
-        queue.accept(snapshot);
+        if (queue.accept(snapshot)) set({ error: null, connected: true });
       };
       room.onMessage('snapshot-update', (input: unknown) => {
         if (get().room !== room) return;
@@ -177,7 +181,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
           return;
         }
         if (parsed.data.requestId === activeId) clearTimeout(pending);
-        queue.acknowledge(parsed.data.requestId, parsed.data.revision);
+        if (queue.acknowledge(parsed.data.requestId, parsed.data.revision))
+          set({ error: null, connected: true });
+        if (queue.waitingForSnapshot)
+          pending = setTimeout(() => {
+            if (get().room === room && queue.waitingForSnapshot) room.send('sync');
+          }, 5000);
       });
       room.onError(() => {
         if (get().room === room) {

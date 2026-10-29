@@ -61,7 +61,7 @@ describe('gerenciamento do centro', () => {
   });
   it('guarda apenas uma seringa e consome a liberação na próxima partida', () => {
     const id = own().playerIds[0]!;
-    state = { ...state, injuries: { ...state.injuries, [id]: 8 } };
+    state = { ...state, injuries: { ...state.injuries, [id]: 60 } };
     expect(act('buy-syringe').ok).toBe(true);
     expect(act('buy-syringe').ok).toBe(false);
     expect(act('use-syringe', id).ok).toBe(true);

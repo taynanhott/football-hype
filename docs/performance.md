@@ -49,3 +49,19 @@ O leitor aceita os snapshots anteriores. Após a primeira gravação incremental
 um backend antigo que desconhece `patchRefs` não deve ser usado para rollback.
 Publique o backend compatível, os índices e a interface desta versão; alterações
 apenas na interface local não atualizam o servidor remoto.
+
+## Dias e antecipação da rodada
+
+`calendarAnchor` associa a data da temporada ao início do intervalo real entre
+partidas. A verificação periódica calcula os dias decorridos até o próximo lote
+de jogos e processa apenas os dias ainda não concluídos. O calendário e a rotina
+usam a mesma classificação: treino, véspera, jogo, recuperação e folga.
+Treinos respeitam a carga e as atividades do CT. Descanso e recuperação recuperam
+mais condição física. Lesões e tratamentos progridem por dias do calendário.
+
+Antecipar uma rodada conclui os dias restantes pelo mesmo processamento diário e
+disputa o lote de jogos para toda a liga. O próximo lote ocupa o próximo horário
+real disponível a partir da antecipação, inclusive o horário liberado pela partida
+antecipada. Todos os participantes recebem a mesma revisão. O agendador evita
+execuções sobrepostas e não grava separadamente os dias de um jogo já vencido:
+nessa situação, dias e partida são salvos juntos.

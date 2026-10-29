@@ -1,5 +1,6 @@
 import { clubCalendarFixtures } from './club-calendar-fixtures';
 import { useState, type CSSProperties } from 'react';
+import { clubDayRoutine } from '@football/domain';
 import { COMPETITIONS, type Fixture, type WorldState } from '@football/shared';
 import { PixelBadge } from '../../ui/pixel-badge';
 import { dateTime } from '../../ui/format';
@@ -40,7 +41,8 @@ const routines = {
 export function ClubCalendar({ state, clubId }: { state: WorldState; clubId: string }) {
   const today = dayKey(state.lastProcessedAt);
   const [selectedGame, setSelectedGame] = useState<Fixture | null>(null);
-  const [month, setMonth] = useState(() => new Date(`${today}T12:00:00Z`));
+  const [viewedMonth, setViewedMonth] = useState<{ day: string; date: Date } | null>(null);
+  const month = viewedMonth?.day === today ? viewedMonth.date : new Date(`${today}T12:00:00Z`);
   const fixtures = clubCalendarFixtures(state, clubId);
   const year = month.getUTCFullYear(),
     monthIndex = month.getUTCMonth();
@@ -49,7 +51,7 @@ export function ClubCalendar({ state, clubId }: { state: WorldState; clubId: str
   const cells = Math.ceil((offset + days) / 7) * 7;
   const competitions = [...new Set(fixtures.map((fixture) => fixture.competitionId))];
   const moveMonth = (delta: number) =>
-    setMonth(new Date(Date.UTC(year, monthIndex + delta, 1, 12)));
+    setViewedMonth({ day: today, date: new Date(Date.UTC(year, monthIndex + delta, 1, 12)) });
   return (
     <>
       <section className="club-calendar" aria-labelledby="club-calendar-title">
@@ -82,19 +84,8 @@ export function ClubCalendar({ state, clubId }: { state: WorldState; clubId: str
             const key = date.toISOString().slice(0, 10);
             const inMonth = date.getUTCMonth() === monthIndex;
             const matches = fixtures.filter((fixture) => dayKey(fixture.scheduledAt) === key);
-            const hasMatch = (delta: number) =>
-              fixtures.some(
-                (fixture) =>
-                  dayKey(fixture.scheduledAt) ===
-                  new Date(date.getTime() + delta * 86400000).toISOString().slice(0, 10),
-              );
-            const routine = hasMatch(-1)
-              ? routines.recovery
-              : hasMatch(1)
-                ? routines.eve
-                : hasMatch(-2)
-                  ? routines.rest
-                  : routines.training;
+            const activity = clubDayRoutine(fixtures, clubId, date.getTime());
+            const routine = activity === 'match' ? routines.training : routines[activity];
             return (
               <div
                 key={key}
@@ -175,10 +166,7 @@ export function ClubCalendar({ state, clubId }: { state: WorldState; clubId: str
           ))}
         </div>
         <footer className="club-calendar-footer">
-          <button
-            className="club-calendar-today"
-            onClick={() => setMonth(new Date(`${today}T12:00:00Z`))}
-          >
+          <button className="club-calendar-today" onClick={() => setViewedMonth(null)}>
             Ir para hoje
           </button>
         </footer>

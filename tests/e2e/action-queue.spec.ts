@@ -43,6 +43,23 @@ test('ações respondem localmente e são confirmadas em ordem pela sala', async
     return current.snapshot.state.homeTicketPrices[clubId];
   });
   expect(persisted).toBe(7500);
+  const beforeRound = await page.evaluate(async () => {
+    const modulePath = '/src/store/game-store.ts';
+    const { useGameStore } = await import(modulePath);
+    const state = useGameStore.getState().snapshot.state;
+    return { round: state.round, nextScheduledAt: state.nextScheduledAt };
+  });
+  await page.getByRole('button', { name: 'Avançar rodada', exact: true }).click();
+  await expect
+    .poll(async () =>
+      page.evaluate(async () => {
+        const modulePath = '/src/store/game-store.ts';
+        const { useGameStore } = await import(modulePath);
+        return useGameStore.getState().snapshot.state.round;
+      }),
+    )
+    .toBe(beforeRound.round + 1);
+  await expect(page.locator('.save-queue-status')).toHaveText('✓ Carreira sincronizada');
   const searches: string[] = [];
   page.on('request', (request) => {
     if (request.url().includes('/players?')) searches.push(request.url());

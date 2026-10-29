@@ -1,3 +1,4 @@
+import { advanceGameDays } from './daily-calendar.js';
 import { cupReturnDate } from '../competitions/season-calendar.js';
 import { nextRealMatchTime, scheduledBatches } from './season-clock.js';
 import { COMPETITIONS, GAMEPLAY, type Fixture, type WorldState } from '@football/shared';
@@ -10,7 +11,7 @@ import { standings } from '../competitions/standings.js';
 import { simulateMatch } from '../simulation/match.js';
 import { matchDemand } from '../finance/match-demand.js';
 import { hashSeed, mulberry32 } from '../simulation/random.js';
-import { appearanceGrowth, revalueGrowth } from '../players/development.js';
+import { appearanceGrowth } from '../players/development.js';
 import { resolveLineup, resolveBench, injuryProbability } from './tactics.js';
 import { qualifyCupGroups } from '../competitions/cup-groups.js';
 import { advanceBracket } from '../competitions/knockout.js';
@@ -19,7 +20,6 @@ import { failure, success, type Result } from '../core/result.js';
 import { domainError } from '../core/domain-error.js';
 import { nextSeasonState } from '../multiplayer/machines.js';
 
-const DAY_MS = 86_400_000;
 export function pendingFixtures(state: WorldState): Fixture[] {
   const completed = new Set(state.results.map((result) => result.fixtureId));
   const cupFixtures: Fixture[] = [];
@@ -62,7 +62,7 @@ export function playNextBatch(state: WorldState, processedAt: number): Result<Wo
   const scheduledAt = pending[0]?.scheduledAt;
   if (scheduledAt === undefined)
     return failure(domainError('VALIDATION_ERROR', 'Não existem partidas pendentes'));
-  state = settleMonthly(state, scheduledAt);
+  state = settleMonthly(advanceGameDays(state, scheduledAt), scheduledAt);
   const batch = state.seasonClock
     ? scheduledBatches(pending)[0]!
     : pending.filter((fixture) => fixture.scheduledAt === scheduledAt);
@@ -81,82 +81,6 @@ export function playNextBatch(state: WorldState, processedAt: number): Result<Wo
   let cups = state.cups;
   const revenue = new Map<string, number>();
   const appeared = new Set<string>();
-  const daysSince = Math.max(
-    state.seasonClock ? 0 : 1,
-    Math.min(7, (scheduledAt - state.lastProcessedAt) / DAY_MS),
-  );
-  for (const player of Object.values(players)) {
-    const club = player.clubId ? clubs[player.clubId] : undefined;
-    const center = club ? state.centers.byId[club.trainingCenterId] : undefined;
-    players[player.id] = {
-      ...player,
-      fitness: Math.min(
-        100,
-        player.fitness +
-          Math.floor(
-            daysSince *
-              (center?.operations?.fitness.includes(player.id) ? 1.5 : 1) *
-              (GAMEPLAY.fitnessRecovery +
-                (center?.levels.fitness ?? 1) * GAMEPLAY.recoveryPerLevel),
-          ),
-      ),
-    };
-  }
-  for (const center of Object.values(centers)) {
-    const ops = center.operations ?? {
-      load: 'moderate' as const,
-      fitness: [],
-      medical: [],
-      individual: [],
-      syringe: false,
-    };
-    const load = ops.load === 'light' ? 0.5 : ops.load === 'intense' ? 1.5 : 1;
-    const random = mulberry32(hashSeed(state.seed, `${center.id}:${scheduledAt}`));
-    for (const id of clubs[center.clubId]?.playerIds ?? []) {
-      const player = players[id];
-      if (!player) continue;
-      const individual = ops.individual.find((t) => t.playerId === id);
-      if (!(state.injuries[id] ?? 0)) {
-        const growth =
-          (development[id] ?? 0) +
-          daysSince * 0.006 * center.levels.coaching * load * (individual ? 1.5 : 1);
-        players[id] = {
-          ...player,
-          overall: Math.max(
-            player.overall,
-            Math.min(player.potential, player.overall + Math.floor(growth)),
-          ),
-          fitness: Math.max(0, player.fitness - Math.floor(daysSince * load)),
-        };
-        development[id] = growth % 1;
-        if (random() < (0.001 * daysSince * load * load) / center.levels.medical)
-          injuries[id] = Math.max(1, Math.ceil(3 / center.levels.medical));
-      }
-      if (individual && scheduledAt >= individual.endsAt) {
-        const current = players[id]!;
-        players[id] = {
-          ...current,
-          overall: Math.min(99, current.overall + 1),
-          potential: Math.max(current.potential, Math.min(99, current.overall + 1)),
-        };
-      }
-      players[id] = revalueGrowth(player, players[id]!);
-    }
-    centers[center.id] = {
-      ...center,
-      operations: {
-        ...ops,
-        individual: ops.individual.filter((t) => t.endsAt > scheduledAt),
-        fitness: ops.fitness.filter(
-          (id) => (players[id]?.fitness ?? 100) < 100 && players[id]?.clubId === center.clubId,
-        ),
-        medical: ops.medical.filter(
-          (id) => (state.injuries[id] ?? 0) > 0 && players[id]?.clubId === center.clubId,
-        ),
-      },
-    };
-  }
-  state = { ...state, centers: { ...state.centers, byId: centers } };
   for (const fixture of batch) {
     const home = clubs[fixture.homeId];
     const away = clubs[fixture.awayId];
@@ -319,22 +243,6 @@ export function playNextBatch(state: WorldState, processedAt: number): Result<Wo
     if (!player.clubId || !playedClubs.has(player.clubId) || appeared.has(player.id)) continue;
     const load = workload[player.id];
     if (load) workload[player.id] = { ...load, consecutiveMatches: 0 };
-    if ((state.injuries[player.id] ?? 0) > 0) {
-      const center = centers[clubs[player.clubId]?.trainingCenterId ?? ''];
-      const ops = center?.operations;
-      const progress =
-        (ops?.medicalProgress?.[player.id] ?? 0) + (ops?.medical.includes(player.id) ? 1.5 : 1);
-      injuries[player.id] = Math.max(0, (state.injuries[player.id] ?? 0) - Math.floor(progress));
-      if (center && ops)
-        centers[center.id] = {
-          ...center,
-          operations: {
-            ...ops,
-            medicalProgress: { ...ops.medicalProgress, [player.id]: progress % 1 },
-            medical: ops.medical.filter((id) => (injuries[id] ?? 0) > 0),
-          },
-        };
-    }
   }
   for (const center of Object.values(centers)) {
     if (
@@ -440,6 +348,7 @@ export function playNextBatch(state: WorldState, processedAt: number): Result<Wo
   next = generateIncomingOffers(next);
   return success({
     ...next,
+    ...(state.seasonClock ? { calendarAnchor: { realAt: processedAt, gameAt: scheduledAt } } : {}),
     status: nextTime === undefined ? nextSeasonState('active', 'FINISH') : 'active',
     nextScheduledAt:
       nextTime === undefined
