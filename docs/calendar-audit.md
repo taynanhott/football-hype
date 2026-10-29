@@ -22,11 +22,11 @@ Relatório do jogo, gerado com as listas fixas e a base de clubes do repositóri
 | Pré-Libertadores    |       4 |       0 |       0 |
 | Libertadores        |       6 |       0 |       0 |
 | Sul-Americana       |       6 |       0 |       0 |
-| Copa do Nordeste    |       1 |       5 |       6 |
-| Copa Sul-Sudeste    |       2 |       7 |       5 |
-| Copa Verde          |       1 |       4 |       3 |
+| Copa do Nordeste    |       0 |       5 |       6 |
+| Copa Sul-Sudeste    |       0 |       9 |       5 |
+| Copa Verde          |       0 |       4 |       3 |
 
-Há clubes da Série A nas listas regionais atuais: a divisão, sozinha, não determina a permissão. Os continentais iniciais usam clubes brasileiros da A; em temporadas seguintes um título pode classificar um clube de outra divisão. A pré-Libertadores envia seus vencedores à Libertadores e os perdedores à Sul-Americana. As duas copas ficam sem participantes comuns depois dessa definição.
+Clubes da Série A estão excluídos das três copas regionais. Os continentais iniciais usam clubes brasileiros da A; em temporadas seguintes um título pode classificar um clube de outra divisão. A pré-Libertadores envia seus vencedores à Libertadores e os perdedores à Sul-Americana. As duas copas ficam sem participantes comuns depois dessa definição.
 
 ## Rodadas que podem compartilhar uma data
 
@@ -40,16 +40,16 @@ Há clubes da Série A nas listas regionais atuais: a divisão, sozinha, não de
 | Brasileirão Série A × Pré-Libertadores    | Condicional: separar enquanto houver clubes comuns na rodada | Santos, Atlético-MG, Botafogo, Corinthians                                                                                                                                                                      |
 | Brasileirão Série A × Libertadores        | Condicional: separar enquanto houver clubes comuns na rodada | Santos, Vasco, Palmeiras, Botafogo, Flamengo, Cruzeiro                                                                                                                                                          |
 | Brasileirão Série A × Sul-Americana       | Condicional: separar enquanto houver clubes comuns na rodada | Atlético-MG, Grêmio, Bahia, Fluminense, Bragantino, Corinthians                                                                                                                                                 |
-| Brasileirão Série A × Copa do Nordeste    | Condicional: separar enquanto houver clubes comuns na rodada | Vitória                                                                                                                                                                                                         |
-| Brasileirão Série A × Copa Sul-Sudeste    | Condicional: separar enquanto houver clubes comuns na rodada | Mirassol, Chapecoense                                                                                                                                                                                           |
-| Brasileirão Série A × Copa Verde          | Condicional: separar enquanto houver clubes comuns na rodada | Remo                                                                                                                                                                                                            |
+| Brasileirão Série A × Copa do Nordeste    | Permitida                                                    | Nenhum                                                                                                                                                                                                          |
+| Brasileirão Série A × Copa Sul-Sudeste    | Permitida                                                    | Nenhum                                                                                                                                                                                                          |
+| Brasileirão Série A × Copa Verde          | Permitida                                                    | Nenhum                                                                                                                                                                                                          |
 | Brasileirão Série B × Brasileirão Série C | Permitida                                                    | Nenhum                                                                                                                                                                                                          |
 | Brasileirão Série B × Copa do Brasil      | Condicional: separar enquanto houver clubes comuns na rodada | Operário-PR, Sport, Novorizontino, Vila Nova, Juventude, Goiás, Fortaleza, Botafogo-SP, Ceará, Cuiabá, Criciúma, CRB                                                                                            |
 | Brasileirão Série B × Pré-Libertadores    | Permitida                                                    | Nenhum                                                                                                                                                                                                          |
 | Brasileirão Série B × Libertadores        | Permitida                                                    | Nenhum                                                                                                                                                                                                          |
 | Brasileirão Série B × Sul-Americana       | Permitida                                                    | Nenhum                                                                                                                                                                                                          |
 | Brasileirão Série B × Copa do Nordeste    | Condicional: separar enquanto houver clubes comuns na rodada | Sport, Náutico, Fortaleza, Ceará, CRB                                                                                                                                                                           |
-| Brasileirão Série B × Copa Sul-Sudeste    | Condicional: separar enquanto houver clubes comuns na rodada | São Bernardo, Novorizontino, Athletic, Londrina, Juventude, Avaí, Criciúma                                                                                                                                      |
+| Brasileirão Série B × Copa Sul-Sudeste    | Condicional: separar enquanto houver clubes comuns na rodada | América-MG, Operário-PR, São Bernardo, Novorizontino, Athletic, Londrina, Juventude, Avaí, Criciúma                                                                                                             |
 | Brasileirão Série B × Copa Verde          | Condicional: separar enquanto houver clubes comuns na rodada | Vila Nova, Atlético-GO, Goiás, Cuiabá                                                                                                                                                                           |
 | Brasileirão Série C × Copa do Brasil      | Permitida                                                    | Nenhum                                                                                                                                                                                                          |
 | Brasileirão Série C × Pré-Libertadores    | Permitida                                                    | Nenhum                                                                                                                                                                                                          |
@@ -61,9 +61,9 @@ Há clubes da Série A nas listas regionais atuais: a divisão, sozinha, não de
 | Copa do Brasil × Pré-Libertadores         | Condicional: separar enquanto houver clubes comuns na rodada | Atlético-MG, Santos, Botafogo, Corinthians                                                                                                                                                                      |
 | Copa do Brasil × Libertadores             | Condicional: separar enquanto houver clubes comuns na rodada | Santos, Palmeiras, Botafogo, Vasco, Cruzeiro, Flamengo                                                                                                                                                          |
 | Copa do Brasil × Sul-Americana            | Condicional: separar enquanto houver clubes comuns na rodada | Grêmio, Atlético-MG, Bragantino, Bahia, Corinthians, Fluminense                                                                                                                                                 |
-| Copa do Brasil × Copa do Nordeste         | Condicional: separar enquanto houver clubes comuns na rodada | Fortaleza, Sport, Vitória, Ceará, CRB                                                                                                                                                                           |
-| Copa do Brasil × Copa Sul-Sudeste         | Condicional: separar enquanto houver clubes comuns na rodada | Chapecoense, Criciúma, Mirassol, Novorizontino, Juventude                                                                                                                                                       |
-| Copa do Brasil × Copa Verde               | Condicional: separar enquanto houver clubes comuns na rodada | Goiás, Remo, Cuiabá, Vila Nova                                                                                                                                                                                  |
+| Copa do Brasil × Copa do Nordeste         | Condicional: separar enquanto houver clubes comuns na rodada | Fortaleza, Sport, Ceará, CRB                                                                                                                                                                                    |
+| Copa do Brasil × Copa Sul-Sudeste         | Condicional: separar enquanto houver clubes comuns na rodada | Criciúma, Operário-PR, Novorizontino, Juventude                                                                                                                                                                 |
+| Copa do Brasil × Copa Verde               | Condicional: separar enquanto houver clubes comuns na rodada | Goiás, Cuiabá, Vila Nova                                                                                                                                                                                        |
 | Pré-Libertadores × Libertadores           | Condicional: separar enquanto houver clubes comuns na rodada | Santos, Botafogo                                                                                                                                                                                                |
 | Pré-Libertadores × Sul-Americana          | Condicional: separar enquanto houver clubes comuns na rodada | Atlético-MG, Corinthians                                                                                                                                                                                        |
 | Pré-Libertadores × Copa do Nordeste       | Permitida                                                    | Nenhum                                                                                                                                                                                                          |
@@ -93,7 +93,7 @@ A pré-Libertadores foi resolvida com os mandantes como vencedores apenas para p
 | Bahia         | Copa do Brasil, Sul-Americana                   |
 | Botafogo      | Copa do Brasil, Pré-Libertadores, Libertadores  |
 | Bragantino    | Copa do Brasil, Sul-Americana                   |
-| Chapecoense   | Copa do Brasil, Copa Sul-Sudeste                |
+| Chapecoense   | Copa do Brasil                                  |
 | Corinthians   | Copa do Brasil, Pré-Libertadores, Sul-Americana |
 | Coritiba      | Copa do Brasil                                  |
 | Cruzeiro      | Copa do Brasil, Libertadores                    |
@@ -101,19 +101,19 @@ A pré-Libertadores foi resolvida com os mandantes como vencedores apenas para p
 | Fluminense    | Copa do Brasil, Sul-Americana                   |
 | Grêmio        | Copa do Brasil, Sul-Americana                   |
 | Internacional | Copa do Brasil                                  |
-| Mirassol      | Copa do Brasil, Copa Sul-Sudeste                |
+| Mirassol      | Copa do Brasil                                  |
 | Palmeiras     | Copa do Brasil, Libertadores                    |
-| Remo          | Copa do Brasil, Copa Verde                      |
+| Remo          | Copa do Brasil                                  |
 | Santos        | Copa do Brasil, Pré-Libertadores, Libertadores  |
 | São Paulo     | Copa do Brasil                                  |
 | Vasco         | Copa do Brasil, Libertadores                    |
-| Vitória       | Copa do Brasil, Copa do Nordeste                |
+| Vitória       | Copa do Brasil                                  |
 
 ### Série B
 
 | Clube         | Copas na base inicial            |
 | ------------- | -------------------------------- |
-| América-MG    | Nenhuma das copas listadas       |
+| América-MG    | Copa Sul-Sudeste                 |
 | Athletic      | Copa Sul-Sudeste                 |
 | Atlético-GO   | Copa Verde                       |
 | Avaí          | Copa Sul-Sudeste                 |
@@ -128,7 +128,7 @@ A pré-Libertadores foi resolvida com os mandantes como vencedores apenas para p
 | Londrina      | Copa Sul-Sudeste                 |
 | Náutico       | Copa do Nordeste                 |
 | Novorizontino | Copa do Brasil, Copa Sul-Sudeste |
-| Operário-PR   | Copa do Brasil                   |
+| Operário-PR   | Copa do Brasil, Copa Sul-Sudeste |
 | Ponte Preta   | Nenhuma das copas listadas       |
 | São Bernardo  | Copa Sul-Sudeste                 |
 | Sport         | Copa do Brasil, Copa do Nordeste |

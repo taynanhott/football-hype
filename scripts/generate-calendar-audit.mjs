@@ -87,7 +87,7 @@ for (const id of ids)
   );
 lines.push(
   '',
-  'Há clubes da Série A nas listas regionais atuais: a divisão, sozinha, não determina a permissão. Os continentais iniciais usam clubes brasileiros da A; em temporadas seguintes um título pode classificar um clube de outra divisão. A pré-Libertadores envia seus vencedores à Libertadores e os perdedores à Sul-Americana. As duas copas ficam sem participantes comuns depois dessa definição.',
+  'Clubes da Série A estão excluídos das três copas regionais. Os continentais iniciais usam clubes brasileiros da A; em temporadas seguintes um título pode classificar um clube de outra divisão. A pré-Libertadores envia seus vencedores à Libertadores e os perdedores à Sul-Americana. As duas copas ficam sem participantes comuns depois dessa definição.',
   '',
   '## Rodadas que podem compartilhar uma data',
   '',

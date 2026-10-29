@@ -1,6 +1,7 @@
 import { COMPETITIONS, knockoutLegs, type WorldState } from '@football/shared';
 import { groupFixtures } from './cup-groups.js';
 import { competitionDates } from './season-calendar.js';
+import { fixedCupParticipants } from './fixed-participants.js';
 const regional = new Set(['copa-nordeste', 'copa-verde', 'copa-sul-sudeste']);
 /** Upgrade only competitions without any played fixture, preserving every result. */
 export function upgradeUnstartedCompetitions(state: WorldState): WorldState {
@@ -9,7 +10,8 @@ export function upgradeUnstartedCompetitions(state: WorldState): WorldState {
   const changed = new Set<string>();
   const played = new Set(state.results.map((r) => r.fixtureId));
   for (const id of ['libertadores', 'sul-americana', ...regional]) {
-    if (state.competitionDraws?.some((draw) => draw.competitionId === id)) continue;
+    if (!regional.has(id) && state.competitionDraws?.some((draw) => draw.competitionId === id))
+      continue;
     const current = fixtures.filter((f) => f.competitionId === id && f.group);
     if (
       !current.length ||
@@ -40,7 +42,10 @@ export function upgradeUnstartedCompetitions(state: WorldState): WorldState {
       .filter(allowed)
       .sort((a, b) => Number(users.has(b)) - Number(users.has(a)));
     const pool = regional.has(id) ? state.clubs.ids.filter(allowed) : [];
-    const selected = [...new Set([...eligible, ...pool])].slice(0, 16);
+    const preferred = regional.has(id)
+      ? (fixedCupParticipants(Object.values(state.clubs.byId), id)?.participants ?? [])
+      : [];
+    const selected = [...new Set([...eligible, ...preferred, ...pool])].slice(0, 16);
     if (selected.length !== 16) continue;
     const dates = competitionDates(id, state.season, 6);
     fixtures = [
@@ -69,5 +74,26 @@ export function upgradeUnstartedCompetitions(state: WorldState): WorldState {
       ([key]) => ![...changed].some((id) => key.startsWith(id + ':')),
     ),
   );
-  return { ...state, fixtures, cups, roundDates, roundCalendarVersion: 0 };
+  const competitionDraws = state.competitionDraws?.map((draw) =>
+    changed.has(draw.competitionId) && regional.has(draw.competitionId)
+      ? {
+          ...draw,
+          participantIds: [
+            ...new Set(
+              fixtures
+                .filter((f) => f.competitionId === draw.competitionId)
+                .flatMap((f) => [f.homeId, f.awayId]),
+            ),
+          ],
+        }
+      : draw,
+  );
+  return {
+    ...state,
+    fixtures,
+    cups,
+    roundDates,
+    ...(competitionDraws ? { competitionDraws } : {}),
+    roundCalendarVersion: 0,
+  };
 }

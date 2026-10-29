@@ -27,6 +27,13 @@ function league(seed: number) {
 describe('participantes fixos e sorteios da liga', () => {
   it('confere exatamente os sete conjuntos das imagens, sem clubes substitutos', () => {
     const state = league(123);
+    for (const id of ['copa-nordeste', 'copa-sul-sudeste', 'copa-verde']) {
+      const draw = state.competitionDraws!.find((draw) => draw.competitionId === id)!;
+      expect(draw.participantIds).toHaveLength(16);
+      expect(draw.participantIds.every((club) => state.clubs.byId[club]?.division !== 'A')).toBe(
+        true,
+      );
+    }
     for (const [id, names] of Object.entries(FIXED_CUP_ENTRANTS)) {
       const draw = state.competitionDraws!.find((d) => d.competitionId === id)!;
       expect(draw).toBeDefined();

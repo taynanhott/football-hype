@@ -7,7 +7,12 @@ export function fixedCupParticipants(clubs: readonly ClubSnapshot[], id: string)
   const missing: string[] = [];
   for (const name of names) {
     const club = clubs.find((c) => competitionClubKey(c.name) === competitionClubKey(name));
-    if (club) participants.push(club.id);
+    if (
+      club &&
+      (!['copa-nordeste', 'copa-sul-sudeste', 'copa-verde'].includes(id) ||
+        (club.country === 'BR' && club.division !== 'A'))
+    )
+      participants.push(club.id);
     else missing.push(name);
   }
   return { participants, missing };
