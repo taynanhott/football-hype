@@ -115,7 +115,6 @@ export function regionalCupForClub(club: ClubSnapshot) {
 export function scheduleRegionalQualifiers(previous: WorldState, next: WorldState): WorldState {
   const fixtures = next.fixtures.filter(
     (f) =>
-      f.competitionId !== 'serie-d' &&
       !REGIONAL_QUALIFIERS.some((q) => q.id === f.competitionId) &&
       !REGIONAL_QUALIFIERS.some((q) => q.cupId === f.competitionId),
   );

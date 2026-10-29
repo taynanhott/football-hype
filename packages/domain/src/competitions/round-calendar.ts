@@ -4,7 +4,7 @@ import { cupCalendarNodes } from './cup-calendar.js';
 const DAY = 86400000;
 const OFFSET = 10800000;
 export const ROUND_REST_DAYS = 2;
-export const ROUND_CALENDAR_VERSION = 5;
+export const ROUND_CALENDAR_VERSION = 6;
 const day = (at: number) => Math.floor((at - OFFSET) / DAY) * DAY + OFFSET;
 export const fixtureRoundKey = (fixture: Fixture) =>
   `${fixture.competitionId}:${fixture.group ? 'group' : 'league'}:${fixture.round}`;

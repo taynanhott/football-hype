@@ -47,7 +47,7 @@ function prepare() {
     },
   };
 }
-it('cria seletivas regionais em turno único sem reativar a Série D', () => {
+it('cria seletivas regionais em turno único mantendo a Série D nacional', () => {
   const { previous, next } = prepare();
   const state = normalizeRoundCalendar(scheduleRegionalQualifiers(previous, next));
   expect(
@@ -56,7 +56,7 @@ it('cria seletivas regionais em turno único sem reativar a Série D', () => {
       .every((c) => regionalCupForClub(c) !== undefined),
   ).toBe(true);
   expect(schema.safeParse(state).success).toBe(true);
-  expect(state.fixtures.some((f) => f.competitionId === 'serie-d')).toBe(false);
+  expect(state.fixtures.some((f) => f.competitionId === 'serie-d')).toBe(true);
   expect(state.regionalQualifiers).toHaveLength(3);
   for (const q of state.regionalQualifiers!) {
     expect(q.directIds.every((id) => state.clubs.byId[id]?.division !== 'A')).toBe(true);
@@ -79,10 +79,10 @@ it('cria seletivas regionais em turno único sem reativar a Série D', () => {
     }
   }
 });
-it('inicia carreiras novas diretamente com seletivas e sem Série D nacional', () => {
+it('inicia carreiras novas diretamente com seletivas e Série D nacional', () => {
   const { previous } = prepare();
   expect(previous.regionalQualifiers).toHaveLength(3);
-  expect(previous.fixtures.some((f) => f.competitionId === 'serie-d')).toBe(false);
+  expect(previous.fixtures.some((f) => f.competitionId === 'serie-d')).toBe(true);
   expect(previous.fixtures.some((f) => f.competitionId.startsWith('seletiva-'))).toBe(true);
   expect(previous.nextScheduledAt).toBe(
     Math.min(

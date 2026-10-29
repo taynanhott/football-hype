@@ -12,6 +12,7 @@ const windows: Record<string, [string, string, number[]]> = {
   'serie-a': ['01-28', '12-02', [0, 3]],
   'serie-b': ['03-21', '11-28', [2, 5, 6]],
   'serie-c': ['04-05', '10-25', [0, 3]],
+  'serie-d': ['03-01', '11-15', [0, 3, 6]],
   libertadores: ['04-08', '05-27', [3]],
   'sul-americana': ['04-08', '05-27', [3]],
   'copa-brasil': ['02-18', '12-06', [3, 0]],

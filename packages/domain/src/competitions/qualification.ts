@@ -65,38 +65,14 @@ export function continentalPlaces(state: WorldState): ContinentalPlace[] {
   for (let i = 0; i < 5; i++) league('sul-americana', 'Série A');
   return places;
 }
+/** Kept for existing callers; access is determined only by the Serie D table. */
 export function regionalPromotions(state: WorldState): string[] {
-  const promoted: string[] = [];
   const ids = state.clubs.ids.filter((id) => state.clubs.byId[id]?.division === 'D');
-  for (const competitionId of ['copa-nordeste', 'copa-sul-sudeste', 'copa-verde']) {
-    const nodes = state.cups.filter((node) => node.competitionId === competitionId);
-    const fixtures = state.fixtures.filter((f) => f.competitionId === competitionId);
-    const participants = new Set([
-      ...fixtures.flatMap((f) => [f.homeId, f.awayId]),
-      ...nodes.flatMap((n) => [n.homeId, n.awayId].filter((id): id is string => !!id)),
-    ]);
-    const candidates = standings(
-      ids.filter((id) => participants.has(id)),
-      fixtures,
-      state.results,
-    ).map((row) => row.id);
-    const reached = (id: string) =>
-      Math.max(
-        -1,
-        ...nodes
-          .filter((n) => n.homeId === id || n.awayId === id)
-          .map((n) => n.round + (n.winnerId === id ? 0.5 : 0)),
-      );
-    candidates.sort((a, b) => reached(b) - reached(a));
-    const best = candidates[0];
-    if (best && !promoted.includes(best)) promoted.push(best);
-  }
-  const table = standings(
+  return standings(
     ids,
     state.fixtures.filter((f) => f.competitionId === 'serie-d'),
     state.results,
-  );
-  for (const row of table)
-    if (promoted.length < 4 && !promoted.includes(row.id)) promoted.push(row.id);
-  return promoted.slice(0, 4);
+  )
+    .slice(0, 4)
+    .map((row) => row.id);
 }

@@ -13,9 +13,7 @@ import { dateTime } from '../../ui/format';
 
 export function Calendar({ snapshot, club }: ViewProps) {
   const [competition, setCompetition] = useState(
-    club.division === 'D' || club.division === 'REGIONAL'
-      ? 'serie-a'
-      : `serie-${club.division.toLowerCase()}`,
+    club.division === 'REGIONAL' ? 'serie-a' : `serie-${club.division.toLowerCase()}`,
   );
   const [tab, setTab] = useState('table');
   const [cupStage, setCupStage] = useState('groups');
@@ -157,11 +155,10 @@ export function Calendar({ snapshot, club }: ViewProps) {
               >
                 {COMPETITIONS.filter(
                   (rule) =>
-                    rule.id !== 'serie-d' &&
-                    (state.fixtures.some((fixture) => fixture.competitionId === rule.id) ||
-                      state.cups.some((node) => node.competitionId === rule.id) ||
-                      Boolean(state.competitionNotes?.[rule.id]) ||
-                      rule.id === competition),
+                    state.fixtures.some((fixture) => fixture.competitionId === rule.id) ||
+                    state.cups.some((node) => node.competitionId === rule.id) ||
+                    Boolean(state.competitionNotes?.[rule.id]) ||
+                    rule.id === competition,
                 ).map((rule) => (
                   <Option value={rule.id} key={rule.id}>
                     {rule.name}

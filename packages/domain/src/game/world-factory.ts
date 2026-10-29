@@ -348,9 +348,7 @@ export function seasonSchedule(
   const fixtures: Fixture[] = [];
   const cups: CupNode[] = [];
   const competitionNotes: Record<string, string> = {};
-  for (const rule of COMPETITIONS.filter(
-    (item) => item.format === 'league' && item.division !== 'D',
-  )) {
+  for (const rule of COMPETITIONS.filter((item) => item.format === 'league')) {
     const ids = clubs
       .filter((club) => club.country === 'BR' && club.division === rule.division)
       .map((club) => club.id);

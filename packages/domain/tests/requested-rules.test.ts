@@ -3,6 +3,7 @@ import {
   createWorld,
   continentalPlaces,
   regionalPromotions,
+  standings,
   seasonSchedule,
   penaltyShootout,
   scheduleIntercontinental,
@@ -59,7 +60,7 @@ describe('regras personalizadas da imagem', () => {
     expect(slots.some((p) => p.origin === 'inherited')).toBe(true);
     expect(slots.filter((p) => p.origin !== 'title').length).toBeLessThanOrEqual(16);
   });
-  it('mantém quatro acessos totais com prioridade para clubes da Série D mais longe nas regionais', () => {
+  it('mantém quatro acessos pela tabela da Série D sem prioridade das regionais', () => {
     const state = world();
     const d = state.clubs.ids.filter((id) => state.clubs.byId[id]?.division === 'D');
     state.cups = ['copa-nordeste', 'copa-sul-sudeste', 'copa-verde'].map(
@@ -78,7 +79,15 @@ describe('regras personalizadas da imagem', () => {
     const promoted = regionalPromotions(state);
     expect(promoted).toHaveLength(4);
     expect(new Set(promoted).size).toBe(4);
-    expect(d.slice(0, 3).every((id) => promoted.includes(id))).toBe(true);
+    expect(promoted).toEqual(
+      standings(
+        d,
+        state.fixtures.filter((f) => f.competitionId === 'serie-d'),
+        state.results,
+      )
+        .slice(0, 4)
+        .map((row) => row.id),
+    );
   });
   it('resolve empates por pênaltis com placar persistido', () => {
     const state = world();

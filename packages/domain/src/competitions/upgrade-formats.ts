@@ -2,6 +2,7 @@ import { COMPETITIONS, knockoutLegs, type WorldState } from '@football/shared';
 import { groupFixtures } from './cup-groups.js';
 import { competitionDates } from './season-calendar.js';
 import { fixedCupParticipants } from './fixed-participants.js';
+import { roundRobin } from './round-robin.js';
 const regional = new Set(['copa-nordeste', 'copa-verde', 'copa-sul-sudeste']);
 /** Upgrade only competitions without any played fixture, preserving every result. */
 export function upgradeUnstartedCompetitions(state: WorldState): WorldState {
@@ -9,6 +10,36 @@ export function upgradeUnstartedCompetitions(state: WorldState): WorldState {
   let cups = state.cups;
   const changed = new Set<string>();
   const played = new Set(state.results.map((r) => r.fixtureId));
+  if (
+    state.regionalQualifiers?.length &&
+    state.lastProcessedAt <= Date.UTC(state.season, 2, 1, 23, 59) &&
+    !fixtures.some((f) => f.competitionId === 'serie-d')
+  ) {
+    const ids = state.clubs.ids.filter(
+      (id) => state.clubs.byId[id]?.country === 'BR' && state.clubs.byId[id]?.division === 'D',
+    );
+    const league = roundRobin(ids, 2);
+    if (league.ok) {
+      const dates = competitionDates(
+        'serie-d',
+        state.season,
+        Math.max(...league.value.map((f) => f.round)) + 1,
+      );
+      fixtures = [
+        ...fixtures,
+        ...league.value.map((f) => ({
+          ...f,
+          id: `serie-d:${f.round}:${f.homeId}`,
+          competitionId: 'serie-d',
+          scheduledAt: Math.max(
+            dates[f.round]!,
+            state.lastProcessedAt + 3 * 86400000 + f.round * 3 * 86400000,
+          ),
+        })),
+      ];
+      changed.add('serie-d');
+    }
+  }
   for (const id of ['libertadores', 'sul-americana', ...regional]) {
     if (!regional.has(id) && state.competitionDraws?.some((draw) => draw.competitionId === id))
       continue;

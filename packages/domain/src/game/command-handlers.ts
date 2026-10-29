@@ -3,7 +3,7 @@ import { scheduleRegionalQualifiers } from '../competitions/regional-qualifiers.
 import { prepareAcademy } from './academy.js';
 import { financialLimits, consumeTransferBudget } from '../finance/financial-management.js';
 import { manageClub, transferContext, upgradePrice } from './management.js';
-import { continentalPlaces, regionalPromotions, cupFinal } from '../competitions/qualification.js';
+import { continentalPlaces, cupFinal } from '../competitions/qualification.js';
 import { scheduledFixtures } from '../competitions/fixtures.js';
 import {
   COMPETITIONS,
@@ -698,10 +698,7 @@ function handleNewSeason({
       state.results,
       rule.tieBreakers,
     );
-    const places =
-      rule.id === 'serie-d'
-        ? { ...qualificationPlaces(table, rule), promoted: regionalPromotions(state) }
-        : qualificationPlaces(table, rule);
+    const places = qualificationPlaces(table, rule);
     for (const id of places.promoted) {
       const current = clubs[id];
       const division = rule.division ? ACCESS_GRAPH[rule.division].promotion : null;

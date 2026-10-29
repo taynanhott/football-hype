@@ -1,4 +1,4 @@
-import { continentalPlaces, regionalPromotions } from '@football/domain';
+import { continentalPlaces } from '@football/domain';
 import { COMPETITIONS, type GameSnapshot } from '@football/shared';
 import { PixelBadge } from '../../ui/pixel-badge';
 
@@ -12,7 +12,6 @@ type Props = {
 
 export function StandingsTable({ state, table, competitionId, clubId, group }: Props) {
   const places = competitionId === 'serie-a' ? continentalPlaces(state) : [];
-  const promotedD = competitionId === 'serie-d' ? regionalPromotions(state) : [];
   const rule = COMPETITIONS.find((item) => item.id === competitionId);
   const qualifier = state.regionalQualifiers?.find((q) => q.competitionId === competitionId);
   const fixtures = new Map(
@@ -75,9 +74,8 @@ export function StandingsTable({ state, table, competitionId, clubId, group }: P
             ? 'pre'
             : 'secondary';
     }
-    if (competitionId === 'serie-d' && promotedD.includes(table[index]!.id)) return 'promotion';
     if (rule?.relegate && index >= table.length - rule.relegate) return 'relegation';
-    if (competitionId !== 'serie-d' && rule?.promote && index < rule.promote) return 'promotion';
+    if (rule?.promote && index < rule.promote) return 'promotion';
     if (rule?.continental && index < rule.continental) return 'continental';
     if (rule?.secondaryContinental && index < (rule.continental ?? 0) + rule.secondaryContinental)
       return 'secondary';
