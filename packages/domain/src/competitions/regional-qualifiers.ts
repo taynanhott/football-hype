@@ -4,6 +4,7 @@ import { roundRobin } from './round-robin.js';
 import { standings } from './standings.js';
 import { seasonStart, competitionDates } from './season-calendar.js';
 import { groupFixtures } from './cup-groups.js';
+import { shuffleCupParticipants } from './fixed-participants.js';
 
 export const REGIONAL_QUALIFIERS = [
   { id: 'seletiva-nordeste', cupId: 'copa-nordeste', name: 'Seletiva do Nordeste' },
@@ -115,6 +116,7 @@ export function scheduleRegionalQualifiers(previous: WorldState, next: WorldStat
   const fixtures = next.fixtures.filter(
     (f) =>
       f.competitionId !== 'serie-d' &&
+      !REGIONAL_QUALIFIERS.some((q) => q.id === f.competitionId) &&
       !REGIONAL_QUALIFIERS.some((q) => q.cupId === f.competitionId),
   );
   const qualifiers: NonNullable<WorldState['regionalQualifiers']> = [];
@@ -184,7 +186,7 @@ export function scheduleRegionalQualifiers(previous: WorldState, next: WorldStat
     );
     fixtures.push(
       ...groupFixtures(
-        provisional,
+        shuffleCupParticipants(provisional, next.seed, rule.cupId),
         rule.cupId,
         competitionDates(rule.cupId, next.season, 6).map((at, round) =>
           Math.max(at, last + (3 + round * 3) * 86400000),
@@ -208,6 +210,14 @@ export function scheduleRegionalQualifiers(previous: WorldState, next: WorldStat
     competitionNotes,
     competitionDraws: draws,
     regionalQualifiers: qualifiers,
+    ...(!next.seasonClock
+      ? {
+          nextScheduledAt: Math.min(
+            ...fixtures.map((f) => f.scheduledAt),
+            ...next.cups.map((n) => n.scheduledAt),
+          ),
+        }
+      : {}),
   };
 }
 

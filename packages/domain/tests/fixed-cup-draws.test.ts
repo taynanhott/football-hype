@@ -38,6 +38,10 @@ describe('participantes fixos e sorteios da liga', () => {
       const draw = state.competitionDraws!.find((d) => d.competitionId === id)!;
       expect(draw).toBeDefined();
       expect(draw.completedAt).toBeUndefined();
+      if (['copa-nordeste', 'copa-sul-sudeste', 'copa-verde'].includes(id)) {
+        expect(draw.participantIds).toHaveLength(16);
+        continue;
+      }
       expect(
         draw.participantIds.map((id) => competitionClubKey(state.clubs.byId[id]!.name)).sort(),
       ).toEqual(names.map(competitionClubKey).sort());

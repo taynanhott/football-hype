@@ -79,6 +79,18 @@ it('cria seletivas regionais em turno único sem reativar a Série D', () => {
     }
   }
 });
+it('inicia carreiras novas diretamente com seletivas e sem Série D nacional', () => {
+  const { previous } = prepare();
+  expect(previous.regionalQualifiers).toHaveLength(3);
+  expect(previous.fixtures.some((f) => f.competitionId === 'serie-d')).toBe(false);
+  expect(previous.fixtures.some((f) => f.competitionId.startsWith('seletiva-'))).toBe(true);
+  expect(previous.nextScheduledAt).toBe(
+    Math.min(
+      ...previous.fixtures.map((f) => f.scheduledAt),
+      ...previous.cups.map((n) => n.scheduledAt),
+    ),
+  );
+});
 it('aguarda todos os jogos e leva apenas os classificados ao sorteio regional', () => {
   const { previous, next } = prepare();
   const state = normalizeRoundCalendar(scheduleRegionalQualifiers(previous, next));

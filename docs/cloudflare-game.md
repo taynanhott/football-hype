@@ -70,7 +70,7 @@ Ligas anteriores sem os eventos de sorteio mantêm sua estrutura; esta alteraç�
 
 ## Seletivas regionais nas próximas temporadas
 
-Em Torneios, as opções Seletiva do Nordeste, Seletiva Sul-Sudeste e Seletiva da Copa Verde permitem acompanhar as vagas da Série D. Na temporada atual, sem seletiva registrada, a interface informa que ela começa na próxima temporada.
+Em Torneios, as opções Seletiva do Nordeste, Seletiva Sul-Sudeste e Seletiva da Copa Verde permitem acompanhar as vagas da Série D. Novas carreiras com a base do jogo já começam com as seletivas na primeira temporada, sem gerar a liga nacional da Série D. Carreiras em andamento preservam seus calendários e recebem o modelo na próxima temporada. Na primeira temporada, sem classificação anterior, a entrada direta de B e C usa a ordenação inicial de desempate da tabela; nas seguintes, usa a classificação encerrada.
 
 Na virada da temporada, após acessos e descensos, o campeão regional elegível garante uma vaga, seguido pelos clubes da Série B e da Série C por classificação anterior. Clubes da Série A são excluídos. Os clubes da Série D da região disputam as vagas restantes em turno único, sem mata-mata, com rodadas a cada três dias de jogo. Com quantidade ímpar, cada clube folga uma rodada. O prazo depende do tamanho do grupo: 13 clubes exigem 13 rodadas e 12 jogos por clube, sem limite artificial de 21 dias.
 

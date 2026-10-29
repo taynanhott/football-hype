@@ -1,4 +1,6 @@
 import { competitionDates } from '../competitions/season-calendar.js';
+import { scheduleRegionalQualifiers } from '../competitions/regional-qualifiers.js';
+import { normalizeRoundCalendar } from '../competitions/round-calendar.js';
 import { initializeStartingChemistry } from './tactics.js';
 import { mapResult } from '../core/result.js';
 import { correctSerieC2026 } from './regularize-season.js';
@@ -85,7 +87,23 @@ export function importDataset(state: WorldState, input: unknown): Result<WorldSt
               ...cups.map((node) => node.scheduledAt),
             ),
       }),
-      initializeStartingChemistry,
+      (imported) => {
+        if (dataset.fixtures) return initializeStartingChemistry(imported);
+        const prepared = normalizeRoundCalendar(
+          scheduleRegionalQualifiers({ ...imported, results: [], cups: [] }, imported),
+        );
+        return initializeStartingChemistry({
+          ...prepared,
+          ...(!prepared.seasonClock
+            ? {
+                nextScheduledAt: Math.min(
+                  ...prepared.fixtures.map((f) => f.scheduledAt),
+                  ...prepared.cups.map((n) => n.scheduledAt),
+                ),
+              }
+            : {}),
+        });
+      },
     );
   });
 }
