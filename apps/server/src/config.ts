@@ -6,7 +6,8 @@ export const environment = z
     PORT: z.coerce.number().int().min(1).max(65535).default(2567),
     HOST: z.string().default('127.0.0.1'),
     CLIENT_ORIGIN: z.url().default('http://localhost:5173'),
-    STORE: z.enum(['file', 'firestore', 'memory']).default('file'),
+    STORE: z.enum(['file', 'firestore', 'postgres', 'memory']).default('file'),
+    DATABASE_URL: z.url().optional(),
     DATA_DIR: z.string().default('.local/leagues'),
     GCLOUD_PROJECT: z.string().default('demo-football-manager'),
     SCHEDULER_SECRET: z.string().min(32).optional(),
@@ -34,9 +35,14 @@ export const environment = z
       });
     if (
       value.NODE_ENV === 'production' &&
-      (value.STORE !== 'firestore' || value.REQUIRE_APP_CHECK !== 'true')
+      (!['firestore', 'postgres'].includes(value.STORE) || value.REQUIRE_APP_CHECK !== 'true')
     )
-      context.addIssue({ code: 'custom', message: 'Produção exige Firestore e App Check' });
+      context.addIssue({
+        code: 'custom',
+        message: 'Produção exige PostgreSQL ou Firestore e App Check',
+      });
+    if (value.STORE === 'postgres' && !value.DATABASE_URL)
+      context.addIssue({ code: 'custom', message: 'PostgreSQL exige DATABASE_URL' });
     if (value.TEST_NOW && value.NODE_ENV !== 'test')
       context.addIssue({ code: 'custom', message: 'Relógio fixo só é permitido em testes' });
   })

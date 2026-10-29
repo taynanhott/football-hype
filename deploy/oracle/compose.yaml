@@ -1,0 +1,54 @@
+services:
+  db:
+    image: postgres:17-bookworm
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: football
+      POSTGRES_USER: football
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Configure POSTGRES_PASSWORD}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U football -d football']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+  server:
+    build: ../..
+    restart: unless-stopped
+    init: true
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: 2567
+      STORE: postgres
+      DATABASE_URL: postgresql://football:${POSTGRES_PASSWORD:?Configure POSTGRES_PASSWORD}@db:5432/football
+      REQUIRE_APP_CHECK: 'true'
+      GOOGLE_APPLICATION_CREDENTIALS: /run/secrets/firebase
+    secrets:
+      - firebase
+    depends_on:
+      db:
+        condition: service_healthy
+  proxy:
+    image: caddy:2
+    restart: unless-stopped
+    environment:
+      GAME_DOMAIN: ${GAME_DOMAIN:?Configure GAME_DOMAIN}
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - server
+secrets:
+  firebase:
+    file: ./firebase-service-account.json
+volumes:
+  postgres-data:
+  caddy-data:
+  caddy-config:

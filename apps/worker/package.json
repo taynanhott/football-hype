@@ -1,0 +1,22 @@
+{
+  "name": "@football/worker",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "node ../../scripts/prepare-worker-assets.mjs && wrangler dev",
+    "build": "node ../../scripts/prepare-worker-assets.mjs && wrangler deploy --dry-run --outdir dist",
+    "typecheck": "tsc --noEmit",
+    "deploy": "node ../../scripts/prepare-worker-assets.mjs && wrangler deploy"
+  },
+  "dependencies": {
+    "@football/domain": "workspace:*",
+    "@football/shared": "workspace:*",
+    "jose": "^6.1.0",
+    "zod": "^4.1.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20261029.1",
+    "wrangler": "^4.0.0"
+  }
+}

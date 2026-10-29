@@ -19,3 +19,6 @@ data/.backups/
 *service-account*.json
 *.pem
 *.key
+
+apps/worker/assets/
+**/.wrangler/

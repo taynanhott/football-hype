@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { z } from 'zod';
-import { Client, type Room } from 'colyseus.js';
+import { Client } from 'colyseus.js';
+import { connectWorker, type GameRoom } from './worker-transport';
 import {
   commandSchema,
   gameSnapshotSchema,
@@ -22,7 +23,7 @@ const pendingActionSchema = z.object({
 type GameStore = {
   snapshot: GameSnapshot | null;
   clockOffset: number;
-  room: Room | null;
+  room: GameRoom | null;
   userId: string;
   connected: boolean;
   busy: boolean;
@@ -62,11 +63,15 @@ export const useGameStore = create<GameStore>((set, get) => ({
       await previous?.leave();
       const identity = await credentials();
       const { userId, ...authOptions } = identity;
-      const room = await new Client(serverUrl).joinOrCreate('league', {
+      const options = {
         ...authOptions,
         leagueId,
         ...(clubId ? { clubId } : {}),
-      });
+      };
+      const room: GameRoom =
+        import.meta.env.VITE_GAME_TRANSPORT === 'cloudflare'
+          ? await connectWorker(serverUrl, options)
+          : await new Client(serverUrl).joinOrCreate('league', options);
       set({ room, userId, connected: true });
       let confirmed: GameSnapshot | null = null;
       let activeId = '';

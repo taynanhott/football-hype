@@ -65,3 +65,11 @@ O workflow CI verifica formatação, lint, tipos, cobertura, builds, navegador, 
 - [Cloud Functions agendadas](https://firebase.google.com/docs/functions/schedule-functions)
 - [Render gratuito](https://render.com/docs/free)
 - [App Check para Web](https://firebase.google.com/docs/app-check/web/recaptcha-provider)
+
+## Alternativa Oracle e PostgreSQL
+
+Consulte [Oracle + PostgreSQL](oracle.md) para publicar o servidor e o banco juntos, mantendo a interface na Cloudflare e o login no Firebase.
+
+## Backend Cloudflare (destino atual)
+
+Consulte [Servidor Cloudflare com Durable Objects](cloudflare-game.md) para publicar as novas carreiras sem Render, Oracle ou Firestore.

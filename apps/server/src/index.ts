@@ -12,11 +12,18 @@ import { FirestoreLeagueRepository } from './repositories/firestore-league-repos
 import { leagueRoom } from './rooms/league-room.js';
 import { FileDataProvider } from './repositories/file-data-provider.js';
 
+import { PostgresLeagueRepository } from './repositories/postgres-league-repository.js';
+
 const repository =
-  environment.STORE === 'firestore'
-    ? new FirestoreLeagueRepository()
-    : new LocalLeagueRepository(environment.STORE === 'memory' ? undefined : environment.DATA_DIR);
-if (repository instanceof LocalLeagueRepository) await repository.initialize();
+  environment.STORE === 'postgres'
+    ? new PostgresLeagueRepository(environment.DATABASE_URL!)
+    : environment.STORE === 'firestore'
+      ? new FirestoreLeagueRepository()
+      : new LocalLeagueRepository(
+          environment.STORE === 'memory' ? undefined : environment.DATA_DIR,
+        );
+if (repository instanceof LocalLeagueRepository || repository instanceof PostgresLeagueRepository)
+  await repository.initialize();
 const primaryData = environment.DATASET_FILE
   ? new FileDataProvider(environment.DATASET_FILE)
   : environment.NODE_ENV !== 'test'
@@ -202,11 +209,18 @@ const timer = setInterval(() => {
   void service.tick().catch((error: unknown) => console.error('Falha no agendamento', error));
 }, 30000);
 timer.unref();
-process.once('SIGTERM', () => {
+let shuttingDown = false;
+async function shutdown(): Promise<void> {
+  if (shuttingDown) return;
+  shuttingDown = true;
   clearInterval(timer);
-  void gameServer.gracefullyShutdown(false);
-});
-process.once('SIGINT', () => {
-  clearInterval(timer);
-  void gameServer.gracefullyShutdown(false);
-});
+  await gameServer.gracefullyShutdown(false);
+  if (repository instanceof PostgresLeagueRepository) await repository.close();
+}
+for (const signal of ['SIGTERM', 'SIGINT'] as const)
+  process.once(signal, () => {
+    void shutdown().catch((error: unknown) => {
+      console.error('Falha ao encerrar servidor', error);
+      process.exitCode = 1;
+    });
+  });
