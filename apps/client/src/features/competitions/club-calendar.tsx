@@ -128,7 +128,7 @@ export function ClubCalendar({ state, clubId }: { state: WorldState; clubId: str
             const key = date.toISOString().slice(0, 10);
             const inMonth = date.getUTCMonth() === monthIndex;
             const drawOnDay = (state.competitionDraws ?? []).filter(
-              (draw) => dayKey(draw.scheduledAt) === key,
+              (draw) => draw.participantIds.includes(clubId) && dayKey(draw.scheduledAt) === key,
             );
             const matches = fixtures.filter((fixture) => dayKey(fixture.scheduledAt) === key);
             const cupId =

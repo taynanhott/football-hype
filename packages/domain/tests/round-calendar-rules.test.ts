@@ -30,7 +30,7 @@ describe('regras compactas de torneio e datas exclusivas', () => {
     for (let round = 0; round < 5; round++) expect(knockoutLegs('copa-brasil', round, 4)).toBe(1);
     expect(knockoutLegs('intercontinental', 0, 0)).toBe(1);
   });
-  it('não cruza torneios ou jogos de um clube no mesmo dia e deixa dois dias livres', () => {
+  it('permite torneios paralelos sem repetir um clube no mesmo dia e mantém rodadas juntas', () => {
     const result = createWorld({
       id: crypto.randomUUID(),
       userId: 'calendar-test',
@@ -61,10 +61,19 @@ describe('regras compactas de torneio e datas exclusivas', () => {
         rounds.set(key, dates);
       }
     }
-    for (const entries of days.values()) expect(entries.size).toBe(1);
-    const ordered = [...days.keys()].sort((a, b) => a - b);
-    for (let i = 1; i < ordered.length; i++)
-      expect(ordered[i]! - ordered[i - 1]!).toBeGreaterThanOrEqual(3);
+    expect([...days.values()].some((entries) => entries.size > 1)).toBe(true);
+    const byCompetition = new Map<string, number[]>();
+    for (const [key, dates] of rounds) {
+      const competition = key.split(':')[0]!;
+      const entries = byCompetition.get(competition) ?? [];
+      entries.push(...dates);
+      byCompetition.set(competition, entries);
+    }
+    for (const entries of byCompetition.values()) {
+      entries.sort((a, b) => a - b);
+      for (let i = 1; i < entries.length; i++)
+        expect(entries[i]! - entries[i - 1]!).toBeGreaterThanOrEqual(3);
+    }
     for (const dates of rounds.values()) expect(dates.size).toBe(1);
     expect(normalizeRoundCalendar(state)).toBe(state);
     const schedule = seasonSchedule(Object.values(state.clubs.byId), seasonStart(2026));

@@ -35,7 +35,7 @@ export async function request(path: string, init?: RequestInit): Promise<unknown
   const response = await fetch(`${serverUrl.replace(/^ws/, 'http')}${path}`, {
     ...init,
     headers,
-    signal: AbortSignal.timeout(path === '/api/leagues' && init?.method === 'POST' ? 45000 : 15000),
+    signal: AbortSignal.timeout(path === '/api/leagues' ? 90000 : 15000),
   });
   const data: unknown = await response.json();
   if (!response.ok) throw new Error(z.object({ error: z.string() }).parse(data).error);

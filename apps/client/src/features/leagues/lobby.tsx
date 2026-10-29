@@ -382,7 +382,9 @@ function AuthenticatedLobby({ user }: { user: { uid: string; name: string } }) {
       )}
       {leagues.error && (
         <p role="alert" className="form-error">
-          Não foi possível carregar suas carreiras. O servidor não respondeu a tempo.
+          {leagues.error.name === 'TimeoutError' || leagues.error.name === 'AbortError'
+            ? 'O servidor demorou para iniciar. Tente carregar suas carreiras novamente.'
+            : `Não foi possível carregar suas carreiras: ${leagues.error.message}`}
           <button
             className="secondary"
             disabled={leagues.isFetching}

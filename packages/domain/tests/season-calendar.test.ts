@@ -42,7 +42,7 @@ describe('calendário da temporada', () => {
     expect(imported.ok).toBe(true);
     if (imported.ok) expect(imported.value.lastProcessedAt).toBe(seasonStart(2026));
   });
-  it('respeita as janelas de estreia e a pausa de junho e julho', () => {
+  it('respeita as janelas de estreia e mantém a Série A ativa em junho e julho', () => {
     expect(new Date(competitionDates('serie-b', 2026, 38)[0]!).toISOString().slice(0, 10)).toBe(
       '2026-03-21',
     );
@@ -50,8 +50,12 @@ describe('calendário da temporada', () => {
       '2026-04-05',
     );
     expect(competitionDates('serie-a', 2026, 38)).toHaveLength(38);
-    for (const date of competitionDates('serie-a', 2026, 38))
-      expect(date < Date.parse('2026-06-01') || date > Date.parse('2026-07-19')).toBe(true);
+    for (const month of [5, 6])
+      expect(
+        competitionDates('serie-a', 2026, 38).some(
+          (date) => new Date(date).getUTCMonth() === month,
+        ),
+      ).toBe(true);
     expect(
       competitionDates('libertadores', 2026, 6).map((date) => new Date(date).getUTCMonth()),
     ).toEqual([3, 3, 3, 4, 4, 4]);

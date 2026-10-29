@@ -3,6 +3,9 @@ import {
   normalizeRoundCalendar,
   cupRoundKey,
   cupReturnDate,
+  cupCalendarNodes,
+  cupPhaseLabel,
+  cupGroupTables,
 } from '@football/domain';
 import { COMPETITIONS } from '@football/shared';
 import type { WorldState } from '@football/shared';
@@ -43,7 +46,8 @@ export function clubCalendarPendingGames(state: WorldState, clubId: string) {
       });
     }
   }
-  for (const node of calendar.cups) {
+  const nodes = cupCalendarNodes(calendar);
+  for (const node of nodes) {
     if (!competitions.has(node.competitionId)) continue;
     const latestKnownRound = Math.max(
       -1,
@@ -63,6 +67,15 @@ export function clubCalendarPendingGames(state: WorldState, clubId: string) {
         n.winnerId !== clubId,
     );
     if (eliminated) continue;
+    const groups = cupGroupTables(calendar, node.competitionId);
+    const group = groups.find((g) => g.table.some((row) => row.id === clubId));
+    const complete = new Set(calendar.results.map((r) => r.fixtureId));
+    if (
+      group &&
+      groups.every((g) => g.fixtures.every((f) => complete.has(f.id))) &&
+      group.table.findIndex((row) => row.id === clubId) >= 2
+    )
+      continue;
     const legs = node.legs ?? COMPETITIONS.find((r) => r.id === node.competitionId)?.legs ?? 1;
     for (let leg = 0; leg < legs; leg++) {
       const id = cupRoundKey(node.competitionId, node.round, leg);
@@ -84,7 +97,7 @@ export function clubCalendarPendingGames(state: WorldState, clubId: string) {
         id,
         competitionId: node.competitionId,
         scheduledAt,
-        label: `${node.label ?? `Fase ${node.round + 1}`} · ${node.round > latestKnownRound ? 'Se classificar' : 'Adversário a definir'}${legs === 2 ? (leg ? ' · Volta' : ' · Ida') : ''}`,
+        label: `${node.label ?? cupPhaseLabel(node.round, Math.max(...nodes.filter((n) => n.competitionId === node.competitionId).map((n) => n.round)))} · ${node.round > latestKnownRound ? 'Se classificar' : 'Adversário a definir'}${legs === 2 ? (leg ? ' · Volta' : ' · Ida') : ''}`,
       });
     }
   }

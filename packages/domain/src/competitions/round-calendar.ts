@@ -1,15 +1,16 @@
 import { COMPETITIONS, type WorldState, type Fixture } from '@football/shared';
 import { cupReturnDate, competitionDates } from './season-calendar.js';
+import { cupCalendarNodes } from './cup-calendar.js';
 const DAY = 86400000;
 const OFFSET = 10800000;
 export const ROUND_REST_DAYS = 2;
-export const ROUND_CALENDAR_VERSION = 3;
+export const ROUND_CALENDAR_VERSION = 4;
 const day = (at: number) => Math.floor((at - OFFSET) / DAY) * DAY + OFFSET;
 export const fixtureRoundKey = (fixture: Fixture) =>
   `${fixture.competitionId}:${fixture.group ? 'group' : 'league'}:${fixture.round}`;
 export const cupRoundKey = (competition: string, round: number, leg: number) =>
   `${competition}:cup:${round}:${leg}`;
-/** Reserve a separate date for every complete round, including unresolved bracket nodes. */
+/** Shared round dates; only overlapping club pools block a date in another competition. */
 export function normalizeRoundCalendar(state: WorldState): WorldState {
   if (
     state.roundCalendarVersion !== undefined &&
@@ -78,6 +79,7 @@ export function normalizeRoundCalendar(state: WorldState): WorldState {
       ),
     };
   }
+  const calendarNodes = cupCalendarNodes(state);
   const candidates = new Map<string, { at: number; competition: string; order: number }>();
   for (const f of state.fixtures) {
     const key = fixtureRoundKey(f);
@@ -88,7 +90,7 @@ export function normalizeRoundCalendar(state: WorldState): WorldState {
       order: f.round,
     });
   }
-  for (const node of state.cups) {
+  for (const node of calendarNodes) {
     const legs = node.legs ?? COMPETITIONS.find((r) => r.id === node.competitionId)?.legs ?? 1;
     for (let leg = 0; leg < legs; leg++) {
       const key = cupRoundKey(node.competitionId, node.round, leg);
@@ -101,6 +103,17 @@ export function normalizeRoundCalendar(state: WorldState): WorldState {
       });
     }
   }
+  const datesMatchSources =
+    state.fixtures.every((f) => state.roundDates?.[fixtureRoundKey(f)] === f.scheduledAt) &&
+    state.cups.every(
+      (n) => state.roundDates?.[cupRoundKey(n.competitionId, n.round, 0)] === n.scheduledAt,
+    );
+  if (
+    state.roundCalendarVersion === ROUND_CALENDAR_VERSION &&
+    datesMatchSources &&
+    [...candidates.keys()].every((key) => state.roundDates?.[key] !== undefined)
+  )
+    return state;
   const dates = { ...state.roundDates };
   const queues = new Map<string, [string, { at: number; competition: string; order: number }][]>();
   for (const entry of candidates) {
@@ -122,7 +135,38 @@ export function normalizeRoundCalendar(state: WorldState): WorldState {
     if (n.awayId) ids.add(n.awayId);
     participants.set(n.competitionId, ids);
   }
+  const roundParticipants = new Map<string, Set<string>>();
+  for (const f of state.fixtures) {
+    const ids = roundParticipants.get(fixtureRoundKey(f)) ?? new Set<string>();
+    ids.add(f.homeId);
+    ids.add(f.awayId);
+    roundParticipants.set(fixtureRoundKey(f), ids);
+  }
+  const possibleClubs = (
+    node: (typeof calendarNodes)[number],
+    visited = new Set<string>(),
+  ): string[] => {
+    if (visited.has(node.id)) return [];
+    visited.add(node.id);
+    if (node.winnerId) return [node.winnerId];
+    const known = [node.homeId, node.awayId].filter((id): id is string => !!id);
+    for (const parentId of [node.leftId, node.rightId]) {
+      const parent = calendarNodes.find((n) => n.id === parentId);
+      if (parent) known.push(...possibleClubs(parent, visited));
+    }
+    return known.length ? known : [...(participants.get(node.competitionId) ?? [])];
+  };
+  for (const node of calendarNodes) {
+    const legs = node.legs ?? COMPETITIONS.find((r) => r.id === node.competitionId)?.legs ?? 1;
+    for (let leg = 0; leg < legs; leg++) {
+      const key = cupRoundKey(node.competitionId, node.round, leg);
+      const ids = roundParticipants.get(key) ?? new Set<string>();
+      possibleClubs(node).forEach((id) => ids.add(id));
+      roundParticipants.set(key, ids);
+    }
+  }
   const occupied = Object.entries(dates).map(([key, at]) => ({
+    key,
     at: day(at),
     competition: key.split(':')[0]!,
   }));
@@ -131,20 +175,20 @@ export function normalizeRoundCalendar(state: WorldState): WorldState {
   for (const f of state.fixtures.filter((f) => completed.has(f.id))) {
     const key = fixtureRoundKey(f);
     dates[key] ??= f.scheduledAt;
-    occupied.push({ at: day(dates[key]!), competition: f.competitionId });
+    occupied.push({ key, at: day(dates[key]!), competition: f.competitionId });
   }
   for (const node of state.cups) {
     if (completed.has(`${node.id}:first`)) {
       const key = cupRoundKey(node.competitionId, node.round, 0);
       dates[key] ??= node.scheduledAt;
-      occupied.push({ at: day(dates[key]!), competition: node.competitionId });
+      occupied.push({ key, at: day(dates[key]!), competition: node.competitionId });
     }
     if (completed.has(node.id)) {
       const legs = node.legs ?? COMPETITIONS.find((r) => r.id === node.competitionId)?.legs ?? 1;
       const key = cupRoundKey(node.competitionId, node.round, legs - 1);
       dates[key] ??=
         legs === 2 ? cupReturnDate(node.competitionId, node.scheduledAt) : node.scheduledAt;
-      occupied.push({ at: day(dates[key]!), competition: node.competitionId });
+      occupied.push({ key, at: day(dates[key]!), competition: node.competitionId });
     }
   }
   const previous = new Map<string, number>();
@@ -180,14 +224,14 @@ export function normalizeRoundCalendar(state: WorldState): WorldState {
             Math.abs(day(at) - other.at) <
               (other.competition === item.competition ? ROUND_REST_DAYS + 1 : 1) * DAY &&
             (other.competition === item.competition ||
-              [...(participants.get(item.competition) ?? [])].some((id) =>
-                participants.get(other.competition)?.has(id),
+              [...(roundParticipants.get(key) ?? [])].some((id) =>
+                roundParticipants.get(other.key)?.has(id),
               )),
         )
       )
         at += DAY;
       dates[key] = at;
-      occupied.push({ at: day(at), competition: item.competition });
+      occupied.push({ key, at: day(at), competition: item.competition });
     }
     previous.set(item.competition, dates[key]!);
   }
@@ -213,6 +257,7 @@ export function normalizeRoundCalendar(state: WorldState): WorldState {
   });
   if (
     !drawChanged &&
+    datesMatchSources &&
     state.roundCalendarVersion === ROUND_CALENDAR_VERSION &&
     Object.keys(dates).length === Object.keys(state.roundDates ?? {}).length
   )
