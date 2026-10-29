@@ -90,4 +90,17 @@ describe('convites, aprovação e vagas online', () => {
       '90 segundos',
     );
   });
+  it('permite avançar quando as partidas em andamento envolvem apenas clubes da IA', async () => {
+    const { service, repo, id } = await setup();
+    await service.command(id, host.userId, { type: 'advance' });
+    const saved = (await repo.load(id))!;
+    const humanClubs = new Set(saved.state.participants.map((participant) => participant.clubId));
+    saved.state.results = saved.state.results.filter(
+      (result) => !humanClubs.has(result.homeId) && !humanClubs.has(result.awayId),
+    );
+    expect(saved.state.results.length).toBeGreaterThan(0);
+    await expect(service.command(id, host.userId, { type: 'advance' })).resolves.toBeTypeOf(
+      'number',
+    );
+  });
 });

@@ -715,7 +715,12 @@ export class LeagueService {
         (command.type === 'advance' || command.type === 'ready') &&
         saved.state.mode === 'multiplayer' &&
         saved.state.results.some(
-          (result) => (result.startedAt ?? 0) + MATCH_DURATION_MS > this.now(),
+          (result) =>
+            (result.startedAt ?? 0) + MATCH_DURATION_MS > this.now() &&
+            saved.state.participants.some(
+              (participant) =>
+                participant.clubId === result.homeId || participant.clubId === result.awayId,
+            ),
         )
       )
         throw new Error('Aguarde o encerramento dos 90 segundos da rodada');
@@ -817,7 +822,16 @@ export class LeagueService {
             current.nextScheduledAt > this.now()
           )
             return;
-          if (current.results.some((r) => (r.startedAt ?? 0) + MATCH_DURATION_MS > this.now()))
+          if (
+            current.results.some(
+              (result) =>
+                (result.startedAt ?? 0) + MATCH_DURATION_MS > this.now() &&
+                current.participants.some(
+                  (participant) =>
+                    participant.clubId === result.homeId || participant.clubId === result.awayId,
+                ),
+            )
+          )
             return;
           const played = playNextBatch(current, current.nextScheduledAt);
           if (!played.ok) return;
