@@ -1,3 +1,4 @@
+import { GeneratedPerson } from '../../ui/person-avatar';
 import { FitnessGym } from './fitness-gym';
 import { useState } from 'react';
 import type { ViewProps } from '../../ui/view-props';
@@ -12,7 +13,7 @@ export function SectorGuide({ sector }: { sector: string }) {
   return (
     <div className="sector-guide">
       <span className="sector-avatar" role="img" aria-label={info.person}>
-        {info.avatar}
+        <GeneratedPerson name={info.person} />
       </span>
       <div>
         <strong>{info.person}</strong>

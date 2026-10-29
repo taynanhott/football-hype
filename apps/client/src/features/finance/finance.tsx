@@ -1,3 +1,4 @@
+import { GeneratedPerson } from '../../ui/person-avatar';
 import {
   clubPayroll,
   financialLimits,
@@ -13,48 +14,8 @@ import { FinancialManagement, SeasonResults } from './financial-management';
 import { FinanceLedger } from './finance-ledger';
 
 function FinancialDirector() {
-  return (
-    <svg viewBox="0 0 140 160" role="img" aria-label="Helena Duarte, gestora financeira">
-      <defs>
-        <linearGradient id="director-jacket" x2="1" y2="1">
-          <stop stopColor="#406f72" />
-          <stop offset="1" stopColor="#173d47" />
-        </linearGradient>
-      </defs>
-      <circle cx="70" cy="72" r="62" fill="#244e49" />
-      <path d="M33 83Q20 12 69 10Q119 10 110 91L99 117H43Z" fill="#302929" />
-      <path d="M61 100H81V126H61Z" fill="#c68765" />
-      <path
-        d="M17 160V143Q21 118 58 112L70 128L82 112Q121 118 125 143V160"
-        fill="url(#director-jacket)"
-      />
-      <path d="M58 112L70 128L82 112L90 160H50Z" fill="#e9efe8" />
-      <path d="M43 48Q70 37 87 29L101 56V74Q100 107 72 111Q43 104 40 75Z" fill="#dba582" />
-      <path d="M33 57Q28 12 70 15Q100 12 108 49Q95 50 87 29Q70 52 33 57" fill="#382b2a" />
-      <path
-        d="M50 65Q56 61 62 65M81 65Q87 61 93 65"
-        fill="none"
-        stroke="#4b3430"
-        strokeWidth="3"
-        strokeLinecap="round"
-      />
-      <ellipse cx="57" cy="72" rx="2" ry="3" fill="#27333a" />
-      <ellipse cx="86" cy="72" rx="2" ry="3" fill="#27333a" />
-      <path d="M70 72L66 86H74" fill="none" stroke="#b87e60" strokeWidth="2" />
-      <path d="M59 93Q71 102 83 92" fill="#a65454" />
-      <path d="M61 94Q72 98 80 93" stroke="#f9e8db" strokeWidth="2" />
-      <circle cx="40" cy="83" r="3" fill="#e9c474" />
-      <circle cx="101" cy="83" r="3" fill="#e9c474" />
-      <path
-        d="M56 117L47 132L58 140L49 160M84 117L94 132L83 140L92 160"
-        fill="none"
-        stroke="#75a69d"
-        strokeWidth="2"
-      />
-    </svg>
-  );
+  return <GeneratedPerson name="Helena Duarte, gestora financeira" outfit="#406f72" />;
 }
-
 export function Finance({ snapshot, club }: ViewProps) {
   const state = snapshot.state,
     send = useGameStore((s) => s.send),

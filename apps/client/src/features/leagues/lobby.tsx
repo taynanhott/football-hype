@@ -1,3 +1,4 @@
+import { GeneratedPerson } from '../../ui/person-avatar';
 import { BrandMark } from '../../ui/brand-mark';
 import { useState, useEffect, useRef, type CSSProperties } from 'react';
 import { z } from 'zod';
@@ -64,7 +65,7 @@ export function Lobby() {
                 </span>
               </div>
               <div className="badge-coach-profile">
-                <Icon name="squad" size={42} />
+                <GeneratedPerson name="Treinador" className="credential-person" />
                 <div>
                   <span>COMISSÃO TÉCNICA</span>
                   <strong>TREINADOR</strong>

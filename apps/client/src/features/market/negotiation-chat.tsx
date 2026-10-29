@@ -1,3 +1,4 @@
+import { GeneratedPerson } from '../../ui/person-avatar';
 import { useEffect, useRef, useState } from 'react';
 import type { ViewProps } from '../../ui/view-props';
 import { transferContext, interestLabel } from '@football/domain';
@@ -83,7 +84,7 @@ export function NegotiationChat({
             ←
           </button>
           <span className="chat-avatar" aria-hidden="true">
-            {(seller?.coachName ?? 'T').slice(0, 1)}
+            <GeneratedPerson name={seller?.coachName ?? 'Técnico do clube'} />
           </span>
           <div>
             <strong id="chat-contact">

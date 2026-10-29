@@ -1,3 +1,4 @@
+import { GeneratedPerson } from '../../ui/person-avatar';
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { COMPETITIONS, type WorldState } from '@football/shared';
 import { openModalPreservingScroll } from '../../ui/modal-scroll';
@@ -7,33 +8,11 @@ import { Icon } from '../../ui/icons';
 export type CompetitionDraw = NonNullable<WorldState['competitionDraws']>[number];
 function DrawAvatar({ player = false }: { player?: boolean }) {
   return (
-    <svg
+    <GeneratedPerson
+      name={player ? 'Atleta convidado' : 'Apresentador do sorteio'}
       className={`ceremony-avatar ${player ? 'ceremony-player' : ''}`}
-      viewBox="0 0 80 120"
-      role="img"
-      aria-label={player ? 'Atleta convidado do sorteio' : 'Apresentador do sorteio'}
-    >
-      <path fill={player ? '#3e281e' : '#c6c4ad'} d="M23 9h34v12h7v30H16V21h7z" />
-      <path fill={player ? '#a86c46' : '#e7b68b'} d="M23 24h34v30H23z" />
-      <path fill="#172a24" d="M29 33h5v5h-5zm17 0h5v5h-5z" />
-      <path fill="#895e45" d="M34 46h12v3H34z" />
-      {!player && (
-        <>
-          <path fill="#e7e9d2" d="M13 18h54v8H13zM23 8h34v10H23z" />
-          <path fill="#23372d" d="M23 15h34v5H23z" />
-        </>
-      )}
-      <path fill={player ? '#d4bd4b' : '#263f34'} d="M19 59h42v33H19z" />
-      <path fill={player ? '#4d7042' : '#f0e8cb'} d="M35 59h10v26H35z" />
-      <path fill={player ? '#a86c46' : '#e7b68b'} d="M9 62h10v29H9zm52 0h10v29H61z" />
-      <path fill={player ? '#2f6347' : '#192c26'} d="M22 92h15v23H22zm21 0h15v23H43z" />
-      <path fill="#12291f" d="M18 112h20v7H18zm24 0h20v7H42z" />
-      {player && (
-        <text x="40" y="79" textAnchor="middle" fontSize="15" fontWeight="900" fill="#173e2d">
-          10
-        </text>
-      )}
-    </svg>
+      outfit={player ? '#d4bd4b' : '#263f34'}
+    />
   );
 }
 export function CompetitionDrawDetails({

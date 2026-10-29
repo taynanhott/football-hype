@@ -1,3 +1,4 @@
+import { GeneratedPerson } from '../../ui/person-avatar';
 import { formationSchema, playStyleSchema, type Fixture, type WorldState } from '@football/shared';
 import { resolveLineup, tacticalBonus, effectiveOverall, STYLE_LABELS } from '@football/domain';
 import { Icon } from '../../ui/icons';
@@ -133,24 +134,7 @@ export function OpponentAdvice({
   return (
     <aside className="opponent-advice" aria-label="Dica do auxiliar técnico">
       <div className="opponent-advice-coach">
-        <svg viewBox="0 0 80 80" role="img" aria-label="Auxiliar técnico">
-          <circle cx="40" cy="40" r="39" fill="#d7e2cc" />
-          <path d="M9 80q1-27 31-27t31 27" fill="#174638" />
-          <path d="M31 54l9 13 9-13" fill="#f5edda" />
-          <rect x="34" y="45" width="12" height="15" rx="5" fill="#c68c64" />
-          <ellipse cx="40" cy="32" rx="18" ry="22" fill="#dba77d" />
-          <path d="M22 30q-4-26 19-25 23 1 18 25l-8-14-26 9" fill="#3d342b" />
-          <path
-            d="M29 31h7m8 0h7M35 42q5 4 10 0"
-            fill="none"
-            stroke="#473a30"
-            strokeWidth="2"
-            strokeLinecap="round"
-          />
-          <circle cx="32" cy="34" r="1.5" />
-          <circle cx="48" cy="34" r="1.5" />
-          <path d="M19 70l7 10m35-10l-7 10" stroke="#d7bb6f" strokeWidth="3" />
-        </svg>
+        <GeneratedPerson name="Auxiliar técnico" outfit="#174638" />
         <span>AUXILIAR TÉCNICO</span>
       </div>
       <div className="opponent-advice-content">

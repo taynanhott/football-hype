@@ -1,3 +1,6 @@
+import { CoachAvatar, CoachEditor } from './coach-profile';
+import { readCoach } from './coach-profile-storage';
+import { useSession } from '../features/auth/session';
 import { AdvanceRoundButton } from '../features/leagues/advance-round-button';
 import { BrandMark } from './brand-mark';
 import { MATCH_DURATION_MS } from '@football/shared';
@@ -49,6 +52,15 @@ function scrollPageToTop() {
 
 function GameApp() {
   const route = useSyncExternalStore(subscribe, currentRoute);
+  const { user } = useSession();
+  const profileKey = `football.coach.${user?.uid ?? useGameStore.getState().userId}`;
+  const [coach, setCoach] = useState(() => readCoach(profileKey));
+  const [loadedProfileKey, setLoadedProfileKey] = useState(profileKey);
+  if (loadedProfileKey !== profileKey) {
+    setLoadedProfileKey(profileKey);
+    setCoach(readCoach(profileKey));
+  }
+  const coachProfile = { ...coach, name: coach.name || user?.name || 'Treinador' };
 
   useLayoutEffect(() => {
     scrollPageToTop();
@@ -122,7 +134,16 @@ function GameApp() {
   const props = { snapshot, club, stadium, center };
   const ready = state.participants.filter((member) => member.ready).length;
   const view =
-    route === 'matches' ? (
+    route === 'coach' ? (
+      <CoachEditor
+        key={profileKey}
+        profile={coachProfile}
+        onSave={(profile) => {
+          localStorage.setItem(profileKey, JSON.stringify(profile));
+          setCoach(profile);
+        }}
+      />
+    ) : route === 'matches' ? (
       <Matches {...props} />
     ) : route === 'settings' && state.mode === 'multiplayer' ? (
       <LeagueSettings {...props} />
@@ -197,10 +218,21 @@ function GameApp() {
         <button className="sidebar-exit" onClick={disconnect}>
           ← Trocar de carreira
         </button>
-        <div className="sidebar-user">
-          <span className="avatar">T</span>
+        <a className="sidebar-user" href="#/coach" aria-label="Editar treinador">
+          <span className="avatar">
+            <CoachAvatar profile={coachProfile} />
+          </span>
           <div>
-            <strong>Treinador</strong>
+            <strong>{coachProfile.name}</strong>
+            <div className="save-queue-status" role="status">
+              {!connected
+                ? 'Reconecte para sincronizar a carreira'
+                : pendingActions
+                  ? `${pendingActions} ${pendingActions === 1 ? 'ação sincronizando' : 'ações sincronizando'}…`
+                  : error
+                    ? 'Confira a sincronização da carreira'
+                    : '✓ Carreira sincronizada'}
+            </div>
             <small>
               {state.mode === 'offline'
                 ? 'Carreira solo'
@@ -208,18 +240,9 @@ function GameApp() {
             </small>
           </div>
           <span className={connected ? 'status-dot' : 'status-dot offline'} />
-        </div>
+        </a>
       </aside>
       <div className="workspace">
-        <div className="save-queue-status" role="status">
-          {!connected
-            ? 'Reconecte para sincronizar a carreira'
-            : pendingActions
-              ? `${pendingActions} ${pendingActions === 1 ? 'ação sincronizando' : 'ações sincronizando'}…`
-              : error
-                ? 'Confira a sincronização da carreira'
-                : '✓ Carreira sincronizada'}
-        </div>
         {!connected && (
           <div className="connection-banner">
             Você está desconectado.{' '}
