@@ -3,13 +3,17 @@ import { positionLabel } from '../../ui/position-label';
 import { NegotiationChat } from './negotiation-chat';
 import { MoneyRange } from '../../ui/money-range';
 import { IncomingOffers } from '../players/player-management';
-import { transferContext, interestLabel, potentialStars, financialLimits } from '@football/domain';
+import {
+  transferContext,
+  interestLabel,
+  potentialStars,
+  financialLimits,
+  SearchTrie,
+} from '@football/domain';
 import { useEffect, useMemo, useState } from 'react';
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import type { PlayerSnapshot } from '@football/shared';
 import type { ViewProps } from '../../ui/view-props';
 import { useGameStore } from '../../store/game-store';
-import { searchPlayers } from '../leagues/api';
 import { UNLIMITED_MARKET_PRICE, marketPriceCeiling, matchesMarketRanges } from './market-filters';
 import type { MarketFilterValues } from './market-filters';
 import { MarketFiltersDialog } from './market-filters-dialog';
@@ -92,15 +96,25 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
   const [salary, setSalary] = useState('');
   const send = useGameStore((state) => state.send);
   const busy = useGameStore((state) => state.busy);
-  const found = useQuery({
-    queryKey: ['players', snapshot.state.id, searchQuery, snapshot.state.revision],
-    queryFn: () => searchPlayers(snapshot.state.id, searchQuery),
-    enabled: searchQuery.length > 1,
-    placeholderData: keepPreviousData,
-    refetchOnWindowFocus: false,
-    staleTime: 10000,
-  });
-  const candidates = (searchQuery.length > 1 ? (found.data ?? []) : allPlayers)
+  const searchIndex = useMemo(() => {
+    const trie = new SearchTrie();
+    for (const player of allPlayers) {
+      trie.insert(player.name, player.id);
+      for (const token of player.name.split(' ')) trie.insert(token, player.id);
+    }
+    return trie;
+  }, [allPlayers]);
+  const found =
+    searchQuery.length > 1
+      ? searchIndex
+          .search(searchQuery)
+          .slice(0, 50)
+          .flatMap((id) => {
+            const player = snapshot.state.players.byId[id];
+            return player ? [player] : [];
+          })
+      : allPlayers;
+  const candidates = found
     .filter((player) => (!player.academyClubId || !!player.clubId) && player.clubId !== club.id)
     .filter((player) => {
       const seller = snapshot.state.clubs.byId[player.clubId ?? ''];
@@ -319,7 +333,6 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
               </button>
             </div>
           )}
-          {found.error && <p role="alert">Não foi possível realizar a busca.</p>}
           <div className="market-grid">
             {players.map((player) => (
               <section className="panel market-player" key={player.id}>
@@ -379,11 +392,9 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
           )}
           {!players.length && (
             <div className="empty-state">
-              {found.isFetching
-                ? 'Procurando atletas…'
-                : hasFilters
-                  ? 'Nenhum atleta encontrado com os filtros atuais. Abra os filtros, ajuste a busca e clique em Ver resultados.'
-                  : 'Nenhum atleta encontrado para esta busca.'}
+              {hasFilters
+                ? 'Nenhum atleta encontrado com os filtros atuais. Abra os filtros, ajuste a busca e clique em Ver resultados.'
+                : 'Nenhum atleta encontrado para esta busca.'}
             </div>
           )}
         </>

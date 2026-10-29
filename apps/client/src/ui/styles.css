@@ -14035,3 +14035,10 @@ html {
     animation-duration: 0.01s;
   }
 }
+.save-queue-status {
+  font-size: 11px;
+  color: #86a38f;
+  text-align: right;
+  padding: 6px 20px;
+  min-height: 26px;
+}

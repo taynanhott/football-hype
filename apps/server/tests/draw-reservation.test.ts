@@ -27,5 +27,8 @@ describe('reserva do sorteio', () => {
     const next = await service.draw(identity, { mode: 'multiplayer', division: 'B' });
     expect(next.leagueId).not.toBe(first.leagueId);
     expect(next.division).toBe('B');
+    const nextId = await service.create(identity, { name: 'Outra liga', mode: 'multiplayer' });
+    await service.leave(nextId, identity.userId);
+    expect(await repository.getDraw(identity.userId, 'multiplayer')).toBeUndefined();
   });
 });

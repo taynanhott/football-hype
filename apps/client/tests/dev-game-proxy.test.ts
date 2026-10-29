@@ -51,6 +51,8 @@ describe('interface local com a carreira online', () => {
     await new Promise<void>((resolve) => upstream!.listen(0, '127.0.0.1', resolve));
     const address = upstream.address();
     if (!address || typeof address === 'string') throw new Error('Porta indisponível');
+    const proxy = developmentGameProxy('http://127.0.0.1:' + address.port, origin);
+    if (!proxy) throw new Error('Proxy indisponível');
     vite = await createViteServer({
       configFile: false,
       appType: 'custom',
@@ -58,7 +60,7 @@ describe('interface local com a carreira online', () => {
       server: {
         host: '127.0.0.1',
         port: 0,
-        proxy: developmentGameProxy('http://127.0.0.1:' + address.port, origin),
+        proxy,
       },
     });
     await vite.listen();

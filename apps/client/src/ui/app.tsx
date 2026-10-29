@@ -15,8 +15,6 @@ import { LeagueSettings, TrophyGallery } from '../features/leagues/settings';
 import { Calendar } from '../features/competitions/calendar';
 import { Icon } from './icons';
 
-import { firebaseEnabled } from '../features/leagues/api';
-
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30000, retry: 1 } },
 });
@@ -68,26 +66,18 @@ function GameApp() {
       window.removeEventListener('hashchange', navigate);
     };
   }, []);
-  const { snapshot, connected, busy, error, userId, send, disconnect, clearError, connect } =
-    useGameStore();
-  const observedLeagueId = snapshot?.state.id;
-  useEffect(() => {
-    if (!firebaseEnabled || !observedLeagueId) return;
-    let unsubscribe: (() => void) | undefined;
-    let active = true;
-    void import('../features/auth/firebase').then((firebase) => {
-      if (active && firebase.auth.currentUser)
-        unsubscribe = firebase.observeLeague(
-          observedLeagueId,
-          () => useGameStore.getState().room?.send('sync'),
-          () => undefined,
-        );
-    });
-    return () => {
-      active = false;
-      unsubscribe?.();
-    };
-  }, [observedLeagueId]);
+  const {
+    snapshot,
+    connected,
+    busy,
+    pendingActions,
+    error,
+    userId,
+    send,
+    disconnect,
+    clearError,
+    connect,
+  } = useGameStore();
   const latestMatch = snapshot?.state.results
     .filter(
       (r) =>
@@ -218,6 +208,13 @@ function GameApp() {
         </div>
       </aside>
       <div className="workspace">
+        <div className="save-queue-status" role="status">
+          {pendingActions
+            ? `${pendingActions} ${pendingActions === 1 ? 'ação sincronizando' : 'ações sincronizando'}…`
+            : error
+              ? 'Confira a sincronização da carreira'
+              : '✓ Carreira sincronizada'}
+        </div>
         {!connected && (
           <div className="connection-banner">
             Você está desconectado.{' '}

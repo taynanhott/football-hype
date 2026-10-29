@@ -25,6 +25,30 @@ afterEach(async () => {
 });
 
 describe('serviço autoritativo de ligas', () => {
+  it('reconhece uma ação reenviada após reconectar sem aplicá-la novamente', async () => {
+    const repository = new LocalLeagueRepository(undefined);
+    const service = new LeagueService(repository, () => now);
+    const id = await service.create(host, { mode: 'offline' });
+    const requestId = '00000001-0000-4000-8000-000000000099';
+    const first = await service.command(
+      id,
+      host.userId,
+      { type: 'home-ticket-price', priceCents: 5000 },
+      false,
+      requestId,
+    );
+    const retry = await service.command(
+      id,
+      host.userId,
+      { type: 'home-ticket-price', priceCents: 7500 },
+      false,
+      requestId,
+    );
+    expect(retry).toBe(first);
+    const saved = (await repository.load(id))!;
+    expect(saved.events.filter((event) => event.id === requestId)).toHaveLength(1);
+    expect(saved.state.homeTicketPrices?.[saved.state.participants[0]!.clubId]).toBe(5000);
+  });
   it('serializa criação concorrente e permite apenas uma liga por modo', async () => {
     const repository = new LocalLeagueRepository(undefined);
     const service = new LeagueService(repository, () => now);

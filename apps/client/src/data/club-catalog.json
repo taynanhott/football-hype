@@ -1,0 +1,431 @@
+{
+  "source": "Base local do arquivo fornecido · Treineiros · 2026",
+  "imported": true,
+  "clubs": [
+    {
+      "id": "0000001f-0000-4000-8000-db38873e2f6c",
+      "name": "Athletico-PR",
+      "division": "A"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-327d72559aff",
+      "name": "Atlético-MG",
+      "division": "A"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-6334dee52524",
+      "name": "Bahia",
+      "division": "A"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-ded6a6875142",
+      "name": "Botafogo",
+      "division": "A"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-b40a5dab6649",
+      "name": "Bragantino",
+      "division": "A"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-f104b0fa29cb",
+      "name": "Chapecoense",
+      "division": "A"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-45643fcbe978",
+      "name": "Corinthians",
+      "division": "A"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-fa1d5838ef24",
+      "name": "Coritiba",
+      "division": "A"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-a673e8791149",
+      "name": "Cruzeiro",
+      "division": "A"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-d58d736c7a96",
+      "name": "Flamengo",
+      "division": "A"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-f828f11c37ac",
+      "name": "Fluminense",
+      "division": "A"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-d11ede0b1441",
+      "name": "Grêmio",
+      "division": "A"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-8d294eb556df",
+      "name": "Internacional",
+      "division": "A"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-cf07a92378cb",
+      "name": "Mirassol",
+      "division": "A"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-2ac4296d076e",
+      "name": "Palmeiras",
+      "division": "A"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-f04e8efb46e2",
+      "name": "Remo",
+      "division": "A"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-0df2b318462f",
+      "name": "Santos",
+      "division": "A"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-8f7f2f7ccd3f",
+      "name": "São Paulo",
+      "division": "A"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-6e10390574fe",
+      "name": "Vasco",
+      "division": "A"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-a5f3cf1c18f9",
+      "name": "Vitória",
+      "division": "A"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-c6d330b64067",
+      "name": "América-MG",
+      "division": "B"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-b0abb7566fe8",
+      "name": "Athletic",
+      "division": "B"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-04d8bec8c29f",
+      "name": "Atlético-GO",
+      "division": "B"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-bd21a6c6007e",
+      "name": "Avaí",
+      "division": "B"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-ef37e8a35025",
+      "name": "Botafogo-SP",
+      "division": "B"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-70528be54163",
+      "name": "Ceará",
+      "division": "B"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-38317beee1d7",
+      "name": "CRB",
+      "division": "B"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-9b8c26b16441",
+      "name": "Criciúma",
+      "division": "B"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-c2c64c35e75e",
+      "name": "Cuiabá",
+      "division": "B"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-d5136e93e64c",
+      "name": "Fortaleza",
+      "division": "B"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-ccd5b09a0739",
+      "name": "Goiás",
+      "division": "B"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-e0591aac0255",
+      "name": "Juventude",
+      "division": "B"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-2bb16d2216bc",
+      "name": "Londrina",
+      "division": "B"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-263a9c36d43f",
+      "name": "Náutico",
+      "division": "B"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-b0a1641b19b0",
+      "name": "Novorizontino",
+      "division": "B"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-1536e1d6cf3b",
+      "name": "Operário-PR",
+      "division": "B"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-b9af2373a81b",
+      "name": "Ponte Preta",
+      "division": "B"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-233b54fc6af7",
+      "name": "São Bernardo",
+      "division": "B"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-ec450786e26a",
+      "name": "Sport",
+      "division": "B"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-b499709a07c0",
+      "name": "Vila Nova",
+      "division": "B"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-ba7816bf8f01",
+      "name": "ABC",
+      "division": "D"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-b941767a21cd",
+      "name": "Águia de Marabá",
+      "division": "D"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-6c198fc6c609",
+      "name": "Altos",
+      "division": "D"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-226887df75c2",
+      "name": "Amazonas",
+      "division": "C"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-462db43cab84",
+      "name": "América-RN",
+      "division": "D"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-c906ab86d7cd",
+      "name": "Anápolis",
+      "division": "C"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-8ba9e37b18c9",
+      "name": "Araguaína",
+      "division": "D"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-84c7497f72a3",
+      "name": "Barra",
+      "division": "C"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-d5a6d7c996ef",
+      "name": "Botafogo-PB",
+      "division": "C"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-584a7d66322d",
+      "name": "Brasiliense",
+      "division": "D"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-e4c94258cb13",
+      "name": "Brusque",
+      "division": "C"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-bd08022e8fb8",
+      "name": "Capital",
+      "division": "D"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-25ff05a7681f",
+      "name": "Caxias",
+      "division": "C"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-806efcb02802",
+      "name": "Cianorte",
+      "division": "D"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-c70602d05d3a",
+      "name": "Confiança",
+      "division": "C"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-55fafa646c77",
+      "name": "CSA",
+      "division": "D"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-7ed77381c980",
+      "name": "Ferroviária",
+      "division": "C"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-4fcb6314c060",
+      "name": "Ferroviário",
+      "division": "D"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-237be53281cb",
+      "name": "Figueirense",
+      "division": "C"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-080b7f174d2b",
+      "name": "Floresta",
+      "division": "C"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-a9147877ddf8",
+      "name": "Gama",
+      "division": "D"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-2fe840e13244",
+      "name": "GAS",
+      "division": "D"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-cb6b0140a169",
+      "name": "Guarani",
+      "division": "C"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-3def657185a9",
+      "name": "Independência-AC",
+      "division": "D"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-464706eedb21",
+      "name": "Inter de Limeira",
+      "division": "C"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-aa806e122c1b",
+      "name": "Itabaiana",
+      "division": "C"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-0317bdab7cb0",
+      "name": "Ituano",
+      "division": "C"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-083369c4a57b",
+      "name": "Juazeirense",
+      "division": "D"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-ac0f5724f755",
+      "name": "Luverdense",
+      "division": "D"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-b0e5b2870731",
+      "name": "Maranhão",
+      "division": "C"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-4d5b9398d9f3",
+      "name": "Maringá",
+      "division": "C"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-da9aa8fda278",
+      "name": "Moto Club",
+      "division": "D"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-73d4a81e14f1",
+      "name": "Nacional-AM",
+      "division": "D"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-31e4bbeb6fda",
+      "name": "Operário-MS",
+      "division": "D"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-9d451b47668f",
+      "name": "Paysandu",
+      "division": "C"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-0ea7b0313290",
+      "name": "Porto Velho",
+      "division": "D"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-233c761b0953",
+      "name": "Portuguesa",
+      "division": "D"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-a62ee5ab3e89",
+      "name": "Primavera",
+      "division": "D"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-a2b3da557e4d",
+      "name": "Sampaio Corrêa",
+      "division": "D"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-1d61c4a4d5aa",
+      "name": "Santa Cruz",
+      "division": "C"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-0b5eb2f35492",
+      "name": "Sergipe",
+      "division": "D"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-c78df4a873fd",
+      "name": "Trem",
+      "division": "D"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-e914339b8e43",
+      "name": "Treze",
+      "division": "D"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-e4d1dd05ca07",
+      "name": "Volta Redonda",
+      "division": "C"
+    },
+    {
+      "id": "0000001f-0000-4000-8000-6966d14525b6",
+      "name": "Ypiranga",
+      "division": "C"
+    }
+  ]
+}

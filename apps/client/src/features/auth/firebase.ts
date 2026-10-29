@@ -8,7 +8,6 @@ import {
   signOut,
   type User,
 } from 'firebase/auth';
-import { connectFirestoreEmulator, doc, getFirestore, onSnapshot } from 'firebase/firestore';
 import { getToken, initializeAppCheck, ReCaptchaEnterpriseProvider } from 'firebase/app-check';
 import { z } from 'zod';
 
@@ -41,10 +40,8 @@ const app = initializeApp({
   ...(config.measurementId ? { measurementId: config.measurementId } : {}),
 });
 export const auth = getAuth(app);
-const db = getFirestore(app);
 if (import.meta.env.DEV && import.meta.env.VITE_USE_EMULATORS === 'true') {
   connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
-  connectFirestoreEmulator(db, '127.0.0.1', 8080);
 }
 const siteKey = import.meta.env.VITE_FIREBASE_APPCHECK_SITE_KEY as string | undefined;
 if (import.meta.env.DEV && import.meta.env.VITE_FIREBASE_APPCHECK_DEBUG === 'true') {
@@ -74,14 +71,6 @@ export async function firebaseCredentials() {
   const appCheckToken = appCheck ? (await getToken(appCheck)).token : undefined;
   return { ...(token ? { token } : {}), ...(appCheckToken ? { appCheckToken } : {}) };
 }
-export function observeLeague(
-  id: string,
-  update: () => void,
-  fail: (error: Error) => void,
-): () => void {
-  return onSnapshot(doc(db, 'leagues', id), update, fail);
-}
-
 export function observeUser(listener: (user: User | null) => void) {
   return onAuthStateChanged(auth, listener);
 }

@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { playerSchema } from '@football/shared';
+import bundledCatalog from '../../data/club-catalog.json';
 
 export const serverUrl = z
   .url()
@@ -73,7 +74,14 @@ export async function searchPlayers(leagueId: string, query: string) {
     .parse(await request(`/api/leagues/${leagueId}/players?q=${encodeURIComponent(query)}`));
 }
 
-export async function loadCatalog() {
+export async function loadCatalog(): Promise<{
+  source: string;
+  imported: boolean;
+  clubs: { id: string; name: string; division: string; crestUrl?: string | undefined }[];
+}> {
+  // Production club selection uses a small build artifact, not the player database.
+  // The demo test server deliberately uses a different generated world.
+  if (!testAuth) return bundledCatalog;
   const response = await fetch(serverUrl.replace(/^ws/, 'http') + '/api/catalog', {
     signal: AbortSignal.timeout(15000),
   });

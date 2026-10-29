@@ -187,19 +187,20 @@ export class LocalLeagueRepository implements LeagueRepository {
       this.fileVersions.set(id, `${base.mtimeMs}:${base.size}:${journal.mtimeMs}:${journal.size}`);
     }
     this.leagues.set(id, saved);
-    if (state.deletedAt) {
-      for (const member of previous.state.participants) {
-        const draw = await this.getDraw(member.userId, state.mode);
-        if (draw?.leagueId !== id) continue;
-        const key = this.drawKey(member.userId, state.mode);
-        this.draws.delete(key);
-        if (this.directory)
-          await unlink(join(this.directory, key + '.draw.json')).catch(
-            (error: NodeJS.ErrnoException) => {
-              if (error.code !== 'ENOENT') throw error;
-            },
-          );
-      }
+    for (const member of previous.state.participants.filter(
+      (member) =>
+        state.deletedAt || !state.participants.some((current) => current.userId === member.userId),
+    )) {
+      const draw = await this.getDraw(member.userId, state.mode);
+      if (draw?.leagueId !== id) continue;
+      const key = this.drawKey(member.userId, state.mode);
+      this.draws.delete(key);
+      if (this.directory)
+        await unlink(join(this.directory, key + '.draw.json')).catch(
+          (error: NodeJS.ErrnoException) => {
+            if (error.code !== 'ENOENT') throw error;
+          },
+        );
     }
   }
   async forUser(userId: string): Promise<readonly WorldState[]> {

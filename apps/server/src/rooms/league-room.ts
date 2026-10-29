@@ -1,5 +1,6 @@
 import { Room, ServerError, type Client } from '@colyseus/core';
 import { connectOptionsSchema, type GameSnapshot } from '@football/shared';
+import { z } from 'zod';
 import { authenticate, type Identity } from '../auth/identity.js';
 import type { LeagueService } from '../application/league-service.js';
 
@@ -8,12 +9,10 @@ export function leagueRoom(service: LeagueService): new () => Room {
     private leagueId = '';
     private unsubscribe: (() => void) | undefined;
     private readonly identities = new Map<string, Identity>();
-    private readonly rate = new Map<string, { start: number; count: number }>();
     private readonly sent = new Map<string, GameSnapshot>();
     private readonly sending = new Map<string, Promise<void>>();
     override async onCreate(input: unknown): Promise<void> {
       const options = connectOptionsSchema.parse(input);
-      await authenticate(input);
       if (!options.leagueId) throw new ServerError(400, 'Informe o código da liga');
       this.leagueId = options.leagueId;
       this.maxClients = 100;
@@ -31,21 +30,24 @@ export function leagueRoom(service: LeagueService): new () => Room {
         void this.sendSnapshot(client, true);
       });
       this.onMessage('command', async (client, input: unknown) => {
+        let requestId: string | undefined;
         try {
+          const envelope = z.object({ requestId: z.uuid(), command: z.unknown() }).safeParse(input);
+          if (envelope.success) requestId = envelope.data.requestId;
           const identity = this.identities.get(client.sessionId);
           if (!identity) throw new Error('Acesso negado');
-          const now = Date.now();
-          let rate = this.rate.get(identity.userId);
-          if (!rate || now - rate.start > 10000) {
-            rate = { start: now, count: 0 };
-            this.rate.set(identity.userId, rate);
-          }
-          if (++rate.count > 20) throw new Error('Aguarde um momento antes de tentar novamente');
-          await service.command(this.leagueId, identity.userId, input);
-          client.send('ack', { ok: true });
+          const revision = await service.command(
+            this.leagueId,
+            identity.userId,
+            envelope.success ? envelope.data.command : input,
+            false,
+            requestId,
+          );
+          client.send('ack', { ok: true, revision, ...(requestId ? { requestId } : {}) });
         } catch (error) {
           client.send('error', {
             message: error instanceof Error ? error.message : 'Falha inesperada',
+            ...(requestId ? { requestId } : {}),
           });
         }
       });

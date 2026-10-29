@@ -496,16 +496,29 @@ export class LeagueService {
       })),
     };
   }
-  async command(id: string, userId: string, input: unknown, scheduled = false): Promise<void> {
+  async command(
+    id: string,
+    userId: string,
+    input: unknown,
+    scheduled = false,
+    requestId?: string,
+  ): Promise<number> {
     if (!scheduled) await this.expire(id);
-    await this.serial(id, async () => {
+    return this.serial(id, async () => {
       const saved = await this.repository.load(id, { eventPatches: false });
       if (!saved || saved.state.deletedAt) throw new Error('Liga não encontrada');
+      if (requestId) {
+        const repeated = saved.events.find((event) => event.id === requestId);
+        if (repeated) {
+          if (repeated.actorId !== userId) throw new Error('Identificação de ação inválida');
+          return saved.state.revision;
+        }
+      }
       if (
         scheduled &&
         (saved.state.status !== 'active' || saved.state.nextScheduledAt > this.now())
       )
-        return;
+        return saved.state.revision;
       const command = commandSchema.parse(input);
       if (
         (command.type === 'advance' || command.type === 'ready') &&
@@ -515,7 +528,13 @@ export class LeagueService {
         )
       )
         throw new Error('Aguarde o encerramento dos 90 segundos da rodada');
-      const event = executeCommand(saved.state, command, userId, this.now(), randomUUID());
+      const event = executeCommand(
+        saved.state,
+        command,
+        userId,
+        this.now(),
+        requestId ?? randomUUID(),
+      );
       if (!event.ok) throw new Error(event.error.message);
       // Persist presence together with the command instead of writing the world twice.
       if (!scheduled) {
@@ -528,6 +547,7 @@ export class LeagueService {
       const applied = applyEvent(saved.state, event.value);
       if (!applied.ok) throw new Error(applied.error.message);
       await this.repository.append(id, saved.state.revision, applied.value, event.value);
+      let revision = applied.value.revision;
       this.updates.emit(id);
       if (
         command.type === 'ready' &&
@@ -552,9 +572,11 @@ export class LeagueService {
               accelerated.value,
             );
             this.updates.emit(id);
+            revision = state.value.revision;
           }
         }
       }
+      return revision;
     });
   }
   async tick(): Promise<void> {

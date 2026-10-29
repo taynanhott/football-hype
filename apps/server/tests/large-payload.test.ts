@@ -43,6 +43,9 @@ class Collection {
   select() {
     return this;
   }
+  where() {
+    return this;
+  }
   orderBy() {
     return this;
   }
@@ -132,6 +135,45 @@ class MemoryDb {
   }
 }
 describe('payloads grandes das trajetórias', () => {
+  it('salva pequenas alterações sem regravar a base e reconstrói o estado após reinício', async () => {
+    const db = new MemoryDb();
+    const repository = new FirestoreLeagueRepository(db as unknown as Firestore);
+    const state = unwrap(
+      createWorld({
+        id: randomUUID(),
+        userId: 'delta-user',
+        name: 'Base',
+        mode: 'offline',
+        now: 1,
+      }),
+    );
+    await repository.create(state);
+    const original = db.docs.get(`leagues/${state.id}`)!;
+    const next = { ...state, revision: 1, name: 'Nome novo' };
+    const first = {
+      id: randomUUID(),
+      sequence: 1,
+      occurredAt: 1,
+      actorId: 'delta-user',
+      type: 'league.updated' as const,
+      message: 'Nome',
+      amount: 0,
+      patch: { revision: 1, name: next.name },
+    };
+    await repository.append(state.id, 0, next, first);
+    const final = { ...next, revision: 2, round: 2 };
+    const second = { ...first, id: randomUUID(), sequence: 2, patch: { revision: 2, round: 2 } };
+    await repository.append(state.id, 1, final, second);
+    const document = db.docs.get(`leagues/${state.id}`)!;
+    expect(document.payload).toBe(original.payload);
+    expect(document.partIds).toBe(original.partIds);
+    const eventData = db.docs.get(`leagues/${state.id}/events/${first.id}`)!;
+    expect((eventData.payload as Buffer).length).toBeLessThan(1000);
+    expect(db.masks).toContainEqual(['revision', 'status', 'participantIds', 'patchRefs']);
+    const restarted = new FirestoreLeagueRepository(db as unknown as Firestore);
+    expect((await restarted.load(state.id, { eventPatches: false }))?.state).toEqual(final);
+    expect((await restarted.load(state.id))?.events).toEqual([first, second]);
+  });
   it('grava partes em lotes e uma tentativa obsoleta não altera o snapshot publicado', async () => {
     const db = new MemoryDb();
     const repository = new FirestoreLeagueRepository(db as unknown as Firestore);

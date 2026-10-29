@@ -12,6 +12,9 @@
   ],
   "fieldOverrides": [
     { "collectionGroup": "leagues", "fieldPath": "payload", "indexes": [] },
-    { "collectionGroup": "events", "fieldPath": "payload", "indexes": [] }
+    { "collectionGroup": "events", "fieldPath": "payload", "indexes": [] },
+    { "collectionGroup": "leagues", "fieldPath": "patchRefs", "indexes": [] },
+    { "collectionGroup": "leagues", "fieldPath": "partIds", "indexes": [] },
+    { "collectionGroup": "events", "fieldPath": "partIds", "indexes": [] }
   ]
 }

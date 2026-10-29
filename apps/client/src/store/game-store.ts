@@ -9,6 +9,15 @@ import {
   type GameSnapshot,
 } from '@football/shared';
 import { credentials, serverUrl } from '../features/leagues/api';
+import { ActionQueue, type PendingAction } from './action-queue';
+
+const pendingActionSchema = z.object({
+  id: z.uuid(),
+  command: commandSchema,
+  at: z.number().nonnegative(),
+  sent: z.boolean(),
+  revision: z.number().int().nonnegative().optional(),
+});
 
 type GameStore = {
   snapshot: GameSnapshot | null;
@@ -17,6 +26,7 @@ type GameStore = {
   userId: string;
   connected: boolean;
   busy: boolean;
+  pendingActions: number;
   error: string | null;
   connect: (id: string, clubId?: string) => Promise<void>;
   disconnect: () => void;
@@ -24,6 +34,7 @@ type GameStore = {
   clearError: () => void;
 };
 let pending: ReturnType<typeof setTimeout> | undefined;
+let actions: ActionQueue | undefined;
 export const useGameStore = create<GameStore>((set, get) => ({
   snapshot: null,
   clockOffset: 0,
@@ -31,12 +42,24 @@ export const useGameStore = create<GameStore>((set, get) => ({
   userId: '',
   connected: false,
   busy: false,
+  pendingActions: 0,
   error: null,
   clearError: () => set({ error: null }),
   connect: async (leagueId, clubId) => {
-    set({ busy: true, error: null });
+    const previous = get().room;
+    actions?.stop();
+    actions = undefined;
+    clearTimeout(pending);
+    set({
+      busy: true,
+      error: null,
+      snapshot: null,
+      room: null,
+      connected: false,
+      pendingActions: 0,
+    });
     try {
-      await get().room?.leave();
+      await previous?.leave();
       const identity = await credentials();
       const { userId, ...authOptions } = identity;
       const room = await new Client(serverUrl).joinOrCreate('league', {
@@ -45,68 +68,132 @@ export const useGameStore = create<GameStore>((set, get) => ({
         ...(clubId ? { clubId } : {}),
       });
       set({ room, userId, connected: true });
+      let confirmed: GameSnapshot | null = null;
+      let activeId = '';
+      const queueKey = `football.queue.${userId}.${leagueId}`;
+      let restored: PendingAction[] = [];
+      try {
+        restored = z
+          .array(pendingActionSchema)
+          .max(50)
+          .parse(JSON.parse(localStorage.getItem(queueKey) ?? '[]'))
+          .map(({ revision, ...action }) => ({
+            ...action,
+            ...(revision === undefined ? {} : { revision }),
+          }));
+      } catch {
+        set({ error: 'Não foi possível recuperar a fila local de ações' });
+      }
+      const queue = new ActionQueue(
+        userId,
+        (requestId, command) => {
+          activeId = requestId;
+          clearTimeout(pending);
+          room.send('command', { requestId, command });
+          pending = setTimeout(() => {
+            if (get().room !== room) return;
+            queue.stop(
+              'A sincronização não foi confirmada. Reconecte para conferir as ações salvas.',
+            );
+          }, 20000);
+        },
+        (view) => {
+          if (get().room === room) set(view);
+        },
+        (message) => {
+          if (get().room === room) set({ error: message });
+        },
+        restored,
+        (items) => {
+          try {
+            if (items.length) localStorage.setItem(queueKey, JSON.stringify(items));
+            else localStorage.removeItem(queueKey);
+          } catch {
+            /* The active in-memory queue can still finish if storage is full. */
+          }
+        },
+      );
+      actions = queue;
+      const accept = (snapshot: GameSnapshot) => {
+        if (
+          get().room !== room ||
+          (confirmed && snapshot.state.revision < confirmed.state.revision)
+        )
+          return;
+        confirmed = snapshot;
+        set({ clockOffset: (snapshot.serverTime ?? Date.now()) - Date.now() });
+        queue.accept(snapshot);
+      };
       room.onMessage('snapshot-update', (input: unknown) => {
         if (get().room !== room) return;
         const parsed = gameSnapshotUpdateSchema.safeParse(input);
-        const current = get().snapshot;
         if (
           !parsed.success ||
-          !current ||
-          current.state.id !== parsed.data.leagueId ||
-          current.state.revision !== parsed.data.baseRevision
+          !confirmed ||
+          confirmed.state.id !== parsed.data.leagueId ||
+          confirmed.state.revision !== parsed.data.baseRevision
         ) {
           room.send('sync');
           return;
         }
         const update = parsed.data;
-        if (update.revision < current.state.revision) return;
-        clearTimeout(pending);
-        set({
-          snapshot: {
-            state: Object.assign({}, current.state, update.patch, { revision: update.revision }),
-            tables: update.tables,
-            ledger: update.ledger,
-            roomId: update.roomId,
-            serverTime: update.serverTime,
-          },
-          busy: false,
-          clockOffset: (update.serverTime ?? Date.now()) - Date.now(),
+        accept({
+          state: Object.assign({}, confirmed.state, update.patch, { revision: update.revision }),
+          tables: update.tables,
+          ledger: update.ledger,
+          roomId: update.roomId,
+          serverTime: update.serverTime,
         });
       });
       room.onMessage('snapshot', (input: unknown) => {
+        if (get().room !== room) return;
         const parsed = gameSnapshotSchema.safeParse(input);
         if (!parsed.success) {
-          set({ busy: false, error: 'O servidor enviou dados incompatíveis' });
+          queue.stop('O servidor enviou dados incompatíveis');
           return;
         }
-        if (get().room !== room) return;
-        const current = get().snapshot?.state;
-        if (current?.id === parsed.data.state.id && parsed.data.state.revision < current.revision)
-          return;
-        clearTimeout(pending);
-        set({
-          snapshot: parsed.data,
-          busy: false,
-          clockOffset: (parsed.data.serverTime ?? Date.now()) - Date.now(),
-        });
+        accept(parsed.data);
       });
       room.onMessage('error', (input: unknown) => {
-        const parsed = z.object({ message: z.string().max(1000) }).safeParse(input);
-        clearTimeout(pending);
-        set({
-          error: parsed.success ? parsed.data.message : 'Não foi possível concluir a operação',
-          busy: false,
-        });
+        if (get().room !== room) return;
+        const parsed = z
+          .object({ message: z.string().max(1000), requestId: z.string().optional() })
+          .safeParse(input);
+        if (parsed.success && parsed.data.requestId) {
+          if (parsed.data.requestId === activeId) clearTimeout(pending);
+          queue.reject(parsed.data.requestId, parsed.data.message);
+        } else {
+          clearTimeout(pending);
+          queue.stop(parsed.success ? parsed.data.message : 'Não foi possível concluir a operação');
+        }
       });
-      room.onMessage('ack', () => {
-        clearTimeout(pending);
-        set({ busy: false });
+      room.onMessage('ack', (input: unknown) => {
+        if (get().room !== room) return;
+        const parsed = z
+          .object({ requestId: z.string(), revision: z.number().int().nonnegative() })
+          .safeParse(input);
+        if (!parsed.success) {
+          queue.stop('Atualize o jogo para sincronizar com este servidor');
+          return;
+        }
+        if (parsed.data.requestId === activeId) clearTimeout(pending);
+        queue.acknowledge(parsed.data.requestId, parsed.data.revision);
       });
-      room.onError(() => set({ error: 'A conexão foi interrompida', busy: false }));
+      room.onError(() => {
+        if (get().room === room) {
+          clearTimeout(pending);
+          queue.stop('A conexão foi interrompida. Reconecte à liga.');
+        }
+      });
       const heartbeat = setInterval(() => room.send('heartbeat'), 30000);
       room.onLeave(() => {
         clearInterval(heartbeat);
-        if (get().room === room) set({ connected: false, busy: false, snapshot: null, room: null });
+        if (get().room === room) {
+          clearTimeout(pending);
+          queue.stop();
+          actions = undefined;
+          set({ connected: false, busy: false, snapshot: null, room: null, pendingActions: 0 });
+        }
       });
       room.send('sync');
       location.hash = '/dashboard';
@@ -120,23 +207,30 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
   disconnect: () => {
     clearTimeout(pending);
+    actions?.stop();
+    actions = undefined;
     const room = get().room;
-    set({ room: null, snapshot: null, connected: false, error: null, busy: false });
+    set({
+      room: null,
+      snapshot: null,
+      connected: false,
+      error: null,
+      busy: false,
+      pendingActions: 0,
+    });
     void room?.leave();
   },
   send: (command) => {
-    const { room, connected, busy } = get();
-    if (!room || !connected || busy) return;
-    set({ busy: true, error: null });
-    room.send('command', commandSchema.parse(command));
-    clearTimeout(pending);
-    pending = setTimeout(
-      () =>
-        set({
-          busy: false,
-          error: 'O servidor demorou a responder. Reconecte para conferir a operação',
-        }),
-      20000,
-    );
+    if (!get().room || !get().connected || !actions) return;
+    try {
+      set({ error: null });
+      actions.enqueue(
+        commandSchema.parse(command),
+        crypto.randomUUID(),
+        Date.now() + get().clockOffset,
+      );
+    } catch (error) {
+      set({ error: error instanceof Error ? error.message : 'Não foi possível executar a ação' });
+    }
   },
 }));

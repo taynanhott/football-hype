@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { gzip, gunzip } from 'node:zlib';
 import { promisify } from 'node:util';
+import { z } from 'zod';
 import {
   getFirestore,
   type Firestore,
@@ -85,6 +86,32 @@ export class FirestoreLeagueRepository implements LeagueRepository {
       await batch.commit();
     }
   }
+  private async readState(document: DocumentSnapshot): Promise<WorldState> {
+    const base = await this.unpack(document);
+    const references = z
+      .record(z.string(), z.string().regex(/^[\w-]+$/))
+      .parse(document.get('patchRefs') ?? {});
+    const keys = Object.keys(references);
+    if (keys.some((key) => !Object.hasOwn(worldStateSchema.shape, key)))
+      throw new Error('Referência de alteração inválida');
+    const ids = [...new Set(Object.values(references))];
+    if (!ids.length) return worldStateSchema.parse(base);
+    const documents = await this.db.getAll(
+      ...ids.map((id) => document.ref.collection('events').doc(id)),
+      { fieldMask: ['payload', 'partIds'] },
+    );
+    const patches = await Promise.all(
+      documents.map(async (entry) => gameEventSchema.shape.patch.parse(await this.unpack(entry))),
+    );
+    const changes = Object.fromEntries(
+      keys.map((key) => {
+        const patch = patches[ids.indexOf(references[key]!)];
+        if (!patch || !Object.hasOwn(patch, key)) throw new Error('Alteração ausente');
+        return [key, patch[key as keyof typeof patch]];
+      }),
+    );
+    return worldStateSchema.parse({ ...(base as object), ...changes });
+  }
   async load(id: string, options?: { eventPatches?: boolean }): Promise<SavedLeague | undefined> {
     const ref = this.db.doc(`leagues/${id}`);
     const cached = this.cache.get(id);
@@ -98,6 +125,7 @@ export class FirestoreLeagueRepository implements LeagueRepository {
     if (!document.exists || document.get('status') === 'deleted') return undefined;
     const events = await document.ref
       .collection('events')
+      .where('sequence', '<=', document.get('revision'))
       .select(
         'id',
         'sequence',
@@ -113,7 +141,7 @@ export class FirestoreLeagueRepository implements LeagueRepository {
       .limit(100)
       .get();
     const saved = {
-      state: worldStateSchema.parse(await this.unpack(document)),
+      state: await this.readState(document),
       events: await Promise.all(
         events.docs.reverse().map(async (event) => {
           const { payload: _payload, partIds: _parts, ...entry } = event.data();
@@ -149,15 +177,16 @@ export class FirestoreLeagueRepository implements LeagueRepository {
     event: GameEvent,
   ): Promise<void> {
     const { patch, ...entry } = event;
-    const [packed, packedEvent] = await Promise.all([
-      pack(state, randomUUID()),
-      pack(patch, randomUUID()),
-    ]);
+    // The initial world stays immutable. Store only changed branches once, in the event.
+    const packedEvent = await pack(patch, randomUUID());
     const ref = this.db.doc(`leagues/${id}`);
     const eventRef = ref.collection('events').doc(event.id);
-    await Promise.all([this.writeParts(ref, packed), this.writeParts(eventRef, packedEvent)]);
+    await this.writeParts(eventRef, packedEvent);
     await this.db.runTransaction(async (transaction) => {
-      const current = await transaction.get(ref);
+      const [current] = await transaction.getAll(ref, {
+        fieldMask: ['revision', 'status', 'participantIds', 'patchRefs'],
+      });
+      if (!current?.exists) throw new Error('Liga não encontrada');
       if (current.get('status') === 'deleted' || current.get('revision') !== expectedRevision)
         throw new Error('A liga mudou. Atualize e tente novamente');
       const previousIds = current.get('participantIds') as string[];
@@ -178,7 +207,11 @@ export class FirestoreLeagueRepository implements LeagueRepository {
         const membership = await transaction.get(this.db.doc(`memberships/${member.userId}`));
         if (membership.get(state.mode) === id) removedRefs.push(membership.ref);
       }
-      transaction.set(ref, { ...metadata(state), ...packed.fields });
+      const patchRefs = {
+        ...(current.get('patchRefs') as Record<string, string> | undefined),
+        ...Object.fromEntries(Object.keys(patch).map((key) => [key, event.id])),
+      };
+      transaction.update(ref, { ...metadata(state), patchRefs, storageVersion: 2 });
       for (const member of newMembers)
         transaction.set(
           this.db.doc(`memberships/${member.userId}`),
@@ -186,7 +219,11 @@ export class FirestoreLeagueRepository implements LeagueRepository {
           { merge: true },
         );
       for (const membership of removedRefs)
-        transaction.set(membership, { [state.mode]: null }, { merge: true });
+        transaction.set(
+          membership,
+          { [state.mode]: null, [state.mode + 'Draw']: null },
+          { merge: true },
+        );
       transaction.create(eventRef, { ...entry, ...packedEvent.fields });
     });
     const cached = this.cache.get(id);
