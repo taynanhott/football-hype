@@ -487,6 +487,14 @@ export function seasonSchedule(
           });
         }
       }
+      if (rule.id === 'sul-americana' && qualifications) {
+        // Reserve the eventual losers' seats without enlarging the groups after the pre.
+        domestic.push(
+          ...cups
+            .filter((n) => n.competitionId === 'pre-libertadores')
+            .flatMap((n) => (n.homeId ? [n.homeId] : [])),
+        );
+      }
       const needed = rule.teamCount - domestic.length;
       const availableForeign = foreignPool.filter(
         (id) => !usedForeign.has(id) && !domestic.includes(id),
