@@ -7,7 +7,7 @@ Relatório do jogo, gerado com as listas fixas e a base de clubes do repositóri
 - Uma rodada inteira usa a mesma data de jogo e o mesmo horário real para todos os usuários da liga.
 - Rodadas com clubes distintos podem compartilhar data e horário real. Um clube não pode jogar duas vezes no mesmo dia.
 - Mata-matas ainda indefinidos reservam as datas com os possíveis classificados. A agenda não depende do clube escolhido pelo usuário.
-- Entre rodadas da mesma competição permanecem pelo menos dois dias livres. Entre competições diferentes a proibição é disputar dois jogos no mesmo dia.
+- Cada clube deve ter pelo menos dois dias livres entre partidas, inclusive de competições diferentes. Torneios sem clubes em comum continuam podendo coincidir.
 - A Série A passa a ter jogos em junho. Foi removida a pausa explícita de 1º de junho a 19 de julho; as referências distribuem as rodadas ao longo da temporada em domingos e quartas. Conflitos podem deslocar o dia.
 - O sorteio inicial define os grupos ou a chave. As datas até a final são mostradas como condicionais; não são inventados novos sorteios para fases cuja chave já está definida.
 

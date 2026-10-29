@@ -87,14 +87,20 @@ it('plays Serie A in June and distributes reference rounds over more than Sunday
   ).toBe(true);
 });
 
-it('does not schedule the same club twice on one game date', () => {
+it('leaves two full rest days between all games of a club across competitions', () => {
   const state = importedWorld();
   const seen = new Set<string>();
+  const previous = new Map<string, number>();
   for (const f of scheduledFixtures(state)) {
     for (const club of [f.homeId, f.awayId]) {
       const key = `${club}:${new Date(f.scheduledAt).toISOString().slice(0, 10)}`;
       expect(seen.has(key), `${f.competitionId} ${key}`).toBe(false);
       seen.add(key);
+      const date = Math.floor((f.scheduledAt - 10800000) / 86400000);
+      const last = previous.get(club);
+      if (last !== undefined)
+        expect(date - last, `${club}: ${f.competitionId}`).toBeGreaterThanOrEqual(3);
+      previous.set(club, date);
     }
   }
 });

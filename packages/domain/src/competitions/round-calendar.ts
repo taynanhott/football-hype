@@ -4,7 +4,7 @@ import { cupCalendarNodes } from './cup-calendar.js';
 const DAY = 86400000;
 const OFFSET = 10800000;
 export const ROUND_REST_DAYS = 2;
-export const ROUND_CALENDAR_VERSION = 4;
+export const ROUND_CALENDAR_VERSION = 5;
 const day = (at: number) => Math.floor((at - OFFSET) / DAY) * DAY + OFFSET;
 export const fixtureRoundKey = (fixture: Fixture) =>
   `${fixture.competitionId}:${fixture.group ? 'group' : 'league'}:${fixture.round}`;
@@ -221,8 +221,7 @@ export function normalizeRoundCalendar(state: WorldState): WorldState {
       while (
         occupied.some(
           (other) =>
-            Math.abs(day(at) - other.at) <
-              (other.competition === item.competition ? ROUND_REST_DAYS + 1 : 1) * DAY &&
+            Math.abs(day(at) - other.at) < (ROUND_REST_DAYS + 1) * DAY &&
             (other.competition === item.competition ||
               [...(roundParticipants.get(key) ?? [])].some((id) =>
                 roundParticipants.get(other.key)?.has(id),
