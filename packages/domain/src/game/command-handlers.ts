@@ -736,6 +736,8 @@ function handleNewSeason({
   next = {
     ...state,
     ...schedule,
+    roundDates: {},
+    roundCalendarVersion: 0,
     clubs: { ...state.clubs, byId: clubs },
     players: {
       ...state.players,

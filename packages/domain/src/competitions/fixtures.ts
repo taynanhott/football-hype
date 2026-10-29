@@ -1,8 +1,10 @@
+import { normalizeRoundCalendar, fixtureRoundKey, cupRoundKey } from './round-calendar.js';
 import { cupReturnDate } from './season-calendar.js';
 import { COMPETITIONS, type Fixture, type WorldState } from '@football/shared';
 
 /** Includes both legs of known cup ties, including completed games. */
 export function scheduledFixtures(state: WorldState): Fixture[] {
+  state = normalizeRoundCalendar(state);
   const cups = state.cups.flatMap((node): Fixture[] => {
     if (!node.homeId || !node.awayId) return [];
     const rule = COMPETITIONS.find((item) => item.id === node.competitionId);
@@ -13,7 +15,8 @@ export function scheduledFixtures(state: WorldState): Fixture[] {
       round: node.round,
       homeId: node.homeId,
       awayId: node.awayId,
-      scheduledAt: node.scheduledAt,
+      scheduledAt:
+        state.roundDates?.[cupRoundKey(node.competitionId, node.round, 0)] ?? node.scheduledAt,
       ...(node.neutral ? { neutral: true } : {}),
       ...(node.stadiumId ? { stadiumId: node.stadiumId } : {}),
     };
@@ -25,12 +28,22 @@ export function scheduledFixtures(state: WorldState): Fixture[] {
             id: node.id,
             homeId: node.awayId,
             awayId: node.homeId,
-            scheduledAt: cupReturnDate(node.competitionId, node.scheduledAt),
+            scheduledAt:
+              state.roundDates?.[cupRoundKey(node.competitionId, node.round, 1)] ??
+              cupReturnDate(node.competitionId, node.scheduledAt),
           },
         ]
       : [first];
   });
   return [
-    ...new Map([...state.fixtures, ...cups].map((fixture) => [fixture.id, fixture])).values(),
+    ...new Map(
+      [
+        ...state.fixtures.map((f) => ({
+          ...f,
+          scheduledAt: state.roundDates?.[fixtureRoundKey(f)] ?? f.scheduledAt,
+        })),
+        ...cups,
+      ].map((fixture) => [fixture.id, fixture]),
+    ).values(),
   ].sort((a, b) => a.scheduledAt - b.scheduledAt || a.id.localeCompare(b.id));
 }

@@ -15915,3 +15915,488 @@ html {
 .sidebar .sidebar-exit:active {
   background: #1a3c30;
 }
+
+/* Clearer, space-efficient club agenda. */
+.club-calendar,
+.football-dashboard .club-calendar {
+  height: auto;
+  min-height: 400px;
+  padding: 14px;
+  grid-template-rows: auto auto minmax(250px, 1fr) auto auto;
+  gap: 8px;
+}
+.club-calendar-heading,
+.football-dashboard .club-calendar-heading {
+  background: transparent;
+  padding: 0 0 8px;
+  border-bottom: 1px solid #d6ddce;
+}
+.club-calendar-heading h2,
+.football-dashboard .club-calendar-heading h2 {
+  color: #234633;
+  font-size: 18px;
+}
+.club-calendar-heading button,
+.football-dashboard .club-calendar-heading button {
+  background: #e5ecde;
+  border-color: #ccd7c5;
+  color: #28533c;
+  min-width: 32px;
+  min-height: 32px;
+}
+.club-calendar-weekdays {
+  font-size: 10px;
+  color: #526453;
+  letter-spacing: 0.06em;
+}
+.club-calendar-weekdays,
+.club-calendar-grid {
+  gap: 5px;
+}
+.club-calendar-day {
+  padding: 6px;
+  border-radius: 7px;
+  gap: 5px;
+}
+.club-calendar-day > time {
+  font-size: 12px;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+.club-calendar-day.is-today {
+  outline: 2px solid #326347;
+  outline-offset: -2px;
+}
+.club-calendar-routine {
+  font-size: 10px;
+  color: #596655;
+  line-height: 1.4;
+}
+.club-calendar-routine-icon {
+  right: 6px;
+  top: 6px;
+}
+.club-calendar-day.training-day:not(.outside-month) {
+  background: #faf8f0;
+  border-color: #e6e3d6;
+}
+.club-calendar-event strong,
+.club-calendar-event b {
+  font-size: 11px;
+  line-height: 1.4;
+}
+.club-calendar-event .pixel-badge {
+  top: 5px;
+  right: 5px;
+}
+.club-calendar-legend {
+  gap: 5px 12px;
+  font-size: 10px;
+  color: #596655;
+}
+.club-calendar-footer {
+  justify-content: flex-end;
+  padding-top: 5px;
+}
+.club-calendar-today {
+  font-size: 11px;
+  padding: 4px 14px;
+}
+@media (max-width: 620px) {
+  .club-calendar,
+  .football-dashboard .club-calendar {
+    padding: 10px;
+    min-height: 380px;
+  }
+  .club-calendar-grid,
+  .club-calendar-weekdays {
+    gap: 3px;
+  }
+  .club-calendar-day {
+    padding: 4px 3px;
+  }
+  .club-calendar-routine {
+    font-size: 8px;
+  }
+  .club-calendar-event strong {
+    font-size: 9px;
+  }
+  .club-calendar-routine-icon {
+    right: 3px;
+    top: 4px;
+  }
+}
+
+/* Keep the stadium viewport level with the adjacent calendar. */
+.football-dashboard .dashboard-middle {
+  --dashboard-panel-height: 430px;
+  align-items: stretch;
+}
+.football-dashboard .dashboard-middle > .arena-card,
+.football-dashboard .dashboard-middle > .club-calendar {
+  box-sizing: border-box;
+  align-self: stretch;
+  height: var(--dashboard-panel-height, 430px);
+  min-height: var(--dashboard-panel-height, 430px);
+}
+.football-dashboard .dashboard-middle > .arena-card > .arena-canvas {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+  width: 100%;
+}
+
+/* Six stable week rows prevent month navigation from resizing the agenda. */
+.club-calendar-grid {
+  grid-template-rows: repeat(6, minmax(0, 1fr));
+}
+.club-calendar,
+.football-dashboard .club-calendar {
+  height: 430px;
+  min-height: 430px;
+  grid-template-rows: auto auto minmax(0, 1fr) auto auto;
+}
+@media (max-width: 620px) {
+  .club-calendar,
+  .football-dashboard .club-calendar {
+    height: 430px;
+    min-height: 430px;
+  }
+}
+
+/* Compact match programme, with real kickoff as its main information. */
+.game-details-modal.compact-match-preview {
+  width: min(640px, calc(100vw - 24px));
+  padding: 20px;
+  border-radius: 20px;
+}
+.compact-match-preview h2 {
+  font-size: 20px;
+  margin: 8px 35px 12px 0;
+}
+.game-details-kickoff {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border: 1px solid #92b58b;
+  border-radius: 12px;
+  color: #ecf4d6;
+  background:
+    repeating-linear-gradient(115deg, #ffffff04 0 20px, transparent 20px 40px),
+    linear-gradient(110deg, #173e31, #285c42);
+}
+.game-details-kickoff > div {
+  flex: 1;
+  min-width: 0;
+}
+.game-details-kickoff small {
+  display: block;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: #c6db9b;
+}
+.game-details-kickoff time {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.game-details-kickoff time strong {
+  font-size: 32px;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+.game-details-kickoff time span {
+  font-size: 13px;
+  text-transform: capitalize;
+}
+.compact-match-preview .game-details-season-date {
+  font-size: 11px;
+  margin: 7px 0 0;
+  color: #657465;
+}
+.compact-match-preview .game-details-teams {
+  gap: 38px;
+  padding: 12px 0 4px;
+}
+.compact-match-preview .game-details-teams > div {
+  padding: 10px 8px;
+  gap: 5px;
+  border-radius: 12px;
+}
+.compact-match-preview .game-details-probabilities {
+  padding: 6px 0;
+}
+.compact-match-preview .game-details-probabilities h3 {
+  font-size: 12px;
+  margin: 4px 0 7px;
+}
+.compact-match-preview .game-probability-labels > span {
+  padding: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  flex-wrap: wrap;
+  font-size: 11px;
+}
+.compact-match-preview .game-probability-labels b {
+  font-size: 20px;
+}
+.compact-match-preview .game-details-facts {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+  margin: 8px 0 0;
+}
+.compact-match-preview .game-details-facts > div {
+  padding: 9px;
+  border-radius: 10px;
+  min-width: 0;
+}
+.compact-match-preview .game-details-facts dt {
+  font-size: 10px;
+  gap: 5px;
+}
+.compact-match-preview .game-details-facts dd {
+  margin-top: 4px;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 480px) {
+  .game-details-modal.compact-match-preview {
+    padding: 14px;
+  }
+  .compact-match-preview .game-details-facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .compact-match-preview .game-details-teams {
+    gap: 26px;
+  }
+}
+
+.game-details-modal.compact-match-preview {
+  padding-inline: 40px;
+}
+.compact-match-preview .close-modal {
+  right: 30px;
+}
+.game-details-navigation {
+  display: contents;
+}
+.game-details-navigation button {
+  position: absolute;
+  inset-block: 0;
+  width: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: linear-gradient(180deg, #dce5ce, #edf0e1 48%, #dce5ce);
+  color: #31583b;
+  font-size: 28px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.game-details-navigation button:first-child {
+  left: 0;
+  border-right: 1px solid #c6d3bd;
+}
+.game-details-navigation button:last-child {
+  right: 0;
+  border-left: 1px solid #c6d3bd;
+}
+.game-details-navigation button:hover:not(:disabled) {
+  background: #cadcad;
+  color: #153f29;
+}
+.game-details-navigation button:focus-visible {
+  outline: 2px solid #548145;
+  outline-offset: -3px;
+}
+.game-details-navigation button:disabled {
+  color: #a6b19e;
+  cursor: default;
+}
+.game-details-navigation > span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+@media (max-width: 480px) {
+  .game-details-modal.compact-match-preview {
+    padding-inline: 32px;
+  }
+  .game-details-navigation button {
+    width: 20px;
+  }
+  .compact-match-preview .close-modal {
+    right: 25px;
+  }
+}
+
+.game-details-modal.compact-match-preview .close-modal {
+  top: 14px;
+  right: 34px;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border: 1px solid #bdcbb2;
+  border-radius: 8px;
+  background: #e6ecd9;
+  color: #35563b;
+  line-height: 1;
+  box-shadow: inset 0 1px 0 #ffffff80;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
+}
+.game-details-modal.compact-match-preview .close-modal:hover {
+  background: #d5e2bf;
+  border-color: #8fa67d;
+}
+.game-details-modal.compact-match-preview .close-modal:focus-visible {
+  outline: 2px solid #527b3c;
+  outline-offset: 2px;
+}
+@media (max-width: 480px) {
+  .game-details-modal.compact-match-preview .close-modal {
+    top: 10px;
+    right: 28px;
+  }
+}
+
+.match-programme-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 42px 12px 14px;
+  border-radius: 12px;
+  color: #f0f5dd;
+  background:
+    repeating-linear-gradient(115deg, #ffffff05 0 20px, transparent 20px 40px),
+    linear-gradient(110deg, #173e31, #285c42);
+}
+.match-date-stamp {
+  display: inline-flex;
+  gap: 7px;
+  align-items: center;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+.match-date-stamp > strong {
+  font-size: 38px;
+  line-height: 1;
+  font-weight: 900;
+  letter-spacing: -2px;
+  font-variant-numeric: tabular-nums;
+}
+.match-date-stamp > span {
+  display: grid;
+  gap: 3px;
+}
+.match-date-stamp b {
+  font-size: 12px;
+  white-space: nowrap;
+}
+.match-date-stamp em {
+  font-style: normal;
+  margin-left: 4px;
+  opacity: 0.7;
+}
+.match-date-stamp small {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  opacity: 0.75;
+}
+.match-kickoff-clock {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 14px;
+}
+.match-relative-day {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 800;
+  color: #d7eaa3;
+}
+.match-start-time {
+  font-size: 30px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -1px;
+}
+.match-kickoff-clock .match-date-stamp > strong {
+  font-size: 28px;
+}
+.match-kickoff-clock .match-date-stamp b {
+  font-size: 10px;
+}
+.game-details-modal.compact-match-preview .match-competition-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin: 10px 0 0;
+  padding: 6px 10px;
+  border-radius: 5px;
+  background: #ead16d;
+  color: #273b26;
+  font-size: 12px;
+  font-weight: 800;
+  box-shadow: inset 0 1px 0 #fff5bb;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+@media (max-width: 520px) {
+  .match-programme-header {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding-right: 32px;
+  }
+  .match-kickoff-clock {
+    margin-left: auto;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .match-date-stamp > strong {
+    font-size: 32px;
+  }
+  .match-start-time {
+    font-size: 26px;
+  }
+}
+
+/* Reserve a separate top row for closing, clear of the match clock. */
+.game-details-modal.compact-match-preview {
+  padding-top: 54px;
+}
+.game-details-modal.compact-match-preview .close-modal {
+  top: 10px;
+  right: 34px;
+}
+.match-programme-header {
+  padding-right: 14px;
+}
+@media (max-width: 480px) {
+  .game-details-modal.compact-match-preview {
+    padding-top: 50px;
+  }
+  .game-details-modal.compact-match-preview .close-modal {
+    top: 9px;
+    right: 28px;
+  }
+}

@@ -51,3 +51,7 @@ WebSockets usam a API de hibernação e guardam apenas identidade e liga no atta
 O catálogo de jogadores é um asset interno da aplicação, não uma consulta ao Firestore. O endpoint público não expõe a base inteira. O runtime ainda precisa carregar e validar a base e simular partidas; o plano gratuito tem limites de CPU e memória, portanto o desempenho e a quantidade de ligas suportadas precisam ser medidos com partidas reais. Não há ganho percentual garantido.
 
 Referências: https://developers.cloudflare.com/durable-objects/platform/pricing/ e https://developers.cloudflare.com/durable-objects/platform/limits/
+
+## Uso local em um comando
+
+Com apps/client/.env.development.local apontando DEV_GAME_SERVER_TARGET para http://127.0.0.1:8788 e VITE_GAME_TRANSPORT=cloudflare, execute pnpm dev:local na raiz. O comando inicia a interface em http://localhost:5173 e o Worker local em 8788. As carreiras ficam em apps/worker/.wrangler/state, separadas da produção. Login Google e App Check ainda precisam de internet e configuração Firebase para localhost. Para encerrar, pressione Ctrl+C no terminal.

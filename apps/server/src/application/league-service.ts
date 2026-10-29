@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { randomUUID, randomInt } from 'node:crypto';
 import {
   applyEvent,
+  normalizeRoundCalendar,
   playNextBatch,
   createWorld,
   EventBus,
@@ -148,6 +149,7 @@ export class LeagueService {
         nextScheduledAt: nextRealMatchTime(this.now()),
         participants: state.participants.map((member) => ({ ...member, lastSeenAt: this.now() })),
       };
+      state = normalizeRoundCalendar(state);
       await this.repository.create(state);
       return state.id;
     });
@@ -612,6 +614,21 @@ export class LeagueService {
           userId,
           'Calendário da temporada ajustado para 11 de janeiro',
         );
+      });
+      saved = (await this.repository.load(id, { eventPatches: false })) ?? saved;
+    }
+    if (normalizeRoundCalendar(saved.state) !== saved.state) {
+      await this.serial(id, async () => {
+        const current = await this.repository.load(id, { eventPatches: false });
+        if (!current) return;
+        const next = normalizeRoundCalendar(current.state);
+        if (next !== current.state)
+          await this.commit(
+            current.state,
+            next,
+            userId,
+            'Rodadas reorganizadas com datas exclusivas e descanso',
+          );
       });
       saved = (await this.repository.load(id, { eventPatches: false })) ?? saved;
     }

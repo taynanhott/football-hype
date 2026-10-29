@@ -126,7 +126,13 @@ export const CUP_PARTICIPANTS_2026: Readonly<Record<string, readonly string[]>> 
 };
 
 export function knockoutLegs(competitionId: string, round: number, finalRound: number): 1 | 2 {
-  if (competitionId === 'copa-brasil') return round === finalRound ? 2 : 1;
+  if (
+    ['copa-brasil', 'libertadores', 'copa-nordeste', 'copa-verde', 'copa-sul-sudeste'].includes(
+      competitionId,
+    )
+  )
+    return 1;
+  if (competitionId === 'pre-libertadores') return 2;
   if (competitionId === 'intercontinental') return 1;
   if (['libertadores', 'sul-americana', 'europa'].includes(competitionId))
     return round === finalRound ? 1 : 2;

@@ -381,7 +381,9 @@ export function seasonSchedule(
     const official = CUP_PARTICIPANTS_2026[rule.id];
     const genericRegional = ['copa-nordeste', 'copa-verde', 'copa-sul-sudeste'].includes(rule.id);
     if (genericRegional) {
-      const pool = clubs.filter((club) => club.country === 'BR' && club.playerIds.length >= 11);
+      const pool = clubs.filter(
+        (club) => club.country === 'BR' && club.division !== 'A' && club.playerIds.length >= 11,
+      );
       const preferred = (
         official ??
         (rule.id === 'copa-norte' ? CUP_PARTICIPANTS_2026['copa-verde']?.slice(0, 12) : []) ??
@@ -394,9 +396,9 @@ export function seasonSchedule(
         .filter((club) => ['C', 'D', 'REGIONAL'].includes(club.division))
         .map((club) => club.id);
       const all = [...new Set([...preferred, ...regionalPool, ...pool.map((club) => club.id)])];
-      selected = all.slice(0, 32);
+      selected = all.slice(0, rule.teamCount);
       competitionNotes[rule.id] =
-        'Modelo genérico: 32 clubes da base, oito grupos de quatro, seis partidas por clube. Os dois primeiros avançam às oitavas de final.';
+        '16 clubes fora da Série A, quatro grupos de quatro e seis partidas por clube. Os dois primeiros avançam às quartas de final.';
     } else if (['libertadores', 'sul-americana'].includes(rule.id)) {
       const offset = rule.id === 'libertadores' ? 0 : 6;
       const key = rule.id === 'libertadores' ? 'libertadores' : 'sulAmericana';
@@ -435,14 +437,13 @@ export function seasonSchedule(
           });
         }
       }
-      const needed = 32 - domestic.length;
+      const needed = rule.teamCount - domestic.length;
       const availableForeign = foreignPool.filter((id) => !usedForeign.has(id));
       const foreigners = availableForeign.slice(0, needed);
       selected = [...domestic, ...foreigners];
       foreigners.forEach((id) => usedForeign.add(id));
-      if (selected.length < 32) {
-        competitionNotes[rule.id] =
-          'São necessários 32 clubes com elenco para a fase de grupos. Base insuficiente; a competição aguarda participantes.';
+      if (selected.length < rule.teamCount) {
+        competitionNotes[rule.id] = 'Base insuficiente para completar os grupos da competição.';
         continue;
       }
       selected.sort((a, b) =>

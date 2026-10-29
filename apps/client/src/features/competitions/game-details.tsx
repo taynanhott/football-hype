@@ -1,5 +1,6 @@
 import { openModalPreservingScroll } from '../../ui/modal-scroll';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { clubCalendarFixtures } from './club-calendar-fixtures';
 import { clubKit, COMPETITIONS, type Fixture, type WorldState } from '@football/shared';
 import {
   matchDemand,
@@ -9,11 +10,38 @@ import {
 } from '@football/domain';
 import { Icon } from '../../ui/icons';
 import { PixelBadge } from '../../ui/pixel-badge';
-import { currency, dateTime, ticketPrice } from '../../ui/format';
+import { currency, ticketPrice } from '../../ui/format';
 
+function MatchDate({ at, label }: { at: number; label: string }) {
+  const format = (options: Intl.DateTimeFormatOptions) =>
+    new Intl.DateTimeFormat('pt-BR', { ...options, timeZone: 'America/Sao_Paulo' })
+      .format(at)
+      .replace(/\./g, '');
+  return (
+    <time className="match-date-stamp" dateTime={new Date(at).toISOString()} aria-label={label}>
+      <strong>{format({ day: '2-digit' })}</strong>
+      <span>
+        <b>
+          {format({ month: 'short' })} <em>{format({ weekday: 'short' })}</em>
+        </b>
+        <small>{format({ year: 'numeric' })}</small>
+      </span>
+    </time>
+  );
+}
+function calendarDay(at: number) {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Sao_Paulo',
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric',
+  }).formatToParts(at);
+  const part = (type: string) => Number(parts.find((p) => p.type === type)?.value);
+  return Date.UTC(part('year'), part('month') - 1, part('day'));
+}
 export function GameDetails({
   state,
-  fixture,
+  fixture: initialFixture,
   clubId,
   onClose,
 }: {
@@ -22,6 +50,19 @@ export function GameDetails({
   clubId: string;
   onClose: () => void;
 }) {
+  const [now, setNow] = useState(Date.now);
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 30000);
+    return () => clearInterval(timer);
+  }, []);
+  const [viewedId, setViewedId] = useState(initialFixture.id);
+  const fixtures = clubCalendarFixtures(state, clubId).sort(
+    (a, b) => a.scheduledAt - b.scheduledAt || a.id.localeCompare(b.id),
+  );
+  const fixture = fixtures.find((item) => item.id === viewedId) ?? initialFixture;
+  const fixtureIndex = fixtures.findIndex((item) => item.id === fixture.id);
+  const previousFixture = fixtures[fixtureIndex - 1];
+  const nextFixture = fixtureIndex < 0 ? undefined : fixtures[fixtureIndex + 1];
   const dialog = useRef<HTMLDialogElement>(null);
   useEffect(() => {
     return openModalPreservingScroll(dialog.current);
@@ -40,7 +81,7 @@ export function GameDetails({
   return (
     <dialog
       ref={dialog}
-      className="game-details-modal"
+      className="game-details-modal compact-match-preview"
       aria-labelledby="game-details-title"
       onCancel={onClose}
       onClick={(event) => {
@@ -56,31 +97,78 @@ export function GameDetails({
       }}
     >
       <button className="close-modal" onClick={onClose} aria-label="Fechar detalhes do jogo">
-        ×
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          aria-hidden="true"
+        >
+          <path d="m6 6 12 12M18 6 6 18" />
+        </svg>
       </button>
-      <span className="eyebrow">{result ? 'PARTIDA ENCERRADA' : 'PRÉVIA DA PARTIDA'}</span>
-      <h2 id="game-details-title">{competition?.name ?? fixture.competitionId}</h2>
-      <p>
-        Calendário do jogo: {dateTime(fixture.scheduledAt)}
-        <br />
-        <Icon name="kickoff" size={16} />{' '}
-        {result ? 'Realizado na vida real' : 'Início na vida real'}:{' '}
-        {realAt === undefined ? (
-          'Aguardando agendamento online'
-        ) : (
-          <time dateTime={new Date(realAt).toISOString()}>{dateTime(realAt)}</time>
-        )}{' '}
-        (horário de Brasília)
-        <br />
-        {fixture.neutral ? 'Campo neutro' : 'Mandante à esquerda'}
-      </p>
+      <nav className="game-details-navigation" aria-label="Jogos do seu clube">
+        <button
+          type="button"
+          aria-label="Jogo anterior"
+          title="Jogo anterior"
+          disabled={!previousFixture}
+          onClick={() => previousFixture && setViewedId(previousFixture.id)}
+        >
+          ‹
+        </button>
+        <span aria-live="polite">
+          {fixtureIndex >= 0 ? `${fixtureIndex + 1} de ${fixtures.length}` : 'Jogo selecionado'}
+        </span>
+        <button
+          type="button"
+          aria-label="Próximo jogo"
+          title="Próximo jogo"
+          disabled={!nextFixture}
+          onClick={() => nextFixture && setViewedId(nextFixture.id)}
+        >
+          ›
+        </button>
+      </nav>
+      <header className="match-programme-header">
+        <MatchDate at={fixture.scheduledAt} label="Data da temporada" />
+        <div className="match-kickoff-clock">
+          {realAt === undefined ? (
+            <strong className="match-unscheduled">A agendar</strong>
+          ) : (
+            <>
+              {calendarDay(realAt) === calendarDay(now) ? (
+                <span className="match-relative-day">Hoje</span>
+              ) : calendarDay(realAt) === calendarDay(now) + 86400000 ? (
+                <span className="match-relative-day">Amanhã</span>
+              ) : (
+                <MatchDate at={realAt} label="Data da partida em Brasília" />
+              )}
+              <time className="match-start-time" dateTime={new Date(realAt).toISOString()}>
+                {new Intl.DateTimeFormat('pt-BR', {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  timeZone: 'America/Sao_Paulo',
+                }).format(realAt)}
+              </time>
+            </>
+          )}
+        </div>
+      </header>
+      <h2 id="game-details-title" className="match-competition-badge">
+        <Icon name="trophy" size={14} /> {competition?.name ?? fixture.competitionId} · Rodada{' '}
+        {fixture.round}
+      </h2>
       <div className="game-details-teams">
         {[home, away].map((team, index) => (
           <div key={index} style={{ borderTopColor: clubKit(team ?? { name: '' }).primary }}>
             <PixelBadge
               name={team?.name ?? 'A definir'}
               {...(team?.crestUrl ? { url: team.crestUrl } : {})}
-              size={60}
+              size={48}
             />
             {team ? (
               <a
@@ -182,14 +270,6 @@ export function GameDetails({
           <dd>{demand.importanceLabel}</dd>
         </div>
       </dl>
-      {isHome &&
-        !result &&
-        !fixture.neutral &&
-        (!fixture.stadiumId || fixture.stadiumId === home?.stadiumId) && (
-          <a className="primary full" href="#/finance" onClick={onClose}>
-            Definir ingresso em Finanças
-          </a>
-        )}
     </dialog>
   );
 }

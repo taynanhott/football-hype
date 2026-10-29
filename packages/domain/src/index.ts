@@ -51,3 +51,5 @@ export { FACILITY_ECONOMY, monthlyStructureCost } from './finance/facility-costs
 export * from './competitions/season-calendar.js';
 export * from './game/season-clock.js';
 export * from './game/daily-calendar.js';
+
+export * from './competitions/round-calendar.js';

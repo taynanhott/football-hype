@@ -47,8 +47,8 @@ export function ClubCalendar({ state, clubId }: { state: WorldState; clubId: str
   const year = month.getUTCFullYear(),
     monthIndex = month.getUTCMonth();
   const offset = new Date(Date.UTC(year, monthIndex, 1)).getUTCDay();
-  const days = new Date(Date.UTC(year, monthIndex + 1, 0)).getUTCDate();
-  const cells = Math.ceil((offset + days) / 7) * 7;
+
+  const cells = 42;
   const competitions = [...new Set(fixtures.map((fixture) => fixture.competitionId))];
   const moveMonth = (delta: number) =>
     setViewedMonth({ day: today, date: new Date(Date.UTC(year, monthIndex + delta, 1, 12)) });
@@ -67,7 +67,6 @@ export function ClubCalendar({ state, clubId }: { state: WorldState; clubId: str
                 timeZone: 'UTC',
               }).format(month)}
             </h2>
-            <p>calendário do jogo</p>
           </div>
           <button aria-label="Próximo mês" onClick={() => moveMonth(1)}>
             ›
@@ -102,7 +101,7 @@ export function ClubCalendar({ state, clubId }: { state: WorldState; clubId: str
                 <time dateTime={key}>{date.getUTCDate()}</time>
                 {inMonth &&
                   (matches.length ? (
-                    matches.map((fixture) => {
+                    matches.slice(0, 1).map((fixture) => {
                       const home = fixture.homeId === clubId;
                       const opponent = state.clubs.byId[home ? fixture.awayId : fixture.homeId];
                       const result = state.results.find((item) => item.fixtureId === fixture.id);
@@ -115,7 +114,7 @@ export function ClubCalendar({ state, clubId }: { state: WorldState; clubId: str
                           className="club-calendar-event"
                           key={fixture.id}
                           onClick={() => setSelectedGame(fixture)}
-                          aria-label={`Detalhes: ${state.clubs.byId[fixture.homeId]?.name ?? 'Mandante'} contra ${state.clubs.byId[fixture.awayId]?.name ?? 'Visitante'}, ${dateTime(fixture.scheduledAt)}`}
+                          aria-label={`${matches.length} jogo(s) neste dia. Use as setas do modal para navegar. Detalhes: ${state.clubs.byId[fixture.homeId]?.name ?? 'Mandante'} contra ${state.clubs.byId[fixture.awayId]?.name ?? 'Visitante'}, ${dateTime(fixture.scheduledAt)}`}
                           title={`${home ? 'Casa' : 'Fora'} · ${opponent?.name ?? 'A definir'} · ${competition?.name} · ${dateTime(fixture.scheduledAt)}`}
                         >
                           <PixelBadge
@@ -124,10 +123,16 @@ export function ClubCalendar({ state, clubId }: { state: WorldState; clubId: str
                             size={14}
                           />
                           <strong>
-                            {home ? 'Casa' : 'Fora'} <span>{opponent?.abbreviation}</span>
+                            {matches.length > 1 ? (
+                              <span>{matches.length} jogos ›</span>
+                            ) : (
+                              <>
+                                {home ? 'Casa' : 'Fora'} <span>{opponent?.abbreviation}</span>
+                              </>
+                            )}
                           </strong>
                           <small>{competition?.name ?? fixture.competitionId}</small>
-                          {result && (
+                          {result && matches.length === 1 && (
                             <b>
                               {result.homeGoals}–{result.awayGoals}
                             </b>
@@ -167,7 +172,7 @@ export function ClubCalendar({ state, clubId }: { state: WorldState; clubId: str
         </div>
         <footer className="club-calendar-footer">
           <button className="club-calendar-today" onClick={() => setViewedMonth(null)}>
-            Ir para hoje
+            Hoje
           </button>
         </footer>
       </section>

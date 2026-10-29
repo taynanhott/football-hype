@@ -1,5 +1,6 @@
 import { advanceGameDays } from './daily-calendar.js';
-import { cupReturnDate } from '../competitions/season-calendar.js';
+import { scheduledFixtures } from '../competitions/fixtures.js';
+import { normalizeRoundCalendar } from '../competitions/round-calendar.js';
 import { nextRealMatchTime, scheduledBatches } from './season-clock.js';
 import { COMPETITIONS, GAMEPLAY, type Fixture, type WorldState } from '@football/shared';
 import {
@@ -22,42 +23,23 @@ import { nextSeasonState } from '../multiplayer/machines.js';
 
 export function pendingFixtures(state: WorldState): Fixture[] {
   const completed = new Set(state.results.map((result) => result.fixtureId));
-  const cupFixtures: Fixture[] = [];
-  for (const node of state.cups) {
-    if (!node.homeId || !node.awayId || node.winnerId) continue;
-    const legs =
-      node.legs ?? COMPETITIONS.find((rule) => rule.id === node.competitionId)?.legs ?? 1;
-    if (legs === 2 && !completed.has(`${node.id}:first`)) {
-      cupFixtures.push({
-        id: `${node.id}:first`,
-        competitionId: node.competitionId,
-        homeId: node.homeId,
-        awayId: node.awayId,
-        scheduledAt: node.scheduledAt,
-        round: node.round,
-        ...(node.neutral ? { neutral: true } : {}),
-        ...(node.stadiumId ? { stadiumId: node.stadiumId } : {}),
-      });
-    } else {
-      cupFixtures.push({
-        id: node.id,
-        competitionId: node.competitionId,
-        homeId: legs === 2 ? node.awayId : node.homeId,
-        awayId: legs === 2 ? node.homeId : node.awayId,
-        scheduledAt:
-          legs === 2 ? cupReturnDate(node.competitionId, node.scheduledAt) : node.scheduledAt,
-        round: node.round,
-        ...(node.neutral ? { neutral: true } : {}),
-        ...(node.stadiumId ? { stadiumId: node.stadiumId } : {}),
-      });
-    }
-  }
-  return [...state.fixtures.filter((fixture) => !completed.has(fixture.id)), ...cupFixtures].sort(
-    (a, b) => a.scheduledAt - b.scheduledAt || a.id.localeCompare(b.id),
-  );
+  const all = scheduledFixtures(state);
+  return all.filter((fixture) => {
+    if (completed.has(fixture.id)) return false;
+    const node = state.cups.find(
+      (node) => node.id === fixture.id || `${node.id}:first` === fixture.id,
+    );
+    return (
+      !node ||
+      (!node.winnerId &&
+        (fixture.id.endsWith(':first') ||
+          !all.some((first) => first.id === `${node.id}:first`) ||
+          completed.has(`${node.id}:first`)))
+    );
+  });
 }
-
 export function playNextBatch(state: WorldState, processedAt: number): Result<WorldState> {
+  state = normalizeRoundCalendar(state);
   const pending = pendingFixtures(state);
   const scheduledAt = pending[0]?.scheduledAt;
   if (scheduledAt === undefined)
@@ -344,6 +326,7 @@ export function playNextBatch(state: WorldState, processedAt: number): Result<Wo
     }),
   );
   if (!pendingFixtures(next).length) next = scheduleIntercontinental(next);
+  next = normalizeRoundCalendar(next);
   const nextTime = pendingFixtures(next)[0]?.scheduledAt;
   next = generateIncomingOffers(next);
   return success({

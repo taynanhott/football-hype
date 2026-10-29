@@ -19,7 +19,7 @@ export function groupFixtures(
   const groups: string[][] = Array.from({ length: count }, () => []);
   ids.forEach((id, index) => {
     const group =
-      competitionId === 'copa-verde' && count === 4
+      competitionId === 'copa-verde' && count === 4 && size === 6
         ? Math.floor(index / 12) * 2 + (index % 2)
         : index % count;
     groups[group]!.push(id);
@@ -147,7 +147,10 @@ export function qualifyCupGroups(state: WorldState): WorldState {
     if (groups.length < 2 || groups.some((g) => g.fixtures.some((f) => !completed.has(f.id))))
       continue;
     const qualified: string[] = [];
-    if (rule.advancement === 'sudamericana') {
+    if (
+      rule.advancement === 'sudamericana' &&
+      cupGroupTables(state, 'libertadores').length === groups.length
+    ) {
       const lib = cupGroupTables(state, 'libertadores');
       if (
         lib.length !== groups.length ||

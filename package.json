@@ -27,6 +27,7 @@
     "data:local": "turbo run build --filter=@football/domain && pnpm --filter @football/server exec tsx src/providers/import-local-players.ts",
     "data:extract": "node scripts/extract-local-players.mjs",
     "data:update": "pnpm --filter @football/server exec tsx src/providers/prepare-source-update.ts && pnpm data:local && pnpm --filter @football/server exec tsx ../../scripts/update-player-appearance.mts",
+    "dev:local": "pnpm --filter @football/domain... build && turbo run dev --filter=@football/client --filter=@football/worker",
     "dev:online": "turbo run dev --filter=@football/client"
   },
   "devDependencies": {

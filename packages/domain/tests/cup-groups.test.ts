@@ -84,7 +84,7 @@ describe('copas com grupos e mata-mata', () => {
     for (let i = 0; i < 12 && state.status !== 'finished'; i++)
       state = unwrap(playNextBatch(state, now + i * 100000));
     expect(state.status).toBe('finished');
-    expect(state.results).toHaveLength(29);
+    expect(state.results).toHaveLength(27);
     expect(state.cups.every((n) => n.winnerId)).toBe(true);
     expect(state.trophies.some((t) => t.competitionId === 'libertadores')).toBe(true);
   });

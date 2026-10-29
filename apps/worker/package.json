@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "node ../../scripts/prepare-worker-assets.mjs && wrangler dev",
+    "dev": "node ../../scripts/prepare-worker-assets.mjs && wrangler dev --port 8788",
     "build": "node ../../scripts/prepare-worker-assets.mjs && wrangler deploy --dry-run --outdir dist",
     "typecheck": "tsc --noEmit",
     "deploy": "node ../../scripts/prepare-worker-assets.mjs && wrangler deploy"
