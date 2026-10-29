@@ -41,6 +41,13 @@ async function pack(value: unknown, version: string) {
     parts,
   };
 }
+function membershipIds(value: unknown): string[] {
+  return typeof value === 'string'
+    ? [value]
+    : Array.isArray(value)
+      ? value.filter((id): id is string => typeof id === 'string')
+      : [];
+}
 function metadata(state: WorldState) {
   return {
     name: state.name,
@@ -164,9 +171,17 @@ export class FirestoreLeagueRepository implements LeagueRepository {
     await this.db.runTransaction(async (transaction) => {
       const membership = this.db.doc(`memberships/${state.administratorId}`);
       const current = await transaction.get(membership);
-      if (current.get(state.mode)) throw new Error('Você já participa de uma liga deste modo');
+      if (membershipIds(current.get(state.mode)).length >= (state.mode === 'offline' ? 2 : 1))
+        throw new Error('Limite de carreiras atingido');
       transaction.create(ref, { ...metadata(state), ...packed.fields });
-      transaction.set(membership, { [state.mode]: state.id }, { merge: true });
+      transaction.set(
+        membership,
+        {
+          [state.mode]: [...membershipIds(current.get(state.mode)), state.id],
+          [state.mode + 'Draw']: null,
+        },
+        { merge: true },
+      );
     });
     this.cache.set(state.id, { state, events: [] });
   }
@@ -197,15 +212,18 @@ export class FirestoreLeagueRepository implements LeagueRepository {
       const removed = previous.participants.filter(
         (old) => !state.participants.some((item) => item.userId === old.userId),
       );
-      const removedRefs: DocumentReference[] = [];
+      const removedRefs: DocumentSnapshot[] = [];
       for (const member of newMembers) {
         const membership = await transaction.get(this.db.doc(`memberships/${member.userId}`));
-        if (membership.get(state.mode) && membership.get(state.mode) !== id)
+        if (
+          !membershipIds(membership.get(state.mode)).includes(id) &&
+          membershipIds(membership.get(state.mode)).length >= (state.mode === 'offline' ? 2 : 1)
+        )
           throw new Error('Você já participa de uma liga deste modo');
       }
       for (const member of removed) {
         const membership = await transaction.get(this.db.doc(`memberships/${member.userId}`));
-        if (membership.get(state.mode) === id) removedRefs.push(membership.ref);
+        if (membershipIds(membership.get(state.mode)).includes(id)) removedRefs.push(membership);
       }
       const patchRefs = {
         ...(current.get('patchRefs') as Record<string, string> | undefined),
@@ -220,8 +238,11 @@ export class FirestoreLeagueRepository implements LeagueRepository {
         );
       for (const membership of removedRefs)
         transaction.set(
-          membership,
-          { [state.mode]: null, [state.mode + 'Draw']: null },
+          membership.ref,
+          {
+            [state.mode]: membershipIds(membership.get(state.mode)).filter((value) => value !== id),
+            [state.mode + 'Draw']: null,
+          },
           { merge: true },
         );
       transaction.create(eventRef, { ...entry, ...packedEvent.fields });
@@ -235,7 +256,8 @@ export class FirestoreLeagueRepository implements LeagueRepository {
     mode: 'offline' | 'multiplayer',
   ): Promise<DrawReservation | undefined> {
     const membership = await this.db.doc(`memberships/${userId}`).get();
-    return membership.get(mode + 'Draw') as DrawReservation | undefined;
+    const draw = membership.get(mode + 'Draw') as DrawReservation | undefined;
+    return draw && !membershipIds(membership.get(mode)).includes(draw.leagueId) ? draw : undefined;
   }
   async reserveDraw(
     userId: string,
@@ -245,10 +267,11 @@ export class FirestoreLeagueRepository implements LeagueRepository {
     return this.db.runTransaction(async (transaction) => {
       const ref = this.db.doc(`memberships/${userId}`);
       const current = await transaction.get(ref);
-      if (current.get(mode))
+      if (membershipIds(current.get(mode)).length >= (mode === 'offline' ? 2 : 1))
         throw new Error('Você já possui uma carreira neste modo. Continue sua carreira.');
       const reserved = current.get(mode + 'Draw') as DrawReservation | undefined;
-      if (reserved) return reserved;
+      if (reserved && !membershipIds(current.get(mode)).includes(reserved.leagueId))
+        return reserved;
       transaction.set(ref, { [mode + 'Draw']: draw }, { merge: true });
       return draw;
     });
@@ -280,16 +303,24 @@ export class FirestoreLeagueRepository implements LeagueRepository {
         revision: Number(current.get('revision')) + 1,
       });
       for (const membership of memberships)
-        if (membership.get(mode) === id)
-          transaction.set(membership.ref, { [mode]: null, [mode + 'Draw']: null }, { merge: true });
+        if (membershipIds(membership.get(mode)).includes(id))
+          transaction.set(
+            membership.ref,
+            {
+              [mode]: membershipIds(membership.get(mode)).filter((value) => value !== id),
+              [mode + 'Draw']: null,
+            },
+            { merge: true },
+          );
     });
     this.cache.delete(id);
   }
   async summariesForUser(userId: string): Promise<readonly LeagueSummary[]> {
     const membership = await this.db.doc(`memberships/${userId}`).get();
-    const ids = [membership.get('offline'), membership.get('multiplayer')].filter(
-      (id): id is string => typeof id === 'string',
-    );
+    const ids = [
+      ...membershipIds(membership.get('offline')),
+      ...membershipIds(membership.get('multiplayer')),
+    ];
     if (!ids.length) return [];
     const documents = await this.db.getAll(...ids.map((id) => this.db.doc(`leagues/${id}`)), {
       fieldMask: ['name', 'mode', 'season', 'round', 'administratorId', 'status', 'participantIds'],
@@ -330,9 +361,10 @@ export class FirestoreLeagueRepository implements LeagueRepository {
   }
   async forUser(userId: string): Promise<readonly WorldState[]> {
     const membership = await this.db.doc(`memberships/${userId}`).get();
-    const ids = [membership.get('offline'), membership.get('multiplayer')].filter(
-      (id): id is string => typeof id === 'string',
-    );
+    const ids = [
+      ...membershipIds(membership.get('offline')),
+      ...membershipIds(membership.get('multiplayer')),
+    ];
     const states = await Promise.all(ids.map((id) => this.load(id, { eventPatches: false })));
     return states.flatMap((saved) => (saved && !saved.state.deletedAt ? [saved.state] : []));
   }

@@ -98,14 +98,19 @@ export class LocalLeagueRepository implements LeagueRepository {
     const key = this.drawKey(userId, mode);
     if (this.directory) {
       try {
-        return JSON.parse(
+        const reservation = JSON.parse(
           await readFile(join(this.directory, key + '.draw.json'), 'utf8'),
         ) as DrawReservation;
+        if (!this.leagues.has(reservation.leagueId)) return reservation;
+        await unlink(join(this.directory, key + '.draw.json'));
+        this.draws.delete(key);
+        return undefined;
       } catch (error) {
         if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
       }
     }
-    return this.draws.get(key);
+    const reservation = this.draws.get(key);
+    return reservation && !this.leagues.has(reservation.leagueId) ? reservation : undefined;
   }
   async reserveDraw(
     userId: string,
@@ -114,7 +119,10 @@ export class LocalLeagueRepository implements LeagueRepository {
   ): Promise<DrawReservation> {
     const key = this.drawKey(userId, mode);
     return this.serial('draw:' + key, async () => {
-      if ((await this.forUser(userId)).some((state) => state.mode === mode))
+      if (
+        (await this.forUser(userId)).filter((state) => state.mode === mode).length >=
+        (mode === 'offline' ? 2 : 1)
+      )
         throw new Error('Você já possui uma carreira neste modo. Continue sua carreira.');
       const previous = await this.getDraw(userId, mode);
       if (previous) return previous;
@@ -134,17 +142,25 @@ export class LocalLeagueRepository implements LeagueRepository {
   async create(state: WorldState): Promise<void> {
     if (
       this.leagues.has(state.id) ||
-      [...this.leagues.values()].some(
+      [...this.leagues.values()].filter(
         (league) =>
           !league.state.deletedAt &&
           league.state.mode === state.mode &&
           league.state.participants.some((member) => member.userId === state.administratorId),
-      )
+      ).length >= (state.mode === 'offline' ? 2 : 1)
     )
       throw new Error('Você já participa de uma liga deste modo');
     const saved = { state, events: [] };
     await this.persist(saved);
     this.leagues.set(state.id, saved);
+    const drawKey = this.drawKey(state.administratorId, state.mode);
+    this.draws.delete(drawKey);
+    if (this.directory)
+      await unlink(join(this.directory, drawKey + '.draw.json')).catch(
+        (error: NodeJS.ErrnoException) => {
+          if (error.code !== 'ENOENT') throw error;
+        },
+      );
   }
   async append(
     id: string,
@@ -165,12 +181,12 @@ export class LocalLeagueRepository implements LeagueRepository {
       throw new Error('A liga mudou. Atualize e tente novamente');
     for (const member of state.participants) {
       if (
-        [...this.leagues.values()].some(
+        [...this.leagues.values()].filter(
           (league) =>
             league.state.id !== id &&
             league.state.mode === state.mode &&
             league.state.participants.some((participant) => participant.userId === member.userId),
-        )
+        ).length >= (state.mode === 'offline' ? 2 : 1)
       )
         throw new Error('Você já participa de uma liga deste modo');
     }

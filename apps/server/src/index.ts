@@ -135,16 +135,26 @@ const http = createServer((request, response) => {
       respond(response, 200, await service.list(identity.userId));
       return;
     }
-    const action = /^\/api\/leagues\/([0-9a-f-]+)\/(preview|request|decide|leave|delete)$/.exec(
-      url.pathname,
-    );
+    const action =
+      /^\/api\/leagues\/([0-9a-f-]+)\/(preview|request|decide|leave|delete|reset|kick)$/.exec(
+        url.pathname,
+      );
     if (action?.[1] && request.method === 'POST') {
       const id = action[1];
+      if (action[2] === 'reset') await service.reset(id, identity.userId);
       if (action[2] === 'preview') {
-        respond(response, 200, await service.invitation(id, await body(request)));
+        respond(response, 200, await service.invitation(id, await body(request), identity.userId));
         return;
       }
-      if (action[2] === 'request') await service.requestEntry(id, identity, await body(request));
+      if (action[2] === 'request') {
+        respond(
+          response,
+          200,
+          (await service.requestEntry(id, identity, await body(request))) ?? { ok: true },
+        );
+        return;
+      }
+      if (action[2] === 'kick') await service.kick(id, identity.userId, await body(request));
       if (action[2] === 'decide') await service.decide(id, identity, await body(request));
       if (action[2] === 'leave' || action[2] === 'delete')
         await service.leave(id, identity.userId, action[2] === 'delete');

@@ -9,6 +9,7 @@ import {
 import { MONEY_STEPS, type ClubSnapshot, type GameSnapshot } from '@football/shared';
 import { useGameStore } from '../../store/game-store';
 import { currency } from '../../ui/format';
+import { TicketPricing } from './ticket-pricing';
 
 const COLORS = {
   transfer: '#7bda78',
@@ -35,8 +36,8 @@ export function FinancialManagement(props: Props) {
         key={`${props.club.id}:${props.club.balance.cents}:${plan?.transfer}:${plan?.salaries}`}
         {...props}
       />
+      <TicketPricing state={props.snapshot.state} clubId={props.club.id} />
       <FinancialHistory {...props} />
-      <SeasonResults {...props} />
     </>
   );
 }
@@ -201,7 +202,16 @@ function FinancialHistory({ snapshot, club }: Props) {
         ].map((metric) => (
           <div key={metric.label}>
             <span>{metric.label}</span>
-            <strong className={metric.value < 0 ? 'negative' : ''} title={currency(metric.value)}>
+            <strong
+              className={
+                metric.value < 0 ||
+                metric.label === 'Total gasto' ||
+                metric.label === 'Gasto no mês atual'
+                  ? 'negative'
+                  : ''
+              }
+              title={currency(metric.value)}
+            >
               {compact(metric.value)}
             </strong>
           </div>
@@ -312,7 +322,7 @@ function FinancialHistory({ snapshot, club }: Props) {
     </section>
   );
 }
-function SeasonResults({ snapshot, club }: Props) {
+export function SeasonResults({ snapshot, club }: Props) {
   const report = seasonFinancialReport(snapshot.state, club.id, snapshot.ledger),
     maximum = Math.max(1, report.income, report.expenses);
   return (

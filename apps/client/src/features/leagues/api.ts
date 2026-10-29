@@ -64,6 +64,9 @@ export async function listLeagues() {
         season: z.number(),
         round: z.number(),
         administratorId: z.string(),
+        club: z
+          .object({ id: z.string(), name: z.string(), crestUrl: z.string().optional() })
+          .optional(),
       }),
     )
     .parse(await request('/api/leagues'));

@@ -1,3 +1,4 @@
+import { AdvanceRoundButton } from '../features/leagues/advance-round-button';
 import { BrandMark } from './brand-mark';
 import { MATCH_DURATION_MS } from '@football/shared';
 import { useEffect, useLayoutEffect, useState, useSyncExternalStore } from 'react';
@@ -123,7 +124,7 @@ function GameApp() {
   const view =
     route === 'matches' ? (
       <Matches {...props} />
-    ) : route === 'settings' ? (
+    ) : route === 'settings' && state.mode === 'multiplayer' ? (
       <LeagueSettings {...props} />
     ) : route === 'trophies' ? (
       <TrophyGallery {...props} />
@@ -178,18 +179,20 @@ function GameApp() {
         </a>
         <span className="nav-caption">ÁREA TÉCNICA</span>
         <nav aria-label="Navegação principal">
-          {ROUTES.map((item) => (
-            <a
-              key={item.id}
-              href={`#/${item.id}`}
-              className={route === item.id ? 'active' : ''}
-              aria-current={route === item.id ? 'page' : undefined}
-            >
-              <Icon name={item.id} />
-              <span>{item.label}</span>
-              {item.id === 'market' && <span className="nav-dot" />}
-            </a>
-          ))}
+          {ROUTES.filter((item) => item.id !== 'settings' || state.mode === 'multiplayer').map(
+            (item) => (
+              <a
+                key={item.id}
+                href={`#/${item.id}`}
+                className={route === item.id ? 'active' : ''}
+                aria-current={route === item.id ? 'page' : undefined}
+              >
+                <Icon name={item.id} />
+                <span>{item.label}</span>
+                {item.id === 'market' && <span className="nav-dot" />}
+              </a>
+            ),
+          )}
         </nav>
         <button className="sidebar-exit" onClick={disconnect}>
           ← Trocar de carreira
@@ -245,29 +248,27 @@ function GameApp() {
                 <span>
                   {state.status === 'finished'
                     ? 'Comece uma nova temporada com acessos e descensos.'
-                    : `${ready} de ${state.participants.length} treinadores prontos · A maioria antecipa a rodada`}
+                    : state.mode === 'offline'
+                      ? 'Avance a rodada quando seu time estiver preparado.'
+                      : `${ready} de ${state.participants.length} treinadores prontos · A maioria antecipa a rodada`}
                 </span>
               </div>
             </div>
             <div className="matchday-actions">
               {state.status === 'active' ? (
                 <>
-                  <button
-                    className={`ready-button ${participant?.ready ? 'checked' : ''}`}
-                    disabled={busy || !connected}
-                    onClick={() => send({ type: 'ready', ready: !participant?.ready })}
-                  >
-                    {participant?.ready ? '✓ Estou pronto' : 'Marcar pronto'}
-                  </button>
-                  {userId === state.administratorId && (
+                  {state.mode === 'multiplayer' && (
                     <button
-                      className="primary"
+                      aria-pressed={participant?.ready ?? false}
+                      className={`ready-button ${participant?.ready ? 'checked' : ''}`}
                       disabled={busy || !connected}
-                      onClick={() => send({ type: 'advance' })}
+                      onClick={() => send({ type: 'ready', ready: !participant?.ready })}
                     >
-                      {busy ? 'Processando…' : 'Avançar rodada'}
-                      <Icon name="arrow" />
+                      {participant?.ready ? '✓ Pronto · desfazer' : 'Marcar pronto'}
                     </button>
+                  )}
+                  {userId === state.administratorId && (
+                    <AdvanceRoundButton disabled={busy || !connected} />
                   )}
                 </>
               ) : (

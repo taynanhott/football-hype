@@ -18,6 +18,7 @@ export function recordEvent(
   // Validate the event's changed branches instead of cloning the entire world.
   return parseBoundary(gameEventSchema, {
     ...metadata,
+    gameOccurredAt: next.lastProcessedAt,
     balances: Object.fromEntries(
       next.clubs.ids
         .map((id) => [

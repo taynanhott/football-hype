@@ -1,7 +1,12 @@
 import { MoneyRange } from '../../ui/money-range';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { GAMEPLAY, MONEY_STEPS, roundMoney, type Fixture, type WorldState } from '@football/shared';
-import { matchDemand, projectTicketDemand, scheduledFixtures } from '@football/domain';
+import {
+  matchDemand,
+  projectTicketDemand,
+  scheduledFixtures,
+  stadiumCapacity,
+} from '@football/domain';
 import { useGameStore } from '../../store/game-store';
 import { currency, dateTime, ticketPrice } from '../../ui/format';
 
@@ -26,24 +31,27 @@ export function TicketPricing({ state, clubId }: { state: WorldState; clubId: st
     <section className="panel ticket-pricing">
       <div className="section-header">
         <div>
-          <span className="eyebrow">TORCIDA E BILHETERIA</span>
-          <h2>Ingressos dos jogos em casa</h2>
+          <h2>Bilheteria</h2>
         </div>
       </div>
-      <p>
-        Um único preço para todos os próximos jogos em casa. Jogos decisivos aumentam a disposição
-        de pagar; má fase e preços altos reduzem a procura.
-      </p>
-      <HomeTicketSlider key={clubId} state={state} fixtures={fixtures} saved={saved} />
+      <HomeTicketSlider
+        key={clubId}
+        clubId={clubId}
+        state={state}
+        fixtures={fixtures}
+        saved={saved}
+      />
     </section>
   );
 }
 
 function HomeTicketSlider({
+  clubId,
   state,
   fixtures,
   saved,
 }: {
+  clubId: string;
   state: WorldState;
   fixtures: Fixture[];
   saved: number;
@@ -105,6 +113,24 @@ function HomeTicketSlider({
   const forecast = forecasts[0];
   const totalAttendance = forecasts.reduce((sum, item) => sum + item.attendance, 0);
   const totalCapacity = forecasts.reduce((sum, item) => sum + item.capacity, 0);
+  const playedMatches = state.results.filter((match) => match.homeId === clubId);
+  const averageAttendance = playedMatches.length
+    ? Math.round(
+        playedMatches.reduce((sum, match) => sum + match.attendance, 0) / playedMatches.length,
+      )
+    : 0;
+  const stadium = state.stadiums.byId[state.clubs.byId[clubId]?.stadiumId ?? ''];
+  const capacity = stadium ? stadiumCapacity(stadium) : 0;
+  const averageOccupancy = capacity ? Math.round((averageAttendance / capacity) * 100) : 0;
+  const averageTicketRevenue = playedMatches.length
+    ? Math.round(
+        playedMatches.reduce(
+          (sum, match) =>
+            sum + match.attendance * (match.ticketPriceCents ?? GAMEPLAY.baseTicketCents),
+          0,
+        ) / playedMatches.length,
+      )
+    : 0;
 
   return (
     <div className="home-ticket-slider">
@@ -190,38 +216,31 @@ function HomeTicketSlider({
           </p>
           <div className="ticket-forecast">
             <div>
-              <span>Público esperado no próximo jogo</span>
+              <span>Público previsto</span>
               <strong>{forecast.attendance.toLocaleString('pt-BR')}</strong>
               <small>{Math.round(forecast.occupancy * 100)}% da capacidade</small>
+              <meter
+                min={0}
+                max={100}
+                value={Math.round(forecast.occupancy * 100)}
+                aria-label="Ocupação prevista"
+              />
             </div>
             <div>
-              <span>Bilheteria do próximo jogo</span>
+              <span>Receita prevista</span>
               <strong>{currency(forecast.ticketRevenue)}</strong>
-              <small>Antes de consumo e despesas</small>
+              <small>Média por jogo: {currency(averageTicketRevenue)}</small>
             </div>
             <div>
-              <span>Ocupação média dos jogos agendados</span>
-              <strong>
-                {totalCapacity ? Math.round((totalAttendance / totalCapacity) * 100) : 0}%
-              </strong>
-              <small>{fixtures.length} jogos em casa com confronto definido</small>
+              <span>Média de público</span>
+              <strong>{averageAttendance.toLocaleString('pt-BR')}</strong>
+              <small>{averageOccupancy}% de ocupação média</small>
             </div>
           </div>
-          <p>
-            {forecast.importanceLabel} · Aproveitamento recente: {Math.round(forecast.form * 100)}%.
-          </p>
         </>
       ) : (
-        <p>
-          Nenhum jogo futuro em casa com confronto definido. O preço será aplicado aos próximos
-          jogos assim que forem agendados.
-        </p>
+        <p>Nenhum jogo em casa agendado.</p>
       )}
-      <p>
-        O preço é salvo automaticamente após o ajuste e também vale para os jogos em casa que ainda
-        serão definidos. Ajustes em passos de R$ 25. As projeções mudam conforme a fase do time e a
-        importância de cada partida.
-      </p>
     </div>
   );
 }

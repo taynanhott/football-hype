@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import {
   clubPayroll,
   financialLimits,
@@ -8,10 +7,10 @@ import {
 import { clubKit } from '@football/shared';
 import { useGameStore } from '../../store/game-store';
 import type { ViewProps } from '../../ui/view-props';
-import { currency, dateTime } from '../../ui/format';
-import { ClubBadge } from '../../ui/icons';
-import { TicketPricing } from './ticket-pricing';
-import { FinancialManagement } from './financial-management';
+import { currency } from '../../ui/format';
+import { ClubBadge, Icon } from '../../ui/icons';
+import { FinancialManagement, SeasonResults } from './financial-management';
+import { FinanceLedger } from './finance-ledger';
 
 function FinancialDirector() {
   return (
@@ -60,7 +59,7 @@ export function Finance({ snapshot, club }: ViewProps) {
   const state = snapshot.state,
     send = useGameStore((s) => s.send),
     busy = useGameStore((s) => s.busy);
-  const [ledgerOpen, setLedgerOpen] = useState(false);
+
   const costs = maintenanceBreakdown(state, club),
     maintenance = costs.reduce((sum, item) => sum + item.cost, 0),
     payroll = clubPayroll(state, club),
@@ -116,10 +115,6 @@ export function Finance({ snapshot, club }: ViewProps) {
     tips.push(
       'Uma contratação compromete o caixa hoje e aumenta a folha dos próximos meses. Use a sobra salarial como limite.',
     );
-  const entries = snapshot.ledger
-    .filter((e) => Boolean(e.balances?.[club.id]))
-    .slice()
-    .reverse();
   return (
     <div className="finance-hub">
       <header className="finance-hero">
@@ -226,86 +221,62 @@ export function Finance({ snapshot, club }: ViewProps) {
         </section>
       )}
       <FinancialManagement snapshot={snapshot} club={club} />
-      <section className="panel finance-operations">
-        <header className="section-header">
-          <div>
-            <span className="eyebrow">OPERAÇÃO DO CLUBE</span>
-            <h2>A conta da sua estrutura</h2>
-            <p>
-              Manutenção mensal por departamento. Upgrades aumentam esta conta permanentemente até
-              você vender o nível.
-            </p>
+      <div className="finance-season-operations">
+        <SeasonResults snapshot={snapshot} club={club} />
+        <section className="panel finance-operations">
+          <header className="section-header">
+            <div>
+              <h2>Custos das estruturas</h2>
+            </div>
+            <strong>{currency(maintenance)}/mês</strong>
+          </header>
+          <div className="finance-facility-costs">
+            {[...costs]
+              .sort((a, b) => b.cost - a.cost)
+              .map((item) => (
+                <a
+                  key={item.target}
+                  href={
+                    ['fitness', 'medical', 'scouting', 'coaching', 'marketing'].includes(
+                      item.target,
+                    )
+                      ? '#/training'
+                      : '#/stadium'
+                  }
+                >
+                  <span className="facility-cost-icon">
+                    <Icon
+                      name={
+                        (
+                          {
+                            fitness: 'training',
+                            medical: 'recovery',
+                            scouting: 'search',
+                            coaching: 'tactics',
+                            marketing: 'megaphone',
+                            pitch: 'pitch',
+                            capacity: 'stadium',
+                            food: 'food',
+                            shop: 'shirt',
+                            hospitality: 'hospitality',
+                            entrance: 'entrance',
+                          } as Record<string, string>
+                        )[item.target] ?? 'stadium'
+                      }
+                      size={22}
+                    />
+                  </span>
+                  <span className="facility-cost-name">
+                    {item.name}
+                    <small>Nv. {item.level}</small>
+                  </span>
+                  <strong>{currency(item.cost)}</strong>
+                </a>
+              ))}
           </div>
-          <strong>{currency(maintenance)}/mês</strong>
-        </header>
-        <div className="finance-facility-costs">
-          {[...costs]
-            .sort((a, b) => b.cost - a.cost)
-            .map((item) => (
-              <a
-                key={item.target}
-                href={
-                  ['fitness', 'medical', 'scouting', 'coaching', 'marketing'].includes(item.target)
-                    ? '#/training'
-                    : '#/stadium'
-                }
-              >
-                <span>
-                  {item.name}
-                  <small>Nível {item.level} / 5</small>
-                </span>
-                <strong>
-                  {currency(item.cost)}
-                  <small>/mês</small>
-                </strong>
-              </a>
-            ))}
-        </div>
-        <p className="financial-budget-note">
-          Próximo dia 1: {currency(monthly)} de folha e manutenção. Dívidas anteriores são cobradas
-          à parte.
-        </p>
-      </section>
-      <details className="panel finance-revenue-settings">
-        <summary>Bilheteria · ajustar preços e projeções</summary>
-        <TicketPricing state={state} clubId={club.id} />
-      </details>
-      <details
-        className="panel finance-ledger"
-        onToggle={(event) => setLedgerOpen(event.currentTarget.open)}
-      >
-        <summary>
-          <span>
-            Livro de movimentações<small>Consulte entradas e saídas do seu clube</small>
-          </span>
-          <b>{entries.length} registros</b>
-        </summary>
-        {ledgerOpen && (
-          <div className="table-scroll">
-            <table>
-              <thead>
-                <tr>
-                  <th>Data</th>
-                  <th>Movimentação</th>
-                  <th>Valor</th>
-                </tr>
-              </thead>
-              <tbody>
-                {entries.map((entry) => (
-                  <tr key={entry.id}>
-                    <td>{dateTime(entry.occurredAt)}</td>
-                    <td>{entry.message}</td>
-                    <td className={(entry.balances?.[club.id] ?? 0) < 0 ? 'negative' : 'positive'}>
-                      {currency(entry.balances?.[club.id] ?? 0)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {!entries.length && <p>Ainda não há movimentações registradas.</p>}
-          </div>
-        )}
-      </details>
+        </section>
+      </div>
+      <FinanceLedger snapshot={snapshot} club={club} />
     </div>
   );
 }

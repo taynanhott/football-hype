@@ -32,6 +32,16 @@ import type { LeagueRepository } from '../repositories/league-repository.js';
 import type { Identity } from '../auth/identity.js';
 
 export class LeagueService {
+  private readonly onlineSessions = new Map<string, Set<string>>();
+  setOnline(leagueId: string, userId: string, sessionId: string, online: boolean) {
+    const key = `${leagueId}:${userId}`;
+    const sessions = this.onlineSessions.get(key) ?? new Set<string>();
+    if (online) sessions.add(sessionId);
+    else sessions.delete(sessionId);
+    if (sessions.size) this.onlineSessions.set(key, sessions);
+    else this.onlineSessions.delete(key);
+    this.updates.emit(leagueId);
+  }
   private readonly searchIndexes = new WeakMap<object, SearchTrie>();
   readonly updates = new EventBus<string>();
   private readonly queues = new Map<string, Promise<unknown>>();
@@ -97,8 +107,9 @@ export class LeagueService {
       const memberships = this.repository.summariesForUser
         ? await this.repository.summariesForUser(identity.userId)
         : await this.repository.forUser(identity.userId);
-      const current = memberships.find((league) => league.mode === options.mode);
-      if (current) return current.id;
+      const current = memberships.filter((league) => league.mode === options.mode);
+      if (current.length >= (options.mode === 'offline' ? 2 : 1))
+        throw new Error('Limite de 2 carreiras solo e 1 liga multiplayer atingido neste modo');
       const generated = createWorld({
         id: draw?.leagueId ?? randomUUID(),
         userId: identity.userId,
@@ -131,7 +142,7 @@ export class LeagueService {
       }
       state = {
         ...state,
-        inviteCode: randomUUID(),
+        inviteCode: options.mode === 'multiplayer' ? randomUUID() : undefined,
         seasonClock: 1,
         calendarAnchor: { realAt: this.now(), gameAt: state.lastProcessedAt },
         nextScheduledAt: nextRealMatchTime(this.now()),
@@ -142,7 +153,6 @@ export class LeagueService {
     });
   }
   async list(userId: string) {
-    if (this.repository.summariesForUser) return this.repository.summariesForUser(userId);
     for (const state of await this.repository.forUser(userId)) await this.expire(state.id);
     return (await this.repository.forUser(userId)).map((state) => ({
       id: state.id,
@@ -151,6 +161,9 @@ export class LeagueService {
       season: state.season,
       round: state.round,
       administratorId: state.administratorId,
+      club: state.clubs.byId[
+        state.participants.find((member) => member.userId === userId)?.clubId ?? ''
+      ],
     }));
   }
   async join(leagueId: string, identity: Identity, _clubId?: string): Promise<void> {
@@ -251,28 +264,47 @@ export class LeagueService {
       );
     });
   }
-  async invitation(id: string, input: unknown) {
+  async invitation(id: string, input: unknown, userId?: string) {
     const { code } = z.object({ code: z.string() }).parse(input);
     await this.expire(id);
     const state = (await this.repository.load(id, { eventPatches: false }))?.state;
     if (!state || state.deletedAt || state.mode !== 'multiplayer' || state.inviteCode !== code)
       throw new Error('Convite inválido');
     return {
-      admission: state.admission,
+      admission: state.returningClubs?.[userId ?? '']
+        ? { ...state.admission, assignment: 'chosen' as const }
+        : state.admission,
       clubs: state.clubs.ids.flatMap((id) => {
-        try {
-          const club = this.availableClub(state, id);
-          return [{ id: club.id, name: club.name, division: club.division }];
-        } catch {
+        const reserved = state.returningClubs?.[userId ?? ''];
+        const club = state.clubs.byId[id];
+        if (
+          !club ||
+          club.country !== 'BR' ||
+          (reserved && reserved !== id) ||
+          (!reserved && state.admission.division && club.division !== state.admission.division)
+        )
           return [];
-        }
+        const occupied =
+          state.participants.some((member) => member.clubId === id) ||
+          Object.entries(state.returningClubs ?? {}).some(
+            ([owner, clubId]) => clubId === id && owner !== userId,
+          );
+        return [
+          {
+            id: club.id,
+            name: club.name,
+            division: club.division,
+            occupied,
+            ...(club.crestUrl ? { crestUrl: club.crestUrl } : {}),
+          },
+        ];
       }),
     };
   }
   async requestEntry(id: string, identity: Identity, input: unknown) {
     const data = z.object({ code: z.string(), clubId: z.uuid().optional() }).parse(input);
     await this.expire(id);
-    await this.serial(id, async () => {
+    return this.serial(id, async () => {
       const state = (await this.repository.load(id, { eventPatches: false }))?.state;
       if (
         !state ||
@@ -282,6 +314,32 @@ export class LeagueService {
       )
         throw new Error('Convite inválido');
       if (state.participants.some((p) => p.userId === identity.userId)) return;
+      const returningClub = state.returningClubs?.[identity.userId];
+      if (returningClub) {
+        this.availableClub(state, returningClub, identity.userId);
+        const returningClubs = { ...state.returningClubs };
+        delete returningClubs[identity.userId];
+        await this.commit(
+          state,
+          {
+            ...state,
+            returningClubs,
+            participants: [
+              ...state.participants,
+              {
+                userId: identity.userId,
+                clubId: returningClub,
+                ready: false,
+                lastSeenAt: this.now(),
+              },
+            ],
+            requests: state.requests.filter((request) => request.userId !== identity.userId),
+          },
+          identity.userId,
+          'Treinador retornou ao clube anterior',
+        );
+        return { rejoined: true };
+      }
       if (state.requests.length >= 100) throw new Error('Limite de solicitações atingido');
       if (data.clubId && state.admission.assignment === 'chosen')
         this.availableClub(state, data.clubId);
@@ -303,13 +361,16 @@ export class LeagueService {
       );
     });
   }
-  private availableClub(state: import('@football/shared').WorldState, id: string) {
+  private availableClub(state: import('@football/shared').WorldState, id: string, userId?: string) {
     const club = state.clubs.byId[id];
     if (
       !club ||
       club.country !== 'BR' ||
       (state.admission.division && club.division !== state.admission.division) ||
-      state.participants.some((p) => p.clubId === id)
+      state.participants.some((p) => p.clubId === id) ||
+      Object.entries(state.returningClubs ?? {}).some(
+        ([owner, clubId]) => clubId === id && owner !== userId,
+      )
     )
       throw new Error('Clube indisponível na divisão permitida');
     return club;
@@ -358,8 +419,81 @@ export class LeagueService {
       }),
     );
   }
+  async kick(id: string, userId: string, input: unknown) {
+    const target = z.object({ userId: z.string() }).parse(input).userId;
+    return this.serial(id, async () => {
+      const state = (await this.repository.load(id, { eventPatches: false }))?.state;
+      if (
+        !state ||
+        state.deletedAt ||
+        state.mode !== 'multiplayer' ||
+        state.administratorId !== userId ||
+        target === userId
+      )
+        throw new Error('Acesso negado');
+      const returningClubs = { ...state.returningClubs };
+      delete returningClubs[target];
+      await this.commit(
+        state,
+        {
+          ...state,
+          returningClubs,
+          participants: state.participants.filter((member) => member.userId !== target),
+          requests: state.requests.filter((request) => request.userId !== target),
+        },
+        userId,
+        'Treinador expulso; vínculo com o clube liberado',
+      );
+    });
+  }
+  async reset(id: string, userId: string) {
+    return this.serial(id, async () => {
+      const saved = await this.repository.load(id, { eventPatches: false });
+      if (!saved || saved.state.deletedAt || saved.state.administratorId !== userId)
+        throw new Error('Somente o administrador pode resetar a carreira');
+      const previous = saved.state;
+      const generated = createWorld({
+        id,
+        userId,
+        name: previous.name,
+        mode: previous.mode,
+        now: this.now(),
+      });
+      if (!generated.ok) throw new Error(generated.error.message);
+      let fresh = generated.value;
+      if (this.dataProvider) {
+        const dataset = this.dataProvider.loadForLeague
+          ? await this.dataProvider.loadForLeague(id)
+          : await this.dataProvider.load();
+        if (!dataset.ok) throw new Error(dataset.error.message);
+        const imported = importDataset(fresh, dataset.value);
+        if (!imported.ok) throw new Error(imported.error.message);
+        fresh = imported.value;
+      }
+      if (previous.participants.some((member) => !fresh.clubs.byId[member.clubId]))
+        throw new Error('Um clube desta carreira não está mais disponível na base');
+      await this.commit(
+        previous,
+        {
+          ...fresh,
+          participants: previous.participants.map((member) => ({
+            userId: member.userId,
+            clubId: member.clubId,
+            ready: false,
+          })),
+          inviteCode: previous.inviteCode,
+          calendarAnchor: { realAt: this.now(), gameAt: fresh.lastProcessedAt },
+          nextScheduledAt: nextRealMatchTime(this.now()),
+        },
+        userId,
+        'Carreira reiniciada do zero',
+      );
+    });
+  }
   async leave(id: string, userId: string, remove = false) {
     await this.serial(id, async () => {
+      const loaded = (await this.repository.load(id, { eventPatches: false }))?.state;
+      if (remove && loaded?.mode === 'multiplayer') remove = false;
       if (remove && this.repository.remove) {
         await this.repository.remove(id, userId, this.now());
         this.updates.emit(id);
@@ -373,19 +507,30 @@ export class LeagueService {
       if (!remove && state.mode === 'offline')
         throw new Error('Use excluir para uma carreira solo');
       const participants = remove ? [] : state.participants.filter((p) => p.userId !== userId);
+      const empty = state.mode === 'multiplayer' && participants.length === 0;
       await this.commit(
         state,
         {
           ...state,
           participants,
-          requests: remove ? [] : state.requests,
+          ...(state.mode === 'multiplayer'
+            ? {
+                returningClubs: {
+                  ...state.returningClubs,
+                  [userId]: state.participants.find((member) => member.userId === userId)!.clubId,
+                },
+              }
+            : {}),
+          requests: remove || empty ? [] : state.requests,
           administratorId: participants.some((p) => p.userId === state.administratorId)
             ? state.administratorId
-            : (participants[0]?.userId ?? state.administratorId),
-          ...(remove ? { deletedAt: this.now() } : {}),
+            : participants.length
+              ? participants[randomInt(participants.length)]!.userId
+              : state.administratorId,
+          ...(remove || empty ? { deletedAt: this.now() } : {}),
         },
         userId,
-        remove ? 'Liga excluída' : 'Treinador abandonou a liga; bot assumiu o clube',
+        remove || empty ? 'Liga excluída' : 'Treinador abandonou a liga; bot assumiu o clube',
       );
     });
   }
@@ -491,20 +636,36 @@ export class LeagueService {
         tables[`${rule.id}:group:${group.group}`] = [...group.table];
     }
     return {
-      state,
+      state: {
+        ...state,
+        participants: state.participants.map((member) => ({
+          ...member,
+          online: (this.onlineSessions.get(`${id}:${member.userId}`)?.size ?? 0) > 0,
+        })),
+      },
       serverTime: this.now(),
       tables,
       roomId,
-      ledger: saved.events.slice(-100).map((event) => ({
-        id: event.id,
-        sequence: event.sequence,
-        occurredAt: event.occurredAt,
-        actorId: event.actorId,
-        type: event.type,
-        message: event.message,
-        amount: event.amount,
-        ...(event.balances ? { balances: event.balances } : {}),
-      })),
+      ledger: saved.events
+        .slice(
+          saved.events.reduce(
+            (last, event, index) =>
+              event.message === 'Carreira reiniciada do zero' ? index : last,
+            -1,
+          ) + 1,
+        )
+        .slice(-100)
+        .map((event) => ({
+          id: event.id,
+          sequence: event.sequence,
+          occurredAt: event.occurredAt,
+          ...(event.gameOccurredAt !== undefined ? { gameOccurredAt: event.gameOccurredAt } : {}),
+          actorId: event.actorId,
+          type: event.type,
+          message: event.message,
+          amount: event.amount,
+          ...(event.balances ? { balances: event.balances } : {}),
+        })),
     };
   }
   async command(

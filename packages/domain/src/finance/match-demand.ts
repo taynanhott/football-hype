@@ -89,6 +89,7 @@ export function matchDemand(state: WorldState, fixture: Fixture, priceOverride?:
   const marketing = state.centers.byId[home?.trainingCenterId ?? '']?.levels.marketing ?? 1;
   const fairPriceCents = roundMoney(
     GAMEPLAY.baseTicketCents *
+      1.2 *
       (marketing >= 5 ? 1.3 : 1) *
       (1 + (importance - 1) * 1.5 + Math.min(0.3, upgrades * GAMEPLAY.qualityTicketPremium)),
     MONEY_STEPS.ticket,

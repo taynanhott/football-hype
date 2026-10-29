@@ -66,13 +66,18 @@ export function leagueRoom(service: LeagueService): new () => Room {
       const options = connectOptionsSchema.parse(input);
       await service.join(this.leagueId, identity, options.clubId);
       this.identities.set(client.sessionId, identity);
+      service.setOnline(this.leagueId, identity.userId, client.sessionId, true);
       await this.sendSnapshot(client);
     }
     override onLeave(client: Client): void {
+      const identity = this.identities.get(client.sessionId);
+      if (identity) service.setOnline(this.leagueId, identity.userId, client.sessionId, false);
       this.identities.delete(client.sessionId);
       this.sent.delete(client.sessionId);
     }
     override onDispose(): void {
+      for (const [sessionId, identity] of this.identities)
+        service.setOnline(this.leagueId, identity.userId, sessionId, false);
       this.unsubscribe?.();
     }
     private async sendSnapshot(client: Client, full = false): Promise<void> {

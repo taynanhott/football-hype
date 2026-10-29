@@ -1,5 +1,4 @@
 import { BrandMark } from '../../ui/brand-mark';
-import { Select, Option } from '../../ui/select';
 import { useState, useEffect, useRef, type CSSProperties } from 'react';
 import { z } from 'zod';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -46,27 +45,64 @@ export function Lobby() {
       {!session.user ? (
         <div className="login-welcome">
           <div className="stadium-art" aria-hidden="true">
-            <div className="pitch-lines">
-              <i />
-              <b />
-            </div>
-            <div className="stadium-ticket">
-              <BrandMark size={64} />
-              <span>ACESSO DO TÉCNICO</span>
-              <strong>2026</strong>
-              <small>VESTIÁRIO · ÁREA TÉCNICA</small>
+            <svg className="access-lanyard" viewBox="0 0 420 500">
+              <path
+                className="lanyard-strap"
+                d="M206 235C173 204 113 112 132 58C149 10 267 8 290 60C313 111 254 205 219 235"
+              />
+              <path
+                className="lanyard-stitch"
+                d="M206 235C173 204 113 112 132 58C149 10 267 8 290 60C313 111 254 205 219 235"
+              />
+            </svg>
+            <div className="coach-access-badge">
+              <span className="badge-metal-clip" />
+              <div className="badge-brand">
+                <BrandMark size={44} />
+                <span>
+                  FOOTBALL HYPE<small>CREDENCIAL OFICIAL</small>
+                </span>
+              </div>
+              <div className="badge-coach-profile">
+                <Icon name="squad" size={42} />
+                <div>
+                  <span>COMISSÃO TÉCNICA</span>
+                  <strong>TREINADOR</strong>
+                </div>
+              </div>
+              <div className="badge-permission">
+                <span>ACESSO LIBERADO</span>
+                <strong>Vestiário e área técnica</strong>
+              </div>
+              <div className="badge-bottom">
+                <span className="badge-barcode" />
+                <b>2026</b>
+              </div>
             </div>
           </div>
           <div className="login-access">
-            <span className="eyebrow">ÁREA DO TÉCNICO</span>
-            <h2>Acesse seu vestiário</h2>
-            <p>Entre para continuar suas carreiras e criar novas ligas.</p>
+            <div className="login-game-brand">
+              <BrandMark size={144} />
+              <strong>FOOTBALL HYPE</strong>
+              <span>FOOTBALL MANAGER BRASIL</span>
+            </div>
+            <p className="login-football-copy">
+              O vestiário te espera, professor.
+              <br />
+              Seu próximo título começa aqui.
+            </p>
             <button
-              className="primary"
+              className="primary google-login-button"
               disabled={busy || session.loading || !firebaseEnabled}
               onClick={() => void login()}
             >
-              {session.loading ? 'Conectando…' : busy ? 'Abrindo Google…' : 'Entrar com Google'}
+              <svg className="google-login-symbol" viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  fill="currentColor"
+                  d="M21.6 12.2c0-.7-.1-1.4-.2-2.1H12v4h5.4a4.6 4.6 0 0 1-2 3v2.5h3.2c1.9-1.8 3-4.3 3-7.4ZM12 22c2.7 0 5-.9 6.6-2.4l-3.2-2.5c-.9.6-2 1-3.4 1-2.6 0-4.8-1.8-5.6-4.1H3.1v2.6A10 10 0 0 0 12 22ZM6.4 14a6 6 0 0 1 0-4V7.4H3.1a10 10 0 0 0 0 9.2L6.4 14ZM12 5.9c1.5 0 2.8.5 3.8 1.5l2.9-2.8A9.6 9.6 0 0 0 12 2a10 10 0 0 0-8.9 5.4L6.4 10c.8-2.3 3-4.1 5.6-4.1Z"
+                />
+              </svg>
+              <span>{session.loading ? 'Conectando…' : busy ? 'Abrindo Google…' : 'Google'}</span>
             </button>
             {!firebaseEnabled && <p>Configure o Firebase para habilitar o acesso.</p>}
             {(error || session.error) && (
@@ -93,6 +129,7 @@ function AuthenticatedLobby({ user }: { user: { uid: string; name: string } }) {
   const [boundLeague, setBoundLeague] = useState('');
   const binding = useRef(false);
   const [creating, setCreating] = useState(false);
+  const [settingsId, setSettingsId] = useState<string | null>(null);
   const [choice, setChoice] = useState<'chosen' | 'random'>('chosen');
   const [settling, setSettling] = useState(false);
   const [spinning, setSpinning] = useState(false);
@@ -100,7 +137,7 @@ function AuthenticatedLobby({ user }: { user: { uid: string; name: string } }) {
   const [rolled, setRolled] = useState(false);
   const [confirmation, setConfirmation] = useState<{
     id: string;
-    action: 'leave' | 'delete';
+    action: 'leave' | 'delete' | 'reset';
   } | null>(null);
   useEffect(() => {
     if (!spinning || !settling) return;
@@ -118,7 +155,13 @@ function AuthenticatedLobby({ user }: { user: { uid: string; name: string } }) {
   const [inviteClub, setInviteClub] = useState('');
   const [invitation, setInvitation] = useState<{
     assignment: 'chosen' | 'random';
-    clubs: { id: string; name: string; division: string }[];
+    clubs: {
+      id: string;
+      name: string;
+      division: string;
+      occupied?: boolean | undefined;
+      crestUrl?: string | undefined;
+    }[];
   } | null>(null);
   const [error, setError] = useState('');
   const connect = useGameStore((state) => state.connect);
@@ -139,7 +182,14 @@ function AuthenticatedLobby({ user }: { user: { uid: string; name: string } }) {
   });
   const teams = (catalog.data?.clubs ?? []).filter((club) => club.division === division);
   const selected = teams.find((club) => club.id === teamId) ?? teams[0];
-  const existingMode = leagues.data?.find((league) => league.mode === mode);
+  const soloFull = (leagues.data?.filter((league) => league.mode === 'offline').length ?? 0) >= 2;
+  const multiplayerFull = leagues.data?.some((league) => league.mode === 'multiplayer') ?? false;
+  const actionsUnavailable = busy || !leagues.isSuccess || leagues.isFetching;
+  const existingMode =
+    (leagues.data?.filter((league) => league.mode === mode).length ?? 0) >=
+    (mode === 'offline' ? 2 : 1)
+      ? leagues.data?.find((league) => league.mode === mode)
+      : undefined;
   async function spin() {
     if (
       !teams.length ||
@@ -218,13 +268,14 @@ function AuthenticatedLobby({ user }: { user: { uid: string; name: string } }) {
       useGameStore.setState({ busy: false });
     }
   }
-  async function manage(id: string, action: 'leave' | 'delete') {
+  async function manage(id: string, action: 'leave' | 'delete' | 'reset') {
     try {
       setConfirmation(null);
       await request(`/api/leagues/${id}/${action}`, { method: 'POST' });
       queryClient.setQueryData<Awaited<ReturnType<typeof listLeagues>>>(
         ['leagues', user.uid],
-        (previous) => previous?.filter((league) => league.id !== id),
+        (previous) =>
+          action === 'reset' ? previous : previous?.filter((league) => league.id !== id),
       );
       void queryClient.invalidateQueries({ queryKey: ['leagues', user.uid] });
     } catch (reason) {
@@ -241,22 +292,38 @@ function AuthenticatedLobby({ user }: { user: { uid: string; name: string } }) {
     }
   }
   return (
-    <main
-      className={`club-selection ${creating && choice === 'chosen' ? 'manual-team-screen' : ''}`}
-    >
-      {!creating && (
+    <main className={`club-selection ${creating ? 'manual-team-screen' : ''}`}>
+      {
         <div className="career-toolbar">
           <span>
             <Icon name="shield" /> {user.name}
           </span>
-          <button className="secondary" onClick={() => void logout()}>
-            Sair da conta
-          </button>
+          {creating || (joining && invitation) ? (
+            <button
+              className="secondary career-nav-button career-back-button"
+              disabled={busy || spinning}
+              onClick={() => {
+                setCreating(false);
+                setJoining(false);
+                setInvitation(null);
+              }}
+            >
+              <Icon name="back" size={18} /> Suas carreiras
+            </button>
+          ) : (
+            <button
+              className="secondary career-nav-button career-logout-button"
+              onClick={() => void logout()}
+            >
+              <Icon name="logout" size={18} /> Sair da conta
+            </button>
+          )}
         </div>
-      )}
-      {!creating && (
+      }
+      {!creating && !(joining && invitation) && (
         <div className="career-actions">
           <button
+            disabled={actionsUnavailable || soloFull}
             onClick={() => {
               setReservation(null);
               setBoundLeague('');
@@ -270,9 +337,10 @@ function AuthenticatedLobby({ user }: { user: { uid: string; name: string } }) {
             <Icon name="trophy" />
             <strong>Nova carreira solo</strong>
             <small>Comande seu clube e dispute cada título.</small>
-            <span>Criar carreira →</span>
+            <span>{soloFull ? 'Limite de 2 carreiras solo atingido' : 'Criar carreira →'}</span>
           </button>
           <button
+            disabled={actionsUnavailable || multiplayerFull}
             onClick={() => {
               setBoundLeague('');
               setRolled(false);
@@ -285,13 +353,18 @@ function AuthenticatedLobby({ user }: { user: { uid: string; name: string } }) {
             <Icon name="ball" />
             <strong>Nova liga multiplayer</strong>
             <small>Seus amigos. Seus rivais. A mesma disputa.</small>
-            <span>Criar liga →</span>
+            <span>{multiplayerFull ? 'Sua vaga multiplayer está ocupada' : 'Criar liga →'}</span>
           </button>
-          <button onClick={() => setJoining(true)}>
+          <button
+            disabled={actionsUnavailable || multiplayerFull}
+            onClick={() => {
+              setJoining(true);
+            }}
+          >
             <Icon name="handshake" />
             <strong>Entrar com convite</strong>
             <small>Entre na liga dos seus amigos.</small>
-            <span>Usar convite →</span>
+            <span>{multiplayerFull ? 'Sua vaga multiplayer está ocupada' : 'Usar convite →'}</span>
           </button>
         </div>
       )}
@@ -300,7 +373,13 @@ function AuthenticatedLobby({ user }: { user: { uid: string; name: string } }) {
           {error}
         </p>
       )}
-      {leagues.isLoading && <p>Carregando suas carreiras…</p>}
+      {leagues.isLoading && (
+        <div className="career-loading" role="status" aria-label="Carregando suas carreiras">
+          <span className="career-loading-ball" aria-hidden="true">
+            <Icon name="ball" size={36} />
+          </span>
+        </div>
+      )}
       {leagues.error && (
         <p role="alert" className="form-error">
           Não foi possível carregar suas carreiras. O servidor não respondeu a tempo.
@@ -313,62 +392,85 @@ function AuthenticatedLobby({ user }: { user: { uid: string; name: string } }) {
           </button>
         </p>
       )}
-      {!creating && Boolean(leagues.data?.length) && (
-        <section className="saved-leagues panel">
-          <h2>Suas carreiras</h2>
+      {!creating && !leagues.isLoading && !(joining && invitation) && (
+        <section className="career-saves">
           {leagues.data?.map((league) => (
-            <div key={league.id}>
-              <button disabled={busy} onClick={() => void connect(league.id)}>
-                <span>
-                  {league.name}
-                  <small>
-                    {league.mode === 'offline' ? 'Solo' : 'Multiplayer'} · {league.season} · rodada{' '}
-                    {league.round}
-                  </small>
-                </span>
-                <span>
-                  Continuar <Icon name="arrow" />
-                </span>
+            <article className="career-save" key={league.id}>
+              <button
+                className="career-save-gear"
+                aria-label={`Configurações de ${league.club?.name ?? league.name.replace(/\s*·\s*(Carreira|Amigos)\s*$/i, '')}`}
+                aria-expanded={settingsId === league.id}
+                onClick={() => setSettingsId(settingsId === league.id ? null : league.id)}
+              >
+                <Icon name="gear" />
               </button>
-              {league.mode === 'multiplayer' && (
-                <button
-                  disabled={busy}
-                  onClick={() => setConfirmation({ id: league.id, action: 'leave' })}
-                >
-                  Abandonar liga
-                </button>
+              {settingsId === league.id && (
+                <div className="career-save-settings">
+                  {league.administratorId === user.uid && (
+                    <>
+                      <button onClick={() => setConfirmation({ id: league.id, action: 'reset' })}>
+                        Resetar carreira
+                      </button>
+                      <button
+                        className="career-delete-option"
+                        onClick={() => setConfirmation({ id: league.id, action: 'delete' })}
+                      >
+                        Excluir carreira
+                      </button>
+                    </>
+                  )}
+                  {league.mode === 'multiplayer' && (
+                    <button onClick={() => setConfirmation({ id: league.id, action: 'leave' })}>
+                      Abandonar liga
+                    </button>
+                  )}
+                </div>
               )}
-              {league.administratorId === user.uid && (
-                <button
-                  disabled={busy}
-                  onClick={() => setConfirmation({ id: league.id, action: 'delete' })}
-                >
-                  Excluir liga
-                </button>
-              )}
+              <button
+                className="career-save-open"
+                disabled={busy}
+                onClick={() => void connect(league.id)}
+              >
+                <span className="career-save-mode">
+                  {league.mode === 'offline' ? 'Carreira solo' : 'Liga multiplayer'}
+                </span>
+                <PixelBadge
+                  name={
+                    league.club?.name ?? league.name.replace(/\s*·\s*(Carreira|Amigos)\s*$/i, '')
+                  }
+                  {...(league.club?.crestUrl ? { url: league.club.crestUrl } : {})}
+                  size={80}
+                />
+                <strong>
+                  {league.club?.name ?? league.name.replace(/\s*·\s*(Carreira|Amigos)\s*$/i, '')}
+                </strong>
+                <span className="career-save-stats">
+                  <span>
+                    <b>{league.season}</b>Temporada
+                  </span>
+                  <span>
+                    <b>{league.round}</b>Rodada
+                  </span>
+                </span>
+                <span className="career-save-continue">Entrar em campo →</span>
+              </button>
+            </article>
+          ))}
+          {Array.from({ length: Math.max(0, 3 - (leagues.data?.length ?? 0)) }, (_, index) => (
+            <div
+              className="career-add career-empty-slot"
+              key={`empty-${index}`}
+              aria-label="Espaço de carreira vazio"
+            >
+              <span aria-hidden="true">+</span>
+              <strong>Espaço disponível</strong>
+              <small>Crie sua carreira nas opções acima</small>
             </div>
           ))}
         </section>
       )}
-      {!creating && leagues.isSuccess && !leagues.data?.length && (
-        <div className="career-empty">
-          <Icon name="trophy" />
-          <p>Suas carreiras aparecerão aqui.</p>
-          <small>Escolha um modo acima para entrar em campo.</small>
-        </div>
-      )}
       {creating && (
         <section className="creation-workspace">
-          <div className="career-toolbar">
-            <button
-              className="secondary"
-              disabled={busy || spinning}
-              onClick={() => setCreating(false)}
-            >
-              ← Suas carreiras
-            </button>
-            <strong>{mode === 'offline' ? 'Nova carreira solo' : 'Nova liga multiplayer'}</strong>
-          </div>
           <div className="division-picker" role="group" aria-label="Divisão brasileira">
             {['A', 'B', 'C', 'D'].map((value) => (
               <button
@@ -411,6 +513,11 @@ function AuthenticatedLobby({ user }: { user: { uid: string; name: string } }) {
           </div>
           {choice === 'random' && !rolled && (
             <div className="roulette-panel">
+              <div className="roulette-draw-label">
+                <Icon name="ball" size={22} />
+                <span>SORTEIO · SÉRIE {division}</span>
+                <span>{teams.length} clubes</span>
+              </div>
               <div className="roulette-window">
                 <div className="roulette-pointer" />
                 <div
@@ -423,47 +530,49 @@ function AuthenticatedLobby({ user }: { user: { uid: string; name: string } }) {
                   }
                   className={`roulette-strip ${spinning && !settling ? 'roulette-waiting' : settling || rolled ? 'rolling' : ''}`}
                 >
-                  {roll.map((id, i) => {
-                    const team = teams.find((t) => t.id === id);
-                    return (
-                      <div className="roulette-card" key={i}>
-                        <PixelBadge
-                          name={team?.name ?? ''}
-                          {...(team?.crestUrl ? { url: team.crestUrl } : {})}
-                          size={64}
-                        />
-                        <strong>{team?.name}</strong>
-                      </div>
-                    );
-                  })}
+                  {(roll.length ? roll : [...teams, ...teams, ...teams].map((team) => team.id)).map(
+                    (id, i) => {
+                      const team = teams.find((t) => t.id === id);
+                      return (
+                        <div className="roulette-card" key={i}>
+                          <PixelBadge
+                            name={team?.name ?? ''}
+                            {...(team?.crestUrl ? { url: team.crestUrl } : {})}
+                            size={64}
+                          />
+                          <strong>{team?.name}</strong>
+                        </div>
+                      );
+                    },
+                  )}
                 </div>
-                {!roll.length && (
-                  <span className="roulette-placeholder">O próximo escudo pode ser o seu.</span>
-                )}
               </div>
-              <button
-                className="primary"
-                disabled={
-                  busy ||
-                  spinning ||
-                  !teams.length ||
-                  Boolean(boundLeague) ||
-                  Boolean(existingMode) ||
-                  leagues.isPending ||
-                  leagues.isError
-                }
-                onClick={() => void spin()}
-              >
-                {spinning
-                  ? settling
-                    ? 'Revelando seu clube…'
-                    : 'Reservando seu clube…'
-                  : busy
-                    ? 'Vinculando seu clube…'
-                    : existingMode
-                      ? 'Você já possui uma carreira neste modo'
-                      : 'Girar roleta'}
-              </button>
+              <div className="roulette-draw-actions">
+                <span>Deixe o destino escolher seu próximo escudo.</span>
+                <button
+                  className="primary"
+                  disabled={
+                    busy ||
+                    spinning ||
+                    !teams.length ||
+                    Boolean(boundLeague) ||
+                    Boolean(existingMode) ||
+                    leagues.isPending ||
+                    leagues.isError
+                  }
+                  onClick={() => void spin()}
+                >
+                  {spinning
+                    ? settling
+                      ? 'Revelando seu clube…'
+                      : 'Reservando seu clube…'
+                    : busy
+                      ? 'Vinculando seu clube…'
+                      : existingMode
+                        ? 'Você já possui uma carreira neste modo'
+                        : 'Girar roleta'}
+                </button>
+              </div>
               {rolled && <strong role="status">Seu clube: {selected?.name}</strong>}
             </div>
           )}
@@ -529,149 +638,214 @@ function AuthenticatedLobby({ user }: { user: { uid: string; name: string } }) {
               </aside>
             )}
           </div>
-          <footer className="lobby-footer">{catalog.data?.source}</footer>
         </section>
       )}
       {confirmation && (
         <div className="modal-backdrop">
           <section
-            className="panel invite-dialog"
+            className="panel invite-dialog career-confirm-dialog"
             role="dialog"
             aria-modal="true"
             aria-label="Confirmar alteração da carreira"
           >
             <Icon name="shield" />
             <h2>
-              {confirmation.action === 'delete' ? 'Excluir esta liga?' : 'Abandonar esta liga?'}
+              {confirmation.action === 'reset'
+                ? 'Resetar esta carreira?'
+                : confirmation.action === 'delete'
+                  ? 'Excluir esta carreira?'
+                  : 'Abandonar esta liga?'}
             </h2>
             <p>
-              {confirmation.action === 'delete'
-                ? 'A carreira será excluída para todos os participantes.'
-                : 'Um bot assumirá seu clube e a vaga será liberada.'}
+              {confirmation.action === 'reset'
+                ? 'Todo o progresso será apagado e os clubes começarão do zero. Isso afeta todos os participantes.'
+                : confirmation.action === 'delete'
+                  ? leagues.data?.find((league) => league.id === confirmation.id)?.mode ===
+                    'multiplayer'
+                    ? 'Você sairá da liga. Outro jogador assumirá a administração, se necessário. Se ninguém restar, a liga será excluída.'
+                    : 'Esta carreira e todo o progresso serão excluídos. Você poderá escolher ou sortear outro clube.'
+                  : 'Seu clube ficará reservado para seu retorno enquanto houver outros jogadores. Se o administrador sair, um sucessor será sorteado. Sem jogadores, a liga será excluída.'}
             </p>
-            <button
-              className="primary"
-              onClick={() => void manage(confirmation.id, confirmation.action)}
-            >
-              Confirmar
-            </button>
-            <button className="secondary" onClick={() => setConfirmation(null)}>
-              Cancelar
-            </button>
+            <div className="career-confirm-actions">
+              <button
+                className="career-confirm-danger"
+                onClick={() => void manage(confirmation.id, confirmation.action)}
+              >
+                {confirmation.action === 'reset'
+                  ? 'Sim, resetar carreira'
+                  : confirmation.action === 'delete'
+                    ? 'Sim, excluir carreira'
+                    : 'Sim, abandonar liga'}
+              </button>
+              <button className="secondary" onClick={() => setConfirmation(null)}>
+                Cancelar
+              </button>
+            </div>
           </section>
         </div>
       )}
-      {joining && (
+      {joining && invitation && (
+        <section className="creation-workspace invite-team-workspace">
+          {invitation.assignment === 'chosen' ? (
+            <div className="invite-team-grid">
+              {invitation.clubs.map((club) => (
+                <button
+                  key={club.id}
+                  className="club-choice"
+                  disabled={club.occupied || busy}
+                  aria-pressed={inviteClub === club.id}
+                  onClick={() => setInviteClub(club.id)}
+                >
+                  <PixelBadge
+                    name={club.name}
+                    {...(club.crestUrl ? { url: club.crestUrl } : {})}
+                    size={48}
+                  />
+                  <strong>{club.name}</strong>
+                  <small>{club.occupied ? 'Ocupado' : `Série ${club.division}`}</small>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="panel invite-random">
+              <Icon name="ball" size={48} />
+              <strong>Seu clube será sorteado entre os disponíveis</strong>
+              <span>
+                {invitation.clubs.filter((club) => !club.occupied).length} clubes livres · sorteio
+                na aprovação da entrada
+              </span>
+            </div>
+          )}
+          <button
+            className="primary"
+            disabled={busy || !invitation || !invitation.clubs.some((club) => !club.occupied)}
+            onClick={() => {
+              const [id, invite] = code.trim().split(':');
+              if (!id || !invite) {
+                setError('Cole o convite completo recebido do administrador');
+                return;
+              }
+              void request(`/api/leagues/${id}/request`, {
+                method: 'POST',
+                body: JSON.stringify({
+                  code: invite,
+                  ...(invitation?.assignment === 'chosen' && inviteClub
+                    ? { clubId: inviteClub }
+                    : {}),
+                }),
+              })
+                .then((result) => {
+                  setJoining(false);
+                  if (z.object({ rejoined: z.boolean().optional() }).parse(result).rejoined) {
+                    void connect(id);
+                    void leagues.refetch();
+                    return;
+                  }
+                  setError('Solicitação enviada. Aguarde aprovação e atualize suas carreiras.');
+                })
+                .catch((reason: unknown) =>
+                  setError(reason instanceof Error ? reason.message : 'Convite inválido'),
+                );
+            }}
+          >
+            {invitation.assignment === 'random'
+              ? 'Solicitar sorteio e entrada'
+              : 'Solicitar entrada'}
+          </button>
+        </section>
+      )}
+      {joining && !invitation && (
         <div className="modal-backdrop">
           <section
-            className="panel invite-dialog"
+            className="panel invite-dialog league-invite-ticket"
             role="dialog"
             aria-modal="true"
             aria-label="Entrar em uma liga"
           >
-            <h2>Jogue com seus amigos</h2>
-            <p>
-              Consulte o convite para escolher entre os times da divisão permitida pelo
-              administrador.
-            </p>
-            {error && <p role="alert">{error}</p>}
-            <label>
-              Código da liga
-              <input
-                aria-label="Código da liga"
-                value={code}
-                onChange={(event) => {
-                  setCode(event.target.value);
-                  setInvitation(null);
-                }}
-              />
-            </label>
-            {!invitation && (
-              <button
-                onClick={() => {
-                  const [id, invite] = code.trim().split(':');
-                  if (!id || !invite) {
-                    setError('Cole o convite completo');
-                    return;
-                  }
-                  void request(`/api/leagues/${id}/preview`, {
-                    method: 'POST',
-                    body: JSON.stringify({ code: invite }),
-                  })
-                    .then((data) => {
-                      const parsed = z
-                        .object({
-                          admission: z.object({ assignment: z.enum(['chosen', 'random']) }),
-                          clubs: z.array(
-                            z.object({ id: z.string(), name: z.string(), division: z.string() }),
-                          ),
-                        })
-                        .parse(data);
-                      setInvitation({
-                        assignment: parsed.admission.assignment,
-                        clubs: parsed.clubs,
-                      });
-                      setInviteClub(parsed.clubs[0]?.id ?? '');
-                      setError('');
-                    })
-                    .catch((reason: unknown) =>
-                      setError(reason instanceof Error ? reason.message : 'Convite inválido'),
-                    );
-                }}
-              >
-                Ver times disponíveis
-              </button>
-            )}
-            {invitation &&
-              (invitation.assignment === 'random' ? (
-                <p>
-                  O administrador sorteará um dos {invitation.clubs.length} clubes disponíveis ao
-                  aprovar sua entrada.
+            <header className="invite-ticket-header">
+              <span className="invite-ticket-seal">
+                <Icon name="trophy" size={30} />
+              </span>
+              <div>
+                <span className="invite-ticket-kicker">FOOTBALL HYPE · MULTIPLAYER</span>
+                <h2>Seu lugar na liga</h2>
+                <p>Convite de acesso do treinador</p>
+              </div>
+            </header>
+            <div className="invite-ticket-body">
+              {error && (
+                <p className="invite-ticket-error" role="alert">
+                  {error}
                 </p>
-              ) : (
-                <label>
-                  Seu clube na divisão permitida
-                  <Select value={inviteClub} onValueChange={(value) => setInviteClub(value)}>
-                    {invitation.clubs.map((c) => (
-                      <Option key={c.id} value={c.id}>
-                        {c.name} · Série {c.division}
-                      </Option>
-                    ))}
-                  </Select>
-                </label>
-              ))}
-            <button
-              className="primary"
-              disabled={busy || !invitation || !invitation.clubs.length}
-              onClick={() => {
-                const [id, invite] = code.trim().split(':');
-                if (!id || !invite) {
-                  setError('Cole o convite completo recebido do administrador');
-                  return;
-                }
-                void request(`/api/leagues/${id}/request`, {
-                  method: 'POST',
-                  body: JSON.stringify({
-                    code: invite,
-                    ...(invitation?.assignment === 'chosen' && inviteClub
-                      ? { clubId: inviteClub }
-                      : {}),
-                  }),
-                })
-                  .then(() => {
-                    setJoining(false);
-                    setError('Solicitação enviada. Aguarde aprovação e atualize suas carreiras.');
-                  })
-                  .catch((reason: unknown) =>
-                    setError(reason instanceof Error ? reason.message : 'Convite inválido'),
-                  );
-              }}
-            >
-              Solicitar entrada
-            </button>
-            <button className="secondary" onClick={() => setJoining(false)}>
-              Cancelar
-            </button>
+              )}
+              <label>
+                Cole seu convite
+                <input
+                  aria-label="Código da liga"
+                  value={code}
+                  placeholder="Código recebido do administrador"
+                  autoComplete="off"
+                  onChange={(event) => {
+                    setCode(event.target.value);
+                    setInvitation(null);
+                  }}
+                />
+              </label>
+              <div className="invite-ticket-actions">
+                {!invitation && (
+                  <button
+                    className="invite-ticket-primary"
+                    disabled={!code.trim() || busy}
+                    onClick={() => {
+                      const [id, invite] = code.trim().split(':');
+                      if (!id || !invite) {
+                        setError('Cole o convite completo');
+                        return;
+                      }
+                      void request(`/api/leagues/${id}/preview`, {
+                        method: 'POST',
+                        body: JSON.stringify({ code: invite }),
+                      })
+                        .then((data) => {
+                          const parsed = z
+                            .object({
+                              admission: z.object({ assignment: z.enum(['chosen', 'random']) }),
+                              clubs: z.array(
+                                z.object({
+                                  id: z.string(),
+                                  name: z.string(),
+                                  division: z.string(),
+                                  occupied: z.boolean().optional(),
+                                  crestUrl: z.string().optional(),
+                                }),
+                              ),
+                            })
+                            .parse(data);
+                          setInvitation({
+                            assignment: parsed.admission.assignment,
+                            clubs: parsed.clubs,
+                          });
+                          setInviteClub(parsed.clubs.find((club) => !club.occupied)?.id ?? '');
+                          setError('');
+                        })
+                        .catch((reason: unknown) =>
+                          setError(reason instanceof Error ? reason.message : 'Convite inválido'),
+                        );
+                    }}
+                  >
+                    Validar convite <Icon name="arrow" size={18} />
+                  </button>
+                )}
+                <button className="secondary" onClick={() => setJoining(false)}>
+                  Cancelar
+                </button>
+              </div>
+            </div>
+            <footer className="invite-ticket-footer">
+              <span className="invite-ticket-bars" aria-hidden="true" />
+              <span>ACESSO EXCLUSIVO · ÁREA TÉCNICA</span>
+              <Icon name="ball" size={20} />
+            </footer>
           </section>
         </div>
       )}

@@ -2,22 +2,22 @@ import { Icon } from '../../ui/icons';
 import { PixelBadge } from '../../ui/pixel-badge';
 import { Career } from './career';
 import { Select, Option } from '../../ui/select';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { ClubInspection } from '../clubs/club-inspection';
 import { COMPETITIONS } from '@football/shared';
 import type { ViewProps } from '../../ui/view-props';
 import { useGameStore } from '../../store/game-store';
 import { request } from './api';
-import { dateTime } from '../../ui/format';
 export function LeagueSettings({ snapshot }: ViewProps) {
   const { state } = snapshot;
   const { userId, send, busy, disconnect, connected } = useGameStore();
   const [error, setError] = useState('');
   const [chosen, setChosen] = useState<Record<string, string>>({});
-  const [tab, setTab] = useState<'invites' | 'rounds'>('invites');
   const [generated, setGenerated] = useState(false);
   const [copied, setCopied] = useState(false);
   const [working, setWorking] = useState(false);
+  const [kickTarget, setKickTarget] = useState<string | null>(null);
+  const [leaving, setLeaving] = useState(false);
   const admin = userId === state.administratorId;
   async function action(kind: string, body?: unknown) {
     if (working) return;
@@ -38,25 +38,40 @@ export function LeagueSettings({ snapshot }: ViewProps) {
   return (
     <>
       {error && <p role="alert">{error}</p>}
-      <div className="segmented management-tabs" role="group" aria-label="Áreas de gerenciamento">
-        <button
-          className={tab === 'invites' ? 'selected' : ''}
-          aria-pressed={tab === 'invites'}
-          onClick={() => setTab('invites')}
-        >
-          Convites
-        </button>
-        {admin && (
-          <button
-            className={tab === 'rounds' ? 'selected' : ''}
-            aria-pressed={tab === 'rounds'}
-            onClick={() => setTab('rounds')}
+      {leaving && (
+        <div className="modal-backdrop">
+          <section
+            className="panel invite-dialog career-confirm-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Confirmar saída"
           >
-            Rodadas
-          </button>
-        )}
-      </div>
-      {tab === 'invites' && (
+            <Icon name="shield" />
+            <h2>Sair da liga?</h2>
+            <p>
+              Se o administrador sair, outro participante será sorteado para assumir. Se ninguém
+              restar, a liga será excluída.
+            </p>
+            <div className="career-confirm-actions">
+              <button
+                className="career-confirm-danger"
+                disabled={working}
+                onClick={() => {
+                  setLeaving(false);
+                  void action('leave');
+                }}
+              >
+                Sim, sair
+              </button>
+              <button className="secondary" onClick={() => setLeaving(false)}>
+                Cancelar
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
+
+      {state.mode === 'multiplayer' && (
         <section className="panel management-invites">
           <span className="eyebrow">JOGUE COM SEUS AMIGOS</span>
           <h2>Convites para a liga</h2>
@@ -102,38 +117,86 @@ export function LeagueSettings({ snapshot }: ViewProps) {
           )}
         </section>
       )}
-      {admin && tab === 'rounds' && (
-        <section className="panel management-rounds">
-          <span className="eyebrow">CONTROLE DO ADMINISTRADOR</span>
-          <h2>Rodadas da liga</h2>
-          <p>Próxima rodada: {dateTime(state.nextScheduledAt)}</p>
-          <button
-            className="primary"
-            disabled={busy || !connected}
-            onClick={() => send({ type: state.status === 'active' ? 'advance' : 'new-season' })}
-          >
-            {busy
-              ? 'Processando…'
-              : state.status === 'active'
-                ? 'Avançar rodada'
-                : 'Iniciar nova temporada'}
-          </button>
-        </section>
-      )}
-      {admin && tab === 'invites' && state.mode === 'multiplayer' && (
+
+      {state.mode === 'multiplayer' && (
         <section className="panel">
           <h2>Participantes e bots</h2>
           <p>
-            A vaga fica vinculada à sua conta. Após 48 horas sem acessar a liga, ou ao sair da conta
-            ou abandonar a liga, um bot assume o clube e a vaga é liberada.
+            Ao sair, o clube fica reservado para o retorno pelo convite. Expulsar libera o vínculo e
+            permite escolher outro time.
           </p>
           {state.participants.map((p) => (
-            <p key={p.userId}>
-              <a href={'#/trophies?club=' + p.clubId}>{state.clubs.byId[p.clubId]?.name}</a> ·{' '}
-              {p.userId === state.administratorId ? 'Administrador' : 'Treinador'} ·{' '}
-              {p.userId === userId ? 'Você' : p.userId.slice(0, 8)}
-            </p>
+            <div className="league-member-row" key={p.userId}>
+              <PixelBadge
+                name={state.clubs.byId[p.clubId]?.name ?? 'Clube'}
+                {...(state.clubs.byId[p.clubId]?.crestUrl
+                  ? { url: state.clubs.byId[p.clubId]!.crestUrl! }
+                  : {})}
+                size={36}
+              />
+              <span>
+                <a href={'#/trophies?club=' + p.clubId}>{state.clubs.byId[p.clubId]?.name}</a> ·{' '}
+                {p.userId === state.administratorId ? 'Administrador' : 'Treinador'} ·{' '}
+                {p.userId === userId ? 'Você' : p.userId.slice(0, 8)}
+                {admin && p.userId !== userId && (
+                  <button
+                    className="secondary"
+                    disabled={working}
+                    onClick={() => setKickTarget(p.userId)}
+                  >
+                    Expulsar
+                  </button>
+                )}
+              </span>
+              <span className={p.online ? 'league-presence online' : 'league-presence'}>
+                {p.online ? 'Online' : 'Offline'}
+              </span>
+            </div>
           ))}
+          {admin &&
+            Object.entries(state.returningClubs ?? {}).map(([owner, clubId]) => (
+              <p key={owner}>
+                {state.clubs.byId[clubId]?.name} · Retorno reservado{' '}
+                <button
+                  className="secondary"
+                  disabled={working}
+                  onClick={() => setKickTarget(owner)}
+                >
+                  Expulsar e liberar vínculo
+                </button>
+              </p>
+            ))}
+          {kickTarget && (
+            <div className="modal-backdrop">
+              <section
+                className="panel invite-dialog career-confirm-dialog"
+                role="dialog"
+                aria-modal="true"
+                aria-label="Confirmar expulsão"
+              >
+                <h2>Expulsar treinador?</h2>
+                <p>
+                  O vínculo com o clube será liberado. Ao voltar pelo convite, ele poderá escolher
+                  outro time.
+                </p>
+                <div className="career-confirm-actions">
+                  <button
+                    className="career-confirm-danger"
+                    disabled={working}
+                    onClick={() => {
+                      void action('kick', { userId: kickTarget });
+                      setKickTarget(null);
+                    }}
+                  >
+                    Sim, expulsar
+                  </button>
+                  <button className="secondary" onClick={() => setKickTarget(null)}>
+                    Cancelar
+                  </button>
+                </div>
+              </section>
+            </div>
+          )}
           <p>
             {state.clubs.ids.filter((id) => state.clubs.byId[id]?.country === 'BR').length -
               state.participants.length}{' '}
@@ -202,7 +265,8 @@ export function LeagueSettings({ snapshot }: ViewProps) {
                             c?.country === 'BR' &&
                             (!state.admission.division ||
                               c.division === state.admission.division) &&
-                            !state.participants.some((p) => p.clubId === id)
+                            !state.participants.some((p) => p.clubId === id) &&
+                            !Object.values(state.returningClubs ?? {}).includes(id)
                           );
                         })
                         .map((id) => (
@@ -236,17 +300,11 @@ export function LeagueSettings({ snapshot }: ViewProps) {
           )}
         </section>
       )}
-      {!admin && state.mode === 'multiplayer' && (
+      {state.mode === 'multiplayer' && (
         <section className="panel management-leave">
           <h2>Gerenciar carreira</h2>
           {state.mode === 'multiplayer' && (
-            <button
-              disabled={working || !connected}
-              onClick={() => {
-                if (confirm('Abandonar a liga e liberar sua vaga para outro treinador?'))
-                  void action('leave');
-              }}
-            >
+            <button disabled={working || !connected} onClick={() => setLeaving(true)}>
               Abandonar liga online
             </button>
           )}
@@ -261,12 +319,25 @@ export function TrophyGallery(props: ViewProps) {
   const requestedClub = new URLSearchParams(location.hash.split('?')[1]).get('club');
   const inspectingClub = Boolean(requestedClub && state.clubs.byId[requestedClub]);
   const clubId = inspectingClub ? requestedClub! : club.id;
+  return (
+    <TrophyGalleryContent
+      key={`${clubId}:${inspectingClub}`}
+      {...props}
+      clubId={clubId}
+      inspectingClub={inspectingClub}
+    />
+  );
+}
+function TrophyGalleryContent({
+  clubId,
+  inspectingClub,
+  ...props
+}: ViewProps & { clubId: string; inspectingClub: boolean }) {
+  const { snapshot, club } = props;
+  const { state } = snapshot;
   const [clubView, setClubView] = useState<
     'career' | 'trophies' | 'squad' | 'stadium' | 'training'
   >(inspectingClub ? 'squad' : 'career');
-  useEffect(() => {
-    setClubView(inspectingClub ? 'squad' : 'career');
-  }, [clubId, inspectingClub]);
   const [visitedViews, setVisitedViews] = useState<string[]>(['squad']);
   const selected = state.clubs.byId[clubId];
   const trophies = state.trophies.filter((t) => t.clubId === clubId);

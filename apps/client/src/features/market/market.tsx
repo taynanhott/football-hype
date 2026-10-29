@@ -20,6 +20,8 @@ import { MarketFiltersDialog } from './market-filters-dialog';
 import { currency } from '../../ui/format';
 import { Icon } from '../../ui/icons';
 import { PlayerCard } from '../players/player-card';
+import { Portrait } from '../players/pixel-portrait';
+import { PlayerDetails } from '../players/player-details';
 import { clubKit, roundMoney, MONEY_STEPS } from '@football/shared';
 
 const SORT_OPTIONS: Record<string, string> = {
@@ -35,6 +37,8 @@ const SORT_OPTIONS: Record<string, string> = {
 };
 export function Market({ snapshot, club, center, stadium }: ViewProps) {
   const [searchQuery, setSearchQuery] = useState('');
+  const [viewMode, setViewMode] = useState<'cards' | 'list'>('cards');
+  const [detailPlayer, setDetailPlayer] = useState<PlayerSnapshot | null>(null);
   const [meetingReady, setMeetingReady] = useState(false);
   const [tab, setTab] = useState(() =>
     new URLSearchParams(location.hash.split('?')[1]).get('tab') === 'proposals'
@@ -144,7 +148,13 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
           (!filters.interestedClubs || (!context.blocked && context.clubInterest > 0))
         );
       });
-  const players = filterCandidates({ overall, age, price, interestedPlayers, interestedClubs })
+  const players = filterCandidates({
+    overall,
+    age,
+    price,
+    interestedPlayers,
+    interestedClubs,
+  })
     .sort((a, b) => {
       let difference = 0;
       switch (sortBy) {
@@ -233,7 +243,12 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
     0,
     Math.min(salaryMaximum, roundMoney(Number(salary) * 100, MONEY_STEPS.salary)),
   );
-  const feeCents = Math.max(0, Math.min(feeMaximum, roundMoney(Number(fee) * 100)));
+  const transferMinimum = selected?.clubId ? Math.ceil(selected.marketValue.cents * 0.15) : 0;
+  const transferMaximum = selected?.clubId ? Math.floor(selected.marketValue.cents * 2) : 0;
+  const feeCents = Math.max(
+    transferMinimum,
+    Math.min(transferMaximum, roundMoney(Number(fee) * 100)),
+  );
   return (
     <div className="transfer-hub">
       <div className="page-heading transfer-hero">
@@ -293,7 +308,32 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
         )}
         {tab !== 'Propostas' && (
           <div className="transfer-searchbar">
-            <PlayerSearch onSearch={setSearchQuery} />
+            <div
+              className="market-view-toggle"
+              role="group"
+              aria-label="Visualização dos jogadores"
+            >
+              <button
+                className="secondary"
+                aria-pressed={viewMode === 'cards'}
+                onClick={() => setViewMode('cards')}
+              >
+                Cartas
+              </button>
+              <button
+                className="secondary"
+                aria-pressed={viewMode === 'list'}
+                onClick={() => setViewMode('list')}
+              >
+                Lista
+              </button>
+            </div>
+            <PlayerSearch
+              onSearch={(query) => {
+                setSearchQuery(query);
+                setVisibleCount(48);
+              }}
+            />
             <button className="secondary" onClick={() => setFiltersOpen(true)}>
               <Icon name="filter" /> Filtros{hasFilters ? ' ativos' : ''}
             </button>
@@ -333,58 +373,145 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
               </button>
             </div>
           )}
-          <div className="market-grid">
-            {players.map((player) => (
-              <section className="panel market-player" key={player.id}>
-                <PlayerCard
-                  player={player}
-                  clubName={snapshot.state.clubs.byId[player.clubId ?? '']?.name ?? 'Sem clube'}
-                  kit={clubKit(snapshot.state.clubs.byId[player.clubId ?? ''])}
-                  hidePotential
-                />
-                <div>
-                  <span className="eyebrow">
-                    {positionLabel(player.position)} · {player.nationality} · {player.age} ANOS
-                  </span>
-                  <h2>{player.name}</h2>
-                  <p>
-                    {player.clubId ? (
-                      <a href={'#/trophies?club=' + player.clubId}>
-                        {snapshot.state.clubs.byId[player.clubId]?.name} ↗
-                      </a>
-                    ) : (
-                      'Sem clube'
-                    )}
-                  </p>
-                  <dl>
-                    <div>
-                      <dt>Valor de mercado</dt>
-                      <dd>{currency(player.marketValue.cents)}</dd>
-                    </div>
-                    <div>
-                      <dt>Salário atual / mês</dt>
-                      <dd>{currency(player.salary.cents)}</dd>
-                    </div>
-                  </dl>
-                  <button
-                    className="secondary full"
-                    aria-pressed={favorites.includes(player.id)}
-                    onClick={() => toggleFavorite(player.id)}
+          {viewMode === 'list' ? (
+            <div className="market-player-list" role="list" aria-label="Jogadores no mercado">
+              {players.map((player) => {
+                const playerClub = snapshot.state.clubs.byId[player.clubId ?? ''];
+                const context = transferContext(snapshot.state, player, club);
+                const tier =
+                  player.overall <= 69
+                    ? 'bronze'
+                    : player.overall <= 77
+                      ? 'silver'
+                      : player.overall <= 85
+                        ? 'gold'
+                        : 'diamond';
+                return (
+                  <div
+                    className="market-list-row"
+                    role="listitem"
+                    key={player.id}
+                    onClick={() => setDetailPlayer(player)}
                   >
-                    {favorites.includes(player.id) ? '★ Favoritado' : '☆ Favoritar'}
-                  </button>
-                  <InterestBars context={transferContext(snapshot.state, player, club)} />
-                  <button
-                    className="negotiate-button full"
-                    disabled={transferContext(snapshot.state, player, club).blocked}
-                    onClick={() => choose(player)}
-                  >
-                    Abrir negociação ↗
-                  </button>
-                </div>
-              </section>
-            ))}
-          </div>
+                    <strong
+                      className="market-list-overall"
+                      data-tier={tier}
+                      aria-label={`Overall ${player.overall}`}
+                    >
+                      {player.overall}
+                    </strong>
+                    <Portrait
+                      player={player}
+                      clubName={playerClub?.name ?? 'Sem clube'}
+                      kit={clubKit(playerClub)}
+                    />
+                    <div className="market-list-identity">
+                      <button onClick={() => setDetailPlayer(player)}>{player.name}</button>
+                      <span>
+                        {positionLabel(player.position)} · {player.age} anos ·{' '}
+                        {playerClub?.name ?? 'Sem clube'}
+                      </span>
+                    </div>
+                    <strong className="market-list-price">
+                      {currency(player.marketValue.cents)}
+                    </strong>
+                    <div className="market-list-interest">
+                      <div>
+                        <span>
+                          Jogador · <strong>{interestLabel(context.playerInterest)}</strong>
+                        </span>
+                        <meter
+                          min={0}
+                          max={100}
+                          value={context.playerInterest}
+                          aria-label="Interesse do jogador"
+                        />
+                      </div>
+                      <div>
+                        <span>
+                          Clube ·{' '}
+                          <strong>
+                            {player.clubId ? interestLabel(context.clubInterest) : 'Sem clube'}
+                          </strong>
+                        </span>
+                        {player.clubId && (
+                          <meter
+                            min={0}
+                            max={100}
+                            value={context.clubInterest}
+                            aria-label="Interesse do clube"
+                          />
+                        )}
+                      </div>
+                    </div>
+                    <button
+                      className="market-list-negotiate"
+                      disabled={context.blocked}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        choose(player);
+                      }}
+                    >
+                      {context.blocked ? 'Indisponível' : 'Negociar ↗'}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="market-grid">
+              {players.map((player) => (
+                <section className="panel market-player" key={player.id}>
+                  <PlayerCard
+                    player={player}
+                    clubName={snapshot.state.clubs.byId[player.clubId ?? '']?.name ?? 'Sem clube'}
+                    kit={clubKit(snapshot.state.clubs.byId[player.clubId ?? ''])}
+                    hidePotential
+                  />
+                  <div>
+                    <span className="eyebrow">
+                      {positionLabel(player.position)} · {player.nationality} · {player.age} ANOS
+                    </span>
+                    <h2>{player.name}</h2>
+                    <p>
+                      {player.clubId ? (
+                        <a href={'#/trophies?club=' + player.clubId}>
+                          {snapshot.state.clubs.byId[player.clubId]?.name} ↗
+                        </a>
+                      ) : (
+                        'Sem clube'
+                      )}
+                    </p>
+                    <dl>
+                      <div>
+                        <dt>Valor de mercado</dt>
+                        <dd>{currency(player.marketValue.cents)}</dd>
+                      </div>
+                      <div>
+                        <dt>Salário atual / mês</dt>
+                        <dd>{currency(player.salary.cents)}</dd>
+                      </div>
+                    </dl>
+                    <button
+                      className="secondary full"
+                      aria-pressed={favorites.includes(player.id)}
+                      onClick={() => toggleFavorite(player.id)}
+                    >
+                      {favorites.includes(player.id) ? '★ Favoritado' : '☆ Favoritar'}
+                    </button>
+                    <InterestBars context={transferContext(snapshot.state, player, club)} />
+                    <button
+                      className="negotiate-button full"
+                      disabled={transferContext(snapshot.state, player, club).blocked}
+                      onClick={() => choose(player)}
+                    >
+                      Abrir negociação ↗
+                    </button>
+                  </div>
+                </section>
+              ))}
+            </div>
+          )}
           {!prospects && players.length === visibleCount && (
             <button className="secondary full" onClick={() => setVisibleCount(visibleCount + 48)}>
               Carregar mais jogadores
@@ -398,6 +525,13 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
             </div>
           )}
         </>
+      )}
+      {detailPlayer && (
+        <PlayerDetails
+          player={detailPlayer}
+          club={snapshot.state.clubs.byId[detailPlayer.clubId ?? '']}
+          onClose={() => setDetailPlayer(null)}
+        />
       )}
       {filtersOpen && (
         <MarketFiltersDialog
@@ -421,6 +555,8 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
           player={selected}
           value={feeCents}
           maximum={feeMaximum}
+          minimumOffer={transferMinimum}
+          maximumOffer={transferMaximum}
           onValue={(value) => setFee(String(value / 100))}
           onClose={() => setSelected(null)}
         />

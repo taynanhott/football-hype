@@ -185,7 +185,13 @@ export function transferContext(
     playerReasons,
     clubReasons,
     minimumFee: seller
-      ? ceilMoney(player.marketValue.cents * Math.max(0.7, 1.55 - baseClub / 100))
+      ? Math.min(
+          Math.floor(player.marketValue.cents * 2),
+          Math.max(
+            Math.ceil(player.marketValue.cents * 0.15),
+            ceilMoney(player.marketValue.cents * (1.55 - baseClub / 100)),
+          ),
+        )
       : 0,
     minimumSalary: Math.min(
       player.salary.cents * 3,

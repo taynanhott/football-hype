@@ -35,12 +35,19 @@ export function RoundResults({
   const fixture = state.fixtures.find((item) => item.id === result.fixtureId);
   const fixtures = new Map(state.fixtures.map((item) => [item.id, item]));
   const cups = new Map(state.cups.map((item) => [item.id, item]));
+  const competitionOf = (item: MatchResult) =>
+    fixtures.get(item.fixtureId)?.competitionId ??
+    cups.get(item.fixtureId.replace(/:first$/, ''))?.competitionId;
+  const clubMatch = state.results.find(
+    (item) =>
+      item.startedAt === result.startedAt &&
+      (item.homeId === viewerClubId || item.awayId === viewerClubId),
+  );
+  const activeCompetitionId = competitionOf(clubMatch ?? result);
   const groups = new Map<string, MatchResult[]>();
   for (const item of state.results.filter((match) => match.startedAt === result.startedAt)) {
-    const competitionId =
-      fixtures.get(item.fixtureId)?.competitionId ??
-      cups.get(item.fixtureId.replace(/:first$/, ''))?.competitionId ??
-      'unknown';
+    const competitionId = competitionOf(item);
+    if (!competitionId || competitionId !== activeCompetitionId) continue;
     const matches = groups.get(competitionId) ?? [];
     matches.push(item);
     groups.set(competitionId, matches);

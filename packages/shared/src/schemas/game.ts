@@ -141,6 +141,7 @@ export const participantSchema = z.strictObject({
   clubId: entityIdSchema,
   ready: z.boolean(),
   lastSeenAt: countSchema.optional(),
+  online: z.boolean().optional(),
 });
 export const negotiationSchema = z.strictObject({
   expiresAt: z.number().optional(),
@@ -205,6 +206,7 @@ export const worldStateSchema = z.strictObject({
   stadiums: normalizedSchema(stadiumSchema),
   centers: normalizedSchema(trainingCenterSchema),
   participants: z.array(participantSchema),
+  returningClubs: z.record(userIdSchema, entityIdSchema).optional(),
   inviteCode: z.string().optional(),
   admission: z
     .object({
@@ -330,6 +332,7 @@ export const gameEventSchema = z.strictObject({
   id: entityIdSchema,
   sequence: countSchema,
   occurredAt: countSchema,
+  gameOccurredAt: countSchema.optional(),
   actorId: userIdSchema,
   type: z.enum([
     'lineup.changed',
