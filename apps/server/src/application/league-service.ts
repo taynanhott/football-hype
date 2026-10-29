@@ -3,6 +3,7 @@ import { randomUUID, randomInt } from 'node:crypto';
 import {
   applyEvent,
   normalizeRoundCalendar,
+  upgradeUnstartedCompetitions,
   playNextBatch,
   createWorld,
   EventBus,
@@ -617,11 +618,11 @@ export class LeagueService {
       });
       saved = (await this.repository.load(id, { eventPatches: false })) ?? saved;
     }
-    if (normalizeRoundCalendar(saved.state) !== saved.state) {
+    if (normalizeRoundCalendar(upgradeUnstartedCompetitions(saved.state)) !== saved.state) {
       await this.serial(id, async () => {
         const current = await this.repository.load(id, { eventPatches: false });
         if (!current) return;
-        const next = normalizeRoundCalendar(current.state);
+        const next = normalizeRoundCalendar(upgradeUnstartedCompetitions(current.state));
         if (next !== current.state)
           await this.commit(
             current.state,

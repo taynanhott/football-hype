@@ -1,3 +1,4 @@
+import { upgradeUnstartedCompetitions } from '../competitions/upgrade-formats.js';
 import { advanceGameDays } from './daily-calendar.js';
 import { scheduledFixtures } from '../competitions/fixtures.js';
 import { normalizeRoundCalendar } from '../competitions/round-calendar.js';
@@ -39,7 +40,7 @@ export function pendingFixtures(state: WorldState): Fixture[] {
   });
 }
 export function playNextBatch(state: WorldState, processedAt: number): Result<WorldState> {
-  state = normalizeRoundCalendar(state);
+  state = normalizeRoundCalendar(upgradeUnstartedCompetitions(state));
   const pending = pendingFixtures(state);
   const scheduledAt = pending[0]?.scheduledAt;
   if (scheduledAt === undefined)
