@@ -1,3 +1,4 @@
+import { TransferNews } from '../features/market/transfer-news';
 import { request } from '../features/leagues/api';
 import { CoachAvatar, CoachEditor } from './coach-profile';
 import { readCoach } from './coach-profile-storage';
@@ -29,6 +30,7 @@ const ROUTES = [
   { id: 'lineup', label: 'Escalação' },
   { id: 'finance', label: 'Finanças' },
   { id: 'market', label: 'Transferências' },
+  { id: 'news', label: 'Noticiário' },
   { id: 'calendar', label: 'Torneios' },
   { id: 'stadium', label: 'Estádio' },
   { id: 'training', label: 'Centro de treinamento' },
@@ -177,6 +179,8 @@ function GameApp() {
       <LineupEditor {...props} />
     ) : route === 'squad' ? (
       <Squad {...props} />
+    ) : route === 'news' ? (
+      <TransferNews state={snapshot.state} />
     ) : route === 'market' ? (
       <Market {...props} />
     ) : route === 'calendar' ? (

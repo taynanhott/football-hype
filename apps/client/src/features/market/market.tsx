@@ -1,5 +1,4 @@
 import { PlayerModal } from '../players/player-modal';
-import { TransferNews } from './transfer-news';
 import { usePlayerPresentation } from '../../ui/use-player-presentation';
 import { Select, Option } from '../../ui/select';
 import { positionLabel } from '../../ui/position-label';
@@ -268,7 +267,6 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
   );
   return (
     <div className="transfer-hub">
-      <TransferNews state={snapshot.state} />
       {withdrawPlayerId && (
         <PlayerModal
           title="Retirar proposta?"
