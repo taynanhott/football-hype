@@ -1,3 +1,4 @@
+import { showDraggedCard, startCardPointerDrag } from '../../ui/card-drag';
 import { PixelBadge } from '../../ui/pixel-badge';
 import { PlayStylePicker } from './play-style-picker';
 import { TacticalAnalysis } from './tactical-analysis';
@@ -351,10 +352,14 @@ export function LineupEditor({ snapshot, club, center }: ViewProps) {
                   data-lineup-slot={index}
                   data-dragging={dragging === entry.player?.id}
                   draggable={!!entry.player}
+                  onPointerDown={(event) => {
+                    if (entry.player) startCardPointerDrag(event, entry.player.id);
+                  }}
                   onDragStart={(event) => {
                     if (!entry.player) return;
                     event.dataTransfer.setData('text/plain', entry.player.id);
                     event.dataTransfer.effectAllowed = 'move';
+                    showDraggedCard(event);
                     setDragging(entry.player.id);
                   }}
                   onDragEnd={() => setDragging(null)}
@@ -398,10 +403,15 @@ export function LineupEditor({ snapshot, club, center }: ViewProps) {
                   </span>
                   {entry.player && <Portrait player={entry.player} />}
                   <strong>{entry.player?.name ?? 'Sem atleta'}</strong>
-                  <span className="chemistry-meter">
-                    <i style={{ width: `${entry.chemistry}%` }} />
+                  <span
+                    className="chemistry-meter"
+                    aria-label={`Condicionamento físico ${Math.round(entry.player?.fitness ?? 0)}%`}
+                  >
+                    <i style={{ width: `${entry.player?.fitness ?? 0}%` }} />
                   </span>
-                  <small className="tactics-chemistry">{entry.chemistry}% ENT.</small>
+                  <small className="tactics-chemistry">
+                    {Math.round(entry.player?.fitness ?? 0)}% COND.
+                  </small>
                 </button>
               ))}
             </div>
@@ -423,14 +433,18 @@ export function LineupEditor({ snapshot, club, center }: ViewProps) {
               const source = next.indexOf(id);
               const target = targetId ? next.indexOf(targetId) : -1;
               if (related) {
-                if (source >= 0 && target >= 0)
-                  [next[source], next[target]] = [next[target]!, next[source]!];
-                else if (source < 0 && target >= 0) next[target] = id;
+                if (source >= 0) return;
+                if (target >= 0) next[target] = id;
                 else if (source < 0 && next.length < 12) next.push(id);
               } else if (source >= 0) {
                 if (targetId && medicallyAvailable(state, targetId)) next[source] = targetId;
                 else next.splice(source, 1);
               }
+              if (
+                next.length === reserves.length &&
+                next.every((id, index) => id === reserves[index])
+              )
+                return;
               setBench(next);
               setDirty(true);
             }}

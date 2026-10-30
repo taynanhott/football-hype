@@ -22,7 +22,11 @@ export function appearanceGrowth(
   const overall = Math.min(player.potential, player.overall + Math.floor(growth));
   return { player: revalueGrowth(player, { ...player, overall }), progress: growth % 1 };
 }
-export function agePlayer(player: PlayerSnapshot, coachingLevel = 1): PlayerSnapshot {
+export function agePlayer(
+  player: PlayerSnapshot,
+  coachingLevel = 1,
+  dailyDecline = false,
+): PlayerSnapshot {
   const declineAge =
     GAMEPLAY.declineStartAge + (player.position === 'GK' ? GAMEPLAY.goalkeeperDeclineDelay : 0);
   return {
@@ -31,7 +35,7 @@ export function agePlayer(player: PlayerSnapshot, coachingLevel = 1): PlayerSnap
     overall: Math.max(
       DOMAIN_LIMITS.overall.min,
       player.overall -
-        (player.age >= declineAge
+        (!dailyDecline && player.age >= declineAge
           ? Math.max(0, GAMEPLAY.annualDecline - Math.floor((coachingLevel - 1) / 2))
           : 0),
     ),

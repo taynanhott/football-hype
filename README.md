@@ -33,6 +33,8 @@ Se a instalação copiada apresentar módulos ausentes, execute a reinstalação
 pnpm install --force --frozen-lockfile --virtual-store-dir="C:/Users/tayna/AppData/Local/football-hype-native/pnpm-virtual-store"
 ```
 
+Os comandos de inicialização apenas avisam quando as dependências estão desatualizadas; não reinstalam `node_modules` automaticamente. Após mudanças nas dependências, execute a instalação explicitamente. Se estiver usando a pasta externa acima, mantenha `--virtual-store-dir` nas próximas instalações.
+
 Abra http://localhost:5173 e entre com a mesma conta Google usada no site. As ações afetam a carreira real no servidor; a interface local não cria uma cópia dos dados.
 
 Em `apps/client/.env.development.local` (arquivo local ignorado pelo Git), configure:

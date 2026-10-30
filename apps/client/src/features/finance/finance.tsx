@@ -81,7 +81,7 @@ export function Finance({ snapshot, club }: ViewProps) {
       <header className="finance-hero">
         <div className="finance-hero-copy">
           <a className="finance-club" href={'#/trophies?club=' + club.id}>
-            <ClubBadge name={club.name} kit={clubKit(club)} size={34} />
+            <ClubBadge name={club.name} kit={clubKit(club)} size={80} />
             {club.name}
           </a>
         </div>

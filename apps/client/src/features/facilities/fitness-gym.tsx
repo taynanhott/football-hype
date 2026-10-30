@@ -154,36 +154,7 @@ export function FitnessGym({
                   <span className="fitness-gym-status">
                     <i /> {coaching ? 'Treinando · +50%' : 'Recuperando · +50%'}
                   </span>
-                  {coaching ? (
-                    <>
-                      <rect width="640" height="420" fill="#eaf0e4" />
-                      <path d="M0 100H640V420H0Z" fill="#b8cda4" />
-                      <path d="M0 170H640M0 290H640M0 410H640" stroke="#aec59a" strokeWidth="60" />
-                      <g stroke="#f6f8ed" strokeWidth="3" fill="none" opacity=".85">
-                        <rect x="24" y="120" width="592" height="276" rx="2" />
-                        <path d="M320 120V396M24 190H100V326H24M616 190H540V326H616" />
-                        <ellipse cx="320" cy="258" rx="64" ry="52" />
-                        <path d="M24 222H52V294H24M616 222H588V294H616" />
-                      </g>
-                      <path
-                        d="M35 99V61H170V99M470 99V61H605V99"
-                        stroke="#9aaa8c"
-                        strokeWidth="5"
-                        fill="#f6f8ed"
-                      />
-                      <text
-                        x="320"
-                        y="53"
-                        textAnchor="middle"
-                        fill="#718763"
-                        fontSize="12"
-                        fontFamily="sans-serif"
-                        letterSpacing="3"
-                      >
-                        CENTRO DE TREINAMENTO
-                      </text>
-                    </>
-                  ) : medical ? (
+                  {coaching ? null : medical ? (
                     <span className="medical-room-days">
                       {snapshot.state.injuries[player.id] ?? 0} dias de recuperação
                     </span>

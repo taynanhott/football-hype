@@ -64,6 +64,15 @@ export function Matches({ snapshot, club }: ViewProps) {
   const [selected, setSelected] = useState('');
   const [replay, setReplay] = useState<{ id: string; start: number } | null>(null);
   const scene = useRef<HTMLDivElement>(null);
+  const reports = useRef<HTMLDivElement>(null);
+  const scrollFrame = useRef(0);
+  useEffect(() => () => cancelAnimationFrame(scrollFrame.current), []);
+  const frameContent = (target: { current: HTMLDivElement | null }) => {
+    cancelAnimationFrame(scrollFrame.current);
+    scrollFrame.current = requestAnimationFrame(() =>
+      target.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
+    );
+  };
   const [reportTab, setReportTab] = useState('round');
   const activeReportTab = desktop && reportTab === 'ratings' ? 'stats' : reportTab;
   const result = state.results.find((r) => r.fixtureId === selected) ?? available.at(-1);
@@ -79,15 +88,13 @@ export function Matches({ snapshot, club }: ViewProps) {
     90,
     (Math.max(0, now + clockOffset - (result?.startedAt ?? 0)) / MATCH_DURATION_MS) * 90,
   );
-  const selectMatch = (id: string) => {
+  const selectMatch = (id: string, time: number) => {
     const match = state.results.find((item) => item.fixtureId === id);
     if (!match) return;
-    const time = Date.now();
-    const finished = time + clockOffset - (match.startedAt ?? 0) >= MATCH_DURATION_MS;
     setSelected(id);
-    setReplay(finished ? { id, start: time } : null);
+    setReplay(null);
     setNow(time);
-    scene.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    frameContent(scene);
   };
   const minute = Math.min(90, (elapsed / MATCH_DURATION_MS) * 90);
   useEffect(() => {
@@ -321,7 +328,7 @@ export function Matches({ snapshot, club }: ViewProps) {
           )}
         </div>{' '}
       </section>
-      <div className="match-reports-layout">
+      <div className="match-reports-layout" ref={reports}>
         <section className="match-report-tabs" aria-label="Informações da partida">
           <div className="match-tab-list" role="tablist" aria-label="Relatório da partida">
             {[
@@ -340,7 +347,10 @@ export function Matches({ snapshot, club }: ViewProps) {
                   aria-selected={activeReportTab === id}
                   aria-controls="match-report-panel"
                   tabIndex={activeReportTab === id ? 0 : -1}
-                  onClick={() => setReportTab(id!)}
+                  onClick={() => {
+                    setReportTab(id!);
+                    frameContent(reports);
+                  }}
                   onKeyDown={(event) => {
                     const keys = ['ArrowLeft', 'ArrowRight', 'Home', 'End'];
                     if (!keys.includes(event.key)) return;

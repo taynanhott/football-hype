@@ -37,7 +37,20 @@ export async function request(path: string, init?: RequestInit): Promise<unknown
     headers,
     signal: AbortSignal.timeout(path === '/api/leagues' ? 90000 : 15000),
   });
-  const data: unknown = await response.json();
+  const body = await response.text();
+  if (body.trimStart().startsWith('<')) {
+    throw new Error(
+      'O servidor de carreiras está indisponível ou com o endereço incorreto. Tente novamente em instantes.',
+    );
+  }
+  let data: unknown;
+  try {
+    data = JSON.parse(body);
+  } catch {
+    throw new Error(
+      'O servidor de carreiras retornou uma resposta inválida. Tente novamente em instantes.',
+    );
+  }
   if (!response.ok) throw new Error(z.object({ error: z.string() }).parse(data).error);
   return data;
 }

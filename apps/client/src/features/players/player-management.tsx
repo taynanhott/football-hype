@@ -7,12 +7,13 @@ import {
   effectiveOverall,
   financialLimits,
   temporaryModifiers,
+  renewalTerms,
 } from '@football/domain';
 import type { ViewProps } from '../../ui/view-props';
 import { useGameStore } from '../../store/game-store';
 import { currency } from '../../ui/format';
 import { PlayerCard } from './player-card';
-import { ClubBadge } from '../../ui/icons';
+import { ClubBadge, Icon } from '../../ui/icons';
 
 export function PlayerManagement({
   player,
@@ -21,7 +22,7 @@ export function PlayerManagement({
   const state = snapshot.state,
     send = useGameStore((s) => s.send),
     busy = useGameStore((s) => s.busy);
-  const [section, setSection] = useState<'renew' | 'policy' | 'effects'>('renew');
+  const [section, setSection] = useState<'renew' | 'policy' | 'effects'>('effects');
   const policy = state.management?.policies?.[player.id] ?? {
     available: false,
     rivals: false,
@@ -37,10 +38,9 @@ export function PlayerManagement({
   );
   const [years, setYears] = useState(1);
   const effects = temporaryModifiers(state, player);
+  const terms = renewalTerms(state, player);
   const club = state.clubs.byId[player.clubId ?? ''];
-  const salaryMaximum = club
-    ? Math.min(financialLimits(state, club).salary + player.salary.cents, player.salary.cents * 3)
-    : 0;
+  const salaryMaximum = club ? financialLimits(state, club).salary + player.salary.cents : 0;
   const salaryCents = Math.min(salaryMaximum, ceilMoney(Number(salary) * 100, MONEY_STEPS.salary));
   return (
     <section className="player-management">
@@ -49,12 +49,32 @@ export function PlayerManagement({
         {new Date(end).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })}
         {days <= 180 ? ' · Renovação urgente' : ''}
       </p>
+      {terms.demand && (
+        <div className="contract-demand">
+          <strong>Pedido de valorização</strong>
+          <p>
+            {player.name} pede salário de {currency(terms.minimumSalary)} após sua evolução.
+          </p>
+          <button type="button" onClick={() => setSection('renew')}>
+            Negociar aumento
+          </button>
+          <button
+            type="button"
+            disabled={busy || Boolean(state.management?.contractHistory?.[player.id]?.dissatisfied)}
+            onClick={() =>
+              send({ type: 'management', action: 'reject-renewal', playerId: player.id })
+            }
+          >
+            Recusar pedido (−8)
+          </button>
+        </div>
+      )}
       <div className="management-tabs" role="group" aria-label="Gestão do jogador">
         {(
           [
-            { id: 'renew', label: 'Renovação' },
-            { id: 'policy', label: 'Negociação' },
             { id: 'effects', label: 'Bônus e penalidades' },
+            { id: 'policy', label: 'Negociação' },
+            { id: 'renew', label: 'Renegociação' },
           ] as const
         ).map((item) => (
           <button
@@ -154,11 +174,14 @@ export function PlayerManagement({
       {section === 'renew' && (
         <div>
           <p>
-            {player.morale < 30
-              ? 'Moral baixa: o jogador não quer renovar.'
-              : player.age >= 37
-                ? 'O jogador planeja se aposentar.'
-                : 'O atleta avalia salário e prazo.'}
+            {terms.reason ||
+              'Moral: ' +
+                terms.morale +
+                '% · Salário solicitado: ' +
+                currency(terms.minimumSalary) +
+                ' · Prazo total máximo: ' +
+                terms.maxYears +
+                ' anos'}
           </p>
           <label className="negotiation-range">
             <span>
@@ -178,7 +201,7 @@ export function PlayerManagement({
             </small>
           </label>
           <fieldset className="renewal-years">
-            <legend>Anos adicionais de contrato</legend>
+            <legend>Prazo do novo contrato</legend>
             <div className="segmented">
               {[1, 2, 3, 4, 5].map((n) => (
                 <button
@@ -186,7 +209,7 @@ export function PlayerManagement({
                   key={n}
                   aria-pressed={years === n}
                   className={years === n ? 'selected' : ''}
-                  disabled={busy}
+                  disabled={busy || (player.age >= 32 && n > terms.maxYears)}
                   onClick={() => setYears(n)}
                 >
                   {n} {n === 1 ? 'ano' : 'anos'}
@@ -196,7 +219,12 @@ export function PlayerManagement({
           </fieldset>
           <button
             className="negotiate-button full"
-            disabled={busy || player.morale < 30 || player.age >= 37 || salaryCents <= 0}
+            disabled={
+              busy ||
+              Boolean(terms.reason) ||
+              salaryCents <= 0 ||
+              (player.age >= 32 && years > terms.maxYears)
+            }
             onClick={() =>
               send({
                 type: 'management',
@@ -224,19 +252,29 @@ export function IncomingOffers({ snapshot, club, playerId }: ViewProps & { playe
     ) ?? [];
   return (
     <section className="incoming-offers">
-      <div className="incoming-offers-heading">
-        <div>
-          <span className="eyebrow">MESA DE NEGOCIAÇÕES</span>
-          <h2>Propostas recebidas</h2>
-          <p>Analise seu atleta e decida o próximo passo da transferência.</p>
+      {offers.length > 0 && (
+        <div className="incoming-offers-heading">
+          <div>
+            <span className="eyebrow">MESA DE NEGOCIAÇÕES</span>
+            <h2>Propostas recebidas</h2>
+            <p>Analise seu atleta e decida o próximo passo da transferência.</p>
+          </div>
+          <span className="offer-status">{offers.length} pendentes</span>
         </div>
-        <span className="offer-status">{offers.length} pendentes</span>
-      </div>
+      )}
       {!offers.length && (
-        <p>
-          Nenhuma proposta pendente. Disponibilize atletas para atrair clubes com necessidade na
-          posição e caixa suficiente.
-        </p>
+        <div className="offers-empty-state">
+          <span className="offers-empty-icon">
+            <Icon name="handshake" size={30} />
+          </span>
+          <div>
+            <strong>Nenhuma proposta no momento</strong>
+            <p>Disponibilize jogadores para negociação e acompanhe as ofertas aqui.</p>
+          </div>
+          <a href="#/squad">
+            Gerenciar elenco <span aria-hidden="true">→</span>
+          </a>
+        </div>
       )}
       <div className="incoming-offers-grid">
         {offers.map((o) => {

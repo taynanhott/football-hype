@@ -1,6 +1,9 @@
 packages:
   - apps/*
   - packages/*
+# Keep starting scripts from replacing a working installation (including external stores).
+# Dependency changes are installed explicitly with pnpm install.
+verifyDepsBeforeRun: warn
 allowBuilds:
   '@firebase/util': false
   esbuild: true

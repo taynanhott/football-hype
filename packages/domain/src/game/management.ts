@@ -1,3 +1,4 @@
+import { renewalTerms, contractExpires } from './player-contracts.js';
 import { stableId } from './world-factory.js';
 import { prepareAcademy } from './academy.js';
 import { scheduledFixtures } from '../competitions/fixtures.js';
@@ -53,11 +54,7 @@ export function isRival(a: ClubSnapshot, b: ClubSnapshot) {
   );
 }
 export function contractEnd(state: WorldState, player: PlayerSnapshot) {
-  return (
-    state.management?.contracts?.[player.id] ??
-    state.createdAt +
-      (1 + (player.id.split('').reduce((sum, c) => sum + c.charCodeAt(0), 0) % 3)) * 365 * 86400000
-  );
+  return contractExpires(state, player);
 }
 export function interestLabel(score: number) {
   return score <= 0
@@ -225,6 +222,37 @@ export function temporaryModifiers(state: WorldState, player: PlayerSnapshot) {
   let streak = 0;
   for (let i = games.length - 1; i >= 0 && won(games[i]!); i--) streak++;
   const effects: Array<{ label: string; value: number; until: string }> = [];
+  const cycleBonus =
+    state.centers.byId[state.clubs.byId[clubId]?.trainingCenterId ?? '']?.operations
+      ?.cycleBonuses?.[player.id]?.games ?? 0;
+  if (cycleBonus > 0)
+    effects.push({ label: 'Ciclo individual', value: 1, until: cycleBonus + ' jogos restantes' });
+  const trainingBuff =
+    state.centers.byId[state.clubs.byId[clubId]?.trainingCenterId ?? '']?.operations?.progression?.[
+      player.id
+    ]?.buff ?? 0;
+  if (trainingBuff)
+    effects.push({
+      label: 'Bônus de treinamento',
+      value: trainingBuff,
+      until: 'Bônus conquistado nos treinos intensos',
+    });
+  const effort =
+    state.centers.byId[state.clubs.byId[clubId]?.trainingCenterId ?? '']?.operations?.effort?.[
+      player.id
+    ] ?? 0;
+  if (effort >= 3)
+    effects.push({
+      label: 'Sobrecarga de treinos',
+      value: -Math.min(5, Math.floor(effort / 2)),
+      until: 'Reduza a intensidade e descanse',
+    });
+  if (state.management?.contractHistory?.[player.id]?.dissatisfied)
+    effects.push({
+      label: 'Insatisfeito com o contrato',
+      value: -8,
+      until: 'Até receber a valorização salarial solicitada',
+    });
   if (streak >= 3)
     effects.push({
       label: 'Boa fase do time',
@@ -233,9 +261,10 @@ export function temporaryModifiers(state: WorldState, player: PlayerSnapshot) {
     });
   if ((state.management?.wageDebts?.[clubId] ?? 0) > 0)
     effects.push({ label: 'Salário atrasado', value: -5, until: 'Até quitar a folha atrasada' });
-  const lastDefeat = games.some((r) => !won(r) && r.homeGoals !== r.awayGoals) ? 0 : -1;
-  if (lastDefeat >= 0 && streak < 3)
-    effects.push({ label: 'Má fase do time', value: -1, until: 'Até três vitórias seguidas' });
+  let winless = 0;
+  for (let i = games.length - 1; i >= 0 && !won(games[i]!); i--) winless++;
+  if (winless >= 3)
+    effects.push({ label: 'Má fase do time', value: -1, until: 'Até a próxima vitória' });
   const ratings = state.ratingHistory.filter((entry) => entry.playerId === player.id);
   const averageRating = ratings.length
     ? ratings.reduce((sum, entry) => sum + entry.rating, 0) / ratings.length
@@ -443,11 +472,15 @@ export function manageClub({ state, club, command }: CommandContext): Result<Com
       syringe: false,
       ...center.operations,
     };
-    const target = command.target ?? '';
+    const target = (command.target ?? '').replace(/^player-load-/, '');
     let cost = 0;
-    if (['light', 'moderate', 'intense'].includes(target))
-      operations.load = target as typeof operations.load;
-    else if (target === 'buy-syringe') {
+    if (['light', 'moderate', 'intense'].includes(target)) {
+      if (!player || player.clubId !== club.id) return fail('Escolha um jogador do seu elenco');
+      operations.playerLoads = {
+        ...operations.playerLoads,
+        [player.id]: target as 'light' | 'moderate' | 'intense',
+      };
+    } else if (target === 'buy-syringe') {
       if (center.levels.medical < 5 || operations.syringe || operations.clearance)
         return fail('Seringa indisponível ou já em estoque');
       cost = 15000000;
@@ -480,8 +513,7 @@ export function manageClub({ state, club, command }: CommandContext): Result<Com
       } else if (target === 'individual') {
         if (
           operations.individual.length >= Math.min(3, center.levels.coaching) ||
-          operations.individual.some((t) => t.playerId === player.id) ||
-          player.overall >= 99
+          operations.individual.some((t) => t.playerId === player.id)
         )
           return fail('Treino indisponível para este jogador');
         cost = 10000000;
@@ -527,17 +559,31 @@ export function manageClub({ state, club, command }: CommandContext): Result<Com
     };
     return done({ ...state, management }, 'Disponibilidade para transferências atualizada');
   }
+  if (command.action === 'reject-renewal') {
+    if (!player || player.clubId !== club.id) return fail('Jogador não pertence ao clube');
+    if (
+      !renewalTerms(state, player).demand ||
+      management.contractHistory?.[player.id]?.dissatisfied
+    )
+      return fail('Não existe novo pedido de valorização');
+    management.contractHistory = {
+      ...management.contractHistory,
+      [player.id]: { ...management.contractHistory![player.id]!, dissatisfied: true },
+    };
+    return done({ ...state, management }, 'Pedido recusado: jogador insatisfeito (−8)');
+  }
   if (command.action === 'renew') {
     if (!player || player.clubId !== club.id) return fail('Jogador não pertence ao clube');
-    if (player.morale < 30) return fail('O jogador recusa renovar por falta de moral com o clube');
-    if (player.age >= 37) return fail('O jogador planeja se aposentar e não pretende renovar');
-    const minimum = ceilMoney(
-      Math.min(
-        player.salary.cents * 3,
-        Math.max(player.salary.cents, player.marketValue.cents / 240),
-      ),
-      MONEY_STEPS.salary,
-    );
+    const terms = renewalTerms(state, player);
+    if (terms.reason) return fail(terms.reason);
+    const totalYears = command.years ?? 1;
+    if (player.age >= 32 && totalYears > terms.maxYears + 0.01)
+      return fail(
+        'O jogador recusa um contrato tão longo. Prazo total máximo: ' +
+          terms.maxYears +
+          ' ano(s).',
+      );
+    const minimum = terms.minimumSalary;
     if (!command.salary || command.salary < minimum)
       return fail(
         'Reajuste necessário: salário mínimo mensal de R$ ' +
@@ -545,11 +591,21 @@ export function manageClub({ state, club, command }: CommandContext): Result<Com
       );
     if (command.salary > financialLimits(state, club).salary + player.salary.cents)
       return fail('A renovação ultrapassa o limite da folha salarial');
+    management.contractHistory = {
+      ...management.contractHistory,
+      [player.id]: {
+        overall: player.overall,
+        marketValue: player.marketValue.cents,
+        signedAt: state.lastProcessedAt,
+        dissatisfied: false,
+      },
+    };
     management.contracts = {
       ...management.contracts,
-      [player.id]:
-        Math.max(state.lastProcessedAt, contractEnd(state, player)) +
-        (command.years ?? 1) * 365 * 86400000,
+      [player.id]: Math.max(
+        contractEnd(state, player),
+        state.lastProcessedAt + (command.years ?? 1) * 365 * 86400000,
+      ),
     };
     return done(
       {

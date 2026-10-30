@@ -15,6 +15,10 @@ export function Calendar({ snapshot, club }: ViewProps) {
   const [competition, setCompetition] = useState(
     club.division === 'REGIONAL' ? 'serie-a' : `serie-${club.division.toLowerCase()}`,
   );
+  const parentCompetition =
+    REGIONAL_QUALIFIERS.find((q) => q.id === competition)?.cupId ??
+    (competition === 'pre-libertadores' ? 'libertadores' : competition);
+  const preliminary = REGIONAL_QUALIFIERS.find((q) => q.cupId === parentCompetition);
   const [tab, setTab] = useState('table');
   const [cupStage, setCupStage] = useState('groups');
   const [selectedSeason, setSelectedSeason] = useState<number | null>(null);
@@ -137,17 +141,12 @@ export function Calendar({ snapshot, club }: ViewProps) {
                     {season}
                   </Option>
                 ))}
-                {REGIONAL_QUALIFIERS.map((q) => (
-                  <Option key={q.id} value={q.id}>
-                    {q.name}
-                  </Option>
-                ))}
               </Select>
             </label>
             <label>
               Competição
               <Select
-                value={competition}
+                value={parentCompetition}
                 onValueChange={(value) => {
                   setCompetition(value);
                   setCupStage('groups');
@@ -155,10 +154,11 @@ export function Calendar({ snapshot, club }: ViewProps) {
               >
                 {COMPETITIONS.filter(
                   (rule) =>
-                    state.fixtures.some((fixture) => fixture.competitionId === rule.id) ||
-                    state.cups.some((node) => node.competitionId === rule.id) ||
-                    Boolean(state.competitionNotes?.[rule.id]) ||
-                    rule.id === competition,
+                    rule.id !== 'pre-libertadores' &&
+                    (state.fixtures.some((fixture) => fixture.competitionId === rule.id) ||
+                      state.cups.some((node) => node.competitionId === rule.id) ||
+                      Boolean(state.competitionNotes?.[rule.id]) ||
+                      rule.id === parentCompetition),
                 ).map((rule) => (
                   <Option value={rule.id} key={rule.id}>
                     {rule.name}
@@ -183,14 +183,22 @@ export function Calendar({ snapshot, club }: ViewProps) {
 
             <button
               className={activeTab === 'next' ? 'selected' : ''}
+              disabled={Boolean(pendingDraw)}
+              title={pendingDraw ? 'Disponível após o sorteio' : undefined}
               onClick={() => setTab('next')}
             >
               <Icon name="calendar" size={18} /> Próxima rodada
             </button>
             <button
               className={activeTab === 'fixtures' ? 'selected' : ''}
-              disabled={!participates}
-              title={!participates ? 'Seu clube não participa desta competição' : undefined}
+              disabled={Boolean(pendingDraw) || !participates}
+              title={
+                pendingDraw
+                  ? 'Disponível após o sorteio'
+                  : !participates
+                    ? 'Seu clube não participa desta competição'
+                    : undefined
+              }
               onClick={() => setTab('fixtures')}
             >
               <Icon name="matches" size={18} /> Jogos do clube
@@ -199,6 +207,26 @@ export function Calendar({ snapshot, club }: ViewProps) {
           <span>Horários de Brasília · Partidas entre 08h e 23h30</span>
         </div>
       </div>
+      {(preliminary || parentCompetition === 'libertadores') && (
+        <div
+          className="cup-round-navigation cup-stage-tabs"
+          role="group"
+          aria-label="Etapa da competição"
+        >
+          <button
+            className={competition !== parentCompetition ? 'selected' : ''}
+            onClick={() => setCompetition(preliminary?.id ?? 'pre-libertadores')}
+          >
+            {preliminary?.name ?? 'Pré-Libertadores'}
+          </button>
+          <button
+            className={competition === parentCompetition ? 'selected' : ''}
+            onClick={() => setCompetition(parentCompetition)}
+          >
+            Competição principal
+          </button>
+        </div>
+      )}
       {state.competitionNotes?.[competition] && (
         <p className="competition-note" role="status">
           {state.competitionNotes[competition]}
@@ -211,26 +239,6 @@ export function Calendar({ snapshot, club }: ViewProps) {
             </>
           )}
         </p>
-      )}
-      {qualifierRule && (
-        <section className="panel">
-          <strong>
-            <Icon name="trophy" size={18} /> {qualifierRule.name}
-          </strong>
-          <p>
-            {qualifier
-              ? `${qualifier.candidateIds.length} clubes · ${qualifier.slots} vagas · Turno único · Sem mata-mata`
-              : 'A seletiva será criada no início da próxima temporada, após definir acessos, descensos e as vagas destinadas à Série D.'}
-          </p>
-          {qualifier && (
-            <p>
-              {qualifier.qualifiedIds !== undefined
-                ? `Classificação definida: ${qualifier.qualifiedIds.length} clube(s).`
-                : 'Os primeiros colocados conquistam as vagas. Um clube folga por rodada quando há número ímpar.'}{' '}
-              {qualifier.directIds.length} clubes já têm entrada direta na copa.
-            </p>
-          )}
-        </section>
       )}
       {qualifierRule && !qualifier ? null : pendingDraw ? (
         <CompetitionDrawCard state={state} draw={pendingDraw} />
@@ -262,7 +270,7 @@ export function Calendar({ snapshot, club }: ViewProps) {
           )}
           {groups.length > 0 && activeCupStage === 'groups' ? (
             <div
-              className={`cup-group-tables ${['libertadores', 'sul-americana', 'copa-nordeste', 'copa-verde', 'copa-sul-sudeste'].includes(competition) && groups.length === 4 ? 'libertadores-groups four-group-layout' : ''}`}
+              className={`cup-group-tables ${competition === 'europa' ? 'european-groups' : ''} ${['libertadores', 'sul-americana', 'copa-nordeste', 'copa-verde', 'copa-sul-sudeste'].includes(competition) && groups.length === 4 ? 'libertadores-groups four-group-layout' : ''}`}
             >
               {groups.map(({ group, table }) => (
                 <StandingsTable

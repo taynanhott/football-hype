@@ -59,3 +59,9 @@ export * from './competitions/upgrade-formats.js';
 export * from './competitions/competition-draws.js';
 export * from './competitions/cup-calendar.js';
 export * from './competitions/regional-qualifiers.js';
+
+export { renewalTerms, maxContractYears, ageFatigueFactor } from './game/player-contracts.js';
+
+export { annualDecline } from './game/training-progression.js';
+
+export { expectedTrainingGain } from './game/training-progression.js';

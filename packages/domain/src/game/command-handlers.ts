@@ -1,3 +1,4 @@
+import { maxContractYears, moraleSensitivity } from './player-contracts.js';
 import { seasonStart } from '../competitions/season-calendar.js';
 import { scheduleRegionalQualifiers } from '../competitions/regional-qualifiers.js';
 import { prepareAcademy } from './academy.js';
@@ -603,13 +604,23 @@ function handleSalary({
     },
     management: {
       ...consumeTransferBudget(state, club.id, negotiation.fee),
+      contractHistory: {
+        ...state.management?.contractHistory,
+        [player.id]: {
+          overall: player.overall,
+          marketValue: player.marketValue.cents,
+          signedAt: state.lastProcessedAt,
+          dissatisfied: false,
+        },
+      },
       policies: {
         ...state.management?.policies,
         [player.id]: { available: false, rivals: false, interest: 35 },
       },
       contracts: {
         ...state.management?.contracts,
-        [player.id]: state.lastProcessedAt + 3 * 365 * 86400000,
+        [player.id]:
+          state.lastProcessedAt + Math.min(3, maxContractYears(player.age)) * 365 * 86400000,
       },
     },
     clubs: { ...state.clubs, byId: clubs },
@@ -745,9 +756,29 @@ function handleNewSeason({
         Object.values(state.players.byId).map((player) => [
           player.id,
           agePlayer(
-            player,
+            {
+              ...player,
+              morale: Math.round(
+                Math.max(
+                  0,
+                  Math.min(
+                    100,
+                    player.morale +
+                      (player.clubId && clubs[player.clubId] && state.clubs.byId[player.clubId]
+                        ? Math.sign(
+                            (clubs[player.clubId]!.leagueStrength ?? 0) -
+                              (state.clubs.byId[player.clubId]!.leagueStrength ?? 0),
+                          ) *
+                          10 *
+                          moraleSensitivity(player)
+                        : 0),
+                  ),
+                ),
+              ),
+            },
             state.centers.byId[state.clubs.byId[player.clubId ?? '']?.trainingCenterId ?? '']
               ?.levels.coaching ?? 1,
+            Boolean(player.clubId),
           ),
         ]),
       ),

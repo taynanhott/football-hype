@@ -15,16 +15,11 @@ export function GeneratedBadge({ name, size }: { name: string; size: number }) {
     'M8 10H56V36H52V44H48V48H40V52H36V58H28V52H24V48H16V44H12V36H8Z',
   ];
   const shape = shapes[seed % shapes.length]!;
-  const initials =
-    name
-      .replace(/\b(futebol|clube|club|sport|de|do|da)\b/gi, '')
-      .trim()
-      .split(/[\s-]+/)
-      .filter(Boolean)
-      .map((word) => word[0])
-      .join('')
-      .slice(0, 3)
-      .toUpperCase() || name.slice(0, 2).toUpperCase();
+  const initials = (name.trim().split(/\s+/)[0] ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .slice(0, 3)
+    .toUpperCase();
   const gold = '#e7c97e';
   const shadow = '#172620';
   return (

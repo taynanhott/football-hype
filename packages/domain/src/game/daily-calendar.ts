@@ -1,3 +1,9 @@
+import {
+  progressTraining,
+  emptyTrainingProgression,
+  currentTrainingHistory,
+} from './training-progression.js';
+import { ageFatigueFactor, initializeContractHistory } from './player-contracts.js';
 import { normalizeRoundCalendar } from '../competitions/round-calendar.js';
 import { realizeCompetitionDraws } from '../competitions/competition-draws.js';
 import { GAMEPLAY, type Fixture, type WorldState } from '@football/shared';
@@ -38,6 +44,7 @@ function advanceGameDaysInternal(state: WorldState, target: number): WorldState 
   const start = gameDayStart(state.lastProcessedAt);
   const end = gameDayStart(target);
   if (end <= start) return finishIndividualCycles(state, target);
+  state = initializeContractHistory(state);
   const dates = new Map<string, Set<number>>();
   for (const fixture of scheduledFixtures(state)) {
     for (const id of [fixture.homeId, fixture.awayId]) {
@@ -65,16 +72,43 @@ function advanceGameDaysInternal(state: WorldState, target: number): WorldState 
         individual: [],
         syringe: false,
       };
-      const load = ops.load === 'light' ? 0.5 : ops.load === 'intense' ? 1.5 : 1;
       const recovery =
         routine === 'rest' ? 1.8 : routine === 'recovery' ? 2 : routine === 'eve' ? 1.3 : 1;
       const random = mulberry32(hashSeed(state.seed, `${center.id}:day:${day}`));
       const medicalProgress = { ...ops.medicalProgress };
+      const effort = { ...ops.effort };
+      const progression = { ...ops.progression };
+      const cycleBonuses = { ...ops.cycleBonuses };
+      const trainingHistory = { ...ops.trainingHistory };
       const completed = new Set<string>();
       for (const id of state.clubs.byId[center.clubId]?.playerIds ?? []) {
         const player = players[id];
         if (!player) continue;
+        const officialDay = ops.lastOfficialTrainingAt?.[id];
+        const setting =
+          officialDay !== undefined && gameDayStart(officialDay) === day
+            ? 'intense'
+            : (ops.playerLoads?.[id] ?? 'moderate');
+        const load = setting === 'light' ? 0.5 : setting === 'intense' ? 1.5 : 1;
+        effort[id] = Math.max(
+          0,
+          Math.min(
+            12,
+            (effort[id] ?? 0) +
+              (routine === 'training'
+                ? setting === 'intense'
+                  ? 1
+                  : setting === 'moderate'
+                    ? -0.5
+                    : -1.5
+                : -2),
+          ),
+        );
+        const ageFatigue = ageFatigueFactor(player.age);
         const injured = (injuries[id] ?? 0) > 0;
+        const history = currentTrainingHistory(trainingHistory[id], state.season);
+        history.days++;
+        const previousProgress = progression[id] ?? emptyTrainingProgression();
         const individual = ops.individual.find((plan) => plan.playerId === id);
         let next = {
           ...player,
@@ -82,8 +116,10 @@ function advanceGameDaysInternal(state: WorldState, target: number): WorldState 
             100,
             player.fitness +
               Math.floor(
-                (GAMEPLAY.fitnessRecovery + center.levels.fitness * GAMEPLAY.recoveryPerLevel) *
+                (((GAMEPLAY.fitnessRecovery + center.levels.fitness * GAMEPLAY.recoveryPerLevel) *
                   recovery *
+                  (routine === 'training' ? 0.2 : 1)) /
+                  ageFatigue) *
                   (ops.fitness.includes(id) ? 1.5 : 1),
               ),
           ),
@@ -95,24 +131,61 @@ function advanceGameDaysInternal(state: WorldState, target: number): WorldState 
         } else if (routine === 'training') {
           const growth =
             (development[id] ?? 0) + 0.006 * center.levels.coaching * load * (individual ? 1.5 : 1);
+          if (player.age <= 33 && player.overall < player.potential)
+            history.growth += Math.min(
+              player.potential - player.overall,
+              0.006 * center.levels.coaching * load * (individual ? 1.5 : 1),
+            );
           next = {
             ...next,
             overall: Math.max(
               player.overall,
               Math.min(player.potential, player.overall + Math.floor(growth)),
             ),
-            fitness: Math.max(0, next.fitness - Math.ceil(load)),
+            fitness: Math.max(
+              0,
+              next.fitness - Math.ceil(load * 3 * ageFatigue * (1 + (effort[id] ?? 0) / 12)),
+            ),
           };
           development[id] = growth % 1;
-          if (random() < (0.001 * load * load) / center.levels.medical)
+          if (
+            random() <
+            (0.001 * load * load * ageFatigue * (1 + (effort[id] ?? 0) / 6)) / center.levels.medical
+          )
             injuries[id] = Math.max(1, Math.ceil(3 / center.levels.medical));
         }
+        const trained = progressTraining(
+          player,
+          progression[id] ?? emptyTrainingProgression(),
+          injured ? 'light' : setting,
+          center.levels.coaching,
+          !injured && routine === 'training',
+          individual ? 1.5 : 1,
+          Boolean(individual),
+        );
+        history.bonus +=
+          trained.progress.buff -
+          previousProgress.buff +
+          trained.progress.buffProgress -
+          previousProgress.buffProgress;
+        if (player.age > 33)
+          history.decline = Math.max(
+            0,
+            history.decline +
+              player.overall -
+              trained.overall +
+              trained.progress.declineProgress -
+              previousProgress.declineProgress,
+          );
+        progression[id] = trained.progress;
+        trainingHistory[id] = history;
+        if (player.age > 33) next = { ...next, overall: trained.overall };
         if (individual && day + GAME_DAY_MS >= individual.endsAt) {
-          next = {
-            ...next,
-            overall: Math.min(99, next.overall + 1),
-            potential: Math.max(next.potential, Math.min(99, next.overall + 1)),
-          };
+          if (player.age < 33) {
+            if (next.overall < next.potential)
+              next = { ...next, overall: Math.min(next.potential, next.overall + 1) };
+            else cycleBonuses[id] = { games: 15 };
+          }
           completed.add(id);
         }
         players[id] = revalueGrowth(player, next);
@@ -122,6 +195,10 @@ function advanceGameDaysInternal(state: WorldState, target: number): WorldState 
         operations: {
           ...ops,
           medicalProgress,
+          effort,
+          progression,
+          cycleBonuses,
+          trainingHistory,
           individual: ops.individual.filter((plan) => !completed.has(plan.playerId)),
           medical: ops.medical.filter((id) => (injuries[id] ?? 0) > 0),
           fitness: ops.fitness.filter((id) => (players[id]?.fitness ?? 100) < 100),
@@ -158,19 +235,24 @@ function finishIndividualCycles(state: WorldState, at: number): WorldState {
   const centers = { ...state.centers.byId };
   for (const center of expired) {
     const ops = center.operations!;
+    const cycleBonuses = { ...ops.cycleBonuses };
     for (const plan of ops.individual.filter((plan) => plan.endsAt <= at)) {
       const player = players[plan.playerId];
-      if (!player || player.clubId !== center.clubId) continue;
-      const overall = Math.min(99, player.overall + 1);
-      players[player.id] = revalueGrowth(player, {
-        ...player,
-        overall,
-        potential: Math.max(player.potential, overall),
-      });
+      if (!player || player.clubId !== center.clubId || player.age >= 33) continue;
+      if (player.overall >= player.potential) cycleBonuses[player.id] = { games: 15 };
+      else
+        players[player.id] = revalueGrowth(player, {
+          ...player,
+          overall: Math.min(player.potential, player.overall + 1),
+        });
     }
     centers[center.id] = {
       ...center,
-      operations: { ...ops, individual: ops.individual.filter((plan) => plan.endsAt > at) },
+      operations: {
+        ...ops,
+        cycleBonuses,
+        individual: ops.individual.filter((plan) => plan.endsAt > at),
+      },
     };
   }
   return {

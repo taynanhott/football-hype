@@ -27,11 +27,11 @@ const ROUTES = [
   { id: 'dashboard', label: 'Visão geral' },
   { id: 'squad', label: 'Elenco' },
   { id: 'lineup', label: 'Escalação' },
+  { id: 'finance', label: 'Finanças' },
   { id: 'market', label: 'Transferências' },
   { id: 'calendar', label: 'Torneios' },
   { id: 'stadium', label: 'Estádio' },
   { id: 'training', label: 'Centro de treinamento' },
-  { id: 'finance', label: 'Finanças' },
   { id: 'matches', label: 'Central de partidas' },
   { id: 'trophies', label: 'Carreira' },
   { id: 'settings', label: 'Gerenciamento' },
@@ -157,6 +157,7 @@ function GameApp() {
       <CoachEditor
         key={profileKey}
         profile={coachProfile}
+        trophies={state.trophies.filter((trophy) => trophy.coachUserId === userId)}
         onSave={async (profile) => {
           await request(`/api/leagues/${state.id}/profile`, {
             method: 'POST',

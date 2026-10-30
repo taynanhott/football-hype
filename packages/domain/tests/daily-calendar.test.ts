@@ -5,6 +5,7 @@ import {
   createWorld,
   GAME_DAY_MS,
   realTimeGameDate,
+  temporaryModifiers,
 } from '../src/index.js';
 import { IDS, unwrap } from '../../../tests/fixtures/domain.js';
 const at = (day: number) => Date.UTC(2026, 0, day, 12);
@@ -64,7 +65,8 @@ describe('dias da temporada', () => {
         [center.id]: {
           ...center,
           operations: {
-            load: 'intense',
+            load: 'moderate',
+            playerLoads: { [player.id]: 'intense' },
             fitness: [],
             medical: [],
             syringe: false,
@@ -108,7 +110,8 @@ describe('dias da temporada', () => {
           [center.id]: {
             ...center,
             operations: {
-              load: 'intense' as const,
+              load: 'moderate' as const,
+              playerLoads: { [player.id]: 'intense' as const },
               fitness: [],
               medical: [],
               individual: [],
@@ -135,5 +138,88 @@ describe('dias da temporada', () => {
     state.nextScheduledAt = start + 3600000;
     expect(realTimeGameDate(state, at(16), start + 1800000)).toBe(at(11) + 2.5 * GAME_DAY_MS);
     expect(realTimeGameDate(state, at(16), start + 7200000)).toBe(at(16));
+  });
+  it('ciclo individual de veterano zera desgaste e não concede overall ao terminar', () => {
+    const { state, club, player } = world();
+    const center = state.centers.byId[club.trainingCenterId]!;
+    state.fixtures = [];
+    state.cups = [];
+    state.competitionDraws = [];
+    state.players = {
+      ...state.players,
+      byId: {
+        ...state.players.byId,
+        [player.id]: { ...player, age: 35, overall: 75, potential: 80, fitness: 100 },
+      },
+    };
+    state.centers = {
+      ...state.centers,
+      byId: {
+        ...state.centers.byId,
+        [center.id]: {
+          ...center,
+          operations: {
+            load: 'moderate',
+            playerLoads: { [player.id]: 'intense' },
+            fitness: [],
+            medical: [],
+            syringe: false,
+            individual: [
+              { playerId: player.id, startedAt: at(11), endsAt: at(11) + 60 * GAME_DAY_MS },
+            ],
+            progression: { [player.id]: { buff: 0, buffProgress: 0, declineProgress: 0.5 } },
+          },
+        },
+      },
+    };
+    const next = advanceGameDays(state, at(11) + 61 * GAME_DAY_MS);
+    expect(
+      next.centers.byId[center.id]!.operations?.progression?.[player.id]?.declineProgress,
+    ).toBe(0);
+    expect(next.players.byId[player.id]!.overall).toBe(75);
+    expect(next.centers.byId[center.id]!.operations?.individual).toHaveLength(0);
+  });
+  it('ciclo abaixo de 33 dá overall antes do potencial e bônus de 15 jogos no limite', () => {
+    for (const atPotential of [false, true]) {
+      const { state, club, player } = world();
+      const center = state.centers.byId[club.trainingCenterId]!;
+      state.fixtures = [];
+      state.cups = [];
+      state.competitionDraws = [];
+      state.players = {
+        ...state.players,
+        byId: {
+          ...state.players.byId,
+          [player.id]: { ...player, age: 25, overall: 75, potential: atPotential ? 75 : 80 },
+        },
+      };
+      state.centers = {
+        ...state.centers,
+        byId: {
+          ...state.centers.byId,
+          [center.id]: {
+            ...center,
+            operations: {
+              load: 'moderate',
+              fitness: [],
+              medical: [],
+              syringe: false,
+              individual: [{ playerId: player.id, startedAt: at(10), endsAt: at(11) + 1000 }],
+            },
+          },
+        },
+      };
+      const next = advanceGameDays(state, at(11) + 2000);
+      expect(next.players.byId[player.id]!.overall).toBe(atPotential ? 75 : 76);
+      expect(next.players.byId[player.id]!.potential).toBe(atPotential ? 75 : 80);
+      if (atPotential) {
+        expect(next.centers.byId[center.id]!.operations?.cycleBonuses?.[player.id]?.games).toBe(15);
+        expect(
+          temporaryModifiers(next, next.players.byId[player.id]!).find(
+            (effect) => effect.label === 'Ciclo individual',
+          )?.value,
+        ).toBe(1);
+      }
+    }
   });
 });

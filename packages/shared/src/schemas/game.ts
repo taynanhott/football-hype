@@ -120,6 +120,7 @@ export const matchResultSchema = z.strictObject({
       }),
     })
     .optional(),
+  coachUserIds: z.object({ home: z.string().optional(), away: z.string().optional() }).optional(),
   tacticalPlans: z
     .object({
       home: lineupSchema.extend({ starters: z.array(entityIdSchema).max(11) }),
@@ -257,6 +258,7 @@ export const worldStateSchema = z.strictObject({
         competitionId: z.string(),
         season: countSchema,
         wonAt: countSchema,
+        coachUserId: z.string().optional(),
       }),
     )
     .default([]),
@@ -329,6 +331,17 @@ export const worldStateSchema = z.strictObject({
             available: z.boolean(),
             rivals: z.boolean(),
             interest: z.number().int().min(1).max(100),
+          }),
+        )
+        .optional(),
+      contractHistory: z
+        .record(
+          entityIdSchema,
+          z.object({
+            overall: z.number(),
+            marketValue: z.number(),
+            signedAt: z.number(),
+            dissatisfied: z.boolean(),
           }),
         )
         .optional(),
@@ -531,6 +544,7 @@ export const commandSchema = z.discriminatedUnion('type', [
     action: z.enum([
       'policy',
       'renew',
+      'reject-renewal',
       'accept',
       'reject',
       'sell-facility',

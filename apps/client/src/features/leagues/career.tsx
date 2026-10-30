@@ -2,14 +2,20 @@ import { isRival } from '@football/domain';
 import type { ViewProps } from '../../ui/view-props';
 import { Icon, ClubBadge } from '../../ui/icons';
 
-export function Career({ snapshot, club }: ViewProps) {
+export function Career({ snapshot, club, trainerId }: ViewProps & { trainerId?: string }) {
   const { state } = snapshot;
   const seasons = [...(state.seasonArchives ?? []), state];
   const games = seasons.flatMap((season) =>
     season.results.flatMap((result) => {
       const fixture = season.fixtures.find((f) => f.id === result.fixtureId);
-      if (!fixture || (fixture.homeId !== club.id && fixture.awayId !== club.id)) return [];
-      const home = fixture.homeId === club.id;
+      if (!fixture) return [];
+      if (
+        trainerId
+          ? result.coachUserIds?.home !== trainerId && result.coachUserIds?.away !== trainerId
+          : fixture.homeId !== club.id && fixture.awayId !== club.id
+      )
+        return [];
+      const home = trainerId ? result.coachUserIds?.home === trainerId : fixture.homeId === club.id;
       const opponent = season.clubs.byId[home ? fixture.awayId : fixture.homeId];
       return [
         {
@@ -97,11 +103,7 @@ export function Career({ snapshot, club }: ViewProps) {
                 {String(label)}
               </h2>
               <strong className="career-score">{g ? `${g.goals} × ${g.conceded}` : '—'}</strong>
-              <p>
-                {g
-                  ? `Contra ${g.opponent?.name ?? 'Adversário'} · Temporada ${g.season}`
-                  : 'Nenhum resultado registrado'}
-              </p>
+              {g && <p>{`Contra ${g.opponent?.name ?? 'Adversário'} · Temporada ${g.season}`}</p>}
             </article>
           );
         })}
@@ -117,12 +119,6 @@ export function Career({ snapshot, club }: ViewProps) {
             <p>Clube atual · {games.length} partidas disponíveis</p>
           </div>
         </div>
-        <p className="career-note">
-          O histórico de trocas de clube ainda não foi registrado. Os números acima são os
-          resultados disponíveis do clube atual, incluindo temporadas arquivadas, e podem incluir
-          outros treinadores. Aproveitamento: pontos conquistados ÷ pontos possíveis; decisões por
-          pênaltis contam como empate.
-        </p>
       </section>
     </section>
   );

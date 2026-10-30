@@ -1,3 +1,4 @@
+import { showDraggedCard, startCardPointerDrag } from '../../ui/card-drag';
 import { positionLabel } from '../../ui/position-label';
 import { useState } from 'react';
 import type { ClubSnapshot, PlayerSnapshot, WorldState } from '@football/shared';
@@ -29,12 +30,47 @@ export function MatchBench({
   onMove?: (id: string, target: string | null, related: boolean) => void;
 }) {
   const [selected, setSelected] = useState<PlayerSnapshot | null>(null);
-  const players = club.playerIds.flatMap((id) =>
+  const orderKey = 'football.bench-order.' + state.id + '.' + club.id;
+  const [customOrder, setCustomOrder] = useState<string[]>(() => {
+    try {
+      const value: unknown = JSON.parse(localStorage.getItem(orderKey) ?? '[]');
+      return Array.isArray(value) ? value.filter((id): id is string => typeof id === 'string') : [];
+    } catch {
+      return [];
+    }
+  });
+  const orderedIds = [
+    ...new Set([...customOrder.filter((id) => club.playerIds.includes(id)), ...club.playerIds]),
+  ];
+  const players = orderedIds.flatMap((id) =>
     state.players.byId[id] && !starters.includes(id) ? [state.players.byId[id]!] : [],
   );
   const available = (player: PlayerSnapshot) =>
     medicallyAvailable(state, player.id) &&
     !(isFifaWindow(state.nextScheduledAt) && player.overall >= 80);
+  const moveCard = (id: string, targetId: string | null, related: boolean) => {
+    if (id === targetId || !club.playerIds.includes(id)) return;
+    if (!starters.includes(id) && reserves.includes(id) === related) {
+      const list = related
+        ? [...reserves]
+        : players.filter((player) => !reserves.includes(player.id)).map((player) => player.id);
+      const from = list.indexOf(id);
+      const to = targetId ? list.indexOf(targetId) : -1;
+      if (from < 0 || to < 0) return;
+      [list[from], list[to]] = [list[to]!, list[from]!];
+      if (related) onChange(list);
+      const others = orderedIds.filter((id) => !list.includes(id));
+      const next = [...list, ...others];
+      setCustomOrder(next);
+      try {
+        localStorage.setItem(orderKey, JSON.stringify(next));
+      } catch {
+        /* Ordering still works for this session. */
+      }
+      return;
+    }
+    onMove?.(id, targetId, related);
+  };
   const included = selected ? reserves.includes(selected.id) : false;
   const candidates = players.filter(
     (player) => player.id !== selected?.id && reserves.includes(player.id) !== included,
@@ -48,7 +84,7 @@ export function MatchBench({
           onDragOver={(event) => event.preventDefault()}
           onDrop={(event) => {
             event.preventDefault();
-            onMove?.(event.dataTransfer.getData('text/plain'), null, related);
+            moveCard(event.dataTransfer.getData('text/plain'), null, related);
           }}
         >
           <div className="reserve-section-heading">
@@ -62,17 +98,23 @@ export function MatchBench({
           <div className="reserve-cards">
             {players
               .filter((player) => reserves.includes(player.id) === related)
+              .sort((a, b) => (related ? reserves.indexOf(a.id) - reserves.indexOf(b.id) : 0))
               .map((player) => (
                 <button
-                  draggable={available(player)}
+                  data-drag-player-id={player.id}
+                  draggable
+                  onPointerDown={(event) => {
+                    startCardPointerDrag(event, player.id);
+                  }}
                   onDragStart={(event) => {
                     event.dataTransfer.setData('text/plain', player.id);
                     event.dataTransfer.effectAllowed = 'move';
+                    showDraggedCard(event);
                   }}
                   onDrop={(event) => {
                     event.preventDefault();
                     event.stopPropagation();
-                    onMove?.(event.dataTransfer.getData('text/plain'), player.id, related);
+                    moveCard(event.dataTransfer.getData('text/plain'), player.id, related);
                   }}
                   type="button"
                   className="reserve-mini"
@@ -86,7 +128,6 @@ export function MatchBench({
                           : 'diamond'
                   }
                   key={player.id}
-                  disabled={!related && !available(player)}
                   onClick={() => setSelected(player)}
                   aria-label={`${related ? 'Substituir reserva' : 'Relacionar'} ${player.name}`}
                 >
@@ -122,12 +163,12 @@ export function MatchBench({
       ))}
       {selected && (
         <PlayerModal
-          className="reserve-swap-modal"
-          title={selected.name}
+          className="lineup-selection-modal"
+          title={`${selected.name} · ${positionLabel(selected.position)}`}
           onClose={() => setSelected(null)}
         >
-          <div className="reserve-swap-grid">
-            <div className="player-detail-card">
+          <div className="lineup-selection-grid">
+            <div className="lineup-player-detail">
               <PlayerCard
                 player={selected}
                 clubName={club.name}
@@ -136,6 +177,9 @@ export function MatchBench({
               />
               <div className="lineup-effects">
                 <h3>O que afeta este jogador</h3>
+                {!temporaryModifiers(state, selected).length && (
+                  <p>Sem bônus ou penalidades nesta posição.</p>
+                )}
                 {temporaryModifiers(state, selected).map((effect) => (
                   <p key={effect.label} className={effect.value > 0 ? 'positive' : 'negative'}>
                     <b>
@@ -166,7 +210,7 @@ export function MatchBench({
                 {candidates.map((player) => (
                   <button
                     type="button"
-                    className="bench-player"
+                    className="bench-player starter"
                     key={player.id}
                     disabled={!available(player) || (!included && !available(selected))}
                     onClick={() => {

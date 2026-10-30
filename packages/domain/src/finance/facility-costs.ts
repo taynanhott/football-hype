@@ -3,22 +3,22 @@ export const FACILITY_ECONOMY: Record<
   string,
   { name: string; upgrade: number; maintenance: number; growth: number }
 > = {
-  pitch: { name: 'Gramado', upgrade: 90000000, maintenance: 3000000, growth: 1.9 },
-  surroundings: { name: 'Entorno', upgrade: 60000000, maintenance: 1800000, growth: 1.8 },
+  pitch: { name: 'Gramado', upgrade: 180000000, maintenance: 6000000, growth: 1.9 },
+  surroundings: { name: 'Entorno', upgrade: 120000000, maintenance: 3600000, growth: 1.8 },
   structure: {
     name: 'Estrutura do estádio',
-    upgrade: 280000000,
-    maintenance: 12000000,
+    upgrade: 560000000,
+    maintenance: 24000000,
     growth: 2.2,
   },
-  food: { name: 'Alimentação', upgrade: 45000000, maintenance: 1350000, growth: 1.8 },
-  shirts: { name: 'Loja do clube', upgrade: 35000000, maintenance: 900000, growth: 1.8 },
-  hospitality: { name: 'Camarotes', upgrade: 160000000, maintenance: 3600000, growth: 2.1 },
-  fitness: { name: 'Preparação física', upgrade: 85000000, maintenance: 2700000, growth: 1.95 },
-  medical: { name: 'Departamento médico', upgrade: 110000000, maintenance: 5250000, growth: 2.05 },
-  scouting: { name: 'Scout', upgrade: 70000000, maintenance: 2100000, growth: 1.9 },
-  coaching: { name: 'Treinamento', upgrade: 130000000, maintenance: 3300000, growth: 2.05 },
-  marketing: { name: 'Marketing', upgrade: 65000000, maintenance: 1500000, growth: 1.9 },
+  food: { name: 'Alimentação', upgrade: 90000000, maintenance: 2700000, growth: 1.8 },
+  shirts: { name: 'Loja do clube', upgrade: 70000000, maintenance: 1800000, growth: 1.8 },
+  hospitality: { name: 'Camarotes', upgrade: 320000000, maintenance: 7200000, growth: 2.1 },
+  fitness: { name: 'Preparação física', upgrade: 170000000, maintenance: 5400000, growth: 1.95 },
+  medical: { name: 'Departamento médico', upgrade: 220000000, maintenance: 10500000, growth: 2.05 },
+  scouting: { name: 'Scout', upgrade: 140000000, maintenance: 4200000, growth: 1.9 },
+  coaching: { name: 'Treinamento', upgrade: 260000000, maintenance: 6600000, growth: 2.05 },
+  marketing: { name: 'Marketing', upgrade: 130000000, maintenance: 3000000, growth: 1.9 },
 };
 export function upgradePrice(level: number, target = 'structure') {
   const item = FACILITY_ECONOMY[target] ?? FACILITY_ECONOMY.structure!;

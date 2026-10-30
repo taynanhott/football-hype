@@ -28,6 +28,7 @@ export function CupBracket({
   const allRounds = [...new Set(allNodes.map((node) => node.round))].sort((a, b) => a - b);
   const activeRound =
     selectedRound !== null && rounds.includes(selectedRound) ? selectedRound : rounds.at(-1);
+  const fourColumns = competitionId === 'copa-brasil' && activeRound === allRounds[0];
   const roundNodes = nodes.filter((node) => node.round === activeRound);
   const twoLegs = roundNodes.some((node) => (node.legs ?? rule?.legs) === 2);
   const pageSize = Math.max(1, roundNodes.length);
@@ -113,29 +114,31 @@ export function CupBracket({
     );
   return (
     <div className="cup-bracket-cards">
-      <div className="cup-round-navigation" role="group" aria-label="Fase da copa">
-        {allRounds.map((round) => (
-          <button
-            key={round}
-            disabled={!nodes.some((node) => node.round === round && node.homeId && node.awayId)}
-            title={
-              !nodes.some((node) => node.round === round && node.homeId && node.awayId)
-                ? 'Confrontos ainda não definidos'
-                : undefined
-            }
-            aria-pressed={round === activeRound}
-            className={round === activeRound ? 'selected' : ''}
-            onClick={() => {
-              setSelectedRound(round);
-              setPage(0);
-            }}
-          >
-            {allNodes.find((node) => node.round === round)?.label ??
-              ['Final', 'Semifinal', 'Quartas', 'Oitavas'][final - round] ??
-              'Fase ' + (round + 1)}
-          </button>
-        ))}
-      </div>
+      {allRounds.length > 1 && (
+        <div className="cup-round-navigation" role="group" aria-label="Fase da copa">
+          {allRounds.map((round) => (
+            <button
+              key={round}
+              disabled={!nodes.some((node) => node.round === round && node.homeId && node.awayId)}
+              title={
+                !nodes.some((node) => node.round === round && node.homeId && node.awayId)
+                  ? 'Confrontos ainda não definidos'
+                  : undefined
+              }
+              aria-pressed={round === activeRound}
+              className={round === activeRound ? 'selected' : ''}
+              onClick={() => {
+                setSelectedRound(round);
+                setPage(0);
+              }}
+            >
+              {allNodes.find((node) => node.round === round)?.label ??
+                ['Final', 'Semifinal', 'Quartas', 'Oitavas'][final - round] ??
+                'Fase ' + (round + 1)}
+            </button>
+          ))}
+        </div>
+      )}
       {rounds
         .filter((round) => round === activeRound)
         .map((round) => {
@@ -153,12 +156,12 @@ export function CupBracket({
                   : ' · Jogo único'}
               </h2>
               <div
-                className="cup-round-games cup-two-column-screen"
+                className={`cup-round-games cup-two-column-screen ${fourColumns ? 'cup-four-column-screen' : ''}`}
                 ref={gamesRef}
                 style={{
-                  gridTemplateColumns: `repeat(${capacity.columns}, minmax(0, 1fr))`,
-                  height: capacity.height || undefined,
-                  gridTemplateRows: `repeat(${Math.max(1, Math.ceil(roundNodes.length / 2))}, minmax(0, 1fr))`,
+                  gridTemplateColumns: `repeat(${fourColumns ? 4 : capacity.columns}, minmax(0, 1fr))`,
+                  height: undefined,
+                  gridTemplateRows: `repeat(${Math.max(1, Math.ceil(roundNodes.length / (fourColumns ? 4 : 2)))}, minmax(0, 1fr))`,
                 }}
               >
                 {nodes

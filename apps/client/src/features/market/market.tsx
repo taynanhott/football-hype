@@ -1,3 +1,4 @@
+import { usePlayerPresentation } from '../../ui/use-player-presentation';
 import { Select, Option } from '../../ui/select';
 import { positionLabel } from '../../ui/position-label';
 import { NegotiationChat } from './negotiation-chat';
@@ -37,7 +38,7 @@ const SORT_OPTIONS: Record<string, string> = {
 };
 export function Market({ snapshot, club, center, stadium }: ViewProps) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [viewMode, setViewMode] = useState<'cards' | 'list'>('cards');
+  const [viewMode, setViewMode] = usePlayerPresentation();
   const [detailPlayer, setDetailPlayer] = useState<PlayerSnapshot | null>(null);
   const [meetingReady, setMeetingReady] = useState(false);
   const [tab, setTab] = useState(() =>

@@ -115,6 +115,17 @@ describe('contratos e negociação', () => {
       interest: 80,
     });
     expect(state.management?.policies?.[player.id]?.interest).toBe(80);
+    state.management = {
+      ...state.management,
+      contracts: {
+        ...state.management?.contracts,
+        [player.id]: state.lastProcessedAt + 30 * 86400000,
+      },
+    };
+    state.players = {
+      ...state.players,
+      byId: { ...state.players.byId, [player.id]: { ...player, age: 25, morale: 80 } },
+    };
     const end = contractEnd(state, player);
     state = act({
       type: 'management',

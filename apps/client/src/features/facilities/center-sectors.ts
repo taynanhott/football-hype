@@ -24,7 +24,7 @@ export const SECTORS: Record<
     icon: 'tactics',
     avatar: '🧑🏽‍🏫',
     person: 'Coordenador técnico',
-    tip: 'Ajuste a carga do elenco e invista em ciclos individuais de 60 dias. Cada ciclo concluído garante +1 de overall, até o limite de 99.',
+    tip: 'Ajuste a carga de cada jogador e escolha os atletas para os ciclos individuais.',
   },
   marketing: {
     icon: 'megaphone',

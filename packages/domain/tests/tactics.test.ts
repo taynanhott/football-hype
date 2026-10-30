@@ -186,7 +186,25 @@ describe('escalação, entrosamento e carga', () => {
       },
       player,
     );
-    expect(effects.some((effect) => effect.label === 'Má fase do time')).toBe(true);
+    expect(effects.some((effect) => effect.label === 'Má fase do time')).toBe(false);
+    const draw = { ...defeat, homeGoals: 0, awayGoals: 0 };
+    const win = {
+      ...defeat,
+      homeGoals: defeat.homeId === club.id ? 1 : 0,
+      awayGoals: defeat.awayId === club.id ? 1 : 0,
+    };
+    for (const [results, expected] of [
+      [[defeat, draw], false],
+      [[defeat, draw, defeat], true],
+      [[draw, draw, draw], true],
+      [[defeat, draw, defeat, win], false],
+    ] as const) {
+      expect(
+        temporaryModifiers({ ...state, results: [...results] }, player).some(
+          (effect) => effect.label === 'Má fase do time',
+        ),
+      ).toBe(expected);
+    }
     expect(effects.some((effect) => effect.label === 'Má fase do jogador')).toBe(false);
   });
   it('define um banco padrão sem titulares ou indisponíveis e respeita as trocas salvas', () => {

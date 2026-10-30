@@ -31,7 +31,11 @@ export function RoundResults({
   minute,
   onSelect,
   viewerClubId,
-}: ReportProps & { minute: number; onSelect: (id: string) => void; viewerClubId?: string }) {
+}: ReportProps & {
+  minute: number;
+  onSelect: (id: string, time: number) => void;
+  viewerClubId?: string;
+}) {
   const fixture = state.fixtures.find((item) => item.id === result.fixtureId);
   const fixtures = new Map(state.fixtures.map((item) => [item.id, item]));
   const cups = new Map(state.cups.map((item) => [item.id, item]));
@@ -118,7 +122,7 @@ export function RoundResults({
                         <button
                           key={item.fixtureId}
                           className={`round-result-card ${item.fixtureId === result.fixtureId ? 'is-selected' : ''}`}
-                          onClick={() => onSelect(item.fixtureId)}
+                          onClick={() => onSelect(item.fixtureId, Date.now())}
                           aria-label={`Ver partida: ${state.clubs.byId[item.homeId ?? '']?.name} × ${state.clubs.byId[item.awayId ?? '']?.name}`}
                         >
                           <span className="round-result-teams">

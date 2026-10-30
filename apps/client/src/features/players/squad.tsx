@@ -1,3 +1,4 @@
+import { usePlayerPresentation } from '../../ui/use-player-presentation';
 import { SquadAverages } from './squad-averages';
 import { Overall } from './overall';
 import { positionLabel } from '../../ui/position-label';
@@ -42,7 +43,7 @@ type SortColumn = (typeof squadColumns)[number][0];
 export function Squad(props: ViewProps) {
   const { snapshot, club } = props;
   const [position, setPosition] = useState('ALL');
-  const [presentation, setPresentation] = useState('cards');
+  const [presentation, setPresentation] = usePlayerPresentation();
   const [hoveredColumn, setHoveredColumn] = useState<number | null>(null);
   const [sort, setSort] = useState<{ column: SortColumn; ascending: boolean }>({
     column: 'name',
@@ -97,6 +98,13 @@ export function Squad(props: ViewProps) {
   }
   const candidate = selectedId ? snapshot.state.players.byId[selectedId] : undefined;
   const selected = candidate?.clubId === club.id ? candidate : undefined;
+  const hasPlayerOffers = Boolean(
+    selected &&
+    snapshot.state.management?.offers?.some(
+      (offer) =>
+        offer.playerId === selected.id && offer.sellerId === club.id && offer.status === 'pending',
+    ),
+  );
   const history = snapshot.state.ratingHistory.filter((r) => r.playerId === selectedId);
   return (
     <>
@@ -301,8 +309,21 @@ export function Squad(props: ViewProps) {
               <PlayerManagement key={selected.id} player={selected} snapshot={snapshot} />
               <a
                 className="squad-player-offers squad-offers-link"
-                href="#/market?tab=proposals"
-                onClick={() => setSelectedId(null)}
+                href={hasPlayerOffers ? '#/market?tab=proposals' : undefined}
+                aria-disabled={!hasPlayerOffers}
+                tabIndex={hasPlayerOffers ? 0 : -1}
+                title={
+                  hasPlayerOffers
+                    ? 'Ver propostas recebidas'
+                    : 'Nenhuma proposta pendente por este jogador'
+                }
+                onClick={(event) => {
+                  if (!hasPlayerOffers) {
+                    event.preventDefault();
+                    return;
+                  }
+                  setSelectedId(null);
+                }}
               >
                 Propostas recebidas <span aria-hidden="true">↗</span>
               </a>

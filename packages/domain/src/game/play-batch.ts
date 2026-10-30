@@ -1,10 +1,18 @@
+import { ageFatigueFactor, moraleSensitivity } from './player-contracts.js';
 import { upgradeUnstartedCompetitions } from '../competitions/upgrade-formats.js';
 import { resolveRegionalQualifiers } from '../competitions/regional-qualifiers.js';
 import { advanceGameDays } from './daily-calendar.js';
 import { scheduledFixtures } from '../competitions/fixtures.js';
 import { normalizeRoundCalendar } from '../competitions/round-calendar.js';
 import { nextRealMatchTime, scheduledBatches } from './season-clock.js';
-import { COMPETITIONS, GAMEPLAY, type Fixture, type WorldState } from '@football/shared';
+import {
+  COMPETITIONS,
+  GAMEPLAY,
+  type Fixture,
+  type WorldState,
+  type PlayStyle,
+  type Formation,
+} from '@football/shared';
 import {
   applyPreLibertadores,
   scheduleIntercontinental,
@@ -14,7 +22,11 @@ import { standings } from '../competitions/standings.js';
 import { simulateMatch } from '../simulation/match.js';
 import { matchDemand } from '../finance/match-demand.js';
 import { hashSeed, mulberry32 } from '../simulation/random.js';
-import { appearanceGrowth } from '../players/development.js';
+import {
+  officialMatchDevelopment,
+  emptyTrainingProgression,
+  currentTrainingHistory,
+} from './training-progression.js';
 import { resolveLineup, resolveBench, injuryProbability } from './tactics.js';
 import { qualifyCupGroups } from '../competitions/cup-groups.js';
 import { advanceBracket } from '../competitions/knockout.js';
@@ -61,6 +73,62 @@ export function playNextBatch(state: WorldState, processedAt: number): Result<Wo
     Object.entries(state.chemistry).map(([id, matches]) => [id, { ...matches }]),
   );
   const workload = { ...state.workload };
+  // Scout only completed matches; never inspect an opponent's current private plan.
+  const recentPlans = new Map<string, Array<{ formation: Formation; style: PlayStyle }>>();
+  for (const result of state.results) {
+    for (const side of ['home', 'away'] as const) {
+      const id = side === 'home' ? result.homeId : result.awayId;
+      const plan = result.tacticalPlans?.[side];
+      if (!id || !plan) continue;
+      const history = recentPlans.get(id) ?? [];
+      history.push({ formation: plan.formation, style: plan.style ?? 'balanced' });
+      if (history.length > 5) history.shift();
+      recentPlans.set(id, history);
+    }
+  }
+  const humanClubs = new Set(state.participants.map((participant) => participant.clubId));
+  const botStyle = (id: string, opponentId: string): PlayStyle => {
+    const saved = state.tactics[id];
+    const current = saved?.style ?? 'balanced';
+    const history = recentPlans.get(opponentId);
+    if (humanClubs.has(id) || !history?.length) return current;
+    const available = resolveLineup(state, clubs[id]!, scheduledAt, players).flatMap((entry) =>
+      entry.player
+        ? [{ ...entry.player, position: entry.position, overall: entry.effectiveOverall }]
+        : [],
+    );
+    const styles: PlayStyle[] = [
+      current,
+      'balanced',
+      'wings',
+      'gegenpress',
+      'low-block',
+      'possession',
+      'counter',
+    ];
+    let best = current,
+      bestScore = -Infinity;
+    for (const style of new Set(styles)) {
+      const score = history.reduce(
+        (sum, plan, index) =>
+          sum +
+          (index + 1) *
+            tacticalBonus(
+              style,
+              saved?.formation ?? '4-3-3',
+              plan.style,
+              plan.formation,
+              available,
+            ),
+        0,
+      );
+      if (score > bestScore) {
+        best = style;
+        bestScore = score;
+      }
+    }
+    return best;
+  };
   const playedClubs = new Set<string>();
   const results = [...state.results];
   let cups = state.cups;
@@ -78,7 +146,23 @@ export function playNextBatch(state: WorldState, processedAt: number): Result<Wo
     for (const center of Object.values(centers))
       if (center.operations?.clearance?.fixtureId === fixture.id)
         clearedInjuries[center.operations.clearance.playerId] = 0;
-    const selectionState = { ...state, injuries: clearedInjuries };
+    const homeStyle = botStyle(home.id, away.id);
+    const awayStyle = botStyle(away.id, home.id);
+    const selectionState = {
+      ...state,
+      injuries: clearedInjuries,
+      tactics: {
+        ...state.tactics,
+        [home.id]: {
+          ...(state.tactics[home.id] ?? { formation: '4-3-3' as const, starters: [] }),
+          style: homeStyle,
+        },
+        [away.id]: {
+          ...(state.tactics[away.id] ?? { formation: '4-3-3' as const, starters: [] }),
+          style: awayStyle,
+        },
+      },
+    };
     const homeSelection = resolveLineup(selectionState, home, scheduledAt, players);
     const awaySelection = resolveLineup(selectionState, away, scheduledAt, players);
     const effective = (entries: typeof homeSelection) =>
@@ -89,11 +173,11 @@ export function playNextBatch(state: WorldState, processedAt: number): Result<Wo
       );
     const homeLineup = homeSelection.flatMap((entry) => (entry.player ? [entry.player] : []));
     const awayLineup = awaySelection.flatMap((entry) => (entry.player ? [entry.player] : []));
-    const homePlan = state.tactics[home.id] ?? {
+    const homePlan = selectionState.tactics[home.id] ?? {
       formation: '4-3-3' as const,
       starters: homeLineup.map((p) => p.id),
     };
-    const awayPlan = state.tactics[away.id] ?? {
+    const awayPlan = selectionState.tactics[away.id] ?? {
       formation: '4-3-3' as const,
       starters: awayLineup.map((p) => p.id),
     };
@@ -126,9 +210,18 @@ export function playNextBatch(state: WorldState, processedAt: number): Result<Wo
       matchDemand(state, fixture),
       { home: homePlan.style ?? 'balanced', away: awayPlan.style ?? 'balanced' },
     );
+    result.coachUserIds = Object.fromEntries(
+      (['home', 'away'] as const).flatMap((side) => {
+        const member = state.participants.find(
+          (item) => item.clubId === (side === 'home' ? home.id : away.id),
+        );
+        return member ? [[side, member.userId]] : [];
+      }),
+    );
     result.tacticalPlans = {
       home: {
         ...homePlan,
+        style: homePlan.style ?? 'balanced',
         starters: homeLineup.map((p) => p.id),
         bench: resolveBench(
           state,
@@ -140,6 +233,7 @@ export function playNextBatch(state: WorldState, processedAt: number): Result<Wo
       },
       away: {
         ...awayPlan,
+        style: awayPlan.style ?? 'balanced',
         starters: awayLineup.map((p) => p.id),
         bench: resolveBench(
           state,
@@ -165,14 +259,64 @@ export function playNextBatch(state: WorldState, processedAt: number): Result<Wo
         chemistry[player.clubId] = { ...matches, [player.id]: (matches[player.id] ?? 0) + 1 };
       }
       const center = player.clubId
-        ? state.centers.byId[clubs[player.clubId]?.trainingCenterId ?? '']
+        ? centers[clubs[player.clubId]?.trainingCenterId ?? '']
         : undefined;
-      const grown = appearanceGrowth(
+      const grown = officialMatchDevelopment(
         player,
-        center?.levels.coaching ?? 1,
         development[player.id] ?? 0,
+        center?.operations?.progression?.[player.id] ?? emptyTrainingProgression(),
+        center?.levels.coaching ?? 1,
+        Boolean(center?.operations?.individual.some((plan) => plan.playerId === player.id)),
       );
-      development[player.id] = grown.progress;
+      const trainingHistory = currentTrainingHistory(
+        center?.operations?.trainingHistory?.[player.id],
+        state.season,
+      );
+      const previousProgress =
+        center?.operations?.progression?.[player.id] ?? emptyTrainingProgression();
+      if (player.age <= 33 && player.overall < player.potential)
+        trainingHistory.growth +=
+          grown.player.overall - player.overall + grown.development - (development[player.id] ?? 0);
+      trainingHistory.bonus +=
+        grown.progression.buff -
+        previousProgress.buff +
+        grown.progression.buffProgress -
+        previousProgress.buffProgress;
+      trainingHistory.decline = Math.max(
+        0,
+        trainingHistory.decline +
+          grown.progression.declineProgress -
+          previousProgress.declineProgress,
+      );
+      development[player.id] = grown.development;
+      const cycleBonuses = { ...center?.operations?.cycleBonuses };
+      if (cycleBonuses[player.id]) {
+        const games = cycleBonuses[player.id]!.games - 1;
+        if (games > 0) cycleBonuses[player.id] = { games };
+        else delete cycleBonuses[player.id];
+      }
+      if (center)
+        centers[center.id] = {
+          ...center,
+          operations: {
+            load: 'moderate',
+            fitness: [],
+            medical: [],
+            individual: [],
+            syringe: false,
+            ...center.operations,
+            cycleBonuses,
+            progression: { ...center.operations?.progression, [player.id]: grown.progression },
+            lastOfficialTrainingAt: {
+              ...center.operations?.lastOfficialTrainingAt,
+              [player.id]: scheduledAt,
+            },
+            trainingHistory: {
+              ...center.operations?.trainingHistory,
+              [player.id]: trainingHistory,
+            },
+          },
+        };
       players[player.id] = {
         ...grown.player,
         appearances: player.appearances + 1,
@@ -180,19 +324,25 @@ export function playNextBatch(state: WorldState, processedAt: number): Result<Wo
           0,
           player.fitness -
             Math.ceil(
-              (GAMEPLAY.fitnessCost + Math.min(10, Math.max(0, consecutive - 2) * 2)) /
+              ((GAMEPLAY.fitnessCost + Math.min(10, Math.max(0, consecutive - 2) * 2)) *
+                ageFatigueFactor(player.age)) /
                 (1 +
                   ((center?.levels.fitness ?? 1) - 1) * GAMEPLAY.fitnessFatigueReductionPerLevel),
             ),
         ),
-        morale: Math.max(
-          0,
-          Math.min(
-            100,
-            player.morale +
-              (player.clubId === home.id
-                ? result.homeGoals - result.awayGoals
-                : result.awayGoals - result.homeGoals),
+        morale: Math.round(
+          Math.max(
+            0,
+            Math.min(
+              100,
+              player.morale +
+                ((player.clubId === home.id
+                  ? result.homeGoals - result.awayGoals
+                  : result.awayGoals - result.homeGoals) +
+                  ((result.ratings?.[player.id] ?? 6.5) - 6.5) +
+                  Math.min(2, consecutive * 0.3)) *
+                  moraleSensitivity(player),
+            ),
           ),
         ),
       };
@@ -291,6 +441,9 @@ export function playNextBatch(state: WorldState, processedAt: number): Result<Wo
         competitionId: rule.id,
         season: state.season,
         wonAt: processedAt,
+        ...(state.participants.find((member) => member.clubId === champion)
+          ? { coachUserId: state.participants.find((member) => member.clubId === champion)!.userId }
+          : {}),
       });
   }
   let next = applyPreLibertadores(

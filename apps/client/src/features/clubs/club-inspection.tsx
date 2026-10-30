@@ -1,3 +1,5 @@
+import { usePlayerPresentation } from '../../ui/use-player-presentation';
+import { PixelBadge } from '../../ui/pixel-badge';
 import { PlayerDetails } from '../players/player-details';
 import { SquadAverages } from '../players/squad-averages';
 import { positionLabel } from '../../ui/position-label';
@@ -34,7 +36,7 @@ export function ClubInspection({
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
   const selectedPlayer = selectedPlayerId ? state.players.byId[selectedPlayerId] : undefined;
   const [position, setPosition] = useState('ALL');
-  const [presentation, setPresentation] = useState('cards');
+  const [presentation, setPresentation] = usePlayerPresentation();
   const [sort, setSort] = useState({ column: 3, ascending: false });
   const [hover, setHover] = useState<number | null>(null);
   function toggleSort(column: number) {
@@ -135,10 +137,25 @@ export function ClubInspection({
                       <span>{home ? 'Em casa' : 'Fora de casa'}</span>
                     </header>
                     <div className="club-history-score">
+                      <div className="club-history-team">
+                        <PixelBadge
+                          name={club.name}
+                          {...(club.crestUrl ? { url: club.crestUrl } : {})}
+                          size={28}
+                        />
+                        <span>{club.name}</span>
+                      </div>
                       <strong>
                         {goals} × {against}
                       </strong>
-                      <span>vs. {opponent?.name ?? 'Adversário indisponível'}</span>
+                      <div className="club-history-team">
+                        <PixelBadge
+                          name={opponent?.name ?? 'Adversário'}
+                          {...(opponent?.crestUrl ? { url: opponent.crestUrl } : {})}
+                          size={28}
+                        />
+                        <span>{opponent?.name ?? 'Adversário indisponível'}</span>
+                      </div>
                     </div>
                     <dl className="club-history-plan">
                       <div>
@@ -147,7 +164,7 @@ export function ClubInspection({
                       </div>
                       <div>
                         <dt>Tática</dt>
-                        <dd>{plan?.style ? STYLE_LABELS[plan.style] : 'Não registrada'}</dd>
+                        <dd>{plan ? STYLE_LABELS[plan.style ?? 'balanced'] : 'Não registrada'}</dd>
                       </div>
                     </dl>
                     <h3>

@@ -1,3 +1,5 @@
+import { COMPETITIONS } from '@football/shared';
+import { CompetitionTrophy } from './competition-trophy';
 import type { CoachProfile } from './coach-profile-storage';
 import { PersonAvatar } from './person-avatar';
 import { useState } from 'react';
@@ -8,8 +10,10 @@ export function CoachAvatar({ profile }: { profile: CoachProfile }) {
 export function CoachEditor({
   profile,
   onSave,
+  trophies = [],
 }: {
   profile: CoachProfile;
+  trophies?: readonly { competitionId: string }[];
   onSave: (profile: CoachProfile) => void | Promise<void>;
 }) {
   const [draft, setDraft] = useState(profile);
@@ -214,6 +218,22 @@ export function CoachEditor({
         </button>
         <span role="status">{saved ? '✓ Perfil salvo na carreira' : ''}</span>
       </div>
+      <section className="coach-trophy-shelf" aria-label="Troféus do treinador">
+        <h2>Conquistas do treinador</h2>
+        <div className="trophy-gallery trophy-gallery-compact">
+          {COMPETITIONS.filter((rule) => rule.id !== 'pre-libertadores').map((rule) => {
+            const count = trophies.filter((trophy) => trophy.competitionId === rule.id).length;
+            return (
+              <article className="panel trophy-card" data-earned={count > 0} key={rule.id}>
+                <CompetitionTrophy competitionId={rule.id} name={rule.name} />
+                <h2>
+                  <b>{count}x</b> {rule.name}
+                </h2>
+              </article>
+            );
+          })}
+        </div>
+      </section>
     </form>
   );
 }

@@ -126,8 +126,14 @@ export function Facilities(props: ViewProps & { training?: boolean }) {
       ];
   return (
     <>
-      <div className="page-heading">
-        <span className="budget-pill">Caixa {currency(club.balance.cents)}</span>
+      <div className="facility-cash-bar">
+        <span className="facility-cash-icon">
+          <Icon name="balance" size={22} />
+        </span>
+        <div>
+          <span>Caixa do clube</span>
+          <strong>{currency(club.balance.cents)}</strong>
+        </div>
       </div>
       <section className="facility-scene panel">
         <Suspense fallback={<div className="scene-loading">Carregando sua estrutura…</div>}>
@@ -311,7 +317,7 @@ export function Facilities(props: ViewProps & { training?: boolean }) {
         <PlayerModal
           title={DESCRIPTIONS[managing]?.title ?? 'Gerenciar setor'}
           onClose={() => setManaging(null)}
-          className={`center-management-modal ${managing === 'fitness' || managing === 'medical' || managing === 'coaching' ? 'fitness-management-modal' : ''}`}
+          className={`center-management-modal ${managing === 'coaching' ? 'individual-coaching-modal' : ''} ${managing === 'fitness' || managing === 'medical' || managing === 'coaching' ? 'fitness-management-modal' : ''}`}
         >
           {managing === 'scouting' ? (
             <AcademyScout {...props} />
