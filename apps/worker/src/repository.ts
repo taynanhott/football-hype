@@ -22,9 +22,11 @@ export interface SqlStore {
 /** Chunked branches stay below SQLite's row limit, even for large seasons. */
 export class DurableLeagueRepository implements LeagueRepository {
   private cached: SavedLeague | undefined;
+  private metadataCache: SavedLeague | undefined;
   constructor(
     private readonly sql: SqlStore,
     private readonly atomic: <T>(fn: () => T) => T,
+    private readonly retainEventPatches = true,
   ) {
     sql.exec(
       `CREATE TABLE IF NOT EXISTS leagues(id TEXT PRIMARY KEY, revision INTEGER, mode TEXT, status TEXT, due REAL, summary TEXT)`,
@@ -49,14 +51,31 @@ export class DurableLeagueRepository implements LeagueRepository {
       this.sql.exec('DELETE FROM chunks WHERE league_id=? AND branch=?', id, branch);
       return;
     }
-    this.sql.exec('DELETE FROM chunks WHERE league_id=? AND branch=?', id, branch);
-    for (let offset = 0; offset < json.length; offset += 32768)
-      this.sql.exec(
-        'INSERT INTO chunks VALUES (?,?,?,?)',
+    const old = [
+      ...this.sql.exec<{ part: number; value: string }>(
+        'SELECT part,value FROM chunks WHERE league_id=? AND branch=? ORDER BY part',
         id,
         branch,
-        offset / 32768,
-        json.slice(offset, offset + 32768),
+      ),
+    ];
+    const count = Math.ceil(json.length / 32768);
+    for (let part = 0; part < count; part++) {
+      const value = json.slice(part * 32768, (part + 1) * 32768);
+      if (old[part]?.part === part && old[part]?.value === value) continue;
+      this.sql.exec(
+        'INSERT INTO chunks VALUES (?,?,?,?) ON CONFLICT(league_id,branch,part) DO UPDATE SET value=excluded.value',
+        id,
+        branch,
+        part,
+        value,
+      );
+    }
+    if (old.length > count)
+      this.sql.exec(
+        'DELETE FROM chunks WHERE league_id=? AND branch=? AND part>=?',
+        id,
+        branch,
+        count,
       );
   }
   private read(id: string, branch: string): unknown {
@@ -92,21 +111,34 @@ export class DurableLeagueRepository implements LeagueRepository {
       state.nextScheduledAt,
       JSON.stringify({ id, name, mode, season, round, administratorId }),
     );
-    this.sql.exec('DELETE FROM members WHERE league_id=?', id);
-    if (!state.deletedAt)
-      for (const member of state.participants)
-        this.sql.exec('INSERT INTO members VALUES (?,?,?)', member.userId, mode, id);
-    this.sql.exec(
-      `DELETE FROM draws WHERE json_extract(value,'$.leagueId')=? AND NOT EXISTS(SELECT 1 FROM members WHERE members.user_id=draws.user_id AND members.league_id=?)`,
-      id,
-      id,
-    );
+    const members = state.deletedAt ? [] : state.participants.map((m) => m.userId);
+    const existing = [
+      ...this.sql.exec<{ user_id: string }>('SELECT user_id FROM members WHERE league_id=?', id),
+    ].map((m) => m.user_id);
+    for (const user of existing) {
+      if (members.includes(user)) continue;
+      this.sql.exec('DELETE FROM members WHERE league_id=? AND user_id=?', id, user);
+      this.sql.exec(
+        "DELETE FROM draws WHERE user_id=? AND json_extract(value,'$.leagueId')=?",
+        user,
+        id,
+      );
+    }
+    for (const user of members)
+      if (!existing.includes(user))
+        this.sql.exec('INSERT INTO members VALUES (?,?,?)', user, mode, id);
   }
   async load(id: string, options?: { eventPatches?: boolean }): Promise<SavedLeague | undefined> {
     const row = [
       ...this.sql.exec('SELECT revision FROM leagues WHERE id=? AND status<>?', id, 'deleted'),
     ][0];
     if (!row) return undefined;
+    if (
+      options?.eventPatches === false &&
+      this.metadataCache?.state.id === id &&
+      this.metadataCache.state.revision === row.revision
+    )
+      return this.metadataCache;
     let state: WorldState;
     if (this.cached?.state.id === id && this.cached.state.revision === row.revision)
       state = this.cached.state;
@@ -130,10 +162,14 @@ export class DurableLeagueRepository implements LeagueRepository {
     ].map((row) =>
       gameEventSchema.parse({
         ...JSON.parse(row.metadata),
-        patch: options?.eventPatches === false ? {} : this.read(id, `event:${row.sequence}`),
+        patch:
+          !this.retainEventPatches || options?.eventPatches === false
+            ? {}
+            : this.read(id, `event:${row.sequence}`),
       }),
     );
     this.cached = { state, events };
+    if (options?.eventPatches === false) this.metadataCache = this.cached;
     return this.cached;
   }
   async create(state: WorldState): Promise<void> {
@@ -167,7 +203,9 @@ export class DurableLeagueRepository implements LeagueRepository {
       for (const [branch, value] of Object.entries({ ...event.patch, revision: state.revision }))
         this.write(id, branch, value);
       const { patch, ...metadata } = event;
-      this.write(id, `event:${event.sequence}`, patch);
+      // Runtime recovery uses the current branches. The ledger needs metadata and
+      // request ids, not another full copy of every changed player/management branch.
+      if (this.retainEventPatches) this.write(id, `event:${event.sequence}`, patch);
       this.sql.exec(
         'INSERT INTO events VALUES (?,?,?)',
         id,

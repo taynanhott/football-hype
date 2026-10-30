@@ -84,6 +84,14 @@ export function IndividualTrainingRoster({ snapshot, club, center }: ViewProps) 
                 : player.overall <= 85
                   ? 'gold'
                   : 'diamond';
+          const potentialTier =
+            player.potential <= 69
+              ? 'bronze'
+              : player.potential <= 77
+                ? 'silver'
+                : player.potential <= 85
+                  ? 'gold'
+                  : 'diamond';
           return (
             <article className="training-player-row" key={id}>
               <Portrait player={player} clubName={club.name} kit={clubKit(club)} />
@@ -179,7 +187,15 @@ export function IndividualTrainingRoster({ snapshot, club, center }: ViewProps) 
                     aria-label={'Progresso para +1 de overall de ' + player.name}
                   />
                 </div>
-                <b className={'training-current-overall ' + tier}>{player.overall}</b>
+                <span
+                  className="training-overall-potential"
+                  aria-label={'Overall ' + player.overall + ', potencial ' + player.potential}
+                  title="Overall → Potencial"
+                >
+                  <b className={'training-current-overall ' + tier}>{player.overall}</b>
+                  <span aria-hidden="true">→</span>
+                  <b className={'training-current-overall ' + potentialTier}>{player.potential}</b>
+                </span>
               </div>
             </article>
           );

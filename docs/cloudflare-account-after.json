@@ -1,0 +1,26 @@
+{
+  "data": {
+    "viewer": {
+      "accounts": [
+        {
+          "workersInvocationsAdaptive": [
+            {
+              "dimensions": {
+                "scriptName": "football-hype-game"
+              },
+              "quantiles": {
+                "cpuTimeP50": 1151,
+                "cpuTimeP99": 1151
+              },
+              "sum": {
+                "errors": 0,
+                "requests": 1
+              }
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "errors": null
+}

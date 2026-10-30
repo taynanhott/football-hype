@@ -83,7 +83,6 @@ describe('barras de treinamento', () => {
       { ...emptyTrainingProgression(), declineProgress: 0.5 },
       3,
       false,
-      'light',
     );
     expect(result.player.overall).toBe(80);
     expect(result.progression.declineProgress).toBe(0.5);

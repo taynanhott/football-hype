@@ -1,0 +1,36 @@
+{
+  "data": {
+    "viewer": {
+      "accounts": [
+        {
+          "durableObjectsPeriodicGroups": [
+            {
+              "dimensions": {
+                "namespaceId": "76dfc2fa3b664621bc9e28ff70900669"
+              },
+              "quantiles": {
+                "memoryUsageBytesP99": 119224340
+              },
+              "sum": {
+                "cpuTime": 160354697
+              }
+            },
+            {
+              "dimensions": {
+                "namespaceId": "424580380b9c43b686fed965aac124ec"
+              },
+              "quantiles": {
+                "memoryUsageBytesP99": 157988900
+              },
+              "sum": {
+                "cpuTime": 307551230
+              }
+            }
+          ],
+          "durableObjectsStorageGroups": []
+        }
+      ]
+    }
+  },
+  "errors": null
+}

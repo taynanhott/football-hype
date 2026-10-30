@@ -41,6 +41,7 @@ export async function connectWorker(url: string, options: unknown): Promise<Game
     }, 20000);
     ws.onopen = () => room.send('auth', options);
     ws.onmessage = (event) => {
+      if (event.data === 'pong') return;
       try {
         const message = JSON.parse(String(event.data)) as { type: string; data: unknown };
         if (message.type === 'ready') {

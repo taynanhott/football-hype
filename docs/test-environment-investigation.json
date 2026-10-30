@@ -1,0 +1,274 @@
+{
+  "numTotalTestSuites": 8,
+  "numPassedTestSuites": 8,
+  "numFailedTestSuites": 0,
+  "numPendingTestSuites": 0,
+  "numTotalTests": 23,
+  "numPassedTests": 23,
+  "numFailedTests": 0,
+  "numPendingTests": 0,
+  "numTodoTests": 0,
+  "snapshot": {
+    "added": 0,
+    "failure": false,
+    "filesAdded": 0,
+    "filesRemoved": 0,
+    "filesRemovedList": [],
+    "filesUnmatched": 0,
+    "filesUpdated": 0,
+    "matched": 0,
+    "total": 0,
+    "unchecked": 0,
+    "uncheckedKeysByFile": [],
+    "unmatched": 0,
+    "updated": 0,
+    "didUpdate": false
+  },
+  "startTime": 1793383359037,
+  "success": true,
+  "testResults": [
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": ["interface local com a carreira online"],
+          "fullName": "interface local com a carreira online encaminha API e WebSocket preservando as credenciais e a origem configurada",
+          "status": "passed",
+          "title": "encaminha API e WebSocket preservando as credenciais e a origem configurada",
+          "duration": 107.08639999999991,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["interface local com a carreira online"],
+          "fullName": "interface local com a carreira online exige HTTPS para destinos remotos e não cria proxy sem configuração",
+          "status": "passed",
+          "title": "exige HTTPS para destinos remotos e não cria proxy sem configuração",
+          "duration": 0.8518000000000256,
+          "failureMessages": [],
+          "meta": {}
+        }
+      ],
+      "startTime": 1793383359897,
+      "endTime": 1793383360005.8518,
+      "status": "passed",
+      "message": "",
+      "name": "C:/Users/tayna/OneDrive/Área de Trabalho/football-hype/apps/client/tests/dev-game-proxy.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": ["salvamento incremental"],
+          "fullName": "salvamento incremental atualizações pequenas não introduzem valores padrão que apaguem dados da liga",
+          "status": "passed",
+          "title": "atualizações pequenas não introduzem valores padrão que apaguem dados da liga",
+          "duration": 4.599100000000135,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["salvamento incremental"],
+          "fullName": "salvamento incremental preserva referências de dados inalterados e valida alterações do evento",
+          "status": "passed",
+          "title": "preserva referências de dados inalterados e valida alterações do evento",
+          "duration": 137.78550000000018,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["salvamento incremental"],
+          "fullName": "salvamento incremental grava somente o evento e recupera a carreira após reinício e cauda interrompida",
+          "status": "passed",
+          "title": "grava somente o evento e recupera a carreira após reinício e cauda interrompida",
+          "duration": 530.2457999999999,
+          "failureMessages": [],
+          "meta": {}
+        }
+      ],
+      "startTime": 1793383360372,
+      "endTime": 1793383361045.2458,
+      "status": "passed",
+      "message": "",
+      "name": "C:/Users/tayna/OneDrive/Área de Trabalho/football-hype/apps/server/tests/incremental-saving.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": ["serviço autoritativo de ligas"],
+          "fullName": "serviço autoritativo de ligas salva entrada imediata e perfil do convidado após reiniciar o servidor",
+          "status": "passed",
+          "title": "salva entrada imediata e perfil do convidado após reiniciar o servidor",
+          "duration": 272.53840000000014,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["serviço autoritativo de ligas"],
+          "fullName": "serviço autoritativo de ligas sorteia um administrador entre os restantes e exclui a liga após a última saída",
+          "status": "passed",
+          "title": "sorteia um administrador entre os restantes e exclui a liga após a última saída",
+          "duration": 106.85040000000004,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["serviço autoritativo de ligas"],
+          "fullName": "serviço autoritativo de ligas não permite convites solo e acompanha presença por conexão ativa",
+          "status": "passed",
+          "title": "não permite convites solo e acompanha presença por conexão ativa",
+          "duration": 179.35500000000002,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["serviço autoritativo de ligas"],
+          "fullName": "serviço autoritativo de ligas sorteia somente o último clube livre e rejeita escolha de clube ocupado",
+          "status": "passed",
+          "title": "sorteia somente o último clube livre e rejeita escolha de clube ocupado",
+          "duration": 88.63940000000002,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["serviço autoritativo de ligas"],
+          "fullName": "serviço autoritativo de ligas permite sortear a segunda carreira solo sem reutilizar a primeira reserva",
+          "status": "passed",
+          "title": "permite sortear a segunda carreira solo sem reutilizar a primeira reserva",
+          "duration": 362.1481000000001,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["serviço autoritativo de ligas"],
+          "fullName": "serviço autoritativo de ligas reserva o clube na saída online e libera a troca apenas após expulsão",
+          "status": "passed",
+          "title": "reserva o clube na saída online e libera a troca apenas após expulsão",
+          "duration": 75.54819999999972,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["serviço autoritativo de ligas"],
+          "fullName": "serviço autoritativo de ligas reseta somente a carreira escolhida, mantém o clube e protege a administração",
+          "status": "passed",
+          "title": "reseta somente a carreira escolhida, mantém o clube e protege a administração",
+          "duration": 391.85729999999967,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["serviço autoritativo de ligas"],
+          "fullName": "serviço autoritativo de ligas antecipa a rodada e o calendário para todos os treinadores e desloca o próximo jogo",
+          "status": "passed",
+          "title": "antecipa a rodada e o calendário para todos os treinadores e desloca o próximo jogo",
+          "duration": 367.5768000000003,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["serviço autoritativo de ligas"],
+          "fullName": "serviço autoritativo de ligas processa dias antes do horário real do jogo sem disputar a rodada antecipadamente",
+          "status": "passed",
+          "title": "processa dias antes do horário real do jogo sem disputar a rodada antecipadamente",
+          "duration": 221.20240000000013,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["serviço autoritativo de ligas"],
+          "fullName": "serviço autoritativo de ligas reconhece uma ação reenviada após reconectar sem aplicá-la novamente",
+          "status": "passed",
+          "title": "reconhece uma ação reenviada após reconectar sem aplicá-la novamente",
+          "duration": 101.29920000000038,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["serviço autoritativo de ligas"],
+          "fullName": "serviço autoritativo de ligas serializa criação concorrente e permite duas solos e uma multiplayer",
+          "status": "passed",
+          "title": "serializa criação concorrente e permite duas solos e uma multiplayer",
+          "duration": 288.47839999999997,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["serviço autoritativo de ligas"],
+          "fullName": "serviço autoritativo de ligas a maioria adianta a rodada e participantes desconectados mantêm seu clube",
+          "status": "passed",
+          "title": "a maioria adianta a rodada e participantes desconectados mantêm seu clube",
+          "duration": 288.9306999999999,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["serviço autoritativo de ligas"],
+          "fullName": "serviço autoritativo de ligas mantém estado e eventos após reiniciar o repositório local",
+          "status": "passed",
+          "title": "mantém estado e eventos após reiniciar o repositório local",
+          "duration": 181.44580000000042,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["serviço autoritativo de ligas"],
+          "fullName": "serviço autoritativo de ligas executa offline sem jogadores conectados, evita duplicação e recupera horários vencidos à noite",
+          "status": "passed",
+          "title": "executa offline sem jogadores conectados, evita duplicação e recupera horários vencidos à noite",
+          "duration": 1608.7221,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["serviço autoritativo de ligas"],
+          "fullName": "serviço autoritativo de ligas executa multiplayer sem jogadores conectados, evita duplicação e recupera horários vencidos à noite",
+          "status": "passed",
+          "title": "executa multiplayer sem jogadores conectados, evita duplicação e recupera horários vencidos à noite",
+          "duration": 1616.1606000000002,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["serviço autoritativo de ligas"],
+          "fullName": "serviço autoritativo de ligas ativa o relógio de uma carreira solo existente via snapshot, preservando o time e os resultados",
+          "status": "passed",
+          "title": "ativa o relógio de uma carreira solo existente via snapshot, preservando o time e os resultados",
+          "duration": 243.4974999999995,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": ["serviço autoritativo de ligas"],
+          "fullName": "serviço autoritativo de ligas ativa o relógio de uma carreira solo existente via tick, preservando o time e os resultados",
+          "status": "passed",
+          "title": "ativa o relógio de uma carreira solo existente via tick, preservando o time e os resultados",
+          "duration": 186.61049999999977,
+          "failureMessages": [],
+          "meta": {}
+        }
+      ],
+      "startTime": 1793383360373,
+      "endTime": 1793383366953.6106,
+      "status": "passed",
+      "message": "",
+      "name": "C:/Users/tayna/OneDrive/Área de Trabalho/football-hype/apps/server/tests/league-service.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": ["regularização local de uma temporada"],
+          "fullName": "regularização local de uma temporada recarrega uma carreira corrigida em disco sem manter a revisão antiga em memória",
+          "status": "passed",
+          "title": "recarrega uma carreira corrigida em disco sem manter a revisão antiga em memória",
+          "duration": 219.5009,
+          "failureMessages": [],
+          "meta": {}
+        }
+      ],
+      "startTime": 1793383360367,
+      "endTime": 1793383360586.501,
+      "status": "passed",
+      "message": "",
+      "name": "C:/Users/tayna/OneDrive/Área de Trabalho/football-hype/apps/server/tests/local-season-reload.test.ts"
+    }
+  ]
+}

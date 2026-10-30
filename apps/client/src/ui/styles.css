@@ -8675,6 +8675,8 @@ input.money-range:not(.plain-filter-range):disabled {
   border-radius: 50%;
   background: #d6e5ca;
   color: #315b46;
+  overflow: hidden;
+  flex-shrink: 0;
 }
 .chat-history {
   flex: 1;
@@ -19974,4 +19976,190 @@ body::-webkit-scrollbar-corner {
     flex: initial;
     max-height: 58dvh;
   }
+}
+
+.transfer-policy-panel .switch-row {
+  padding: 12px 14px;
+  border: 1px solid #c8d9c9;
+  border-radius: 12px;
+  background: linear-gradient(110deg, #e1eddf, #f7f3e7);
+  margin: 8px 0;
+  gap: 12px;
+}
+.transfer-policy-panel input[type='range'] {
+  accent-color: #138659;
+}
+.renewal-refusal {
+  padding: 20px;
+  border: 1px solid #ce7777;
+  border-left: 5px solid #ad3030;
+  border-radius: 12px;
+  background: #fff0ed;
+  color: #a02727;
+  margin-top: 16px;
+}
+
+.training-player-meters .training-overall-potential {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+/* Phone shell and neutral conversation wallpaper. */
+.modal.negotiation-chat {
+  width: min(390px, 94vw);
+  height: min(760px, 94dvh);
+  max-height: 94dvh;
+  border: 8px solid #171b19;
+  border-radius: 36px;
+  background: #e9e5df;
+  box-shadow:
+    0 0 0 2px #51554e,
+    0 0 0 4px #101310,
+    0 24px 70px #0008;
+  color: #243c32;
+}
+.negotiation-chat .chat-phone-status {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+  height: 32px;
+  padding: 7px 24px 0;
+  box-sizing: border-box;
+  background: #064d45;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  position: relative;
+}
+.chat-phone-status i {
+  position: absolute;
+  left: calc(50% - 5px);
+  top: 14px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #101716;
+  box-shadow: inset 0 0 0 3px #202b2c;
+}
+.negotiation-chat .chat-header {
+  padding: 10px 10px;
+  gap: 8px;
+}
+.negotiation-chat .chat-header strong {
+  font-size: 13px;
+}
+.negotiation-chat .chat-history {
+  background-color: #e9e5df;
+  background-image: radial-gradient(#a59c8928 1px, transparent 1px);
+  background-size: 18px 18px;
+}
+.negotiation-chat .chat-bubble.incoming {
+  color: #293c32;
+}
+.negotiation-chat .chat-bubble.outgoing {
+  color: #243e2c;
+}
+.negotiation-chat .chat-composer {
+  padding: 10px 12px;
+  color: #294337;
+}
+.chat-phone-navigation {
+  height: 20px;
+  display: grid;
+  place-items: center;
+  background: #f8f9f3;
+  flex-shrink: 0;
+}
+.chat-phone-navigation > span {
+  width: 100px;
+  height: 4px;
+  border-radius: 4px;
+  background: #273a32;
+}
+@media (max-height: 550px) {
+  .modal.negotiation-chat {
+    height: 96dvh;
+    max-height: 96dvh;
+    border-width: 5px;
+    border-radius: 24px;
+  }
+  .negotiation-chat .chat-header {
+    padding-block: 5px;
+  }
+}
+
+.chat-phone-shell {
+  position: relative;
+  flex-shrink: 0;
+  width: fit-content;
+  max-width: 100%;
+}
+.chat-phone-shell .modal.negotiation-chat {
+  margin: 0;
+}
+.chat-phone-side-key {
+  position: absolute;
+  right: -7px;
+  width: 5px;
+  border: 1px solid #101310;
+  border-radius: 0 3px 3px 0;
+  background: linear-gradient(90deg, #151b18, #626861 55%, #252b26);
+  box-shadow:
+    2px 1px 3px #0005,
+    inset 0 1px 1px #b2b8aa55;
+  pointer-events: none;
+}
+.chat-phone-side-key.volume {
+  top: 24%;
+  height: 64px;
+}
+.chat-phone-side-key.power {
+  top: 42%;
+  height: 36px;
+}
+
+.negotiation-chat-dialog {
+  border: 0 !important;
+  padding: 6px;
+  background: transparent !important;
+  box-shadow: none;
+  outline: none;
+  max-width: 100vw;
+  max-height: 100dvh;
+  overflow: visible;
+  overscroll-behavior: contain;
+}
+.negotiation-chat-dialog::backdrop {
+  background: #071f19bb;
+  backdrop-filter: blur(5px);
+}
+.negotiation-chat .chat-history {
+  overscroll-behavior: contain;
+}
+
+.negotiation-chat .chat-contact-menu {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 28px;
+  margin-right: 6px;
+  font-size: 25px;
+  line-height: 1;
+  color: #fff;
+}
+
+.offer-notification-dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #e43c42;
+  box-shadow: 0 0 0 2px #fff3;
+  margin-inline: 5px;
+  vertical-align: middle;
+  flex-shrink: 0;
 }

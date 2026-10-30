@@ -1,3 +1,4 @@
+import { PlayerModal } from '../players/player-modal';
 import { InviteDraw } from './invite-draw';
 import { GeneratedPerson } from '../../ui/person-avatar';
 import { BrandMark } from '../../ui/brand-mark';
@@ -121,6 +122,7 @@ export function Lobby() {
   );
 }
 function AuthenticatedLobby({ user }: { user: { uid: string; name: string } }) {
+  const [managing, setManaging] = useState(false);
   const stripRef = useRef<HTMLDivElement>(null);
   const [landingStart, setLandingStart] = useState(0);
   const [landingEnd, setLandingEnd] = useState(0);
@@ -281,17 +283,23 @@ function AuthenticatedLobby({ user }: { user: { uid: string; name: string } }) {
     }
   }
   async function manage(id: string, action: 'leave' | 'delete' | 'reset') {
+    if (managing) return;
+    setManaging(true);
+    setError('');
     try {
-      setConfirmation(null);
       await request(`/api/leagues/${id}/${action}`, { method: 'POST' });
       queryClient.setQueryData<Awaited<ReturnType<typeof listLeagues>>>(
         ['leagues', user.uid],
         (previous) =>
           action === 'reset' ? previous : previous?.filter((league) => league.id !== id),
       );
+      setConfirmation(null);
+      setSettingsId(null);
       void queryClient.invalidateQueries({ queryKey: ['leagues', user.uid] });
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Falha ao alterar liga');
+    } finally {
+      setManaging(false);
     }
   }
   async function logout() {
@@ -658,48 +666,52 @@ function AuthenticatedLobby({ user }: { user: { uid: string; name: string } }) {
         </section>
       )}
       {confirmation && (
-        <div className="modal-backdrop">
-          <section
-            className="panel invite-dialog career-confirm-dialog"
-            role="dialog"
-            aria-modal="true"
-            aria-label="Confirmar alteração da carreira"
-          >
-            <Icon name="shield" />
-            <h2>
-              {confirmation.action === 'reset'
-                ? 'Resetar esta carreira?'
-                : confirmation.action === 'delete'
-                  ? 'Excluir esta carreira?'
-                  : 'Abandonar esta liga?'}
-            </h2>
-            <p>
-              {confirmation.action === 'reset'
-                ? 'Todo o progresso será apagado e os clubes começarão do zero. Isso afeta todos os participantes.'
-                : confirmation.action === 'delete'
-                  ? leagues.data?.find((league) => league.id === confirmation.id)?.mode ===
-                    'multiplayer'
-                    ? 'Você sairá da liga. Outro jogador assumirá a administração, se necessário. Se ninguém restar, a liga será excluída.'
-                    : 'Esta carreira e todo o progresso serão excluídos. Você poderá escolher ou sortear outro clube.'
-                  : 'Seu clube ficará reservado para seu retorno enquanto houver outros jogadores. Se o administrador sair, um sucessor será sorteado. Sem jogadores, a liga será excluída.'}
-            </p>
-            <div className="career-confirm-actions">
-              <button
-                className="career-confirm-danger"
-                onClick={() => void manage(confirmation.id, confirmation.action)}
-              >
-                {confirmation.action === 'reset'
+        <PlayerModal
+          title="Confirmar alteração da carreira"
+          hideTitle
+          className="panel invite-dialog career-confirm-dialog"
+          onClose={() => {
+            if (!managing) setConfirmation(null);
+          }}
+        >
+          <Icon name="shield" />
+          <h2>
+            {confirmation.action === 'reset'
+              ? 'Resetar esta carreira?'
+              : confirmation.action === 'delete'
+                ? 'Excluir esta carreira?'
+                : 'Abandonar esta liga?'}
+          </h2>
+          <p>
+            {confirmation.action === 'reset'
+              ? 'Todo o progresso será apagado e os clubes começarão do zero. Isso afeta todos os participantes.'
+              : confirmation.action === 'delete'
+                ? leagues.data?.find((league) => league.id === confirmation.id)?.mode ===
+                  'multiplayer'
+                  ? 'Você sairá da liga. Outro jogador assumirá a administração, se necessário. Se ninguém restar, a liga será excluída.'
+                  : 'Esta carreira e todo o progresso serão excluídos. Você poderá escolher ou sortear outro clube.'
+                : 'Seu clube ficará reservado para seu retorno enquanto houver outros jogadores. Se o administrador sair, um sucessor será sorteado. Sem jogadores, a liga será excluída.'}
+          </p>
+          <div className="career-confirm-actions">
+            <button
+              className="career-confirm-danger"
+              disabled={managing}
+              onClick={() => void manage(confirmation.id, confirmation.action)}
+            >
+              {managing
+                ? 'Aguarde…'
+                : confirmation.action === 'reset'
                   ? 'Sim, resetar carreira'
                   : confirmation.action === 'delete'
                     ? 'Sim, excluir carreira'
                     : 'Sim, abandonar liga'}
-              </button>
-              <button className="secondary" onClick={() => setConfirmation(null)}>
-                Cancelar
-              </button>
-            </div>
-          </section>
-        </div>
+            </button>
+            <button className="secondary" disabled={managing} onClick={() => setConfirmation(null)}>
+              Cancelar
+            </button>
+          </div>
+          {error && <p role="alert">{error}</p>}
+        </PlayerModal>
       )}
       {joining && invitation && (
         <section className="creation-workspace invite-team-workspace">

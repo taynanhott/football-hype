@@ -1,0 +1,53 @@
+{
+  "environment": "Cloudflare Workers Paid, isolated Durable Object with real SQLite; synthetic identities; virtual 24h",
+  "date": "2026-10-30T15:38:31.041Z",
+  "players": 10,
+  "datasetPlayers": 14012,
+  "calendarAlarms": 36,
+  "matches": 113,
+  "marketOperations": 1000,
+  "clubAdjustments": 480,
+  "httpBenchmarkCalls": 111,
+  "initialUsage": {
+    "sqlStatements": 397,
+    "rowsRead": 3,
+    "rowsWritten": 675,
+    "sentMessages": 0,
+    "sentBytes": 0,
+    "fullSnapshots": 0,
+    "deltaSnapshots": 0,
+    "alarmWrites": 0
+  },
+  "calendarUsage": {
+    "sqlStatements": 11327,
+    "rowsRead": 17719,
+    "rowsWritten": 10606,
+    "sentMessages": 0,
+    "sentBytes": 0,
+    "fullSnapshots": 0,
+    "deltaSnapshots": 0,
+    "alarmWrites": 0
+  },
+  "totalUsage": {
+    "sqlStatements": 49065,
+    "rowsRead": 280059,
+    "rowsWritten": 21483,
+    "sentMessages": 0,
+    "sentBytes": 0,
+    "fullSnapshots": 0,
+    "deltaSnapshots": 0,
+    "alarmWrites": 0
+  },
+  "finalRevision": 1516,
+  "serverElapsedMs": {
+    "max": 292,
+    "sum": 292
+  },
+  "comparison": {
+    "formerPresenceMessages": 28800,
+    "formerCalendarPolling": 1440,
+    "currentPresenceHandlerInvocations": 0,
+    "currentCalendarAlarms": 36
+  },
+  "limitations": "Synthetic load in isolated Cloudflare runtime. Not a 24h observation of production users or a billing invoice. HTTP batches amortize test overhead; actual game uses WebSocket. Auto-response ping billing depends on Cloudflare rules."
+}

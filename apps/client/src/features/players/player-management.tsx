@@ -43,7 +43,7 @@ export function PlayerManagement({
   const salaryMaximum = club ? financialLimits(state, club).salary + player.salary.cents : 0;
   const salaryCents = Math.min(salaryMaximum, ceilMoney(Number(salary) * 100, MONEY_STEPS.salary));
   return (
-    <section className="player-management">
+    <section className="player-management transfer-policy-panel">
       <p className={days <= 180 ? 'negative' : ''}>
         Contrato: {days <= 0 ? 'Encerrado' : days + ' dias restantes'} ·{' '}
         {new Date(end).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })}
@@ -171,7 +171,12 @@ export function PlayerManagement({
           </label>
         </>
       )}
-      {section === 'renew' && (
+      {section === 'renew' && terms.reason && (
+        <div className="renewal-refusal" role="status">
+          <strong>{terms.reason}</strong>
+        </div>
+      )}
+      {section === 'renew' && !terms.reason && (
         <div>
           <p>
             {terms.reason ||

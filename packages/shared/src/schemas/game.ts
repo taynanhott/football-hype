@@ -160,6 +160,7 @@ export const participantSchema = z.strictObject({
   coach: coachProfileSchema.optional(),
 });
 export const negotiationSchema = z.strictObject({
+  reviewAt: z.number().optional(),
   expiresAt: z.number().optional(),
   blockedUntil: z.number().optional(),
   lowAttempts: z.number().optional(),
@@ -175,7 +176,7 @@ export const negotiationSchema = z.strictObject({
   fee: gameAmountSchema,
   offeredSalary: salaryAmountSchema.nullable(),
   interest: z.number().min(0).max(100),
-  status: z.enum(['salary', 'completed', 'rejected']),
+  status: z.enum(['review', 'salary', 'completed', 'rejected']),
 });
 export const cupNodeSchema = z.strictObject({
   neutral: z.boolean().optional(),
@@ -464,7 +465,7 @@ export const gameSnapshotUpdateSchema = gameSnapshotSchema.omit({ state: true })
   revision: countSchema,
   patch: gameEventSchema.shape.patch,
 });
-export const commandSchema = z.discriminatedUnion('type', [
+const individualCommandSchema = z.discriminatedUnion('type', [
   z.strictObject({
     type: z.literal('customize'),
     stadiumColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
@@ -565,7 +566,22 @@ export const commandSchema = z.discriminatedUnion('type', [
   }),
   z.strictObject({ type: z.literal('new-season') }),
 ]);
+const clubSettingSchema = z.discriminatedUnion('type', [
+  individualCommandSchema.options[0]!, // appearance
+  individualCommandSchema.options[2]!, // financial plan
+  individualCommandSchema.options[5]!, // default ticket price
+  individualCommandSchema.options[6]!, // fixture ticket price
+  individualCommandSchema.options[7]!, // lineup
+]);
+export const commandSchema = z.discriminatedUnion('type', [
+  ...individualCommandSchema.options,
+  z.strictObject({
+    type: z.literal('club-settings'),
+    commands: z.array(clubSettingSchema).min(1).max(50),
+  }),
+]);
 export const connectOptionsSchema = z.strictObject({
+  localTables: z.boolean().optional(),
   token: z.string().optional(),
   appCheckToken: z.string().optional(),
   guestId: z.string().optional(),

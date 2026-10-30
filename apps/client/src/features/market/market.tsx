@@ -37,6 +37,19 @@ const SORT_OPTIONS: Record<string, string> = {
   name: 'Nome · A–Z',
 };
 export function Market({ snapshot, club, center, stadium }: ViewProps) {
+  const reviewingOffers = snapshot.state.negotiations.filter(
+    (n) => n.buyerId === club.id && n.status === 'review',
+  );
+  const higherOffer = (offer: (typeof reviewingOffers)[number]) =>
+    Math.max(
+      0,
+      ...snapshot.state.negotiations
+        .filter(
+          (n) => n.playerId === offer.playerId && n.buyerId !== club.id && n.status === 'review',
+        )
+        .map((n) => n.fee),
+    );
+  const hasHigherOffer = reviewingOffers.some((offer) => higherOffer(offer) > offer.fee);
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = usePlayerPresentation();
   const [detailPlayer, setDetailPlayer] = useState<PlayerSnapshot | null>(null);
@@ -261,28 +274,45 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
       </div>
       <section className="market-controls panel" aria-label="Filtros de transferências">
         <div className="segmented market-tabs" role="group" aria-label="Categorias de jogadores">
-          {['Todos', 'A', 'B', 'C', 'Exterior', 'Livres', 'Propostas'].map((value) => (
-            <button
-              key={value}
-              className={tab === value ? 'selected' : ''}
-              aria-pressed={tab === value}
-              onClick={() => {
-                setTab(value);
-                setVisibleCount(48);
-              }}
-            >
-              {['A', 'B', 'C'].includes(value) ? 'Série ' + value : value}
-              {value === 'Propostas' && (
-                <span className="transfer-count">
-                  {snapshot.state.management?.offers?.filter(
-                    (offer) => offer.sellerId === club.id && offer.status === 'pending',
-                  ).length ?? 0}
-                </span>
-              )}
-            </button>
-          ))}
+          {['Todos', 'A', 'B', 'C', 'Exterior', 'Livres', 'Propostas', 'Em análise'].map(
+            (value) => (
+              <button
+                key={value}
+                className={tab === value ? 'selected' : ''}
+                aria-pressed={tab === value}
+                onClick={() => {
+                  setTab(value);
+                  setVisibleCount(48);
+                }}
+              >
+                {['A', 'B', 'C'].includes(value) ? 'Série ' + value : value}
+                {value === 'Em análise' && hasHigherOffer && (
+                  <span
+                    className="offer-notification-dot"
+                    aria-label="Há uma oferta concorrente maior"
+                  />
+                )}
+                {value === 'Em análise' && (
+                  <span className="transfer-count">
+                    {
+                      snapshot.state.negotiations.filter(
+                        (n) => n.buyerId === club.id && n.status === 'review',
+                      ).length
+                    }
+                  </span>
+                )}
+                {value === 'Propostas' && (
+                  <span className="transfer-count">
+                    {snapshot.state.management?.offers?.filter(
+                      (offer) => offer.sellerId === club.id && offer.status === 'pending',
+                    ).length ?? 0}
+                  </span>
+                )}
+              </button>
+            ),
+          )}
         </div>
-        {tab !== 'Propostas' && (
+        {tab !== 'Propostas' && tab !== 'Em análise' && (
           <div className="market-focus" role="group" aria-label="Perfil dos jogadores">
             <span>Refinar observação</span>
             <button
@@ -307,7 +337,7 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
             </button>
           </div>
         )}
-        {tab !== 'Propostas' && (
+        {tab !== 'Propostas' && tab !== 'Em análise' && (
           <div className="transfer-searchbar">
             <div
               className="market-view-toggle"
@@ -362,7 +392,91 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
           </div>
         )}
       </section>
-      {tab === 'Propostas' ? (
+      {tab === 'Em análise' ? (
+        <section className="incoming-offers" aria-label="Propostas enviadas em análise">
+          <div className="incoming-offers-grid">
+            {snapshot.state.negotiations
+              .filter((n) => n.buyerId === club.id && n.status === 'review')
+              .sort((a, b) => (a.reviewAt ?? 0) - (b.reviewAt ?? 0))
+              .map((offer) => {
+                const player = snapshot.state.players.byId[offer.playerId];
+                const seller = snapshot.state.clubs.byId[offer.sellerId ?? ''];
+                return (
+                  <article className="incoming-offer" key={offer.id}>
+                    <header className="offer-buyer">
+                      <Icon name="handshake" size={26} />
+                      <strong>{seller?.name ?? 'Clube vendedor'}</strong>
+                      <span className="offer-status">
+                        {higherOffer(offer) > offer.fee && (
+                          <span className="offer-notification-dot" aria-label="Oferta superada" />
+                        )}
+                        Em análise
+                      </span>
+                    </header>
+                    <div className="offer-body">
+                      {player && (
+                        <PlayerCard
+                          player={player}
+                          clubName={seller?.name ?? ''}
+                          kit={clubKit(seller)}
+                        />
+                      )}
+                      <div className="incoming-offer-details">
+                        <h3>{player?.name ?? 'Jogador'}</h3>
+                        <div className="offer-amount">
+                          <span>Sua oferta</span>
+                          <strong>{currency(offer.fee)}</strong>
+                          {higherOffer(offer) > offer.fee && (
+                            <p className="negative">
+                              Oferta concorrente: <b>{currency(higherOffer(offer))}</b>
+                            </p>
+                          )}
+                        </div>
+                        <p>
+                          Decisão:{' '}
+                          {offer.reviewAt
+                            ? new Date(offer.reviewAt).toLocaleDateString('pt-BR', {
+                                timeZone: 'America/Sao_Paulo',
+                              })
+                            : 'Aguardando análise'}
+                        </p>
+                        <small>
+                          O clube avalia as propostas por uma semana do jogo e escolhe a melhor
+                          oferta.
+                        </small>
+                        <button
+                          className="negotiate-button"
+                          onClick={() => {
+                            if (player) {
+                              choose(player);
+                              setFee(String(offer.fee / 100));
+                            }
+                          }}
+                        >
+                          Aumentar proposta
+                        </button>
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
+          </div>
+          {!snapshot.state.negotiations.some(
+            (n) => n.buyerId === club.id && n.status === 'review',
+          ) && (
+            <div className="offers-empty-state">
+              <Icon name="handshake" size={30} />
+              <div>
+                <strong>Nenhuma proposta em análise</strong>
+                <p>
+                  As ofertas que você enviar aos clubes aparecerão aqui durante a semana de
+                  avaliação.
+                </p>
+              </div>
+            </div>
+          )}
+        </section>
+      ) : tab === 'Propostas' ? (
         <IncomingOffers snapshot={snapshot} club={club} center={center} stadium={stadium} />
       ) : (
         <>
@@ -650,6 +764,15 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
                     {lastReply.closeAttempts ?? 0}/3
                   </p>
                 )}
+                {lastReply?.status === 'review' && (
+                  <p className="offer-status" role="status">
+                    Proposta em análise até{' '}
+                    {new Date(lastReply.reviewAt ?? 0).toLocaleDateString('pt-BR', {
+                      timeZone: 'America/Sao_Paulo',
+                    })}
+                    . O clube escolherá a melhor oferta antes de liberar a conversa com o jogador.
+                  </p>
+                )}
                 {salaryStage && negotiation?.status !== 'completed' && negotiation?.expiresAt && (
                   <p className="negotiation-counter">
                     Acordo com o clube válido por mais{' '}
@@ -731,6 +854,7 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
                         className="primary full"
                         disabled={
                           busy ||
+                          lastReply?.status === 'review' ||
                           (salaryStage && demandedSalary > salaryMaximum) ||
                           (!salaryStage &&
                             (blockedUntil > snapshot.state.lastProcessedAt ||

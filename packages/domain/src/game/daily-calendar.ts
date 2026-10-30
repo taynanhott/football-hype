@@ -84,6 +84,10 @@ function advanceGameDaysInternal(state: WorldState, target: number): WorldState 
       for (const id of state.clubs.byId[center.clubId]?.playerIds ?? []) {
         const player = players[id];
         if (!player) continue;
+        if (routine === 'rest') {
+          players[id] = { ...player, fitness: 100 };
+          continue;
+        }
         const officialDay = ops.lastOfficialTrainingAt?.[id];
         const setting =
           officialDay !== undefined && gameDayStart(officialDay) === day
@@ -99,8 +103,8 @@ function advanceGameDaysInternal(state: WorldState, target: number): WorldState 
                 ? setting === 'intense'
                   ? 1
                   : setting === 'moderate'
-                    ? -0.5
-                    : -1.5
+                    ? -2.5
+                    : -12
                 : -2),
           ),
         );
@@ -118,7 +122,15 @@ function advanceGameDaysInternal(state: WorldState, target: number): WorldState 
               Math.floor(
                 (((GAMEPLAY.fitnessRecovery + center.levels.fitness * GAMEPLAY.recoveryPerLevel) *
                   recovery *
-                  (routine === 'training' ? 0.2 : 1)) /
+                  (routine === 'training'
+                    ? setting === 'light'
+                      ? 1
+                      : setting === 'moderate'
+                        ? 0.5
+                        : player.age <= 23
+                          ? 0.2
+                          : 0
+                    : 1)) /
                   ageFatigue) *
                   (ops.fitness.includes(id) ? 1.5 : 1),
               ),
@@ -130,11 +142,20 @@ function advanceGameDaysInternal(state: WorldState, target: number): WorldState 
           medicalProgress[id] = progress % 1;
         } else if (routine === 'training') {
           const growth =
-            (development[id] ?? 0) + 0.006 * center.levels.coaching * load * (individual ? 1.5 : 1);
+            (development[id] ?? 0) +
+            0.003 *
+              center.levels.coaching *
+              load *
+              (individual ? 1.5 : 1) *
+              Math.max(0.15, (34 - player.age) / 16);
           if (player.age <= 33 && player.overall < player.potential)
             history.growth += Math.min(
               player.potential - player.overall,
-              0.006 * center.levels.coaching * load * (individual ? 1.5 : 1),
+              0.003 *
+                center.levels.coaching *
+                load *
+                (individual ? 1.5 : 1) *
+                Math.max(0.15, (34 - player.age) / 16),
             );
           next = {
             ...next,
@@ -142,10 +163,7 @@ function advanceGameDaysInternal(state: WorldState, target: number): WorldState 
               player.overall,
               Math.min(player.potential, player.overall + Math.floor(growth)),
             ),
-            fitness: Math.max(
-              0,
-              next.fitness - Math.ceil(load * 3 * ageFatigue * (1 + (effort[id] ?? 0) / 12)),
-            ),
+            fitness: Math.max(0, next.fitness),
           };
           development[id] = growth % 1;
           if (
@@ -227,6 +245,34 @@ function advanceGameDaysInternal(state: WorldState, target: number): WorldState 
 }
 
 function finishIndividualCycles(state: WorldState, at: number): WorldState {
+  const due = new Set(
+    state.negotiations
+      .filter((n) => n.status === 'review' && (n.reviewAt ?? Infinity) <= at)
+      .map((n) => n.playerId),
+  );
+  for (const playerId of due) {
+    const offers = state.negotiations.filter(
+      (n) => n.playerId === playerId && n.status === 'review',
+    );
+    const winner = [...offers].sort((a, b) => b.fee - a.fee)[0]!;
+    state = {
+      ...state,
+      negotiations: state.negotiations.map((n) =>
+        offers.some((o) => o.id === n.id)
+          ? {
+              ...n,
+              status: n.id === winner.id ? ('salary' as const) : ('rejected' as const),
+              expiresAt: (winner.reviewAt ?? at) + 3 * GAME_DAY_MS,
+              reply:
+                n.id === winner.id
+                  ? 'Melhor oferta aceita. Negociação com o jogador liberada.'
+                  : 'O clube escolheu uma oferta melhor.',
+            }
+          : n,
+      ),
+    };
+  }
+
   const expired = Object.values(state.centers.byId).filter((center) =>
     center.operations?.individual.some((plan) => plan.endsAt <= at),
   );

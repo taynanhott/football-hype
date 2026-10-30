@@ -241,7 +241,7 @@ export function temporaryModifiers(state: WorldState, player: PlayerSnapshot) {
     state.centers.byId[state.clubs.byId[clubId]?.trainingCenterId ?? '']?.operations?.effort?.[
       player.id
     ] ?? 0;
-  if (effort >= 3)
+  if (effort >= 5)
     effects.push({
       label: 'Sobrecarga de treinos',
       value: -Math.min(5, Math.floor(effort / 2)),

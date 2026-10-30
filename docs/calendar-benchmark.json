@@ -1,0 +1,26 @@
+{
+  "scope": "Local SQLite, production player dataset, virtual 24h. No Cloudflare CPU or billable usage claim.",
+  "players": 10,
+  "datasetPlayers": 14012,
+  "calendarAlarms": 36,
+  "matches": 113,
+  "rowsWritten": 74461,
+  "sqlStatements": 105328,
+  "calendarRowsWritten": 10115,
+  "calendarSqlStatements": 11329,
+  "actionElapsedMs": 35230,
+  "elapsedMs": 62722,
+  "maxTickMs": 2063,
+  "finalRevision": 1516,
+  "formerMinutePolling": 1440,
+  "alarmReductionPercent": 97.5,
+  "dailyScenario": {
+    "httpConnections": 270,
+    "marketMessages": 1000,
+    "clubSettingBatches": 480,
+    "calendarAlarms": 36,
+    "totalApplicationInvocations": 1786,
+    "formerApplicationInvocations": 31990,
+    "reductionPercent": 94.42
+  }
+}

@@ -11,6 +11,7 @@ import {
 } from '@football/shared';
 import { credentials, serverUrl } from '../features/leagues/api';
 import { ActionQueue, type PendingAction } from './action-queue';
+import { localTables } from './local-tables';
 
 const pendingActionSchema = z.object({
   id: z.uuid(),
@@ -66,6 +67,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       const options = {
         ...authOptions,
         leagueId,
+        ...(import.meta.env.VITE_GAME_TRANSPORT === 'cloudflare' ? { localTables: true } : {}),
         ...(clubId ? { clubId } : {}),
       };
       const room: GameRoom =
@@ -121,6 +123,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
             /* The active in-memory queue can still finish if storage is full. */
           }
         },
+        import.meta.env.VITE_GAME_TRANSPORT === 'cloudflare' ? 30000 : 0,
       );
       actions = queue;
       const accept = (snapshot: GameSnapshot) => {
@@ -129,6 +132,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
           (confirmed && snapshot.state.revision < confirmed.state.revision)
         )
           return;
+        if (import.meta.env.VITE_GAME_TRANSPORT === 'cloudflare')
+          snapshot = { ...snapshot, tables: localTables(snapshot.state) };
         confirmed = snapshot;
         set({ clockOffset: (snapshot.serverTime ?? Date.now()) - Date.now() });
         if (queue.accept(snapshot)) set({ error: null, connected: true });
@@ -199,9 +204,17 @@ export const useGameStore = create<GameStore>((set, get) => ({
           queue.stop('A conexão foi interrompida. Reconecte à liga.');
         }
       });
-      const heartbeat = setInterval(() => room.send('heartbeat'), 30000);
+      const heartbeat =
+        import.meta.env.VITE_GAME_TRANSPORT === 'cloudflare'
+          ? undefined
+          : setInterval(() => room.send('heartbeat'), 30000);
+      const flushDrafts = () => {
+        if (document.visibilityState === 'hidden') queue.flush();
+      };
+      document.addEventListener('visibilitychange', flushDrafts);
       room.onLeave(() => {
         clearInterval(heartbeat);
+        document.removeEventListener('visibilitychange', flushDrafts);
         if (get().room === room) {
           clearTimeout(pending);
           queue.stop();
@@ -209,7 +222,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
           set({ connected: false, busy: false, snapshot: null, room: null, pendingActions: 0 });
         }
       });
-      room.send('sync');
+      if (import.meta.env.VITE_GAME_TRANSPORT !== 'cloudflare') room.send('sync');
       location.hash = '/dashboard';
       localStorage.setItem('football.lastLeague', leagueId);
     } catch (error) {

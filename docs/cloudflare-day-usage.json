@@ -1,0 +1,49 @@
+{
+  "data": {
+    "viewer": {
+      "accounts": [
+        {
+          "durableObjectsInvocationsAdaptiveGroups": [
+            {
+              "dimensions": {
+                "namespaceId": "76dfc2fa3b664621bc9e28ff70900669"
+              },
+              "sum": {
+                "requests": 7
+              }
+            },
+            {
+              "dimensions": {
+                "namespaceId": "424580380b9c43b686fed965aac124ec"
+              },
+              "sum": {
+                "requests": 500
+              }
+            }
+          ],
+          "workersInvocationsAdaptive": [
+            {
+              "dimensions": {
+                "scriptName": "__unknown__"
+              },
+              "sum": {
+                "errors": 2,
+                "requests": 176
+              }
+            },
+            {
+              "dimensions": {
+                "scriptName": "football-hype-game"
+              },
+              "sum": {
+                "errors": 4,
+                "requests": 42
+              }
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "errors": null
+}

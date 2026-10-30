@@ -37,7 +37,7 @@ import {
 export type CommandContext = {
   state: WorldState;
   club: ClubSnapshot;
-  command: GameCommand;
+  command: Exclude<GameCommand, { type: 'club-settings' }>;
   userId: string;
   now: number;
   eventId: string;
@@ -441,6 +441,10 @@ function handleOffer({
     .reverse()
     .find((n) => n.playerId === player.id && n.buyerId === club.id);
   const clock = state.lastProcessedAt;
+  if (previous?.status === 'review' && command.fee <= previous.fee)
+    return failure(
+      domainError('VALIDATION_ERROR', 'Para atualizar a proposta, ofereça um valor maior.'),
+    );
   if ((previous?.blockedUntil ?? 0) > clock)
     return failure(
       domainError('VALIDATION_ERROR', 'Conversas suspensas por uma semana no calendário do jogo.'),
@@ -513,14 +517,33 @@ function handleOffer({
     fee: command.fee,
     offeredSalary: null,
     interest,
-    status: feeAcceptedState(),
-    expiresAt: clock + 3 * 86400000,
+    status: player.clubId ? 'review' : feeAcceptedState(),
+    ...(player.clubId
+      ? {
+          reviewAt:
+            state.negotiations.find((n) => n.playerId === player.id && n.status === 'review')
+              ?.reviewAt ?? clock + 7 * 86400000,
+        }
+      : {}),
+    expiresAt: clock + (player.clubId ? 10 : 3) * 86400000,
     minimumSalary: context.minimumSalary,
-    reply: 'Gostamos da oferta, vamos marcar um horário com nosso jogador.',
+    reply: player.clubId
+      ? 'Proposta em análise por uma semana do calendário do jogo. A melhor oferta libera a negociação salarial.'
+      : 'Vamos conversar com o jogador.',
   };
-  next = { ...state, negotiations: [...state.negotiations, negotiation] };
+  next = {
+    ...state,
+    negotiations: [
+      ...state.negotiations.map((n) =>
+        n.playerId === player.id && n.buyerId === club.id && n.status === 'review'
+          ? { ...n, status: 'rejected' as const, reply: 'Substituída por uma oferta maior.' }
+          : n,
+      ),
+      negotiation,
+    ],
+  };
   type = 'transfer.offered';
-  message = `${player.name} aceitou conversar sobre salário`;
+  message = negotiation.reply!;
   return success({ next, type, message, amount });
 }
 

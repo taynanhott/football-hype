@@ -173,7 +173,13 @@ export class LeagueService {
   }
   async join(leagueId: string, identity: Identity, _clubId?: string): Promise<void> {
     void _clubId;
-    await this.touch(leagueId, identity.userId);
+    const saved = await this.expire(leagueId);
+    if (
+      !saved ||
+      saved.state.deletedAt ||
+      !saved.state.participants.some((p) => p.userId === identity.userId)
+    )
+      throw new Error('Acesso negado. Entre na liga com um convite');
   }
   private async commit(
     previous: import('@football/shared').WorldState,
@@ -189,7 +195,7 @@ export class LeagueService {
       message,
       amount: 0,
     });
-    if (!event.ok) throw new Error(event.error.message);
+    if (!event.ok) throw new Error(event.error.message, { cause: event.error.issues });
     const applied = applyEvent(previous, event.value);
     if (!applied.ok) throw new Error(applied.error.message);
     await this.repository.append(previous.id, previous.revision, applied.value, event.value);
@@ -578,7 +584,12 @@ export class LeagueService {
       );
     });
   }
-  async snapshot(id: string, userId: string, roomId = ''): Promise<GameSnapshot> {
+  async snapshot(
+    id: string,
+    userId: string,
+    roomId = '',
+    deriveTables = true,
+  ): Promise<GameSnapshot> {
     let saved = await this.expire(id);
     if (
       !saved ||
@@ -676,7 +687,7 @@ export class LeagueService {
     }
     const state = saved.state;
     const tables = Object.fromEntries(
-      COMPETITIONS.filter((rule) => rule.format === 'league').map((rule) => [
+      COMPETITIONS.filter((rule) => deriveTables && rule.format === 'league').map((rule) => [
         rule.id,
         [
           ...standings(
@@ -690,7 +701,9 @@ export class LeagueService {
         ],
       ]),
     );
-    for (const rule of COMPETITIONS.filter((item) => item.groupSize || item.id === 'serie-c')) {
+    for (const rule of COMPETITIONS.filter(
+      (item) => deriveTables && (item.groupSize || item.id === 'serie-c'),
+    )) {
       for (const group of cupGroupTables(state, rule.id))
         tables[`${rule.id}:group:${group.group}`] = [...group.table];
     }
