@@ -876,6 +876,7 @@ export function generateIncomingOffers(state: WorldState): WorldState {
           fee,
           salary,
           status: 'pending',
+          offeredAt: state.lastProcessedAt,
         });
         break;
       }

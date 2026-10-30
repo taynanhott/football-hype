@@ -1,3 +1,5 @@
+import { PlayerModal } from '../players/player-modal';
+import { TransferNews } from './transfer-news';
 import { usePlayerPresentation } from '../../ui/use-player-presentation';
 import { Select, Option } from '../../ui/select';
 import { positionLabel } from '../../ui/position-label';
@@ -109,6 +111,7 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
     localStorage.setItem(favoritesKey, JSON.stringify(next));
   }
 
+  const [withdrawPlayerId, setWithdrawPlayerId] = useState<string | null>(null);
   const [selected, setSelected] = useState<PlayerSnapshot | null>(null);
   const [fee, setFee] = useState('');
   const [salary, setSalary] = useState('');
@@ -265,6 +268,39 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
   );
   return (
     <div className="transfer-hub">
+      <TransferNews state={snapshot.state} />
+      {withdrawPlayerId && (
+        <PlayerModal
+          title="Retirar proposta?"
+          className="withdraw-offer-confirm"
+          onClose={() => setWithdrawPlayerId(null)}
+        >
+          <p>
+            Deseja retirar sua oferta por{' '}
+            <strong>{snapshot.state.players.byId[withdrawPlayerId]?.name ?? 'este jogador'}</strong>
+            ?
+          </p>
+          <p>
+            Você ficará impedido de fazer uma nova proposta por esse jogador durante{' '}
+            <strong>7 dias do calendário do jogo</strong>.
+          </p>
+          <div className="review-offer-actions">
+            <button className="secondary" onClick={() => setWithdrawPlayerId(null)}>
+              Manter oferta
+            </button>
+            <button
+              className="withdraw-offer-button"
+              disabled={busy}
+              onClick={() => {
+                send({ type: 'offer', playerId: withdrawPlayerId, fee: 0, withdraw: true });
+                setWithdrawPlayerId(null);
+              }}
+            >
+              Sim, retirar oferta
+            </button>
+          </div>
+        </PlayerModal>
+      )}
       <div className="page-heading transfer-hero">
         <div className="transfer-wallet">
           <span>Disponível para contratar</span>
@@ -412,6 +448,17 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
                         )}
                         Em análise
                       </span>
+                      <span className="offer-review-days">
+                        {Math.max(
+                          0,
+                          Math.ceil(
+                            ((offer.reviewAt ?? snapshot.state.lastProcessedAt) -
+                              snapshot.state.lastProcessedAt) /
+                              86400000,
+                          ),
+                        )}{' '}
+                        dias restantes
+                      </span>
                     </header>
                     <div className="offer-body">
                       {player && (
@@ -440,21 +487,26 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
                               })
                             : 'Aguardando análise'}
                         </p>
-                        <small>
-                          O clube avalia as propostas por uma semana do jogo e escolhe a melhor
-                          oferta.
-                        </small>
-                        <button
-                          className="negotiate-button"
-                          onClick={() => {
-                            if (player) {
-                              choose(player);
-                              setFee(String(offer.fee / 100));
-                            }
-                          }}
-                        >
-                          Aumentar proposta
-                        </button>
+                        <div className="review-offer-actions">
+                          <button
+                            className="negotiate-button"
+                            onClick={() => {
+                              if (player) {
+                                choose(player);
+                                setFee(String(offer.fee / 100));
+                              }
+                            }}
+                          >
+                            Aumentar proposta
+                          </button>
+                          <button
+                            className="withdraw-offer-button"
+                            disabled={busy}
+                            onClick={() => setWithdrawPlayerId(offer.playerId)}
+                          >
+                            Retirar oferta
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </article>

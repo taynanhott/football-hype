@@ -441,14 +441,64 @@ function handleOffer({
     .reverse()
     .find((n) => n.playerId === player.id && n.buyerId === club.id);
   const clock = state.lastProcessedAt;
-  if (previous?.status === 'review' && command.fee <= previous.fee)
-    return failure(
-      domainError('VALIDATION_ERROR', 'Para atualizar a proposta, ofereça um valor maior.'),
-    );
   if ((previous?.blockedUntil ?? 0) > clock)
     return failure(
       domainError('VALIDATION_ERROR', 'Conversas suspensas por uma semana no calendário do jogo.'),
     );
+  const activeReview = state.negotiations.find(
+    (n) => n.playerId === player.id && n.buyerId === club.id && n.status === 'review',
+  );
+  const competing = Math.max(
+    0,
+    ...state.negotiations
+      .filter((n) => n.playerId === player.id && n.buyerId !== club.id && n.status === 'review')
+      .map((n) => n.fee),
+  );
+  const requiredFee = Math.max(
+    minimum,
+    previous?.minimumFee ?? 0,
+    activeReview?.fee ?? 0,
+    competing,
+  );
+  if (command.withdraw || ((activeReview || previous?.minimumFee) && command.fee < requiredFee)) {
+    if (command.withdraw && !activeReview)
+      return failure(domainError('VALIDATION_ERROR', 'Não há proposta em análise para retirar.'));
+    const reply = command.withdraw
+      ? 'Proposta retirada. Voltamos a conversar em uma semana.'
+      : 'Não vamos aceitar esse valor, o mínimo que aceitamos é R$ ' +
+        (requiredFee / 100).toLocaleString('pt-BR') +
+        '. Conversas suspensas por uma semana.';
+    const rejected: Negotiation = {
+      id: eventId,
+      buyerId: club.id,
+      playerId: player.id,
+      ...(player.clubId ? { sellerId: player.clubId } : {}),
+      fee: command.fee,
+      offeredSalary: null,
+      offeredAt: clock,
+      interest,
+      status: 'rejected',
+      revised: Boolean(activeReview),
+      withdrawn: Boolean(command.withdraw),
+      minimumFee: requiredFee,
+      blockedUntil: clock + 7 * 86400000,
+      reply,
+    };
+    return success({
+      next: {
+        ...state,
+        negotiations: [
+          ...state.negotiations.map((n) =>
+            n.id === activeReview?.id ? { ...n, status: 'rejected' as const } : n,
+          ),
+          rejected,
+        ],
+      },
+      type: 'transfer.offered',
+      message: reply,
+      amount: 0,
+    });
+  }
   if (context.blocked)
     return failure(domainError('VALIDATION_ERROR', 'O clube não tem interesse em negociar'));
   if (command.fee > financialLimits(state, club).transfer)
@@ -494,6 +544,7 @@ function handleOffer({
       ...(player.clubId ? { sellerId: player.clubId } : {}),
       fee: command.fee,
       offeredSalary: null,
+      offeredAt: clock,
       interest,
       status: 'rejected',
       lowAttempts,
@@ -516,7 +567,10 @@ function handleOffer({
     playerId: player.id,
     fee: command.fee,
     offeredSalary: null,
+    offeredAt: clock,
     interest,
+    revised: Boolean(activeReview),
+    minimumFee: requiredFee,
     status: player.clubId ? 'review' : feeAcceptedState(),
     ...(player.clubId
       ? {
@@ -527,16 +581,18 @@ function handleOffer({
       : {}),
     expiresAt: clock + (player.clubId ? 10 : 3) * 86400000,
     minimumSalary: context.minimumSalary,
-    reply: player.clubId
-      ? 'Proposta em análise por uma semana do calendário do jogo. A melhor oferta libera a negociação salarial.'
-      : 'Vamos conversar com o jogador.',
+    reply: activeReview
+      ? 'Aceito a nova oferta, vamos analisar.'
+      : player.clubId
+        ? 'Gostamos da sua oferta. Vou conversar com a diretoria e o financeiro antes de dar uma resposta. Em uma semana te retorno; se acertarmos, você pode conversar com o jogador.'
+        : 'Vamos conversar com o jogador.',
   };
   next = {
     ...state,
     negotiations: [
       ...state.negotiations.map((n) =>
         n.playerId === player.id && n.buyerId === club.id && n.status === 'review'
-          ? { ...n, status: 'rejected' as const, reply: 'Substituída por uma oferta maior.' }
+          ? { ...n, status: 'rejected' as const }
           : n,
       ),
       negotiation,

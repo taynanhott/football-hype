@@ -160,7 +160,11 @@ export const participantSchema = z.strictObject({
   coach: coachProfileSchema.optional(),
 });
 export const negotiationSchema = z.strictObject({
+  offeredAt: z.number().optional(),
   reviewAt: z.number().optional(),
+  revised: z.boolean().optional(),
+  minimumFee: z.number().optional(),
+  withdrawn: z.boolean().optional(),
   expiresAt: z.number().optional(),
   blockedUntil: z.number().optional(),
   lowAttempts: z.number().optional(),
@@ -356,6 +360,7 @@ export const worldStateSchema = z.strictObject({
             sellerId: entityIdSchema,
             fee: gameAmountSchema,
             salary: salaryAmountSchema,
+            offeredAt: z.number().optional(),
             status: z.enum(['pending', 'accepted', 'rejected']),
           }),
         )
@@ -529,7 +534,12 @@ const individualCommandSchema = z.discriminatedUnion('type', [
       'marketing',
     ]),
   }),
-  z.strictObject({ type: z.literal('offer'), playerId: entityIdSchema, fee: gameAmountSchema }),
+  z.strictObject({
+    type: z.literal('offer'),
+    playerId: entityIdSchema,
+    fee: gameAmountSchema,
+    withdraw: z.boolean().optional(),
+  }),
   z.strictObject({
     type: z.literal('sign-free'),
     playerId: entityIdSchema,

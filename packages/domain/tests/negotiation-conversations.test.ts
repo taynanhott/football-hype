@@ -179,3 +179,50 @@ it('conclui a compra com todo o caixa e registra o primeiro salário como dívid
   expect(state.clubs.byId[buyer.id]?.balance.cents).toBe(0);
   expect(state.debts[buyer.id]).toBeGreaterThan(0);
 });
+
+it('revisa a oferta sem reiniciar o prazo e preserva a resposta anterior', () => {
+  const { buyer, player } = setup();
+  const fee = transferContext(state, player, buyer).minimumFee;
+  act({ type: 'offer', playerId: player.id, fee });
+  const first = state.negotiations.at(-1)!;
+  state = { ...state, lastProcessedAt: state.lastProcessedAt + 86400000 };
+  act({ type: 'offer', playerId: player.id, fee: fee + 1000 });
+  const revised = state.negotiations.at(-1)!;
+  expect(revised.status).toBe('review');
+  expect(revised.reviewAt).toBe(first.reviewAt);
+  expect(revised.revised).toBe(true);
+  expect(revised.reply).toBe('Aceito a nova oferta, vamos analisar.');
+  expect(state.negotiations.find((n) => n.id === first.id)?.reply).toBe(first.reply);
+});
+it('retira a oferta em análise e bloqueia novas propostas por uma semana', () => {
+  const { buyer, player } = setup();
+  act({
+    type: 'offer',
+    playerId: player.id,
+    fee: transferContext(state, player, buyer).minimumFee,
+  });
+  act({ type: 'offer', playerId: player.id, fee: 0, withdraw: true });
+  expect(state.negotiations.at(-1)?.withdrawn).toBe(true);
+  expect(state.negotiations.at(-1)?.blockedUntil).toBe(state.lastProcessedAt + 7 * 86400000);
+  expect(state.negotiations.some((n) => n.playerId === player.id && n.status === 'review')).toBe(
+    false,
+  );
+  expect(
+    executeCommand(
+      state,
+      { type: 'offer', playerId: player.id, fee: player.marketValue.cents * 2 },
+      'host',
+      now,
+      stableId(299, 1),
+    ).ok,
+  ).toBe(false);
+});
+it('recusa redução da oferta e aplica bloqueio semanal', () => {
+  const { buyer, player } = setup();
+  const fee = transferContext(state, player, buyer).minimumFee;
+  act({ type: 'offer', playerId: player.id, fee });
+  act({ type: 'offer', playerId: player.id, fee: 0 });
+  expect(state.negotiations.at(-1)?.status).toBe('rejected');
+  expect(state.negotiations.at(-1)?.minimumFee).toBe(fee);
+  expect(state.negotiations.at(-1)?.blockedUntil).toBe(state.lastProcessedAt + 7 * 86400000);
+});

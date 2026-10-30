@@ -43,8 +43,12 @@ export function NegotiationChat({
     (n) => n.playerId === player.id && n.buyerId === club.id,
   );
   const last = history.at(-1);
-  const [introCount, setIntroCount] = useState(0);
-  const [budgetVisible, setBudgetVisible] = useState(false);
+  const rival = snapshot.state.negotiations
+    .filter((n) => n.playerId === player.id && n.buyerId !== club.id && n.status === 'review')
+    .sort((a, b) => b.fee - a.fee)[0];
+  const currentOffer = history.find((n) => n.status === 'review');
+  const [introCount, setIntroCount] = useState(history.length ? 3 : 0);
+  const [budgetVisible, setBudgetVisible] = useState(history.length > 0);
   const [replyCount, setReplyCount] = useState(history.length);
   const [awaitingReply, setAwaitingReply] = useState(false);
   const busy = useGameStore((s) => s.busy);
@@ -160,7 +164,15 @@ export function NegotiationChat({
             {history.map((n, index) => (
               <div className="chat-exchange" key={n.id}>
                 <div className="chat-bubble outgoing">
-                  Ofereço {currency(n.fee)} pela transferência de {player.name}.
+                  {n.withdrawn
+                    ? 'Decidi retirar minha oferta pelo jogador.'
+                    : n.revised
+                      ? 'Decidi mudar a oferta, ofereço ' + currency(n.fee) + ' pelo jogador.'
+                      : 'Ofereço ' +
+                        currency(n.fee) +
+                        ' pela transferência de ' +
+                        player.name +
+                        '.'}
                   <small>Enviada ✓✓</small>
                 </div>
                 {index < replyCount && (
@@ -173,6 +185,12 @@ export function NegotiationChat({
                 )}
               </div>
             ))}
+            {currentOffer && rival && rival.fee > currentOffer.fee && (
+              <div className="chat-bubble incoming">
+                Recebemos uma oferta melhor de {currency(rival.fee)} pelo jogador. Qual sua
+                contraproposta?
+              </div>
+            )}
             {context.blocked && (
               <div className="chat-bubble incoming">
                 Não estamos disponíveis para negociar esse jogador.
