@@ -8,7 +8,7 @@ import { currency } from '../../ui/format';
 import { Select, Option } from '../../ui/select';
 
 import { SECTORS, MARKETING_BENEFITS } from './center-sectors';
-export function SectorGuide({ sector }: { sector: string }) {
+export function SectorGuide({ sector, rules = false }: { sector: string; rules?: boolean }) {
   const info = SECTORS[sector];
   if (!info) return null;
   return (
@@ -18,7 +18,34 @@ export function SectorGuide({ sector }: { sector: string }) {
       </span>
       <div>
         <strong>{info.person}</strong>
-        <p>{info.tip}</p>
+        {rules ? (
+          <div className="coordinator-training-rules">
+            <p>
+              <b>Até alcançar o potencial</b> · Treinos e jogos oficiais preenchem a barra de
+              evolução. Cada barra completa aumenta +1 de overall, até o potencial. No ciclo
+              individual, atletas com menos de 33 anos recebem +1 ao concluir, sem ultrapassar esse
+              limite.
+            </p>
+            <p>
+              <b>Potencial alcançado</b> · A barra amarela carrega devagar no intenso, mantém no
+              moderado e regride no leve. Ao completar, concede bônus de treinamento, até +3. No
+              ciclo individual, menores de 33 anos recebem +1 temporário por 15 jogos em que
+              atuarem.
+            </p>
+            <p>
+              <b>Acima de 33 anos</b> · A barra vermelha representa desgaste: leve avança
+              normalmente, moderado avança devagar e intenso pausa. O ciclo individual reduz a barra
+              até zero, sem devolver overall já perdido.
+            </p>
+            <p className="coordinator-training-note">
+              O ciclo dura 60 dias. Jogos oficiais contam como treino intenso para quem atua. O
+              nível do CT melhora os efeitos, e a projeção por temporada usa o histórico real de
+              treinos e jogos.
+            </p>
+          </div>
+        ) : (
+          <p>{info.tip}</p>
+        )}
       </div>
     </div>
   );
@@ -62,7 +89,7 @@ export function CenterManagement({
   return (
     <div className={`center-management sector-${sector}`}>
       <div className="center-management-content">
-        <SectorGuide sector={sector} />
+        <SectorGuide sector={sector} rules={sector === 'coaching'} />
         <p className="management-passive">
           {sector === 'fitness'
             ? 'Benefício passivo: descanso mais rápido entre partidas, ampliado a cada nível.'

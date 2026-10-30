@@ -19550,8 +19550,14 @@ body::-webkit-scrollbar-corner {
 }
 
 .modal.individual-coaching-modal {
+  display: flex;
+  flex-direction: column;
   width: min(1500px, calc(100vw - 32px));
   max-width: 1500px;
+  overflow: hidden;
+}
+.modal.individual-coaching-modal > h2 {
+  flex-shrink: 0;
 }
 .center-management.sector-coaching {
   display: grid;
@@ -19906,14 +19912,20 @@ body::-webkit-scrollbar-corner {
 }
 
 .individual-coaching-modal .sector-coaching {
+  flex: 1;
+  min-height: 0;
   align-items: stretch;
+  overflow: hidden;
 }
 .individual-coaching-modal .center-management-content {
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  overflow: auto;
 }
 .individual-coaching-modal .center-management-content > .sector-guide {
-  flex: 1;
+  flex: none;
+  align-self: start;
   align-items: flex-start;
   padding: 14px;
   border: 1px solid #d8c594;
@@ -19946,35 +19958,38 @@ body::-webkit-scrollbar-corner {
   align-self: stretch;
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
 }
-.individual-coaching-modal .training-roster-list {
+.individual-coaching-modal .training-roster-header,
+.individual-coaching-modal .training-save-bar {
+  flex-shrink: 0;
+}
+.individual-coaching-modal .individual-training-roster .training-roster-list {
   flex: 1;
   min-height: 0;
+  max-height: none;
+  overflow-y: auto;
 }
 .individual-coaching-modal .center-management-content > .management-block {
   flex-shrink: 0;
 }
 
 @media (min-width: 1051px) {
-  .individual-coaching-modal .individual-training-roster {
-    position: relative;
-    min-height: 0;
-  }
-  .individual-coaching-modal .individual-training-roster .training-roster-list {
-    position: absolute;
-    inset: 56px 12px 12px;
-    max-height: none;
-    overflow-y: auto;
+  .individual-coaching-modal .center-management.sector-coaching {
+    grid-template-rows: minmax(0, 1fr);
   }
   .individual-coaching-modal .training-roster-header {
     flex-wrap: nowrap;
   }
 }
 @media (max-width: 1050px) {
+  .individual-coaching-modal .center-management.sector-coaching {
+    grid-template-rows: auto minmax(220px, 1fr);
+    overflow: auto;
+  }
   .individual-coaching-modal .individual-training-roster .training-roster-list {
-    position: static;
-    flex: initial;
-    max-height: 58dvh;
+    max-height: none;
   }
 }
 
@@ -21025,7 +21040,13 @@ body::-webkit-scrollbar-corner {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 10px 0;
+  flex-shrink: 0;
+  margin: 0 0 8px;
+  padding: 0 0 8px;
+  border-bottom: 1px solid #728b6855;
   color: #cbd8c8;
   font-size: 12px;
+}
+.training-save-bar .primary {
+  flex-shrink: 0;
 }

@@ -66,7 +66,6 @@ export function IndividualTrainingRoster({
         </label>
       </div>
       <div className="training-save-bar">
-        <span>As cargas só entram em vigor ao salvar.</span>
         <button
           className="primary"
           disabled={
