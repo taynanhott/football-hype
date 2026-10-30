@@ -29,7 +29,14 @@ export function CenterManagement({
   club,
   snapshot,
   onCustomize,
-}: ViewProps & { sector: string; onCustomize: () => void }) {
+  trainingDraft,
+  onTrainingChange,
+}: ViewProps & {
+  sector: string;
+  onCustomize: () => void;
+  trainingDraft: Record<string, 'light' | 'moderate' | 'intense'>;
+  onTrainingChange: (id: string, load: 'light' | 'moderate' | 'intense') => void;
+}) {
   const send = useGameStore((s) => s.send);
   const busy = useGameStore((s) => s.busy);
   const [playerId, setPlayerId] = useState('');
@@ -232,6 +239,8 @@ export function CenterManagement({
       {sector === 'coaching' && (
         <IndividualTrainingRoster
           snapshot={snapshot}
+          draft={trainingDraft}
+          onLoadChange={onTrainingChange}
           club={club}
           center={center}
           stadium={state.stadiums.byId[club.stadiumId]!}

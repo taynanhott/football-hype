@@ -9,7 +9,16 @@ import { Portrait } from '../players/pixel-portrait';
 import { positionLabel } from '../../ui/position-label';
 import { useGameStore } from '../../store/game-store';
 
-export function IndividualTrainingRoster({ snapshot, club, center }: ViewProps) {
+export function IndividualTrainingRoster({
+  snapshot,
+  club,
+  center,
+  draft,
+  onLoadChange,
+}: ViewProps & {
+  draft: Record<string, 'light' | 'moderate' | 'intense'>;
+  onLoadChange: (id: string, load: 'light' | 'moderate' | 'intense') => void;
+}) {
   const send = useGameStore((state) => state.send);
   const busy = useGameStore((state) => state.busy);
   const state = snapshot.state;
@@ -56,10 +65,33 @@ export function IndividualTrainingRoster({ snapshot, club, center }: ViewProps) 
           </Select>
         </label>
       </div>
+      <div className="training-save-bar">
+        <span>As cargas só entram em vigor ao salvar.</span>
+        <button
+          className="primary"
+          disabled={
+            busy ||
+            !Object.entries(draft).some(
+              ([id, load]) => load !== (center.operations?.playerLoads?.[id] ?? 'moderate'),
+            )
+          }
+          onClick={() => {
+            useGameStore.getState().clearError();
+            send({
+              type: 'management',
+              action: 'center',
+              target: 'save-training',
+              playerLoads: draft,
+            });
+          }}
+        >
+          {busy ? 'Salvando…' : 'Salvar treino'}
+        </button>
+      </div>
       <div className="training-roster-list">
         {orderedPlayers.map((player) => {
           const id = player.id;
-          const load = center.operations?.playerLoads?.[id] ?? 'moderate';
+          const load = draft[id] ?? center.operations?.playerLoads?.[id] ?? 'moderate';
           const injured = (state.injuries[id] ?? 0) > 0;
           const cycle = center.operations?.individual.find((plan) => plan.playerId === id);
           const veteran = player.age > 33;
@@ -119,14 +151,7 @@ export function IndividualTrainingRoster({ snapshot, club, center }: ViewProps) 
                       data-load={value}
                       aria-pressed={load === value}
                       disabled={busy}
-                      onClick={() =>
-                        send({
-                          type: 'management',
-                          action: 'center',
-                          target: 'player-load-' + value,
-                          playerId: id,
-                        })
-                      }
+                      onClick={() => onLoadChange(id, value)}
                     >
                       {label}
                     </button>

@@ -110,6 +110,20 @@ export function Facilities(props: ViewProps & { training?: boolean }) {
   const [confirmation, setConfirmation] = useState<{ message: string; action: () => void } | null>(
     null,
   );
+  const [trainingDraft, setTrainingDraft] = useState<
+    Record<string, 'light' | 'moderate' | 'intense'>
+  >({});
+  const [discardTraining, setDiscardTraining] = useState(false);
+  const trainingDirty = Object.entries(trainingDraft).some(
+    ([id, load]) => load !== (props.center.operations?.playerLoads?.[id] ?? 'moderate'),
+  );
+  const closeManagement = () => {
+    if (trainingDirty) setDiscardTraining(true);
+    else {
+      setTrainingDraft({});
+      setManaging(null);
+    }
+  };
   const [managing, setManaging] = useState<string | null>(null);
   const [customizationOpen, setCustomizationOpen] = useState(false);
   const send = useGameStore((state) => state.send);
@@ -313,10 +327,33 @@ export function Facilities(props: ViewProps & { training?: boolean }) {
           </div>
         </PlayerModal>
       )}
+      {discardTraining && (
+        <PlayerModal title="Treino não salvo" onClose={() => setDiscardTraining(false)}>
+          <p>
+            Você alterou as cargas de treino e ainda não salvou. Deseja sair e descartar as
+            alterações?
+          </p>
+          <div className="career-confirm-actions">
+            <button className="secondary" onClick={() => setDiscardTraining(false)}>
+              Continuar editando
+            </button>
+            <button
+              className="career-confirm-danger"
+              onClick={() => {
+                setTrainingDraft({});
+                setDiscardTraining(false);
+                setManaging(null);
+              }}
+            >
+              Descartar e sair
+            </button>
+          </div>
+        </PlayerModal>
+      )}
       {training && managing && (
         <PlayerModal
           title={DESCRIPTIONS[managing]?.title ?? 'Gerenciar setor'}
-          onClose={() => setManaging(null)}
+          onClose={closeManagement}
           className={`center-management-modal ${managing === 'coaching' ? 'individual-coaching-modal' : ''} ${managing === 'fitness' || managing === 'medical' || managing === 'coaching' ? 'fitness-management-modal' : ''}`}
         >
           {managing === 'scouting' ? (
@@ -325,6 +362,10 @@ export function Facilities(props: ViewProps & { training?: boolean }) {
             <CenterManagement
               {...props}
               sector={managing}
+              trainingDraft={trainingDraft}
+              onTrainingChange={(id, load) =>
+                setTrainingDraft((previous) => ({ ...previous, [id]: load }))
+              }
               onCustomize={() => {
                 setManaging(null);
                 setCustomizationOpen(true);

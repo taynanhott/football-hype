@@ -568,6 +568,7 @@ const individualCommandSchema = z.discriminatedUnion('type', [
     playerId: entityIdSchema.optional(),
     offerId: z.string().optional(),
     target: z.string().optional(),
+    playerLoads: z.record(entityIdSchema, z.enum(['light', 'moderate', 'intense'])).optional(),
     available: z.boolean().optional(),
     rivals: z.boolean().optional(),
     interest: z.number().int().min(1).max(100).optional(),

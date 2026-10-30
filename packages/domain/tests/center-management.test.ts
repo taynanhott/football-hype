@@ -121,3 +121,31 @@ describe('gerenciamento do centro', () => {
     expect(state.injuries[id]).toBeLessThan(8);
   });
 });
+
+it('salva as cargas do elenco em uma única ação e rejeita jogadores de outro clube atomicamente', () => {
+  const [first, second] = own().playerIds;
+  const command: GameCommand = {
+    type: 'management',
+    action: 'center',
+    target: 'save-training',
+    playerLoads: { [first!]: 'light', [second!]: 'intense' },
+  };
+  const result = unwrap(executeCommand(state, command, 'host', now, stableId(995, 1)));
+  state = unwrap(applyEvent(state, result));
+  expect(center().operations?.playerLoads).toMatchObject({
+    [first!]: 'light',
+    [second!]: 'intense',
+  });
+  const outsider = Object.values(state.players.byId).find(
+    (p) => p.clubId && p.clubId !== own().id,
+  )!;
+  const invalid = executeCommand(
+    state,
+    { ...command, playerLoads: { [first!]: 'moderate', [outsider.id]: 'light' } },
+    'host',
+    now,
+    stableId(995, 2),
+  );
+  expect(invalid.ok).toBe(false);
+  expect(center().operations?.playerLoads?.[first!]).toBe('light');
+});

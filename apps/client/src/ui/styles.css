@@ -21019,3 +21019,13 @@ body::-webkit-scrollbar-corner {
   color: #91a5b4;
   font-size: 13px;
 }
+
+.training-save-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  color: #cbd8c8;
+  font-size: 12px;
+}

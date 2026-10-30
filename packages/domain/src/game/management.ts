@@ -474,7 +474,12 @@ export function manageClub({ state, club, command }: CommandContext): Result<Com
     };
     const target = (command.target ?? '').replace(/^player-load-/, '');
     let cost = 0;
-    if (['light', 'moderate', 'intense'].includes(target)) {
+    if (target === 'save-training') {
+      const loads = command.playerLoads ?? {};
+      if (Object.keys(loads).some((id) => state.players.byId[id]?.clubId !== club.id))
+        return fail('Escolha apenas jogadores do seu elenco');
+      operations.playerLoads = { ...operations.playerLoads, ...loads };
+    } else if (['light', 'moderate', 'intense'].includes(target)) {
       if (!player || player.clubId !== club.id) return fail('Escolha um jogador do seu elenco');
       operations.playerLoads = {
         ...operations.playerLoads,
