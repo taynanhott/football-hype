@@ -16,8 +16,8 @@ export type CityBuilding = {
 export type CityTree = { x: number; z: number; size: number };
 export function cityReserved(x: number, z: number, margin = 0) {
   return (
-    (x > -150 - margin && x < 94 + margin && z > -125 - margin && z < 145 + margin) ||
-    (x > 100 - margin && x < 295 + margin && z > -122 - margin && z < 122 + margin)
+    (x > -200 - margin && x < 145 + margin && z > -170 - margin && z < 190 + margin) ||
+    (x > 165 - margin && x < 360 + margin && z > -122 - margin && z < 122 + margin)
   );
 }
 type StreetRect = { x1: number; x2: number; z1: number; z2: number; asphalt: boolean };
@@ -94,19 +94,35 @@ export function createCityLayout(seed = 17) {
   ) => boxes.push({ position: [x, y, z], scale: [w, h, d], color, rotation });
   const road = (axis: CityRoad['axis'], cross: number, from: number, to: number, width = 12) =>
     roads.push({ axis, cross, from, to, width });
-  const xs = [-460, -360, -260, -156, -50, 50, 97.5, 200, 300, 400, 500];
-  const zs = [-435, -335, -235, -135, -65, 65, 155, 255, 355, 455];
-  for (const x of [-460, -360, -260, -156, 97.5, 300, 400, 500])
-    road('z', x, -455, 475, x === 97.5 ? 8 : x === -156 || x === 300 ? 16 : 12);
+  const outskirts = [-1400, -1300, -1200, -1100, -1000, -900, -800, -700, -600];
+  const outerEast = [600, 700, 800, 900, 1000, 1100, 1200, 1300, 1400];
+  const xs = [
+    ...outskirts,
+    -460,
+    -360,
+    -260,
+    -210,
+    -50,
+    50,
+    157.5,
+    200,
+    370,
+    400,
+    500,
+    ...outerEast,
+  ];
+  const zs = [...outskirts, -435, -335, -235, -180, -65, 65, 200, 255, 355, 455, ...outerEast];
+  for (const x of [...outskirts, ...outerEast, -460, -360, -260, -210, 157.5, 370, 400, 500])
+    road('z', x, -1450, 1450, x === 157.5 ? 8 : x === -210 || x === 370 ? 16 : 12);
   for (const x of [-50, 50, 200]) {
-    road('z', x, -455, -135);
-    road('z', x, 155, 475);
+    road('z', x, -1450, -180);
+    road('z', x, 200, 1450);
   }
-  for (const z of [-435, -335, -235, -135, 155, 255, 355, 455])
-    road('x', z, -480, 520, z === 155 ? 18 : 12);
+  for (const z of [...outskirts, ...outerEast, -435, -335, -235, -180, 200, 255, 355, 455])
+    road('x', z, -1450, 1450, z === 200 ? 18 : 12);
   for (const z of [-65, 65]) {
-    road('x', z, -480, -156);
-    road('x', z, 300, 520);
+    road('x', z, -1450, -210);
+    road('x', z, 370, 1450);
   }
   const onRoad = (x: number, z: number, extra = 0) =>
     roads.some(
@@ -220,6 +236,7 @@ export function createCityLayout(seed = 17) {
       if (random() < 0.7)
         box(x + width * 0.18, height + 1.3, z + depth * 0.1, 3.3, 1.5, 3, '#b9b9aa');
     }
+    if (Math.abs(x) > 600 || Math.abs(z) > 600) return;
     const rows = Math.min(kind === 'house' ? 2 : 7, Math.max(1, Math.floor(height / 3.5)));
     for (const face of [0, 1, 2, 3]) {
       const span = face < 2 ? width : depth;
@@ -259,8 +276,9 @@ export function createCityLayout(seed = 17) {
       const usableX = right - left - 24,
         usableZ = south - north - 24;
       if (usableX < 18 || usableZ < 18) continue;
-      const nx = usableX > 75 ? 3 : usableX > 38 ? 2 : 1,
-        nz = usableZ > 75 ? 3 : usableZ > 38 ? 2 : 1;
+      const distant = Math.abs((left + right) / 2) > 600 || Math.abs((north + south) / 2) > 600;
+      const nx = distant ? 1 : usableX > 75 ? 3 : usableX > 38 ? 2 : 1,
+        nz = distant ? 1 : usableZ > 75 ? 3 : usableZ > 38 ? 2 : 1;
       const cw = usableX / nx,
         cd = usableZ / nz;
       for (let cx = 0; cx < nx; cx++)
@@ -285,12 +303,7 @@ export function createCityLayout(seed = 17) {
     }
   const tree = (x: number, z: number, size: number) => {
     // Plantings follow sidewalks, small gardens and patios, never a stadium-sized circle.
-    if (
-      (Math.abs(x) < 96 && z > -120 && z < 121) ||
-      (x > 104 && x < 285 && z > -108 && z < 105) ||
-      onRoad(x, z, 0.6)
-    )
-      return;
+    if (cityReserved(x, z, size * 1.5) || onRoad(x, z, 0.6)) return;
     if (
       buildings.some(
         (b) => Math.abs(x - b.x) < b.width / 2 + 2.8 && Math.abs(z - b.z) < b.depth / 2 + 2.8,
@@ -319,7 +332,8 @@ export function createCityLayout(seed = 17) {
   };
   for (const r of roads)
     for (let t = r.from + 11; t < r.to - 8; t += 17 + random() * 7) {
-      if (junction(r, t) || random() < 0.24) continue;
+      if (Math.abs(r.cross) > 650 || Math.abs(t) > 650 || junction(r, t) || random() < 0.24)
+        continue;
       for (const side of [-1, 1])
         if (random() > 0.2) {
           const offset = side * (r.width / 2 + 3.4 + random() * 0.7);
@@ -343,18 +357,19 @@ export function createCityLayout(seed = 17) {
   for (const [x, z] of [
     [-129, -106],
     [-139, 92],
-    [-102, 135],
-    [-25, 133],
-    [27, 132],
-    [75, 127],
-    [-73, -125],
-    [57, -125],
+    [-112, 163],
+    [-25, 158],
+    [27, 158],
+    [85, 163],
+    [-73, -160],
+    [57, -160],
   ])
     tree(x!, z!, 2.8);
   const carColors = ['#b8c1be', '#e3dfd1', '#5b747b', '#a45f54', '#6f7366', '#c1ad7f'];
   for (const r of roads)
     for (let t = r.from + 17; t < r.to - 10; t += 31 + random() * 22) {
-      if (junction(r, t) || random() < 0.28) continue;
+      if (Math.abs(r.cross) > 650 || Math.abs(t) > 650 || junction(r, t) || random() < 0.28)
+        continue;
       const lane = (random() < 0.5 ? -1 : 1) * r.width * 0.24;
       const x = r.axis === 'x' ? t : r.cross + lane,
         z = r.axis === 'x' ? r.cross + lane : t,

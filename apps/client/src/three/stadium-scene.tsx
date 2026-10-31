@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/immutability -- Three.js instance transforms and buffers require in-place updates in animation callbacks. */
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { ContactShadows, OrbitControls, Sky, useGLTF, Clone } from '@react-three/drei';
 import { KTX2Loader } from 'three-stdlib';
@@ -19,6 +20,8 @@ import { ClubCampus, StadiumSurroundings } from './club-campus';
 import { StadiumNeighborhood } from './stadium-neighborhood';
 import { GroundMist } from './ground-mist';
 import { Pitch } from './pitch';
+import { RealStadium } from './real-stadiums';
+import { stadiumSkin } from './stadium-catalog';
 import { ModernArena, TraditionalDetails } from './stadium-architecture';
 
 type Position = [number, number, number];
@@ -33,11 +36,9 @@ type SectorEntity = {
 function stadiumEntities(stadium: StadiumSnapshot): SectorEntity[] {
   return stadium.sectors.map((sector) => ({
     color:
-      stadium.color ??
       ['#315d55', '#334f78', '#875742', '#7c3b42', '#76783c'][
         (parseInt(stadium.id.slice(-4), 16) - 1) % 5
-      ] ??
-      '#315d55',
+      ] ?? '#315d55',
     id: sector.id,
     level: Math.max(...stadium.sectors.map((item) => item.level)),
     width: sector.id === 'north' || sector.id === 'south' ? 78 : 110,
@@ -268,7 +269,7 @@ function StadiumWorld({
         position={[60, 90, 30]}
         intensity={3}
         castShadow
-        shadow-mapSize={[2048, 2048]}
+        shadow-mapSize={[1024, 1024]}
         shadow-bias={-0.0005}
         shadow-normalBias={0.25}
         shadow-camera-left={-150}
@@ -277,7 +278,7 @@ function StadiumWorld({
         shadow-camera-bottom={-150}
       />
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.15, 0]} receiveShadow>
-        <planeGeometry args={[1800, 1800]} />
+        <planeGeometry args={[3600, 3600]} />
         <meshStandardMaterial color={stadium.surroundingsLevel > 2 ? '#85976b' : '#9d9b7f'} />
       </mesh>
       <GroundMist />
@@ -301,7 +302,9 @@ function StadiumWorld({
           </mesh>
         </group>
       ))}
-      {level >= 4 ? (
+      {stadiumSkin(stadium) ? (
+        <RealStadium skin={stadiumSkin(stadium)!} />
+      ) : level >= 4 ? (
         <ModernArena level={level} color={color} />
       ) : (
         <>
@@ -335,11 +338,13 @@ function StadiumWorld({
       <group visible={showNeighborhood}>
         <StadiumNeighborhood seed={parseInt(stadium.clubId.slice(-4), 16) || 17} />
       </group>
-      <ClubCampus
-        center={center}
-        {...(focus === 'training' && !matchView && onSelectSector ? { onSelectSector } : {})}
-      />
-      <StadiumSurroundings level={stadium.surroundingsLevel} />
+      <group position={[70, 0, 0]}>
+        <ClubCampus
+          center={center}
+          {...(focus === 'training' && !matchView && onSelectSector ? { onSelectSector } : {})}
+        />
+      </group>
+      <StadiumSurroundings level={stadium.surroundingsLevel} stadium={stadium} />
       <ContactShadows
         position={[0, -0.13, 0]}
         scale={320}
@@ -353,7 +358,7 @@ function StadiumWorld({
         enablePan={false}
         minDistance={matchView ? 55 : 90}
         maxDistance={focus === 'training' ? 400 : 360}
-        target={focus === 'training' ? [180, 0, 0] : matchView ? [0, 0, 0] : [10, 0, 0]}
+        target={focus === 'training' ? [250, 0, 0] : matchView ? [0, 0, 0] : [10, 0, 0]}
         maxPolarAngle={Math.PI / 2.15}
         autoRotate={!matchView}
         autoRotateSpeed={0.2}
@@ -396,11 +401,11 @@ export default function StadiumScene(props: {
       <SceneBoundary>
         <Canvas
           shadows
-          dpr={[1, 1.5]}
+          dpr={[1, 1.25]}
           camera={{
             position:
               props.focus === 'training'
-                ? [320, 165, 180]
+                ? [390, 165, 180]
                 : props.matchView
                   ? [95, 120, 110]
                   : [200, 165, 205],

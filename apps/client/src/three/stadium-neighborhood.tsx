@@ -52,8 +52,18 @@ function CityBatch({
     </instancedMesh>
   );
 }
+const cityCache = new Map<number, ReturnType<typeof createCityLayout>>();
+function cachedCity(seed: number) {
+  const key = seed % 8;
+  let city = cityCache.get(key);
+  if (!city) {
+    city = createCityLayout(key);
+    cityCache.set(key, city);
+  }
+  return city;
+}
 export function StadiumNeighborhood({ seed }: { seed: number }) {
-  const city = useMemo(() => createCityLayout(seed), [seed]);
+  const city = useMemo(() => cachedCity(seed), [seed]);
   return (
     <group name="Bairro do estádio">
       <CityBatch parts={city.boxes} />

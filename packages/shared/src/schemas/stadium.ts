@@ -19,6 +19,22 @@ export const stadiumSchema = z
       .string()
       .regex(/^#[0-9a-fA-F]{6}$/)
       .optional(),
+    skin: z
+      .enum([
+        'maracana',
+        'mineirao',
+        'arena-mrv',
+        'neo-quimica',
+        'sao-januario',
+        'beira-rio',
+        'arena-gremio',
+        'nilton-santos',
+        'palmeiras-park',
+        'morumbi',
+        'vila-belmiro',
+        'arena-baixada',
+      ])
+      .optional(),
     name: nameSchema,
     pitchLevel: facilityLevelSchema,
     surroundingsLevel: facilityLevelSchema,

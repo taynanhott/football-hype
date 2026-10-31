@@ -1,5 +1,9 @@
-import { useMemo, createContext, useContext } from 'react';
-import { CatmullRomCurve3, Vector3 } from 'three';
+import { useMemo } from 'react';
+import { Shape } from 'three';
+import type { StadiumSnapshot } from '@football/shared';
+import { stadiumSkin } from './stadium-catalog';
+import { createContext, useContext } from 'react';
+
 import type { TrainingCenterSnapshot } from '@football/shared';
 import { Pitch } from './pitch';
 
@@ -35,8 +39,12 @@ function Building({
   const campusColor = useContext(CampusColor);
   return (
     <group>
-      <Box at={[0, height / 2, 0]} size={[width, height, depth]} color={campusColor ?? color} />
-      <Box at={[0, height + 0.4, 0]} size={[width + 1, 0.8, depth + 1]} color="#345c54" />
+      <Box at={[0, height / 2, 0]} size={[width, height, depth]} color={color} />
+      <Box
+        at={[0, height + 0.4, 0]}
+        size={[width + 1, 0.8, depth + 1]}
+        color={campusColor ?? '#345c54'}
+      />
       {Array.from({ length: Math.floor(width / 4) }, (_, index) => (
         <Box
           key={index}
@@ -171,28 +179,22 @@ function Scout({ level }: { level: number }) {
   );
 }
 function TrainingHall() {
-  const arch = useMemo(
-    () =>
-      new CatmullRomCurve3([
-        new Vector3(-25, 0, 0),
-        new Vector3(-20, 15, 0),
-        new Vector3(0, 22, 0),
-        new Vector3(20, 15, 0),
-        new Vector3(25, 0, 0),
-      ]),
-    [],
-  );
   return (
     <group>
-      <mesh scale={[25, 22, 39]}>
-        <sphereGeometry args={[1, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2]} />
-        <meshStandardMaterial color="#dce8df" transparent opacity={0.45} side={2} />
-      </mesh>
-      {[-30, -15, 0, 15, 30].map((z) => (
-        <mesh key={z} position={[0, 0, z]}>
-          <tubeGeometry args={[arch, 20, 0.6, 6, false]} />
-          <meshStandardMaterial color="#f2eddb" />
-        </mesh>
+      <Box at={[0, 18, 0]} size={[49, 1, 74]} color="#dce3dc" />
+      {[-24, 24].flatMap((x) =>
+        [-34, -17, 0, 17, 34].map((z) => (
+          <Box key={x + ':' + z} at={[x, 8.5, z]} size={[0.7, 17, 0.7]} color="#c4ccc4" />
+        )),
+      )}
+      {[-34, -17, 0, 17, 34].map((z) => (
+        <group key={z}>
+          <Box at={[0, 16.5, z]} size={[48, 0.6, 0.6]} color="#b4c2ba" />
+          <Box at={[0, 17.5, z]} size={[48, 0.4, 0.5]} color="#eef0e9" />
+        </group>
+      ))}
+      {[-22, -11, 0, 11, 22].map((x) => (
+        <Box key={x} at={[x, 18.7, 0]} size={[0.25, 0.35, 74]} color="#84988c" />
       ))}
     </group>
   );
@@ -337,17 +339,80 @@ function Shop({ at, color }: { at: Point; color: string }) {
     </group>
   );
 }
-export function StadiumSurroundings({ level }: { level: number }) {
+export function StadiumSurroundings({
+  level,
+  stadium,
+}: {
+  level: number;
+  stadium: StadiumSnapshot;
+}) {
+  const skin = stadiumSkin(stadium);
+  const structure = Math.max(...stadium.sectors.map((s) => s.level));
+  const dimensions: Record<string, [number, number, boolean]> = {
+    morumbi: [109, 134, false],
+    'vila-belmiro': [72, 88, true],
+    'arena-baixada': [80, 98, true],
+    'palmeiras-park': [92, 112, true],
+    'neo-quimica': [88, 90, true],
+    'sao-januario': [79, 110, true],
+    maracana: [123, 129, false],
+    mineirao: [123, 129, false],
+    'beira-rio': [123, 129, false],
+    'arena-mrv': [93, 113, true],
+    'arena-gremio': [113, 150, false],
+    'nilton-santos': [113, 150, false],
+  };
+  const [width, depth, rect] = dimensions[skin ?? ''] ?? [
+    structure >= 4 ? 100 : 72,
+    structure >= 4 ? 123 : 92,
+    structure < 4,
+  ];
+  const base = useMemo(() => {
+    const shape = new Shape();
+    if (!rect) shape.absellipse(0, 0, width, depth, 0, Math.PI * 2, false, 0);
+    else {
+      const r = 12;
+      shape.moveTo(-width + r, -depth);
+      shape.lineTo(width - r, -depth);
+      shape.quadraticCurveTo(width, -depth, width, -depth + r);
+      shape.lineTo(width, depth - r);
+      shape.quadraticCurveTo(width, depth, width - r, depth);
+      shape.lineTo(-width + r, depth);
+      shape.quadraticCurveTo(-width, depth, -width, depth - r);
+      shape.lineTo(-width, -depth + r);
+      shape.quadraticCurveTo(-width, -depth, -width + r, -depth);
+    }
+    return shape;
+  }, [width, depth, rect]);
   return (
     <group>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.08, 0]} receiveShadow>
+        <shapeGeometry args={[base, 48]} />
+        <meshStandardMaterial color="#b4b7aa" />
+      </mesh>
+      {Array.from({ length: level + 2 }, (_, i) => (
+        <group key={i} position={[-100 + i * 38, 0, 155]}>
+          <Box at={[0, 0.6, 0]} size={[8, 1.2, 2]} color="#8c7656" />
+          <Box at={[-3, 0.3, 0]} size={[0.5, 0.6, 2]} color="#485a50" />
+          <Box at={[3, 0.3, 0]} size={[0.5, 0.6, 2]} color="#485a50" />
+        </group>
+      ))}
+      {level >= 3 &&
+        [-1, 1].map((side) => (
+          <group key={side} position={[side * 126, 0, -95]}>
+            <Box at={[0, 2.5, 0]} size={[7, 5, 7]} color="#e5dfc9" />
+            <Box at={[0, 5.4, 0]} size={[9, 0.8, 9]} color="#305b48" />
+            <Box at={[0, 2, 3.6]} size={[4, 2, 0.2]} color="#608984" />
+          </group>
+        ))}
       {level >= 2 && (
         <>
-          <Box at={[0, -0.05, 126]} size={[190, 0.1, 22]} color="#b2b4a5" />
-          <Box at={[-119, -0.04, 15]} size={[38, 0.1, 96]} color="#7d8982" />
+          <Box at={[0, -0.05, 170]} size={[190, 0.1, 22]} color="#b2b4a5" />
+          <Box at={[-166, -0.04, 15]} size={[38, 0.1, 96]} color="#7d8982" />
           {Array.from({ length: level * 3 }, (_, index) => (
             <group
               key={index}
-              position={[-131 + (index % 2) * 19, 0, -24 + Math.floor(index / 2) * 12]}
+              position={[-180 + (index % 2) * 19, 0, -24 + Math.floor(index / 2) * 12]}
             >
               <Box at={[0, 0.02, 0]} size={[0.2, 0.1, 10]} color="#e8e4d0" />
               <Box
@@ -361,31 +426,29 @@ export function StadiumSurroundings({ level }: { level: number }) {
         </>
       )}
       {Array.from({ length: level >= 2 ? 8 + level * 2 : 4 }, (_, index) => (
-        <Lamp key={index} at={[-95 + index * 12, 0, 139]} />
+        <Lamp key={index} at={[-95 + index * 12, 0, 184]} />
       ))}
       {level >= 3 && (
         <>
-          <Shop at={[-102, 0, -62]} color="#ba7052" />
-          <Shop at={[-123, 0, -62]} color="#44876c" />
-          <group position={[0, 0, 128]}>
+          <Shop at={[-118, 0, -135]} color="#ba7052" />
+          <Shop at={[-180, 0, -135]} color="#44876c" />
+          <group position={[0, 0, 170]}>
             <Box at={[0, 2, 0]} size={[9, 4, 9]} color="#aaa68f" />
-            <Box at={[0, 7, 0]} size={[3, 6, 2]} color="#9b8754" />
-            <mesh position={[0, 11, 0]}>
-              <sphereGeometry args={[1.5, 8, 6]} />
-              <meshStandardMaterial color="#9b8754" metalness={0.5} />
+            <mesh position={[0, 7, 0]}>
+              <icosahedronGeometry args={[3.2, 1]} />
+              <meshStandardMaterial color="#e6ca72" metalness={0.65} roughness={0.3} />
             </mesh>
-            <Box at={[3, 5, 0]} size={[6, 1.5, 1.5]} color="#9b8754" />
-            <mesh position={[6, 4.5, 0]}>
-              <sphereGeometry args={[1.5, 8, 6]} />
-              <meshStandardMaterial color="#d9c586" />
+            <mesh position={[0, 7, 0]}>
+              <icosahedronGeometry args={[3.25, 0]} />
+              <meshStandardMaterial color="#66552c" wireframe />
             </mesh>
           </group>
         </>
       )}
       {level >= 4 && (
         <>
-          <Shop at={[52, 0, 128]} color="#2e6555" />
-          <Shop at={[-50, 0, 128]} color="#d0b264" />
+          <Shop at={[52, 0, 170]} color="#2e6555" />
+          <Shop at={[-50, 0, 170]} color="#d0b264" />
           {[-125, 125].map((x) => (
             <group key={x} position={[x, 0, 100]}>
               <Box at={[0, 7, 0]} size={[0.4, 14, 0.4]} color="#eee5c9" />
@@ -396,7 +459,7 @@ export function StadiumSurroundings({ level }: { level: number }) {
       )}
       {level === 5 && (
         <>
-          <group position={[-82, 0.1, 112]}>
+          <group position={[-82, 0.1, 165]}>
             <mesh rotation={[-Math.PI / 2, 0, 0]}>
               <circleGeometry args={[9, 32]} />
               <meshStandardMaterial color="#4fabbc" />
@@ -406,9 +469,9 @@ export function StadiumSurroundings({ level }: { level: number }) {
               <meshStandardMaterial color="#dedccc" />
             </mesh>
           </group>
-          <Box at={[-118, 6.5, 15]} size={[40, 1, 99]} color="#98a6a0" />
+          <Box at={[-166, 6.5, 15]} size={[40, 1, 99]} color="#98a6a0" />
           {[-35, 15, 65].map((z) => (
-            <Box key={z} at={[-136, 3, z]} size={[0.5, 6, 0.5]} color="#d7dccf" />
+            <Box key={z} at={[-174, 3, z]} size={[0.5, 6, 0.5]} color="#d7dccf" />
           ))}
         </>
       )}

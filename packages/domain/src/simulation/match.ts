@@ -1,3 +1,4 @@
+import { stadiumBenefits } from '../finance/stadium-benefits.js';
 import {
   MATCH_DURATION_MS,
   GAMEPLAY,
@@ -44,17 +45,14 @@ export function simulateMatch(
   const morale = home.length
     ? home.reduce((sum, player) => sum + player.morale, 0) / home.length
     : 0;
-  const upgrades =
-    stadium.pitchLevel +
-    stadium.surroundingsLevel +
-    stadium.sectors.reduce((sum, sector) => sum + sector.level, 0);
+  const benefits = stadiumBenefits(stadium);
   const occupancy =
     economics?.occupancy ??
     Math.min(
       1,
       GAMEPLAY.attendanceBase +
         (morale / 100) * GAMEPLAY.attendanceMoraleWeight +
-        upgrades * GAMEPLAY.attendanceUpgradeWeight,
+        benefits.interest,
     );
   const attendance = economics?.attendance ?? Math.floor(capacity * occupancy);
   const advantage =
@@ -63,8 +61,7 @@ export function simulateMatch(
   const difference =
     strategy.strength(home) - strategy.strength(away) + (fixture.neutral ? 0 : advantage);
   const simulation = spatialMatch(home, away, random, difference, styles);
-  const commerce =
-    stadium.commerce.foodLevel + stadium.commerce.shirtsLevel + stadium.commerce.hospitalityLevel;
+  const commerce = benefits.commerce;
   return {
     fixtureId: fixture.id,
     homeId: fixture.homeId,
@@ -81,7 +78,7 @@ export function simulateMatch(
         attendance *
           GAMEPLAY.baseTicketCents *
           (1 + commerce / GAMEPLAY.commerceRateDivisor) *
-          (1 + upgrades * GAMEPLAY.qualityTicketPremium),
+          (1 + benefits.ticketPremium),
       ),
     seed: matchSeed,
     scorers: simulation.scorers.sort((a, b) => a.minute - b.minute),

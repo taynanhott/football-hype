@@ -473,6 +473,22 @@ export const gameSnapshotUpdateSchema = gameSnapshotSchema.omit({ state: true })
 const individualCommandSchema = z.discriminatedUnion('type', [
   z.strictObject({
     type: z.literal('customize'),
+    stadiumSkin: z
+      .enum([
+        'maracana',
+        'mineirao',
+        'arena-mrv',
+        'neo-quimica',
+        'sao-januario',
+        'beira-rio',
+        'arena-gremio',
+        'nilton-santos',
+        'palmeiras-park',
+        'morumbi',
+        'vila-belmiro',
+        'arena-baixada',
+      ])
+      .optional(),
     stadiumColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
     centerColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
     primary: z.string().regex(/^#[0-9a-fA-F]{6}$/),

@@ -219,12 +219,20 @@ function HomeTicketSlider({
               <span>Público previsto</span>
               <strong>{forecast.attendance.toLocaleString('pt-BR')}</strong>
               <small>{Math.round(forecast.occupancy * 100)}% da capacidade</small>
-              <meter
-                min={0}
-                max={100}
-                value={Math.round(forecast.occupancy * 100)}
+              <div
+                className="ticket-occupancy-bar"
+                role="progressbar"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={Math.round(forecast.occupancy * 100)}
                 aria-label="Ocupação prevista"
-              />
+              >
+                <span
+                  style={{
+                    width: Math.max(0, Math.min(100, Math.round(forecast.occupancy * 100))) + '%',
+                  }}
+                />
+              </div>
             </div>
             <div>
               <span>Receita prevista</span>

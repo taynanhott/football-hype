@@ -189,7 +189,11 @@ export function handleCommand(input: CommandContext): Result<CommandOutcome> {
             ...state.stadiums,
             byId: {
               ...state.stadiums.byId,
-              [stadium.id]: { ...stadium, color: command.stadiumColor },
+              [stadium.id]: {
+                ...stadium,
+                color: command.stadiumColor,
+                ...(command.stadiumSkin ? { skin: command.stadiumSkin } : {}),
+              },
             },
           },
           centers: {

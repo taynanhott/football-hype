@@ -26,17 +26,17 @@ type Props = { snapshot: GameSnapshot; club: ClubSnapshot };
 export function FinancialManagement(props: Props) {
   const plan = props.snapshot.state.management?.financialPlans?.[props.club.id];
   return (
-    <>
+    <div className="finance-management-grid">
       <BudgetEditor
         key={`${props.club.id}:${props.club.balance.cents}:${plan?.transfer}:${plan?.salaries}`}
         {...props}
       />
       <TicketPricing state={props.snapshot.state} clubId={props.club.id} />
       <FinancialHistory {...props} />
-    </>
+    </div>
   );
 }
-function BudgetEditor({ snapshot, club }: Props) {
+export function BudgetEditor({ snapshot, club }: Props) {
   const state = snapshot.state;
   const cash = Math.max(0, club.balance.cents);
   const operations = monthlyStructureCost(state, club);
@@ -141,7 +141,7 @@ function BudgetEditor({ snapshot, club }: Props) {
     </section>
   );
 }
-function FinancialHistory({ snapshot, club }: Props) {
+export function FinancialHistory({ snapshot, club }: Props) {
   const chartRef = useRef<HTMLDivElement>(null);
   const [chartWidth, setChartWidth] = useState(720);
   useEffect(() => {
@@ -166,9 +166,9 @@ function FinancialHistory({ snapshot, club }: Props) {
     ),
     lowest = Math.min(0, ...months.map((r) => r.profit));
   const width = Math.max(560, chartWidth, months.length * 66 + 70),
-    height = 300,
+    height = 160,
     top = 20,
-    bottom = 250,
+    bottom = 130,
     plot = bottom - top;
   const y = (value: number) => top + ((highest - value) / (highest - lowest)) * plot,
     zero = y(0),
@@ -184,9 +184,7 @@ function FinancialHistory({ snapshot, club }: Props) {
     <section className="panel financial-history">
       <header className="section-header">
         <div>
-          <span className="eyebrow">RESULTADO DO CLUBE</span>
           <h2>Evolução financeira mensal</h2>
-          <p>Entradas e saídas do caixa; custo fixo inclui salários e manutenção.</p>
         </div>
       </header>
       <div className="financial-insights-metrics">
@@ -218,69 +216,77 @@ function FinancialHistory({ snapshot, club }: Props) {
         Custo fixo mensal atual: <strong>{currency(fixed)}</strong>. Média calculada desde o início
         da carreira, incluindo meses sem movimentação e o mês atual.
       </p>
-      <div className="financial-chart-legend">
-        {series.map((item) => (
-          <span key={item.key}>
-            <i style={{ background: item.color }} />
-            {item.label}
-          </span>
-        ))}
-      </div>
-      <div className="financial-chart-scroll" ref={chartRef}>
-        <svg
-          className="financial-bars"
-          viewBox={`0 0 ${width} ${height}`}
-          style={{ minWidth: width }}
-          role="img"
-          aria-label="Gráfico mensal de receitas, despesas, custo fixo e lucro"
-        >
-          {[0, 0.5, 1].map((t) => {
-            const value = lowest + (highest - lowest) * t;
-            return (
-              <g key={t}>
-                <line x1="65" x2={width - 10} y1={y(value)} y2={y(value)} stroke="#e3eae3" />
-                <text x="58" y={y(value) + 4} textAnchor="end" fill="#728174" fontSize="11">
-                  {compact(value)}
-                </text>
-              </g>
-            );
-          })}
-          <line x1="65" x2={width - 10} y1={zero} y2={zero} stroke="#829b89" />
-          {months.map((month, index) => {
-            const center = 70 + group * (index + 0.5);
-            return (
-              <g key={month.month}>
-                {series.map((item, j) => {
-                  const value = month[item.key],
-                    point = y(value);
-                  return (
-                    <rect
-                      key={item.key}
-                      x={center + (j - 2) * bar}
-                      y={Math.min(point, zero)}
-                      width={bar - 2}
-                      height={Math.abs(point - zero)}
-                      rx="2"
-                      fill={value < 0 ? '#b85043' : item.color}
-                    >
-                      <title>
-                        {month.month} · {item.label}: {currency(value)}
-                      </title>
-                    </rect>
-                  );
-                })}
-                <text x={center} y="275" textAnchor="middle" fill="#536d5b" fontSize="12">
-                  {new Date(month.month + '-02T12:00:00Z').toLocaleDateString('pt-BR', {
-                    month: 'short',
-                    year: '2-digit',
-                    timeZone: 'America/Sao_Paulo',
-                  })}
-                </text>
-              </g>
-            );
-          })}
-        </svg>
-      </div>
+      {months.some(
+        (month) => month.income || month.expenses || month.fixedCosts || month.profit,
+      ) ? (
+        <>
+          <div className="financial-chart-legend">
+            {series.map((item) => (
+              <span key={item.key}>
+                <i style={{ background: item.color }} />
+                {item.label}
+              </span>
+            ))}
+          </div>
+          <div className="financial-chart-scroll" ref={chartRef}>
+            <svg
+              className="financial-bars"
+              viewBox={`0 0 ${width} ${height}`}
+              style={{ minWidth: width }}
+              role="img"
+              aria-label="Gráfico mensal de receitas, despesas, custo fixo e lucro"
+            >
+              {[0, 0.5, 1].map((t) => {
+                const value = lowest + (highest - lowest) * t;
+                return (
+                  <g key={t}>
+                    <line x1="65" x2={width - 10} y1={y(value)} y2={y(value)} stroke="#e3eae3" />
+                    <text x="58" y={y(value) + 4} textAnchor="end" fill="#728174" fontSize="11">
+                      {compact(value)}
+                    </text>
+                  </g>
+                );
+              })}
+              <line x1="65" x2={width - 10} y1={zero} y2={zero} stroke="#829b89" />
+              {months.map((month, index) => {
+                const center = 70 + group * (index + 0.5);
+                return (
+                  <g key={month.month}>
+                    {series.map((item, j) => {
+                      const value = month[item.key],
+                        point = y(value);
+                      return (
+                        <rect
+                          key={item.key}
+                          x={center + (j - 2) * bar}
+                          y={Math.min(point, zero)}
+                          width={bar - 2}
+                          height={Math.abs(point - zero)}
+                          rx="2"
+                          fill={value < 0 ? '#b85043' : item.color}
+                        >
+                          <title>
+                            {month.month} · {item.label}: {currency(value)}
+                          </title>
+                        </rect>
+                      );
+                    })}
+                    <text x={center} y="150" textAnchor="middle" fill="#536d5b" fontSize="12">
+                      {new Date(month.month + '-02T12:00:00Z').toLocaleDateString('pt-BR', {
+                        month: 'short',
+                        year: '2-digit',
+                        timeZone: 'America/Sao_Paulo',
+                      })}
+                    </text>
+                  </g>
+                );
+              })}
+            </svg>
+          </div>
+        </>
+      ) : (
+        <p className="financial-empty">Sem movimentações no período.</p>
+      )}
       {report.legacy && (
         <p className="financial-budget-note">
           Movimentações antigas usam a variação líquida do caixa. Os novos registros separam
@@ -320,40 +326,33 @@ function FinancialHistory({ snapshot, club }: Props) {
   );
 }
 export function SeasonResults({ snapshot, club }: Props) {
-  const report = seasonFinancialReport(snapshot.state, club.id, snapshot.ledger),
-    maximum = Math.max(1, report.income, report.expenses);
+  const report = seasonFinancialReport(snapshot.state, club.id, snapshot.ledger);
+  const maximum = Math.max(1, report.income, report.expenses);
   return (
-    <section className="panel financial-season">
-      <header className="section-header">
-        <div>
-          <span className="eyebrow">BALANÇO DA TEMPORADA</span>
-          <h2>Entrou × saiu · {snapshot.state.season}</h2>
-          <p>Todas as movimentações de caixa desta temporada.</p>
-        </div>
-        <strong className={report.profit < 0 ? 'negative' : 'season-profit'}>
-          Saldo {currency(report.profit)}
-        </strong>
-      </header>
-      <div
-        className="season-money-bars"
-        role="img"
-        aria-label={
-          'Receitas ' + currency(report.income) + ', despesas ' + currency(report.expenses)
-        }
-      >
+    <section className="panel financial-season-compact">
+      <h2>
+        Entrou × saiu <small>· {snapshot.state.season}</small>
+      </h2>
+      <div className="season-inline-bars">
         {[
-          { label: 'Dinheiro ganho', value: report.income, color: COLORS.income },
-          { label: 'Dinheiro gasto', value: report.expenses, color: COLORS.expenses },
+          { label: 'Entrou', value: report.income, color: COLORS.income },
+          { label: 'Saiu', value: report.expenses, color: COLORS.expenses },
         ].map((row) => (
           <div key={row.label}>
             <span>{row.label}</span>
-            <div className="season-bar-track">
+            <div className="season-inline-track">
               <i style={{ width: (row.value / maximum) * 100 + '%', background: row.color }} />
             </div>
             <strong>{currency(row.value)}</strong>
           </div>
         ))}
       </div>
+      <span>
+        Saldo{' '}
+        <strong className={report.profit < 0 ? 'negative' : 'positive'}>
+          {currency(report.profit)}
+        </strong>
+      </span>
     </section>
   );
 }

@@ -36,7 +36,7 @@ describe('stadium neighborhood', () => {
       }
       for (const t of c.trees) {
         expect(Math.abs(t.x) < 96 && t.z > -120 && t.z < 121).toBe(false);
-        expect(t.x > 104 && t.x < 285 && t.z > -108 && t.z < 105).toBe(false);
+        expect(t.x > 173 && t.x < 355 && t.z > -120 && t.z < 120).toBe(false);
         expect(
           c.buildings.some(
             (b) =>
@@ -45,5 +45,35 @@ describe('stadium neighborhood', () => {
         ).toBe(false);
       }
     }
+  });
+});
+
+// Includes the roof overhang, not just the pitch or facade.
+describe('complex access clearances', () => {
+  it('keeps roads outside stadium and relocated training grounds', () => {
+    const { roads } = createCityLayout(17);
+    for (const [left, right, back, front] of [
+      [-110, 110, -145, 145],
+      [173, 355, -120, 120],
+    ]) {
+      for (const road of roads) {
+        const half = road.width / 2 + 4;
+        const x1 = road.axis === 'x' ? road.from : road.cross - half;
+        const x2 = road.axis === 'x' ? road.to : road.cross + half;
+        const z1 = road.axis === 'x' ? road.cross - half : road.from;
+        const z2 = road.axis === 'x' ? road.cross + half : road.to;
+        expect(x1 < right! && x2 > left! && z1 < front! && z2 > back!).toBe(false);
+      }
+    }
+  });
+});
+
+describe('stadium landscaping', () => {
+  it('keeps every tree crown outside the roof envelope', () => {
+    for (const seed of [1, 17, 65535])
+      for (const tree of createCityLayout(seed).trees) {
+        const radius = tree.size;
+        expect(Math.abs(tree.x) < 110 + radius && Math.abs(tree.z) < 145 + radius).toBe(false);
+      }
   });
 });

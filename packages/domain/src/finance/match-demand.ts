@@ -1,3 +1,4 @@
+import { stadiumBenefits } from './stadium-benefits.js';
 import {
   GAMEPLAY,
   MONEY_STEPS,
@@ -16,11 +17,9 @@ export function matchDemand(state: WorldState, fixture: Fixture, priceOverride?:
   const home = state.clubs.byId[fixture.homeId];
   const stadium = state.stadiums.byId[fixture.stadiumId ?? home?.stadiumId ?? ''];
   const capacity = stadium?.sectors.reduce((sum, sector) => sum + sector.capacity, 0) ?? 0;
-  const upgrades = stadium
-    ? stadium.pitchLevel +
-      stadium.surroundingsLevel +
-      stadium.sectors.reduce((sum, sector) => sum + sector.level, 0)
-    : 0;
+  const benefits = stadium
+    ? stadiumBenefits(stadium)
+    : { interest: 0, ticketPremium: 0, commerce: 0 };
   const players = (home?.playerIds ?? []).flatMap((id) =>
     state.players.byId[id] ? [state.players.byId[id]!] : [],
   );
@@ -91,7 +90,7 @@ export function matchDemand(state: WorldState, fixture: Fixture, priceOverride?:
     GAMEPLAY.baseTicketCents *
       1.2 *
       (marketing >= 5 ? 1.3 : 1) *
-      (1 + (importance - 1) * 1.5 + Math.min(0.3, upgrades * GAMEPLAY.qualityTicketPremium)),
+      (1 + (importance - 1) * 1.5 + benefits.ticketPremium),
     MONEY_STEPS.ticket,
   );
   const priceCents = Math.max(
@@ -109,7 +108,7 @@ export function matchDemand(state: WorldState, fixture: Fixture, priceOverride?:
   const interest =
     (GAMEPLAY.attendanceBase +
       (morale / 100) * GAMEPLAY.attendanceMoraleWeight +
-      Math.min(0.2, upgrades * GAMEPLAY.attendanceUpgradeWeight)) *
+      benefits.interest) *
     (marketing >= 5 ? 1.3 : 0.7 + form * 0.6) *
     (1 + (importance - 1) * 0.3);
   const selloutPriceCents =
@@ -124,9 +123,7 @@ export function matchDemand(state: WorldState, fixture: Fixture, priceOverride?:
     50000,
     ceilMoney(selloutPriceCents + (Math.log(100) * fairPriceCents) / 0.85, MONEY_STEPS.ticket),
   );
-  const commerce = stadium
-    ? stadium.commerce.foodLevel + stadium.commerce.shirtsLevel + stadium.commerce.hospitalityLevel
-    : 0;
+  const commerce = benefits.commerce;
   const projection = projectTicketDemand(
     { capacity, selloutPriceCents, minimumCrowdPriceCents, commerce },
     priceCents,

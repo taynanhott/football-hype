@@ -1,3 +1,6 @@
+import { Select, Option } from '../../ui/select';
+import { clubKit } from '@football/shared';
+import { STADIUM_SKINS, stadiumSkin } from '../../three/stadium-catalog';
 import { SECTORS, MARKETING_BENEFITS } from './center-sectors';
 import { CenterManagement, SectorGuide } from './center-management';
 import { lazy, Suspense, useState } from 'react';
@@ -170,6 +173,33 @@ export function Facilities(props: ViewProps & { training?: boolean }) {
         <div className="scene-legend">
           <span className="live-dot">VISUALIZAÇÃO 3D</span>
           <span>Arraste para explorar · Role para aproximar</span>
+          {!training && (
+            <>
+              <label className="stadium-skin-control">
+                Skin do Estádio
+                <Select
+                  aria-label="Skin do Estádio"
+                  value={stadiumSkin(stadium) ?? ''}
+                  disabled={busy}
+                  onValueChange={(value) =>
+                    send({
+                      type: 'customize',
+                      stadiumSkin: value as NonNullable<typeof stadium.skin>,
+                      stadiumColor: stadium.color ?? '#315d55',
+                      centerColor: center.color ?? '#e5dfcf',
+                      ...clubKit(club),
+                    })
+                  }
+                >
+                  {STADIUM_SKINS.map((s) => (
+                    <Option key={s[0]} value={s[0]}>
+                      {s[1]}
+                    </Option>
+                  ))}
+                </Select>
+              </label>
+            </>
+          )}
         </div>
       </section>
       <div className="facility-grid">
@@ -374,7 +404,7 @@ export function Facilities(props: ViewProps & { training?: boolean }) {
           )}
         </PlayerModal>
       )}
-      {training && customizationOpen && (
+      {customizationOpen && (
         <PlayerModal
           className="club-customization-modal"
           title="Personalização do clube"

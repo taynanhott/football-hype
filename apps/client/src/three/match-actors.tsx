@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/immutability -- Three.js animation buffers are updated in place each frame. */
 import type { OrbitControls } from 'three-stdlib';
 import { useFrame, useThree } from '@react-three/fiber';
 import { useEffect, useMemo, useRef } from 'react';
@@ -154,7 +155,9 @@ export function MatchActors({
       </mesh>
       {elapsed >= MATCH_DURATION_MS &&
         elapsed < MATCH_DURATION_MS + 6000 &&
-        result.homeGoals > result.awayGoals && <Fireworks />}
+        result.homeGoals > result.awayGoals && (
+          <Fireworks color={state.stadiums.byId[home?.stadiumId ?? '']?.color ?? '#ffd36b'} />
+        )}
     </group>
   );
 }
@@ -349,7 +352,7 @@ function Runner({
     </group>
   );
 }
-function Fireworks() {
+function Fireworks({ color: victoryColor }: { color: string }) {
   const fireworks = useMemo(() => {
     const rays = 56;
     const trail = 8;
@@ -363,7 +366,7 @@ function Fireworks() {
   useEffect(() => () => fireworks.geometry.dispose(), [fireworks]);
   useFrame(({ clock }) => {
     const { positions, colors, rays, trail, geometry } = fireworks;
-    const palette = ['#ffd36b', '#ff8645', '#ff68b4', '#fff1ce'];
+    const palette = [victoryColor, victoryColor, '#ffffff', victoryColor];
     const color = new Color();
     let offset = 0;
     for (let burst = 0; burst < 12; burst++) {
