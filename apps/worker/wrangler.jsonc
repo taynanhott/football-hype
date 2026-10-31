@@ -17,7 +17,7 @@
     { "tag": "v1", "new_sqlite_classes": ["GameHub"] },
     {
       "tag": "v2-reset-careers",
-      "deleted_classes": ["GameHub"],
+
       "new_sqlite_classes": ["GameHubV2"],
     },
   ],
