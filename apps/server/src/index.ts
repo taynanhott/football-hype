@@ -126,7 +126,6 @@ const http = createServer((request, response) => {
     const authStarted = performance.now();
     const identity = await authenticate({
       token: request.headers.authorization?.replace(/^Bearer /, ''),
-      appCheckToken: request.headers['x-firebase-appcheck'],
       guestId: request.headers['x-guest-id'],
     });
     response.setHeader('Server-Timing', 'auth;dur=' + (performance.now() - authStarted).toFixed(1));

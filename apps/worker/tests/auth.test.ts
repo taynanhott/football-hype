@@ -31,6 +31,19 @@ describe('Tokens Firebase no Worker', () => {
       );
 
       expect((await authenticate({ token }, 'test-project')).userId).toBe('test-user');
+      const request = new Request('https://game.example/api/leagues', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      expect(
+        (
+          await authenticate(
+            {
+              token: request.headers.get('Authorization')?.replace(/^Bearer /, ''),
+            },
+            'test-project',
+          )
+        ).userId,
+      ).toBe('test-user');
       await expect(authenticate({ token }, 'another-project')).rejects.toThrow();
       await expect(authenticate({}, 'test-project')).rejects.toThrow();
       const invalidProvider = await sign(

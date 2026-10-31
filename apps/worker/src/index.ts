@@ -136,7 +136,6 @@ export class GameHubV2 extends DurableObject<Env> {
     const identity = await authenticate(
       {
         token: request.headers.get('Authorization')?.replace(/^Bearer /, ''),
-        appCheckToken: request.headers.get('X-Firebase-AppCheck'),
       },
       this.env.FIREBASE_PROJECT_ID,
     );
