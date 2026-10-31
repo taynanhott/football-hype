@@ -7,6 +7,8 @@ import {
   applyEvent,
   clubPayroll,
   financialLimits,
+  defaultFinancialPlan,
+  monthlyStructureCost,
   monthlyFinancialReport,
   recordEvent,
   recordFinancialHistory,
@@ -31,6 +33,18 @@ function act(command: Parameters<typeof executeCommand>[1]) {
 }
 
 describe('limites financeiros autoritativos', () => {
+  it('inicia todos os clubes após as despesas mensais sem exceder o caixa', () => {
+    for (const club of Object.values(state.clubs.byId)) {
+      const expenses = clubPayroll(state, club) + monthlyStructureCost(state, club);
+      const plan = defaultFinancialPlan(state, club);
+      if (club.balance.cents > expenses) expect(plan.salaries).toBeGreaterThan(expenses);
+      expect(plan.salaries + plan.transfer).toBeLessThanOrEqual(Math.max(0, club.balance.cents));
+      expect(financialLimits(state, club).salaryCap).toBe(plan.salaries);
+    }
+    expect(
+      defaultFinancialPlan(state, { ...own(), balance: { cents: 0, currency: 'BRL' } }),
+    ).toEqual({ salaries: 0, transfer: 0 });
+  });
   it('salva a distribuição, impede exceder o caixa e considera a folha existente', () => {
     const club = own(),
       payroll = clubPayroll(state, club),

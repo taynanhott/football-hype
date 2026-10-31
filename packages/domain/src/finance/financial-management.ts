@@ -4,6 +4,17 @@ import { MONEY_STEPS, type ClubSnapshot, type WorldState, type GameEvent } from 
 export function clubPayroll(state: WorldState, club: ClubSnapshot) {
   return club.playerIds.reduce((sum, id) => sum + (state.players.byId[id]?.salary.cents ?? 0), 0);
 }
+/** Start just beyond the monthly expense marker, within available cash. */
+export function defaultFinancialPlan(state: WorldState, club: ClubSnapshot) {
+  const cash = Math.max(0, club.balance.cents);
+  const expenses = clubPayroll(state, club) + monthlyStructureCost(state, club);
+  const salaries = Math.min(
+    cash,
+    (Math.floor(expenses / MONEY_STEPS.general) + 1) * MONEY_STEPS.general,
+  );
+  const transfer = Math.floor((cash - salaries) / MONEY_STEPS.general) * MONEY_STEPS.general;
+  return { salaries, transfer };
+}
 export function operatingReserve(state: WorldState, club: ClubSnapshot) {
   return Math.min(
     Math.max(0, club.balance.cents),
@@ -18,7 +29,8 @@ export function financialLimits(
 ) {
   void _fee;
   void _negotiationId;
-  const plan = state.management?.financialPlans?.[club.id];
+  const savedPlan = state.management?.financialPlans?.[club.id];
+  const plan = savedPlan ?? defaultFinancialPlan(state, club);
   const cash = Math.max(0, club.balance.cents);
   const payroll = clubPayroll(state, club);
   const operations = monthlyStructureCost(state, club) + (state.debts[club.id] ?? 0);
@@ -26,7 +38,7 @@ export function financialLimits(
   const transfer = Math.max(0, Math.min(plan?.transfer ?? cash, cash));
   const salary = Math.max(0, plan ? plan.salaries - payroll : cash);
   return {
-    configured: Boolean(plan),
+    configured: Boolean(savedPlan),
     operations,
     reserve,
     transfer: Math.floor(transfer / MONEY_STEPS.general) * MONEY_STEPS.general,

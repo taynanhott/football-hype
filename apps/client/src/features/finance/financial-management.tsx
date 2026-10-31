@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import {
   clubPayroll,
+  defaultFinancialPlan,
   monthlyFinancialReport,
   maintenanceBreakdown,
   monthlyStructureCost,
@@ -43,7 +44,9 @@ function BudgetEditor({ snapshot, club }: Props) {
   const plan = state.management?.financialPlans?.[club.id];
   const payroll = clubPayroll(state, club);
   const monthlyExpenses = payroll + operations;
-  const [salaries, setSalaries] = useState(Math.min(total, plan?.salaries ?? payroll));
+  const [salaries, setSalaries] = useState(
+    Math.min(total, plan?.salaries ?? defaultFinancialPlan(state, club).salaries),
+  );
   const transfer =
     Math.floor(Math.max(0, total - salaries) / MONEY_STEPS.general) * MONEY_STEPS.general;
   const busy = useGameStore((s) => s.busy);
