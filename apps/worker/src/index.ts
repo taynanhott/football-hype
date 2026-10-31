@@ -139,7 +139,6 @@ export class GameHubV2 extends DurableObject<Env> {
         appCheckToken: request.headers.get('X-Firebase-AppCheck'),
       },
       this.env.FIREBASE_PROJECT_ID,
-      this.env.FIREBASE_PROJECT_NUMBER,
     );
     const body = async () => {
       const text = await request.text();
@@ -281,11 +280,7 @@ export class GameHubV2 extends DurableObject<Env> {
               localTables: z.boolean().optional(),
             })
             .parse(data);
-          const identity = await authenticate(
-            data,
-            this.env.FIREBASE_PROJECT_ID,
-            this.env.FIREBASE_PROJECT_NUMBER,
-          );
+          const identity = await authenticate(data, this.env.FIREBASE_PROJECT_ID);
           await this.service.join(options.leagueId, identity, options.clubId);
           this.meter.totals.authentications++;
           session = {

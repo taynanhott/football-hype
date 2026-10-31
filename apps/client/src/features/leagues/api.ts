@@ -29,8 +29,6 @@ export async function request(path: string, init?: RequestInit): Promise<unknown
   const identity = await credentials();
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   if ('token' in identity && identity.token) headers.Authorization = `Bearer ${identity.token}`;
-  if ('appCheckToken' in identity && identity.appCheckToken)
-    headers['X-Firebase-AppCheck'] = identity.appCheckToken;
   if ('guestId' in identity && identity.guestId) headers['X-Guest-Id'] = identity.guestId;
   const response = await fetch(`${serverUrl.replace(/^ws/, 'http')}${path}`, {
     ...init,

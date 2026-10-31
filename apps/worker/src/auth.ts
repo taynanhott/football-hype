@@ -6,27 +6,16 @@ const authKeys = createRemoteJWKSet(
     'https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com',
   ),
 );
-const appKeys = createRemoteJWKSet(new URL('https://firebaseappcheck.googleapis.com/v1/jwks'));
-export async function authenticate(
-  input: unknown,
-  projectId: string,
-  projectNumber: string,
-): Promise<Identity> {
+export async function authenticate(input: unknown, projectId: string): Promise<Identity> {
   const options = connectOptionsSchema.parse(input);
-  if (!options.token || !options.appCheckToken)
-    throw new Error('Entre com sua conta Google e valide o App Check');
+  if (!options.token) throw new Error('Entre com sua conta Google');
   const { payload } = await jwtVerify(options.token, authKeys, {
     issuer: `https://securetoken.google.com/${projectId}`,
     audience: projectId,
     algorithms: ['RS256'],
   });
-  const app = await jwtVerify(options.appCheckToken, appKeys, {
-    issuer: `https://firebaseappcheck.googleapis.com/${projectNumber}`,
-    audience: `projects/${projectNumber}`,
-    algorithms: ['RS256'],
-  });
   const firebase = payload.firebase as { sign_in_provider?: string } | undefined;
-  if (!payload.sub || firebase?.sign_in_provider !== 'google.com' || !app.payload.sub)
+  if (!payload.sub || firebase?.sign_in_provider !== 'google.com')
     throw new Error('Sessão inválida');
   return { userId: payload.sub, name: String(payload.name ?? 'Treinador'), guest: false };
 }

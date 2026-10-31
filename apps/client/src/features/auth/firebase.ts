@@ -8,7 +8,6 @@ import {
   signOut,
   type User,
 } from 'firebase/auth';
-import { getToken, initializeAppCheck, ReCaptchaEnterpriseProvider } from 'firebase/app-check';
 import { z } from 'zod';
 
 const config = z
@@ -43,18 +42,6 @@ export const auth = getAuth(app);
 if (import.meta.env.DEV && import.meta.env.VITE_USE_EMULATORS === 'true') {
   connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
 }
-const siteKey = import.meta.env.VITE_FIREBASE_APPCHECK_SITE_KEY as string | undefined;
-if (import.meta.env.DEV && import.meta.env.VITE_FIREBASE_APPCHECK_DEBUG === 'true') {
-  (
-    self as typeof self & { FIREBASE_APPCHECK_DEBUG_TOKEN?: boolean }
-  ).FIREBASE_APPCHECK_DEBUG_TOKEN = true;
-}
-const appCheck = siteKey
-  ? initializeAppCheck(app, {
-      provider: new ReCaptchaEnterpriseProvider(siteKey),
-      isTokenAutoRefreshEnabled: true,
-    })
-  : undefined;
 export async function googleLogin(): Promise<User> {
   return (await signInWithPopup(auth, new GoogleAuthProvider())).user;
 }
@@ -68,8 +55,7 @@ export async function logout(): Promise<void> {
 export async function firebaseCredentials() {
   await auth.authStateReady();
   const token = await auth.currentUser?.getIdToken();
-  const appCheckToken = appCheck ? (await getToken(appCheck)).token : undefined;
-  return { ...(token ? { token } : {}), ...(appCheckToken ? { appCheckToken } : {}) };
+  return { ...(token ? { token } : {}) };
 }
 export function observeUser(listener: (user: User | null) => void) {
   return onAuthStateChanged(auth, listener);
