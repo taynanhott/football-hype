@@ -9,5 +9,5 @@ export function ceilMoney(cents: number, step: number = MONEY_STEPS.general): nu
 }
 
 export function formatMoney(cents: number): string {
-  return `${Number((cents / 100000).toFixed(3))} K`;
+  return `${Number((cents / 100000).toFixed(3))} $`;
 }
