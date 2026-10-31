@@ -7,3 +7,7 @@ export function roundMoney(cents: number, step: number = MONEY_STEPS.general): n
 export function ceilMoney(cents: number, step: number = MONEY_STEPS.general): number {
   return Math.ceil(cents / step) * step;
 }
+
+export function formatMoney(cents: number): string {
+  return `${Number((cents / 100000).toFixed(3))} K`;
+}

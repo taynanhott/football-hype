@@ -1,3 +1,4 @@
+import { formatMoney } from '@football/shared';
 import { renewalTerms, contractExpires } from './player-contracts.js';
 import { stableId } from './world-factory.js';
 import { prepareAcademy } from './academy.js';
@@ -590,10 +591,7 @@ export function manageClub({ state, club, command }: CommandContext): Result<Com
       );
     const minimum = terms.minimumSalary;
     if (!command.salary || command.salary < minimum)
-      return fail(
-        'Reajuste necessário: salário mínimo mensal de R$ ' +
-          (minimum / 100).toLocaleString('pt-BR'),
-      );
+      return fail('Reajuste necessário: salário mínimo mensal de R$ ' + formatMoney(minimum));
     if (command.salary > financialLimits(state, club).salary + player.salary.cents)
       return fail('A renovação ultrapassa o limite da folha salarial');
     management.contractHistory = {

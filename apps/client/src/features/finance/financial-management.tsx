@@ -20,13 +20,7 @@ const COLORS = {
   fixed: '#9b83ad',
   profit: '#258660',
 };
-const compact = (cents: number) =>
-  new Intl.NumberFormat('pt-BR', {
-    notation: 'compact',
-    maximumFractionDigits: 1,
-    style: 'currency',
-    currency: 'BRL',
-  }).format(cents / 100);
+const compact = currency;
 type Props = { snapshot: GameSnapshot; club: ClubSnapshot };
 export function FinancialManagement(props: Props) {
   const plan = props.snapshot.state.management?.financialPlans?.[props.club.id];

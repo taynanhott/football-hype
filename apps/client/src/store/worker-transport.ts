@@ -68,9 +68,14 @@ export async function connectWorker(url: string, options: unknown): Promise<Game
       if (!ready) reject(new Error('Falha na conexão com o servidor'));
       for (const handler of errors) handler();
     };
-    ws.onclose = () => {
+    ws.onclose = (event) => {
       clearTimeout(timeout);
-      if (!ready) reject(new Error('Conexão encerrada'));
+      if (!ready)
+        reject(
+          new Error(
+            `Conexão encerrada (código ${event.code})${event.reason ? `: ${event.reason}` : '. O servidor não informou o motivo.'}`,
+          ),
+        );
       for (const handler of leaves) handler();
     };
   });

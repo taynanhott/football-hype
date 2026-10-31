@@ -195,9 +195,31 @@ export class LeagueService {
       message,
       amount: 0,
     });
-    if (!event.ok) throw new Error(event.error.message, { cause: event.error.issues });
+    if (!event.ok) {
+      console.error(
+        JSON.stringify({
+          event: 'league.commit.validation-failed',
+          leagueId: previous.id,
+          revision: previous.revision,
+          operation: message,
+          issues: event.error.issues,
+        }),
+      );
+      throw new Error(event.error.message, { cause: event.error.issues });
+    }
     const applied = applyEvent(previous, event.value);
-    if (!applied.ok) throw new Error(applied.error.message);
+    if (!applied.ok) {
+      console.error(
+        JSON.stringify({
+          event: 'league.commit.apply-failed',
+          leagueId: previous.id,
+          revision: previous.revision,
+          operation: message,
+          issues: applied.error.issues,
+        }),
+      );
+      throw new Error(applied.error.message, { cause: applied.error.issues });
+    }
     await this.repository.append(previous.id, previous.revision, applied.value, event.value);
     this.updates.emit(previous.id);
   }

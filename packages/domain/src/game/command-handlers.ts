@@ -1,3 +1,4 @@
+import { formatMoney } from '@football/shared';
 import { maxContractYears, moraleSensitivity } from './player-contracts.js';
 import { seasonStart } from '../competitions/season-calendar.js';
 import { scheduleRegionalQualifiers } from '../competitions/regional-qualifiers.js';
@@ -466,7 +467,7 @@ function handleOffer({
     const reply = command.withdraw
       ? 'Proposta retirada. Voltamos a conversar em uma semana.'
       : 'Não vamos aceitar esse valor, o mínimo que aceitamos é R$ ' +
-        (requiredFee / 100).toLocaleString('pt-BR') +
+        formatMoney(requiredFee) +
         '. Conversas suspensas por uma semana.';
     const rejected: Negotiation = {
       id: eventId,
@@ -536,7 +537,7 @@ function handleOffer({
           'Você esqueceu uns zeros nessa oferta? Vamos conversar sério.',
           'Essa é a última vez que eu escuto uma proposta tão baixa.',
         ][Math.min(2, Math.max(0, lowAttempts - 1))]!
-      : `A oferta está abaixo do que queremos. Nosso valor é R$ ${(minimum / 100).toLocaleString('pt-BR')}.`;
+      : `A oferta está abaixo do que queremos. Nosso valor é ${formatMoney(minimum)}.`;
     const rejected: Negotiation = {
       id: eventId,
       buyerId: club.id,
@@ -642,7 +643,7 @@ function handleSalary({
       command.salary < minimumSalary * 0.6 ||
       roll >= (command.salary / minimumSalary - 0.6) * 125)
   ) {
-    const reply = `Não aceito esse salário. Quero R$ ${(minimumSalary / 100).toLocaleString('pt-BR')} por mês. Esse é meu valor final.`;
+    const reply = `Não aceito esse salário. Quero ${formatMoney(minimumSalary)} por mês. Esse é meu valor final.`;
     return success({
       next: {
         ...state,

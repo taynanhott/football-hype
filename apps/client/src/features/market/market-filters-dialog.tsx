@@ -1,3 +1,4 @@
+import { currency } from '../../ui/format';
 import { openModalPreservingScroll } from '../../ui/modal-scroll';
 import { MoneyRange } from '../../ui/money-range';
 import { useEffect, useRef, useState } from 'react';
@@ -15,16 +16,7 @@ type FilterProps = {
   onClose: () => void;
 };
 const money = (value: number) =>
-  value === UNLIMITED_MARKET_PRICE
-    ? 'Sem limite'
-    : value === 0
-      ? 'R$ 0'
-      : new Intl.NumberFormat('pt-BR', {
-          style: 'currency',
-          currency: 'BRL',
-          notation: 'compact',
-          maximumFractionDigits: 1,
-        }).format(value);
+  value === UNLIMITED_MARKET_PRICE ? 'Sem limite' : currency(value * 100);
 
 export function MarketFiltersDialog(props: FilterProps) {
   const dialog = useRef<HTMLDialogElement>(null);
