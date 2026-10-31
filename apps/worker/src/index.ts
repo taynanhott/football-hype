@@ -10,7 +10,7 @@ import type { GameSnapshot } from '@football/shared';
 import { UsageMeter } from './usage-meter.js';
 
 export interface Env {
-  GAME: DurableObjectNamespace<GameHub>;
+  GAME: DurableObjectNamespace<GameHubV2>;
   ASSETS: Fetcher;
   CLIENT_ORIGIN: string;
   FIREBASE_PROJECT_ID: string;
@@ -28,7 +28,7 @@ const messageSchema = z.object({ type: z.string().max(32), data: z.unknown().opt
 function errorText(error: unknown) {
   return error instanceof Error ? error.message : 'Falha inesperada';
 }
-export class GameHub extends DurableObject<Env> {
+export class GameHubV2 extends DurableObject<Env> {
   private readonly repository: DurableLeagueRepository;
   private readonly service: LeagueService;
   private pending: Promise<unknown> = Promise.resolve();

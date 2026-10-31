@@ -23,7 +23,7 @@ vi.mock('../src/dataset.js', () => ({ datasetProvider: () => undefined }));
 describe('sincronização do Worker com dez conexões', () => {
   it('envia um estado por ação, recupera sync completo e persiste comandos de mercado sem duplicar', async () => {
     const modulePath = '../src/index.js';
-    const { GameHub } = await import(modulePath);
+    const { GameHubV2 } = await import(modulePath);
     const db = new DatabaseSync(':memory:');
     const sockets: ReturnType<typeof socket>[] = [];
     const tasks: Promise<unknown>[] = [];
@@ -93,7 +93,7 @@ describe('sincronização do Worker com dez conexões', () => {
         },
       },
     };
-    const hub = new GameHub(context as never, { USAGE_METRICS: 'false' } as never);
+    const hub = new GameHubV2(context as never, { USAGE_METRICS: 'false' } as never);
     const repo = (hub as unknown as { repository: DurableLeagueRepository }).repository;
     const created = createWorld({
       id: randomUUID(),

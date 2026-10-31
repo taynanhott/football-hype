@@ -12,7 +12,14 @@
     "FIREBASE_PROJECT_NUMBER": "717966218493",
     "USAGE_METRICS": "true",
   },
-  "durable_objects": { "bindings": [{ "name": "GAME", "class_name": "GameHub" }] },
-  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["GameHub"] }],
+  "durable_objects": { "bindings": [{ "name": "GAME", "class_name": "GameHubV2" }] },
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["GameHub"] },
+    {
+      "tag": "v2-reset-careers",
+      "deleted_classes": ["GameHub"],
+      "new_sqlite_classes": ["GameHubV2"],
+    },
+  ],
   "assets": { "directory": "./assets", "binding": "ASSETS", "run_worker_first": true },
 }
