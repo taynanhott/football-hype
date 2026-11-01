@@ -20,7 +20,7 @@
     "resumeBytes": 2561
   },
   "usageLogEvents": 37,
-  "queueWaitMs": 79.10339999999951,
-  "maxQueueWaitMs": 21.543100000000095,
+  "queueWaitMs": 64.79950000000281,
+  "maxQueueWaitMs": 18.231900000000223,
   "payloadBytes": 3397356
 }

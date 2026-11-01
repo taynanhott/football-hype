@@ -31,6 +31,42 @@ describe('Tokens Firebase no Worker', () => {
       );
 
       expect((await authenticate({ token }, 'test-project')).userId).toBe('test-user');
+      expect(
+        (
+          await authenticate(
+            {
+              token,
+              leagueId: 'd9a47cb5-eed7-4c19-bb75-c3545562dcaf',
+              localTables: true,
+              deltaProtocol: true,
+            },
+            'test-project',
+          )
+        ).userId,
+      ).toBe('test-user');
+      expect(
+        (
+          await authenticate(
+            {
+              token,
+              deltaProtocol: true,
+              cache: { version: 1, revision: 12, hashes: { players: 'a'.repeat(64) } },
+            },
+            'test-project',
+          )
+        ).userId,
+      ).toBe('test-user');
+      await expect(
+        authenticate(
+          {
+            token,
+            deltaProtocol: true,
+            cache: { version: 1, revision: 12, hashes: { players: 'invalid' } },
+          },
+          'test-project',
+        ),
+      ).rejects.toThrow();
+      await expect(authenticate({ token, unknownFlag: true }, 'test-project')).rejects.toThrow();
       const request = new Request('https://game.example/api/leagues', {
         headers: { Authorization: `Bearer ${token}` },
       });

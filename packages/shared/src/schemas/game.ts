@@ -16,6 +16,7 @@ import {
   userIdSchema,
 } from './primitives.js';
 import { leagueModeSchema } from './league.js';
+import { snapshotCacheSchema } from './snapshot-cache.js';
 
 export const MATCH_DURATION_MS = 90_000;
 
@@ -613,6 +614,8 @@ export const commandSchema = z.discriminatedUnion('type', [
 ]);
 export const connectOptionsSchema = z.strictObject({
   localTables: z.boolean().optional(),
+  deltaProtocol: z.boolean().optional(),
+  cache: snapshotCacheSchema.optional(),
   token: z.string().optional(),
   appCheckToken: z.string().optional(),
   guestId: z.string().optional(),

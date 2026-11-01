@@ -2,14 +2,8 @@ import { z } from 'zod';
 import type { GameSnapshot, WorldState } from './schemas/game.js';
 import { worldStateSchema } from './schemas/game.js';
 
-export const snapshotCacheSchema = z.object({
-  version: z.literal(1),
-  revision: z.number().int().nonnegative(),
-  hashes: z
-    .record(z.string().max(80), z.string().regex(/^[a-f0-9]{64}$/))
-    .refine((value) => Object.keys(value).length <= 100),
-});
-export type SnapshotCacheManifest = z.infer<typeof snapshotCacheSchema>;
+import { type SnapshotCacheManifest } from './schemas/snapshot-cache.js';
+export { snapshotCacheSchema, type SnapshotCacheManifest } from './schemas/snapshot-cache.js';
 export const snapshotDeltaSchema = z.object({
   leagueId: z.uuid(),
   baseRevision: z.number().int().nonnegative(),

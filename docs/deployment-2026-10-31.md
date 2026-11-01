@@ -1,5 +1,7 @@
 # Publicação de produção — 31/10/2026
 
+Correção posterior: backend versão `c8330486-2d59-42e8-a2f5-d51c8abef365`. O validador de autenticação passou a aceitar `deltaProtocol` e o manifesto de cache, preservando a rejeição de campos desconhecidos e manifestos inválidos. O teste com assinatura Firebase cobre os novos campos. A verificação de produção confirmou que ambos os formatos passam pela validação e seguem exigindo login. Nenhuma liga real foi alterada para testar.
+
 Backend publicado antes da interface, usando os Workers existentes e sem novas migrações ou bindings.
 
 - Backend: `football-hype-game`, versão `047b7047-1628-453e-aca7-4811c199e687`.
