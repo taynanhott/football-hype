@@ -488,6 +488,7 @@ const individualCommandSchema = z.discriminatedUnion('type', [
         'vila-belmiro',
         'arena-baixada',
       ])
+      .nullable()
       .optional(),
     stadiumColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
     centerColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
@@ -599,6 +600,9 @@ const clubSettingSchema = z.discriminatedUnion('type', [
   individualCommandSchema.options[5]!, // default ticket price
   individualCommandSchema.options[6]!, // fixture ticket price
   individualCommandSchema.options[7]!, // lineup
+  individualCommandSchema.options[13]!.extend({
+    action: z.enum(['policy', 'renew', 'reject-renewal']),
+  }), // squad planning, committed atomically
 ]);
 export const commandSchema = z.discriminatedUnion('type', [
   ...individualCommandSchema.options,

@@ -1,0 +1,390 @@
+{
+  "measuredAt": "2026-10-31T21:49:57.931Z",
+  "since": "2026-10-31T00:00:00.000Z",
+  "scope": "Whole account, UTC day, read-only API; datasets may be delayed or unavailable",
+  "rest": {
+    "workers/scripts": {
+      "status": 200,
+      "result": [
+        {
+          "created_on": "2026-10-28T20:13:30.857325Z",
+          "modified_on": "2026-10-31T21:35:42.734494Z",
+          "id": "football-hype",
+          "tag": "6fc1f623f473437a99a3bd54aa558d30",
+          "tags": [],
+          "deployment_id": "",
+          "tail_consumers": null,
+          "logpush": false,
+          "has_assets": true,
+          "has_modules": false,
+          "etag": "",
+          "handlers": ["fetch"],
+          "last_deployed_from": "",
+          "compatibility_date": "2026-10-28",
+          "usage_model": "standard",
+          "routes": null
+        },
+        {
+          "created_on": "2026-10-29T14:50:09.478863Z",
+          "modified_on": "2026-10-31T21:34:52.077717Z",
+          "id": "football-hype-game",
+          "tag": "8d4135d30af14e8f99c9192d668cd40d",
+          "tags": [],
+          "deployment_id": "",
+          "tail_consumers": null,
+          "logpush": false,
+          "observability": {
+            "enabled": true,
+            "head_sampling_rate": 1,
+            "redact_query_string": false,
+            "logs": {
+              "enabled": true,
+              "head_sampling_rate": 1,
+              "persist": true,
+              "invocation_logs": true
+            },
+            "traces": {
+              "enabled": false,
+              "persist": true,
+              "head_sampling_rate": 1
+            }
+          },
+          "has_assets": true,
+          "has_modules": true,
+          "etag": "6ceef4c6bb6d9ab969e8dd9a46e508b146715469f58989ff2baef9b091e19b1d",
+          "handlers": ["fetch"],
+          "named_handlers": [
+            {
+              "name": "GameHubV2",
+              "handlers": ["class"]
+            }
+          ],
+          "last_deployed_from": "wrangler",
+          "migration_tag": "v3-delete-old-careers",
+          "compatibility_date": "2026-10-01",
+          "compatibility_flags": ["nodejs_compat"],
+          "usage_model": "standard",
+          "routes": null
+        },
+        {
+          "created_on": "2026-10-21T17:31:58.189477Z",
+          "modified_on": "2026-10-21T17:41:31.476493Z",
+          "id": "fullcalendar-manager",
+          "tag": "48f33ace4d1c49ba919e66b7c39f502a",
+          "tags": [],
+          "deployment_id": "",
+          "tail_consumers": null,
+          "logpush": false,
+          "has_assets": false,
+          "has_modules": true,
+          "etag": "b0290d6828aed3f5db75efba30d6d1644c488430b6bd3ac13817bf30dceae6c4",
+          "handlers": ["fetch"],
+          "last_deployed_from": "dash",
+          "compatibility_date": "2026-10-21",
+          "usage_model": "standard",
+          "routes": null
+        },
+        {
+          "created_on": "2026-09-18T19:19:38.968145Z",
+          "modified_on": "2026-10-06T16:53:16.615855Z",
+          "id": "kingdoms-of-gambling",
+          "tag": "0c5f8d00ce3c441d8f6c464e3b103c36",
+          "tags": [],
+          "deployment_id": "",
+          "tail_consumers": null,
+          "logpush": false,
+          "has_assets": true,
+          "has_modules": true,
+          "etag": "f44cc041579ef2fe1d38989d467bf124ac8459653e3e8cba6536ac2fe9876a63",
+          "handlers": ["fetch"],
+          "named_handlers": [
+            {
+              "name": "AccountStore",
+              "handlers": ["class"]
+            },
+            {
+              "name": "GameRoom",
+              "handlers": ["class"]
+            }
+          ],
+          "last_deployed_from": "wrangler",
+          "migration_tag": "v2-accounts",
+          "compatibility_date": "2026-09-17",
+          "usage_model": "standard",
+          "routes": null
+        }
+      ],
+      "success": true,
+      "errors": [],
+      "messages": []
+    },
+    "workers/durable_objects/namespaces": {
+      "status": 200,
+      "result": [
+        {
+          "id": "fb09f8469129491987606395d7aab625",
+          "name": "kingdoms-of-gambling_GameRoom",
+          "script": "kingdoms-of-gambling",
+          "class": "GameRoom",
+          "use_sqlite": true
+        },
+        {
+          "id": "6c054f07141a4df0bd7bcf706edcaee8",
+          "name": "kingdoms-of-gambling_AccountStore",
+          "script": "kingdoms-of-gambling",
+          "class": "AccountStore",
+          "use_sqlite": true
+        },
+        {
+          "id": "1532ae4c454b4ad7be3980668ff91e21",
+          "name": "football-hype-game_GameHubV2",
+          "script": "football-hype-game",
+          "class": "GameHubV2",
+          "use_sqlite": true
+        }
+      ],
+      "success": true,
+      "errors": null,
+      "messages": null,
+      "result_info": {
+        "page": 1,
+        "per_page": 20,
+        "count": 3,
+        "total_count": 3
+      }
+    },
+    "d1/database": {
+      "status": 200,
+      "result": [],
+      "errors": [],
+      "messages": [],
+      "success": true,
+      "result_info": {
+        "count": 0,
+        "page": 1,
+        "per_page": 100,
+        "total_count": 0
+      }
+    },
+    "storage/kv/namespaces": {
+      "status": 200,
+      "result": [],
+      "errors": [],
+      "messages": [],
+      "success": true,
+      "result_info": {
+        "count": 0,
+        "page": 1,
+        "per_page": 20,
+        "total_count": 0,
+        "total_pages": 0
+      }
+    },
+    "r2/buckets": {
+      "status": 403,
+      "success": false,
+      "errors": [
+        {
+          "code": 10042,
+          "message": "Please enable R2 through the Cloudflare Dashboard."
+        }
+      ],
+      "messages": [],
+      "result": null
+    },
+    "subscriptions": {
+      "status": 403,
+      "success": false,
+      "errors": [
+        {
+          "code": 10000,
+          "message": "Authentication error",
+          "documentation_url": "https://developers.cloudflare.com/api/resources/accounts/subresources/subscriptions/methods/get"
+        }
+      ],
+      "messages": [],
+      "result": null
+    }
+  },
+  "analytics": {
+    "workers": {
+      "status": 200,
+      "data": {
+        "viewer": {
+          "accounts": [
+            {
+              "workersInvocationsAdaptive": [
+                {
+                  "dimensions": {
+                    "scriptName": "kingdoms-of-gambling"
+                  },
+                  "quantiles": {
+                    "cpuTimeP50": 578,
+                    "cpuTimeP99": 1409
+                  },
+                  "sum": {
+                    "cpuTimeUs": 2290,
+                    "errors": 0,
+                    "requests": 3,
+                    "responseBodySize": 336
+                  }
+                },
+                {
+                  "dimensions": {
+                    "scriptName": "football-hype-game"
+                  },
+                  "quantiles": {
+                    "cpuTimeP50": 819,
+                    "cpuTimeP99": 2354
+                  },
+                  "sum": {
+                    "cpuTimeUs": 164395,
+                    "errors": 0,
+                    "requests": 198,
+                    "responseBodySize": 4277334818
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "errors": null
+    },
+    "objects": {
+      "status": 200,
+      "data": {
+        "viewer": {
+          "accounts": [
+            {
+              "durableObjectsInvocationsAdaptiveGroups": [
+                {
+                  "dimensions": {
+                    "namespaceId": "6c054f07141a4df0bd7bcf706edcaee8"
+                  },
+                  "sum": {
+                    "requests": 1
+                  }
+                },
+                {
+                  "dimensions": {
+                    "namespaceId": "1532ae4c454b4ad7be3980668ff91e21"
+                  },
+                  "sum": {
+                    "requests": 177
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "errors": null
+    },
+    "duration": {
+      "status": 200,
+      "data": {
+        "viewer": {
+          "accounts": [
+            {
+              "durableObjectsPeriodicGroups": [
+                {
+                  "dimensions": {
+                    "namespaceId": "6c054f07141a4df0bd7bcf706edcaee8"
+                  },
+                  "quantiles": {
+                    "memoryUsageBytesP99": 1945612
+                  },
+                  "sum": {
+                    "cpuTime": 505,
+                    "duration": 0.01496896,
+                    "inboundWebsocketMsgCount": 0,
+                    "outboundWebsocketMsgCount": 0,
+                    "rowsRead": 3,
+                    "rowsWritten": 0
+                  }
+                },
+                {
+                  "dimensions": {
+                    "namespaceId": "1532ae4c454b4ad7be3980668ff91e21"
+                  },
+                  "quantiles": {
+                    "memoryUsageBytesP99": 151859710
+                  },
+                  "sum": {
+                    "cpuTime": 147036045,
+                    "duration": 36.00297702399999,
+                    "inboundWebsocketMsgCount": 0,
+                    "outboundWebsocketMsgCount": 140,
+                    "rowsRead": 66413,
+                    "rowsWritten": 5851
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "errors": null
+    },
+    "storage": {
+      "status": 200,
+      "data": {
+        "viewer": {
+          "accounts": [
+            {
+              "durableObjectsSqlStorageGroups": [
+                {
+                  "dimensions": {
+                    "namespaceId": "6c054f07141a4df0bd7bcf706edcaee8"
+                  },
+                  "max": {
+                    "storedBytes": 40960
+                  }
+                },
+                {
+                  "dimensions": {
+                    "namespaceId": "1532ae4c454b4ad7be3980668ff91e21"
+                  },
+                  "max": {
+                    "storedBytes": 17674240
+                  }
+                },
+                {
+                  "dimensions": {
+                    "namespaceId": "fb09f8469129491987606395d7aab625"
+                  },
+                  "max": {
+                    "storedBytes": 5746688
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "errors": null
+    }
+  },
+  "logs": {
+    "status": 403,
+    "success": false,
+    "errors": [
+      {
+        "message": "Forbidden"
+      }
+    ],
+    "messages": []
+  },
+  "sharedTotals": {
+    "workerRequests": 201,
+    "workerCpuMs": 166.685,
+    "httpResponseBytes": 4277335154,
+    "objectDurationGbSeconds": 36.01794598399999,
+    "objectCpuMs": 147036.55000000002,
+    "sqliteRowsRead": 66416,
+    "sqliteRowsWritten": 5851,
+    "inboundSocketMessages": 0,
+    "outboundSocketMessages": 140
+  }
+}

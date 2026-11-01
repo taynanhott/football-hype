@@ -2,6 +2,14 @@ import { describe, it, vi, expect } from 'vitest';
 import { DatabaseSync } from 'node:sqlite';
 import { createWorld } from '@football/domain';
 import { randomUUID } from 'node:crypto';
+import { writeFileSync } from 'node:fs';
+import {
+  snapshotManifest,
+  applyStateChanges,
+  snapshotDeltaSchema,
+  type GameSnapshot,
+} from '@football/shared';
+import type { LeagueService } from '../../server/src/application/league-service.js';
 import type { DurableLeagueRepository } from '../src/repository.js';
 vi.mock('cloudflare:workers', () => ({
   DurableObject: class {
@@ -93,7 +101,16 @@ describe('sincronização do Worker com dez conexões', () => {
         },
       },
     };
-    const hub = new GameHubV2(context as never, { USAGE_METRICS: 'false' } as never);
+    const usageLogs: Record<string, number>[] = [];
+    const log = vi.spyOn(console, 'log').mockImplementation((message: string) => {
+      try {
+        const value = JSON.parse(message);
+        if (value.event === 'game.usage') usageLogs.push(value);
+      } catch {
+        /* Other test output is irrelevant to this meter. */
+      }
+    });
+    const hub = new GameHubV2(context as never, { USAGE_METRICS: 'true' } as never);
     const repo = (hub as unknown as { repository: DurableLeagueRepository }).repository;
     const created = createWorld({
       id: randomUUID(),
@@ -163,7 +180,130 @@ describe('sincronização do Worker com dez conexões', () => {
       expect(sockets[0]!.messages.filter((m) => m.type === 'snapshot')).toHaveLength(1);
       expect(auto).toHaveBeenCalledOnce();
       expect(alarm).not.toBeNull();
+      const service = (hub as unknown as { service: LeagueService }).service;
+      const cached = await service.snapshot(created.value.id, 'coach-0', 'cloudflare', false);
+      const manifest = await snapshotManifest(cached, async (text) => {
+        const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+        return Array.from(new Uint8Array(digest), (v) => v.toString(16).padStart(2, '0')).join('');
+      });
+      await service.command(
+        created.value.id,
+        'coach-0',
+        { type: 'home-ticket-price', priceCents: 10000 },
+        false,
+        randomUUID(),
+      );
+      await drain();
+      const resumed = socket();
+      sockets.push(resumed);
+      await hub.webSocketMessage(
+        resumed as never,
+        JSON.stringify({
+          type: 'auth',
+          data: {
+            token: 'coach-0',
+            leagueId: created.value.id,
+            localTables: true,
+            deltaProtocol: true,
+            cache: manifest,
+          },
+        }),
+      );
+      await drain();
+      expect(resumed.messages.filter((m) => m.type === 'snapshot')).toHaveLength(0);
+      const payload = resumed.messages.find((m) => m.type === 'snapshot-delta')!.data;
+      const delta = snapshotDeltaSchema.parse(payload);
+      expect(delta.changes.some((c) => c.path[0] === 'players')).toBe(false);
+      const recovered = applyStateChanges(cached.state, delta.changes);
+      expect(recovered).toEqual(
+        (await service.snapshot(created.value.id, 'coach-0', 'cloudflare', false)).state,
+      );
+      const resumeBytes = Buffer.byteLength(JSON.stringify(payload));
+      expect(resumeBytes).toBeLessThan(Buffer.byteLength(JSON.stringify(cached)) / 10);
+      resumed.messages.length = 0;
+      await hub.webSocketMessage(
+        resumed as never,
+        JSON.stringify({
+          type: 'command',
+          data: {
+            requestId: randomUUID(),
+            command: { type: 'home-ticket-price', priceCents: 12500 },
+          },
+        }),
+      );
+      await drain();
+      const incremental = snapshotDeltaSchema.parse(
+        resumed.messages.find((m) => m.type === 'snapshot-delta')!.data,
+      );
+      expect(applyStateChanges(recovered, incremental.changes).homeTicketPrices).toEqual(
+        (await service.snapshot(created.value.id, 'coach-0')).state.homeTicketPrices,
+      );
+      const afterIncremental = applyStateChanges(recovered, incremental.changes);
+      const warmManifest = await snapshotManifest(
+        { ...cached, state: afterIncremental },
+        async (text) => {
+          const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+          return Array.from(new Uint8Array(digest), (v) => v.toString(16).padStart(2, '0')).join(
+            '',
+          );
+        },
+      );
+      // Simulate the loss of in-memory socket state when a Durable Object hibernates.
+      (hub as unknown as { sent: WeakMap<object, GameSnapshot> }).sent.delete(resumed);
+      resumed.messages.length = 0;
+      await service.command(
+        created.value.id,
+        'coach-0',
+        { type: 'home-ticket-price', priceCents: 15000 },
+        false,
+        randomUUID(),
+      );
+      await drain();
+      expect(resumed.messages.filter((m) => m.type === 'cache-request')).toHaveLength(1);
+      await hub.webSocketMessage(
+        resumed as never,
+        JSON.stringify({ type: 'cache-offer', data: warmManifest }),
+      );
+      await drain();
+      expect(resumed.messages.filter((m) => m.type === 'snapshot')).toHaveLength(0);
+      const wakeDelta = snapshotDeltaSchema.parse(
+        resumed.messages.find((m) => m.type === 'snapshot-delta')!.data,
+      );
+      expect(applyStateChanges(afterIncremental, wakeDelta.changes).homeTicketPrices).toEqual(
+        (await service.snapshot(created.value.id, 'coach-0')).state.homeTicketPrices,
+      );
+      // Missing local data can always request a full state, without changing the world.
+      resumed.messages.length = 0;
+      await hub.webSocketMessage(resumed as never, JSON.stringify({ type: 'sync' }));
+      await drain();
+      expect(resumed.messages.filter((m) => m.type === 'snapshot')).toHaveLength(1);
+      const meter = (hub as unknown as { meter: { totals: Record<string, number> } }).meter;
+      writeFileSync(
+        new URL('../../../docs/socket-resource-benchmark.json', import.meta.url),
+        JSON.stringify(
+          {
+            scope:
+              'Local mocked socket test, generated dataset, ten clients; NOT Cloudflare billing. Includes authentication, broadcast, repeated request and full sync recovery.',
+            ...meter.totals,
+            cacheResume: {
+              fullSnapshotBytes: Buffer.byteLength(JSON.stringify(cached)),
+              resumeBytes,
+            },
+            usageLogEvents: usageLogs.length,
+            queueWaitMs: usageLogs.reduce((n, x) => n + (x.queueWaitMs ?? 0), 0),
+            maxQueueWaitMs: Math.max(...usageLogs.map((x) => x.queueWaitMs ?? 0)),
+            payloadBytes: sockets.reduce(
+              (n, s) =>
+                n + s.messages.reduce((m, x) => m + Buffer.byteLength(JSON.stringify(x)), 0),
+              0,
+            ),
+          },
+          null,
+          2,
+        ) + '\n',
+      );
     } finally {
+      log.mockRestore();
       db.close();
       vi.unstubAllGlobals();
     }

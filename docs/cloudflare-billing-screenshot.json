@@ -1,0 +1,17 @@
+{
+  "source": "User-provided Cloudflare billing screenshot, received 2026-10-31; billing period dates are not visible",
+  "scope": "Account billing totals as displayed; do not add Analytics or exported log totals to these values",
+  "usage": {
+    "workerCpuMs": { "used": 236, "included": 30000000, "billable": 0 },
+    "durableObjectDurationGbSeconds": { "used": 177.95, "included": 400000, "billable": 0 },
+    "durableObjectRowsWritten": { "usedApproximate": 67500, "included": 50000000, "billable": 0 },
+    "durableObjectComputeRequests": { "used": 308, "included": 1000000, "billable": 0 },
+    "durableObjectRowsRead": { "usedApproximate": 2160000, "included": 25000000000, "billable": 0 },
+    "durableObjectStorageGbMonths": { "usedApproximate": 0.01, "included": 5, "billable": 0 },
+    "workerRequests": { "used": 303, "included": 10000000, "billable": 0 },
+    "workerBuildMinutes": { "used": 5, "included": 6000, "billable": 0 }
+  },
+  "displayedAdditionalUsageCostUsd": 0,
+  "r2Screenshot": "Activation offer displayed; no active subscription or usage totals shown. Game has no R2 binding. Do not activate to measure.",
+  "logs": "Not shown; exported JSON contains only 100 events, not daily or monthly usage totals"
+}

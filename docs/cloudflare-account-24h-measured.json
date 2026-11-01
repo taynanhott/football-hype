@@ -1,0 +1,154 @@
+{
+  "measuredAt": "2026-10-31T23:00:22.625Z",
+  "since": "2026-10-30T23:00:22.625Z",
+  "scope": "Whole account, exact time window in since/measuredAt, read-only API; datasets may be delayed or unavailable",
+  "rest": {
+    "workers/scripts": {
+      "status": 401,
+      "success": false,
+      "errors": [
+        {
+          "code": 10000,
+          "message": "Authentication error"
+        }
+      ],
+      "messages": [],
+      "result": null
+    },
+    "workers/durable_objects/namespaces": {
+      "status": 401,
+      "success": false,
+      "errors": [
+        {
+          "code": 10000,
+          "message": "Authentication error"
+        }
+      ],
+      "messages": [],
+      "result": null
+    },
+    "d1/database": {
+      "status": 401,
+      "result": null,
+      "success": false,
+      "errors": [
+        {
+          "code": 10000,
+          "message": "Authentication error"
+        }
+      ],
+      "messages": []
+    },
+    "storage/kv/namespaces": {
+      "status": 401,
+      "result": null,
+      "success": false,
+      "errors": [
+        {
+          "code": 10000,
+          "message": "Authentication error"
+        }
+      ],
+      "messages": []
+    },
+    "r2/buckets": {
+      "status": 401,
+      "success": false,
+      "errors": [
+        {
+          "code": 10000,
+          "message": "Authentication error"
+        }
+      ],
+      "messages": [],
+      "result": null
+    },
+    "subscriptions": {
+      "status": 401,
+      "success": false,
+      "errors": [
+        {
+          "code": 10000,
+          "message": "Authentication error"
+        }
+      ],
+      "messages": [],
+      "result": null
+    }
+  },
+  "analytics": {
+    "workers": {
+      "status": 429,
+      "success": false,
+      "errors": [
+        {
+          "code": 10429,
+          "message": "Rate limited. Please wait and consider throttling your request speed"
+        }
+      ],
+      "messages": [],
+      "result": null
+    },
+    "objects": {
+      "status": 429,
+      "success": false,
+      "errors": [
+        {
+          "code": 10429,
+          "message": "Rate limited. Please wait and consider throttling your request speed"
+        }
+      ],
+      "messages": [],
+      "result": null
+    },
+    "duration": {
+      "status": 429,
+      "success": false,
+      "errors": [
+        {
+          "code": 10429,
+          "message": "Rate limited. Please wait and consider throttling your request speed"
+        }
+      ],
+      "messages": [],
+      "result": null
+    },
+    "storage": {
+      "status": 429,
+      "success": false,
+      "errors": [
+        {
+          "code": 10429,
+          "message": "Rate limited. Please wait and consider throttling your request speed"
+        }
+      ],
+      "messages": [],
+      "result": null
+    }
+  },
+  "logs": {
+    "status": 429,
+    "success": false,
+    "errors": [
+      {
+        "code": 10429,
+        "message": "Rate limited. Please wait and consider throttling your request speed"
+      }
+    ],
+    "messages": [],
+    "result": null
+  },
+  "sharedTotals": {
+    "workerRequests": null,
+    "workerCpuMs": null,
+    "httpResponseBytes": null,
+    "objectDurationGbSeconds": null,
+    "objectCpuMs": null,
+    "sqliteRowsRead": null,
+    "sqliteRowsWritten": null,
+    "inboundSocketMessages": null,
+    "outboundSocketMessages": null,
+    "storageSumOfNamespaceDailyMaxBytes": null
+  },
+  "note": "All Analytics requests returned HTTP 429. No valid 24h totals were obtained; null means unavailable, not zero."
+}

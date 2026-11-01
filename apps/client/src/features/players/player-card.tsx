@@ -155,7 +155,6 @@ export function PlayerCard({
           </div>
         </div>
         <div className="card-back">
-          <span className="eyebrow">PERFIL DO ATLETA · {tierName.toUpperCase()}</span>
           <h3>{player.name}</h3>
           <dl>
             {[

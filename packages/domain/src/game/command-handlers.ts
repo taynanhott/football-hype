@@ -168,6 +168,13 @@ export function handleCommand(input: CommandContext): Result<CommandOutcome> {
       const center = state.centers.byId[club.trainingCenterId];
       if (!stadium || !center)
         return failure(domainError('ENTITY_NOT_FOUND', 'Estrutura indisponível'));
+      if (command.stadiumSkin && stadium.sectors.some((sector) => sector.level < 4))
+        return failure(
+          domainError(
+            'VALIDATION_ERROR',
+            'Skins de estádio são liberadas com todos os setores no nível 4.',
+          ),
+        );
       return success({
         next: {
           ...state,
@@ -192,7 +199,9 @@ export function handleCommand(input: CommandContext): Result<CommandOutcome> {
               [stadium.id]: {
                 ...stadium,
                 color: command.stadiumColor,
-                ...(command.stadiumSkin ? { skin: command.stadiumSkin } : {}),
+                ...(command.stadiumSkin !== undefined
+                  ? { skin: command.stadiumSkin ?? undefined }
+                  : {}),
               },
             },
           },

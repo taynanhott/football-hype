@@ -1,0 +1,74 @@
+{
+  "scope": "User-provided partial export, not a whole-day count. Duplicate files and event IDs removed. Custom usage deltas and platform invocation CPU are separate to avoid double counting.",
+  "duplicateFiles": 1,
+  "uniqueEvents": 100,
+  "from": "2026-10-31T21:13:13.157Z",
+  "to": "2026-10-31T21:40:01.259Z",
+  "platformInvocations": 50,
+  "platformCpuMs": 40265,
+  "platformWallMsSum": 94941,
+  "cpuP50Ms": 482,
+  "cpuP99Ms": 4479,
+  "outcomes": {
+    "ok": 42,
+    "canceled": 8
+  },
+  "usageEvents": 50,
+  "totals": {
+    "httpRequests": 15,
+    "webSocketMessages": 15,
+    "commands": 10,
+    "authentications": 5,
+    "alarms": 1,
+    "errors": 9,
+    "receivedBytes": 8469,
+    "sqlStatements": 1888,
+    "rowsRead": 17983,
+    "rowsWritten": 1113,
+    "sentMessages": 42,
+    "sentBytes": 293768534,
+    "fullSnapshots": 14,
+    "deltaSnapshots": 13,
+    "alarmWrites": 8
+  },
+  "byKind": {
+    "snapshot": {
+      "events": 19,
+      "rowsRead": 2401,
+      "rowsWritten": 0,
+      "sentBytes": 293766914,
+      "elapsedMs": 0
+    },
+    "websocket": {
+      "events": 15,
+      "rowsRead": 5576,
+      "rowsWritten": 804,
+      "sentBytes": 1620,
+      "elapsedMs": 0
+    },
+    "upgrade": {
+      "events": 5,
+      "rowsRead": 0,
+      "rowsWritten": 0,
+      "sentBytes": 0,
+      "elapsedMs": 0
+    },
+    "http": {
+      "events": 10,
+      "rowsRead": 8365,
+      "rowsWritten": 0,
+      "sentBytes": 0,
+      "elapsedMs": 335
+    },
+    "alarm": {
+      "events": 1,
+      "rowsRead": 1641,
+      "rowsWritten": 309,
+      "sentBytes": 0,
+      "elapsedMs": 0
+    }
+  },
+  "maxMessageBatchBytes": 51750969,
+  "maxObservedStorageBytes": 19283968,
+  "logEventBytesSum": 245877
+}

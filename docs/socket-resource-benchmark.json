@@ -1,0 +1,26 @@
+{
+  "scope": "Local mocked socket test, generated dataset, ten clients; NOT Cloudflare billing. Includes authentication, broadcast, repeated request and full sync recovery.",
+  "httpRequests": 0,
+  "webSocketMessages": 17,
+  "commands": 3,
+  "authentications": 11,
+  "alarms": 0,
+  "errors": 0,
+  "receivedBytes": 8328,
+  "sqlStatements": 469,
+  "rowsRead": 298,
+  "rowsWritten": 122,
+  "sentMessages": 127,
+  "sentBytes": 19595265,
+  "fullSnapshots": 12,
+  "deltaSnapshots": 100,
+  "alarmWrites": 2,
+  "cacheResume": {
+    "fullSnapshotBytes": 1608759,
+    "resumeBytes": 2561
+  },
+  "usageLogEvents": 37,
+  "queueWaitMs": 79.10339999999951,
+  "maxQueueWaitMs": 21.543100000000095,
+  "payloadBytes": 3397356
+}

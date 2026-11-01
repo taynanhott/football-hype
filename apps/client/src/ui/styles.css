@@ -22144,3 +22144,710 @@ dialog.modal.ledger-book-modal[open] {
     font-size: 16px;
   }
 }
+@media (min-width: 651px) {
+  .scene-legend .stadium-skin-control {
+    flex-direction: row;
+    align-items: center;
+    width: auto;
+    min-width: 350px;
+    gap: 12px;
+    white-space: nowrap;
+  }
+  .scene-legend .stadium-skin-control .game-select {
+    width: 260px;
+  }
+  .scene-legend:has(.stadium-skin-control) {
+    gap: 16px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+  .scene-legend .stadium-skin-control small {
+    white-space: normal;
+    max-width: 180px;
+  }
+}
+
+/* The assistant keeps a local notebook; the squad stays directly actionable. */
+.squad-office {
+  display: grid;
+  grid-template-columns: minmax(250px, 320px) minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+  padding: 4px;
+}
+.squad-notebook {
+  position: sticky;
+  top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid #b7cf8e45;
+  border-radius: 20px;
+  background: linear-gradient(155deg, #193b35, #102723);
+  box-shadow: 0 16px 40px #0003;
+}
+.assistant-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  color: #e5edca;
+}
+.assistant-local {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #b6cba4;
+  width: 100%;
+  margin-left: 25px;
+}
+.assistant-speech {
+  position: relative;
+  min-height: 86px;
+  padding: 15px;
+  border-radius: 14px;
+  background: #f4edce;
+  color: #263b30;
+  font-size: 14px;
+  line-height: 1.5;
+  box-shadow: 0 5px 0 #0002;
+}
+.assistant-speech:after {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  left: 45%;
+  border: 10px solid transparent;
+  border-top-color: #f4edce;
+  border-bottom: 0;
+}
+.squad-assistant-avatar {
+  display: block;
+  width: 100%;
+  max-height: 225px;
+}
+.assistant-writing-hand {
+  transform-origin: 180px 175px;
+}
+.is-writing .assistant-writing-hand {
+  animation: assistant-note 1.7s ease-in-out infinite;
+}
+@keyframes assistant-note {
+  0%,
+  100% {
+    transform: rotate(-3deg) translateX(-2px);
+  }
+  50% {
+    transform: rotate(5deg) translateX(3px);
+  }
+}
+.notebook-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: #e9eddb;
+}
+.notebook-summary small {
+  font-size: 12px;
+  color: #bbc9b3;
+}
+.notebook-actions {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+  max-height: 240px;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.notebook-actions li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid #ffffff18;
+  padding: 8px 0;
+}
+.notebook-actions li span {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+}
+.notebook-actions small {
+  color: #c1ceb9;
+  font-size: 11px;
+}
+.notebook-actions button {
+  padding: 4px 10px;
+  flex-shrink: 0;
+}
+.notebook-buttons {
+  display: grid;
+  gap: 8px;
+}
+.notebook-buttons button {
+  min-height: 42px;
+  white-space: normal;
+}
+.notebook-buttons .primary {
+  background: #d1e99a;
+  color: #193425;
+  border: 1px solid #dfefb4;
+  font-weight: 800;
+}
+.notebook-connection {
+  font-size: 12px;
+  color: #e6cf8a;
+}
+.squad-office-roster {
+  min-width: 0;
+}
+.squad-office-controls {
+  display: flex;
+  gap: 12px;
+  align-items: end;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.squad-office-controls label {
+  display: grid;
+  gap: 5px;
+  font-size: 12px;
+}
+.squad-office-controls input {
+  width: 100%;
+  min-width: 170px;
+}
+.squad-office-controls .squad-averages {
+  margin-left: auto;
+}
+.squad-office-players {
+  display: grid;
+  gap: 18px;
+}
+.squad-office-player {
+  display: grid;
+  grid-template-columns: 190px minmax(0, 1fr);
+  gap: 22px;
+  padding: 20px;
+  border: 1px solid #9facb02b;
+  border-radius: 18px;
+  background: linear-gradient(125deg, #263237, #19272a);
+  box-shadow: 0 8px 24px #0002;
+}
+.squad-office-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+.squad-office-card .player-card {
+  width: 180px;
+  max-width: 100%;
+  margin: 0;
+}
+.squad-office-card > small {
+  font-size: 10px;
+  color: #b4c2ba;
+}
+.squad-office-actions {
+  min-width: 0;
+}
+.squad-office-actions .player-management {
+  margin: 0;
+}
+.squad-office-actions .management-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  position: relative;
+}
+.squad-office-actions .management-tabs button {
+  font-size: 11px;
+  padding: 8px;
+  flex: 1;
+  white-space: normal;
+}
+.squad-office-actions > a {
+  display: inline-block;
+  font-size: 12px;
+  margin-top: 12px;
+  color: #cee6a3;
+}
+.squad-planned-badge {
+  font-size: 11px;
+  padding: 5px 9px;
+  border-radius: 20px;
+  background: #d4e6a120;
+  color: #d9ecae;
+}
+.squad-office-empty {
+  padding: 30px;
+  text-align: center;
+}
+@media (max-width: 1100px) {
+  .squad-office {
+    grid-template-columns: 260px minmax(0, 1fr);
+    gap: 16px;
+  }
+  .squad-office-player {
+    grid-template-columns: 145px minmax(0, 1fr);
+    gap: 14px;
+    padding: 14px;
+  }
+  .squad-office-card .player-card {
+    width: 145px;
+  }
+}
+@media (max-width: 760px) {
+  .squad-office {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+  }
+  .squad-notebook {
+    position: static;
+    display: grid;
+    grid-template-columns: minmax(110px, 150px) minmax(0, 1fr);
+    gap: 12px;
+    padding: 14px;
+  }
+  .assistant-name {
+    grid-column: 1/-1;
+  }
+  .assistant-speech {
+    grid-column: 2;
+    grid-row: 2;
+    align-self: center;
+    font-size: 13px;
+    min-height: 0;
+  }
+  .assistant-speech:after {
+    left: -10px;
+    bottom: 35%;
+    border: 10px solid transparent;
+    border-right-color: #f4edce;
+    border-left: 0;
+  }
+  .squad-assistant-avatar {
+    grid-column: 1;
+    grid-row: 2;
+    align-self: end;
+  }
+  .notebook-summary,
+  .notebook-actions,
+  .notebook-buttons,
+  .notebook-connection,
+  .squad-notebook > p {
+    grid-column: 1/-1;
+  }
+  .notebook-actions {
+    max-height: 170px;
+  }
+  .notebook-buttons {
+    grid-template-columns: 1fr 1fr;
+  }
+  .squad-office-controls {
+    gap: 10px;
+  }
+  .squad-office-controls label:first-child {
+    flex: 1;
+  }
+  .squad-office-player {
+    grid-template-columns: 145px minmax(0, 1fr);
+    gap: 14px;
+  }
+  .squad-office-actions .management-tabs {
+    gap: 4px;
+  }
+  .squad-office-actions .management-tabs button {
+    flex: 1 1 100%;
+  }
+  .squad-office-actions .renewal-years .segmented {
+    flex-wrap: wrap;
+  }
+}
+@media (max-width: 440px) {
+  .squad-office-player {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .squad-office-card {
+    display: grid;
+    grid-template-columns: 160px minmax(0, 1fr);
+    justify-content: center;
+  }
+  .squad-office-card .player-card {
+    width: 160px;
+    grid-row: 1/3;
+  }
+  .squad-office-card > small {
+    align-self: end;
+  }
+  .squad-planned-badge {
+    align-self: start;
+    text-align: center;
+  }
+  .squad-office-actions .management-tabs button {
+    flex: 1;
+    font-size: 10px;
+  }
+  .squad-notebook {
+    grid-template-columns: 110px minmax(0, 1fr);
+  }
+  .notebook-buttons {
+    grid-template-columns: 1fr;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .is-writing .assistant-writing-hand {
+    animation: none;
+  }
+}
+
+.squad-office-controls > label {
+  color: #edf2d9;
+}
+
+/* Stable squad rows and comfortable card-back insets in every screen. */
+.squad-office-player {
+  height: 400px;
+  min-height: 400px;
+  overflow: hidden;
+  align-items: start;
+}
+.squad-office-actions {
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+  padding-right: 4px;
+}
+.squad-office-card {
+  align-self: start;
+}
+.notebook-buttons {
+  grid-template-columns: 1fr;
+}
+.lineup-club-summary .lineup-summary-metrics {
+  width: 100%;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.lineup-club-summary .squad-averages {
+  flex: 1;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.lineup-club-summary .squad-average {
+  flex: 1;
+  min-width: 48px;
+  padding: 9px 7px;
+}
+.lineup-club-summary .squad-average strong {
+  font-size: 20px;
+}
+.player-card .card-back {
+  display: flex;
+  flex-direction: column;
+  padding: 14px 12px 20px;
+  overflow: hidden;
+}
+.player-card .card-back h3 {
+  flex-shrink: 0;
+  margin: 0 0 8px;
+  font-size: 12px;
+  line-height: 1.2;
+}
+.player-card .card-back dl {
+  display: grid;
+  grid-template-rows: repeat(8, minmax(0, 1fr));
+  flex: 1;
+  min-height: 0;
+  margin: 0;
+  gap: 2px;
+}
+.player-card .card-back dl > div {
+  min-height: 0;
+  align-items: center;
+  padding: 1px 0;
+  gap: 6px;
+  font-size: 8px;
+  line-height: 1.2;
+}
+.player-card .card-back dt {
+  flex-shrink: 0;
+  font-size: 8px;
+}
+.player-card .card-back dd {
+  font-size: 8px;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+.player-card .card-back dl > div:last-child {
+  border-bottom: 0;
+}
+@media (max-width: 440px) {
+  .squad-office-player {
+    height: 640px;
+    min-height: 640px;
+    grid-template-rows: 250px minmax(0, 1fr);
+  }
+  .squad-office-actions {
+    height: 100%;
+  }
+}
+
+.squad-mobile-action-buttons {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.squad-mobile-action-buttons button {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  min-height: 74px;
+  padding: 10px 5px;
+  border: 1px solid #a9c78270;
+  border-radius: 12px;
+  background: #193e33;
+  color: #edf3db;
+  font-size: 11px;
+  line-height: 1.3;
+  white-space: normal;
+}
+.squad-mobile-action-buttons button span {
+  color: #c6e299;
+  font-size: 16px;
+}
+.squad-action-modal {
+  width: min(580px, calc(100vw - 24px));
+  max-height: calc(100dvh - 32px);
+  padding: 24px 18px 18px;
+  border: 1px solid #adc78e;
+  border-radius: 18px;
+  background: linear-gradient(145deg, #1d4035, #112b27);
+  color: #edf1db;
+  overflow-y: auto;
+}
+.squad-action-modal > h2 {
+  font-size: 17px;
+  line-height: 1.4;
+  padding-right: 28px;
+  margin-bottom: 16px;
+}
+.squad-action-modal .player-management {
+  margin: 0;
+  padding: 14px;
+  border-radius: 12px;
+}
+.squad-action-modal .player-management > p {
+  margin-top: 0;
+}
+.squad-action-modal .renewal-years .segmented {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.squad-action-modal-note {
+  font-size: 12px;
+  color: #c9d9bb;
+  line-height: 1.5;
+  margin: 14px 0;
+}
+.squad-action-modal > button.primary {
+  width: 100%;
+  min-height: 42px;
+  background: #d1e99a;
+  color: #18392c;
+}
+@media (max-width: 760px) {
+  .squad-office-player {
+    height: 400px;
+    min-height: 400px;
+  }
+  .squad-office-actions {
+    overflow: visible;
+  }
+  .squad-office-card {
+    align-self: start;
+  }
+}
+@media (max-width: 440px) {
+  .squad-office-player {
+    height: 400px;
+    min-height: 400px;
+    grid-template-rows: 250px minmax(0, 1fr);
+  }
+  .squad-office-actions > a {
+    margin-top: 12px;
+  }
+}
+
+/* Fit the whole negotiation in the fixed desktop row, without a nested scroller. */
+@media (min-width: 761px) {
+  .squad-office-actions {
+    overflow: visible;
+    scrollbar-gutter: auto;
+    padding-right: 0;
+  }
+  .squad-office-actions .player-management {
+    padding: 12px 14px;
+  }
+  .squad-office-actions .player-management > p {
+    margin: 0 0 8px;
+    font-size: 12px;
+    line-height: 1.35;
+  }
+  .squad-office-actions .management-tabs {
+    margin: 0 0 8px;
+  }
+  .squad-office-actions .management-tabs button {
+    min-height: 30px;
+    padding: 6px;
+  }
+  .squad-office-actions .player-management > div > p {
+    margin: 6px 0;
+    font-size: 12px;
+    line-height: 1.35;
+  }
+  .squad-office-actions .negotiation-range {
+    margin: 8px 0;
+    gap: 4px;
+  }
+  .squad-office-actions .negotiation-range > span {
+    font-size: 12px;
+  }
+  .squad-office-actions .negotiation-range small {
+    font-size: 10px;
+  }
+  .squad-office-actions .renewal-years {
+    margin: 8px 0;
+    padding: 0;
+    border: 0;
+  }
+  .squad-office-actions .renewal-years legend {
+    margin-bottom: 5px;
+    font-size: 12px;
+  }
+  .squad-office-actions .renewal-years .segmented {
+    padding: 3px;
+    gap: 3px;
+  }
+  .squad-office-actions .renewal-years button {
+    min-height: 30px;
+    padding: 5px;
+    font-size: 11px;
+  }
+  .squad-office-actions .negotiate-button {
+    min-height: 34px;
+    margin-top: 6px;
+    padding: 7px 10px;
+  }
+  .squad-office-actions .contract-demand {
+    padding: 6px 8px;
+    margin: 6px 0;
+    font-size: 11px;
+  }
+  .squad-office-actions .contract-demand p {
+    margin: 3px 0;
+    font-size: 11px;
+  }
+  .squad-office-actions .contract-demand button {
+    padding: 4px 8px;
+    min-height: 28px;
+  }
+  .squad-office-actions > a {
+    margin-top: 8px;
+  }
+}
+.squad-assistant-avatar {
+  image-rendering: pixelated;
+  border-radius: 10px;
+}
+.squad-assistant-avatar .assistant-writing-hand {
+  transform-origin: 45px 44px;
+}
+.squad-assistant-avatar.is-writing .assistant-writing-hand {
+  animation: assistant-pixel-note 1.2s steps(1, end) infinite;
+}
+@keyframes assistant-pixel-note {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  25% {
+    transform: translate(1px, 0);
+  }
+  50% {
+    transform: translate(0, 1px);
+  }
+  75% {
+    transform: translate(-1px, 0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .squad-assistant-avatar.is-writing .assistant-writing-hand {
+    animation: none;
+  }
+}
+
+.player-policy-offers {
+  display: inline-block;
+  margin-top: 12px;
+  font-size: 12px;
+  color: #32634a;
+  font-weight: 700;
+}
+@media (max-width: 760px) {
+  .squad-office-player {
+    height: 310px;
+    min-height: 310px;
+    grid-template-columns: minmax(110px, 160px) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+    gap: 12px;
+    padding: 14px;
+    align-items: center;
+  }
+  .squad-office-card {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-self: center;
+    min-width: 0;
+  }
+  .squad-office-card .player-card {
+    width: 100%;
+    max-width: 160px;
+    grid-row: auto;
+  }
+  .squad-office-actions {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    height: auto;
+    overflow: visible;
+  }
+  .squad-mobile-action-buttons {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+  .squad-mobile-action-buttons button {
+    min-height: 65px;
+    padding: 9px 6px;
+    gap: 4px;
+    font-size: 11px;
+  }
+}
+
+.notebook-actions li strong {
+  color: #edf2db;
+}

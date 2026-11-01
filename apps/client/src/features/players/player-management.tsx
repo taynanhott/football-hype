@@ -1,14 +1,14 @@
 import { positionLabel } from '../../ui/position-label';
 import { MoneyRange } from '../../ui/money-range';
 import { useState } from 'react';
-import { ceilMoney, clubKit, MONEY_STEPS, type PlayerSnapshot } from '@football/shared';
 import {
-  contractEnd,
-  effectiveOverall,
-  financialLimits,
-  temporaryModifiers,
-  renewalTerms,
-} from '@football/domain';
+  ceilMoney,
+  clubKit,
+  MONEY_STEPS,
+  type PlayerSnapshot,
+  type GameCommand,
+} from '@football/shared';
+import { contractEnd, effectiveOverall, temporaryModifiers, renewalTerms } from '@football/domain';
 import type { ViewProps } from '../../ui/view-props';
 import { useGameStore } from '../../store/game-store';
 import { currency } from '../../ui/format';
@@ -18,11 +18,23 @@ import { ClubBadge, Icon } from '../../ui/icons';
 export function PlayerManagement({
   player,
   snapshot,
-}: Pick<ViewProps, 'snapshot'> & { player: PlayerSnapshot }) {
+  onPlan,
+  planningBusy = false,
+  initialSection = 'effects',
+  hideTabs = false,
+}: Pick<ViewProps, 'snapshot'> & {
+  player: PlayerSnapshot;
+  onPlan?: (command: GameCommand) => void;
+  planningBusy?: boolean;
+  initialSection?: 'renew' | 'policy' | 'effects';
+  hideTabs?: boolean;
+}) {
   const state = snapshot.state,
-    send = useGameStore((s) => s.send),
-    busy = useGameStore((s) => s.busy);
-  const [section, setSection] = useState<'renew' | 'policy' | 'effects'>('effects');
+    sendNow = useGameStore((s) => s.send),
+    serverBusy = useGameStore((s) => s.busy);
+  const send = onPlan ?? sendNow;
+  const busy = serverBusy || planningBusy;
+  const [section, setSection] = useState<'renew' | 'policy' | 'effects'>(initialSection);
   const policy = state.management?.policies?.[player.id] ?? {
     available: false,
     rivals: false,
@@ -30,18 +42,19 @@ export function PlayerManagement({
   };
   const end = contractEnd(state, player),
     days = Math.ceil((end - state.lastProcessedAt) / 86400000);
-  const [salary, setSalary] = useState(
-    String(
-      ceilMoney(Math.max(player.salary.cents, player.marketValue.cents / 240), MONEY_STEPS.salary) /
-        100,
-    ),
-  );
+  const [salaryDraft, setSalaryDraft] = useState({
+    base: player.salary.cents,
+    value: player.salary.cents,
+  });
   const [years, setYears] = useState(1);
   const effects = temporaryModifiers(state, player);
   const terms = renewalTerms(state, player);
-  const club = state.clubs.byId[player.clubId ?? ''];
-  const salaryMaximum = club ? financialLimits(state, club).salary + player.salary.cents : 0;
-  const salaryCents = Math.min(salaryMaximum, ceilMoney(Number(salary) * 100, MONEY_STEPS.salary));
+  const salaryMinimum = ceilMoney(player.salary.cents * 0.5, MONEY_STEPS.salary);
+  const salaryMaximum = player.salary.cents * 2;
+  const salaryCents =
+    salaryDraft.base === player.salary.cents
+      ? Math.max(salaryMinimum, Math.min(salaryMaximum, salaryDraft.value))
+      : player.salary.cents;
   return (
     <section className="player-management transfer-policy-panel">
       <p className={days <= 180 ? 'negative' : ''}>
@@ -69,24 +82,26 @@ export function PlayerManagement({
           </button>
         </div>
       )}
-      <div className="management-tabs" role="group" aria-label="Gestão do jogador">
-        {(
-          [
-            { id: 'effects', label: 'Bônus e penalidades' },
-            { id: 'policy', label: 'Negociação' },
-            { id: 'renew', label: 'Renegociação' },
-          ] as const
-        ).map((item) => (
-          <button
-            key={item.id}
-            className={section === item.id ? 'selected' : ''}
-            aria-pressed={section === item.id}
-            onClick={() => setSection(item.id)}
-          >
-            {item.label}
-          </button>
-        ))}
-      </div>
+      {!hideTabs && (
+        <div className="management-tabs" role="group" aria-label="Gestão do jogador">
+          {(
+            [
+              { id: 'effects', label: 'Bônus e penalidades' },
+              { id: 'policy', label: 'Negociação' },
+              { id: 'renew', label: 'Renegociação' },
+            ] as const
+          ).map((item) => (
+            <button
+              key={item.id}
+              className={section === item.id ? 'selected' : ''}
+              aria-pressed={section === item.id}
+              onClick={() => setSection(item.id)}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+      )}
       {section === 'effects' && (
         <div>
           {effects.length ? (
@@ -193,16 +208,18 @@ export function PlayerManagement({
               Salário mensal <output>{currency(salaryCents)}</output>
             </span>
             <MoneyRange
-              min={0}
+              min={salaryMinimum}
               max={salaryMaximum}
               step={MONEY_STEPS.salary}
               value={salaryCents}
               disabled={busy || salaryMaximum === 0}
-              onChange={(e) => setSalary(String(Number(e.target.value) / 100))}
+              onChange={(e) =>
+                setSalaryDraft({ base: player.salary.cents, value: Number(e.target.value) })
+              }
             />
             <small>
-              <span>{currency(0)}</span>
-              <span>Disponível: {currency(salaryMaximum)}</span>
+              <span>50% · {currency(salaryMinimum)}</span>
+              <span>200% · {currency(salaryMaximum)}</span>
             </small>
           </label>
           <fieldset className="renewal-years">
@@ -240,9 +257,14 @@ export function PlayerManagement({
               })
             }
           >
-            Propor renovação · {currency(salaryCents)}
+            {onPlan ? 'Anotar renovação' : 'Propor renovação'} · {currency(salaryCents)}
           </button>
         </div>
+      )}
+      {section === 'policy' && (
+        <a className="player-policy-offers" href="#/market?tab=proposals">
+          Propostas recebidas ↗
+        </a>
       )}
     </section>
   );

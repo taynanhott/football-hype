@@ -6,12 +6,16 @@ import {
   commandSchema,
   gameSnapshotSchema,
   gameSnapshotUpdateSchema,
+  snapshotDeltaSchema,
+  applyStateChanges,
+  ledgerEntrySchema,
   type GameCommand,
   type GameSnapshot,
 } from '@football/shared';
 import { credentials, serverUrl } from '../features/leagues/api';
 import { ActionQueue, type PendingAction } from './action-queue';
 import { localTables } from './local-tables';
+import { loadSnapshotCache, saveSnapshotCache, prepareSnapshotManifest } from './snapshot-cache';
 
 const pendingActionSchema = z.object({
   id: z.uuid(),
@@ -32,7 +36,7 @@ type GameStore = {
   error: string | null;
   connect: (id: string, clubId?: string) => Promise<void>;
   disconnect: () => void;
-  send: (command: GameCommand) => void;
+  send: (command: GameCommand) => string | undefined;
   clearError: () => void;
 };
 let pending: ReturnType<typeof setTimeout> | undefined;
@@ -64,10 +68,22 @@ export const useGameStore = create<GameStore>((set, get) => ({
       await previous?.leave();
       const identity = await credentials();
       const { userId, ...authOptions } = identity;
+      const cacheKey = `${userId}.${leagueId}`;
+      let cached =
+        import.meta.env.VITE_GAME_TRANSPORT === 'cloudflare'
+          ? await loadSnapshotCache(cacheKey)
+          : null;
+      if (cached?.snapshot.state.id !== leagueId) cached = null;
       const options = {
         ...authOptions,
         leagueId,
-        ...(import.meta.env.VITE_GAME_TRANSPORT === 'cloudflare' ? { localTables: true } : {}),
+        ...(import.meta.env.VITE_GAME_TRANSPORT === 'cloudflare'
+          ? {
+              localTables: true,
+              deltaProtocol: true,
+              ...(cached ? { cache: cached.manifest } : {}),
+            }
+          : {}),
         ...(clubId ? { clubId } : {}),
       };
       const room: GameRoom =
@@ -123,7 +139,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
             /* The active in-memory queue can still finish if storage is full. */
           }
         },
-        import.meta.env.VITE_GAME_TRANSPORT === 'cloudflare' ? 30000 : 0,
+        import.meta.env.VITE_GAME_TRANSPORT === 'cloudflare' ? 150 : 0,
       );
       actions = queue;
       const accept = (snapshot: GameSnapshot) => {
@@ -135,9 +151,65 @@ export const useGameStore = create<GameStore>((set, get) => ({
         if (import.meta.env.VITE_GAME_TRANSPORT === 'cloudflare')
           snapshot = { ...snapshot, tables: localTables(snapshot.state) };
         confirmed = snapshot;
+        if (import.meta.env.VITE_GAME_TRANSPORT === 'cloudflare')
+          saveSnapshotCache(cacheKey, snapshot);
         set({ clockOffset: (snapshot.serverTime ?? Date.now()) - Date.now() });
         if (queue.accept(snapshot)) set({ error: null, connected: true });
       };
+      room.onMessage('snapshot-delta', (input: unknown) => {
+        if (get().room !== room) return;
+        const parsed = snapshotDeltaSchema.safeParse(input);
+        const base = confirmed ?? cached?.snapshot;
+        if (
+          !parsed.success ||
+          !base ||
+          base.state.id !== parsed.data.leagueId ||
+          base.state.revision !== parsed.data.baseRevision
+        ) {
+          cached = null;
+          room.send('sync');
+          return;
+        }
+        try {
+          const update = parsed.data;
+          const ledger = z.array(ledgerEntrySchema).parse(update.ledger);
+          const state = applyStateChanges(base.state, update.changes);
+          if (state.id !== leagueId || state.revision !== update.revision)
+            throw new Error('Invalid revision');
+          accept({
+            state,
+            ledger,
+            tables: {},
+            roomId: update.roomId,
+            ...(update.serverTime !== undefined ? { serverTime: update.serverTime } : {}),
+          });
+          cached = null;
+        } catch {
+          cached = null;
+          room.send('sync');
+        }
+      });
+      let preparingResume = false;
+      room.onMessage('cache-request', () => {
+        if (get().room !== room) return;
+        if (preparingResume) return;
+        const base = confirmed;
+        if (!base) {
+          room.send('sync');
+          return;
+        }
+        preparingResume = true;
+        void prepareSnapshotManifest(base)
+          .then((manifest) => {
+            if (get().room !== room) return;
+            if (confirmed !== base) return;
+            if (manifest) room.send('cache-offer', manifest);
+            else room.send('sync');
+          })
+          .finally(() => {
+            preparingResume = false;
+          });
+      });
       room.onMessage('snapshot-update', (input: unknown) => {
         if (get().room !== room) return;
         const parsed = gameSnapshotUpdateSchema.safeParse(input);
@@ -251,11 +323,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
     if (!get().room || !get().connected || !actions) return;
     try {
       set({ error: null });
-      actions.enqueue(
-        commandSchema.parse(command),
-        crypto.randomUUID(),
-        Date.now() + get().clockOffset,
-      );
+      const requestId = crypto.randomUUID();
+      actions.enqueue(commandSchema.parse(command), requestId, Date.now() + get().clockOffset);
+      return requestId;
     } catch (error) {
       set({ error: error instanceof Error ? error.message : 'Não foi possível executar a ação' });
     }

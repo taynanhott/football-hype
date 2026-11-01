@@ -20,13 +20,19 @@ export class UsageMeter {
   start() {
     return { ...this.totals, at: performance.now() };
   }
-  finish(kind: string, before: ReturnType<UsageMeter['start']>, storageBytes?: number) {
+  finish(
+    kind: string,
+    before: ReturnType<UsageMeter['start']>,
+    storageBytes?: number,
+    queueWaitMs = 0,
+  ) {
     if (!this.enabled) return;
     console.log(
       JSON.stringify({
         event: 'game.usage',
         kind,
         storageBytes,
+        queueWaitMs,
         ...Object.fromEntries(
           Object.entries(this.totals).map(([key, value]) => [
             key,

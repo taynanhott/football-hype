@@ -8,6 +8,12 @@ import { datasetProvider } from './dataset.js';
 import { nextLeagueWake } from './wake-policy.js';
 import type { GameSnapshot } from '@football/shared';
 import { UsageMeter } from './usage-meter.js';
+import {
+  snapshotCacheSchema,
+  snapshotManifest,
+  stateChanges,
+  type SnapshotCacheManifest,
+} from '@football/shared';
 
 export interface Env {
   GAME: DurableObjectNamespace<GameHubV2>;
@@ -23,6 +29,9 @@ type Session = {
   sessionId: string;
   expires: number;
   localTables?: boolean;
+  deltaProtocol?: boolean;
+  cache?: SnapshotCacheManifest;
+  sentSnapshot?: boolean;
 };
 const messageSchema = z.object({ type: z.string().max(32), data: z.unknown().optional() });
 function errorText(error: unknown) {
@@ -75,17 +84,19 @@ export class GameHubV2 extends DurableObject<Env> {
     });
   }
   private serial<T>(fn: () => Promise<T>, kind = 'operation'): Promise<T> {
+    const queuedAt = performance.now();
     const current = this.pending
       .catch(() => undefined)
       .then(async () => {
         const before = this.meter.start();
+        const queueWaitMs = performance.now() - queuedAt;
         if (kind === 'http') this.meter.totals.httpRequests++;
         if (kind === 'websocket') this.meter.totals.webSocketMessages++;
         if (kind === 'alarm') this.meter.totals.alarms++;
         try {
           return await fn();
         } finally {
-          this.meter.finish(kind, before, this.ctx.storage.sql.databaseSize);
+          this.meter.finish(kind, before, this.ctx.storage.sql.databaseSize, queueWaitMs);
         }
       });
     this.pending = current;
@@ -220,7 +231,7 @@ export class GameHubV2 extends DurableObject<Env> {
     this.meter.totals.sentMessages++;
     this.meter.totals.sentBytes += new TextEncoder().encode(payload).byteLength;
     if (type === 'snapshot') this.meter.totals.fullSnapshots++;
-    if (type === 'snapshot-update') this.meter.totals.deltaSnapshots++;
+    if (type === 'snapshot-update' || type === 'snapshot-delta') this.meter.totals.deltaSnapshots++;
     ws.send(payload);
   }
   private async snapshot(ws: WebSocket, session: Session) {
@@ -232,7 +243,41 @@ export class GameHubV2 extends DurableObject<Env> {
         !session.localTables,
       );
       const previous = this.sent.get(ws);
-      if (previous) {
+      if (session.deltaProtocol && !previous && !session.cache && session.sentSnapshot) {
+        this.send(ws, 'cache-request', {});
+        return;
+      }
+      if (
+        session.deltaProtocol &&
+        (previous || (session.cache && session.cache.revision <= snapshot.state.revision))
+      ) {
+        let changes;
+        if (previous) changes = stateChanges(previous.state, snapshot.state);
+        else {
+          const manifest = await snapshotManifest(snapshot, async (text) => {
+            const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+            return Array.from(new Uint8Array(digest), (v) => v.toString(16).padStart(2, '0')).join(
+              '',
+            );
+          });
+          changes = Object.entries(snapshot.state)
+            .filter(([key]) => manifest.hashes[key] !== session.cache!.hashes[key])
+            .map(([key, value]) => ({ path: [key], value }));
+          for (const key of Object.keys(session.cache!.hashes))
+            if (!Object.hasOwn(snapshot.state, key))
+              changes.push({ path: [key], value: undefined });
+        }
+        this.send(ws, 'snapshot-delta', {
+          leagueId: session.leagueId,
+          baseRevision: previous?.state.revision ?? session.cache!.revision,
+          revision: snapshot.state.revision,
+          changes,
+          tables: snapshot.tables,
+          ledger: snapshot.ledger,
+          serverTime: snapshot.serverTime,
+          roomId: snapshot.roomId,
+        });
+      } else if (previous) {
         const patch = Object.fromEntries(
           Object.entries(snapshot.state).filter(([key, value]) => {
             const old = previous.state[key as keyof typeof previous.state];
@@ -252,6 +297,9 @@ export class GameHubV2 extends DurableObject<Env> {
           roomId: snapshot.roomId,
         });
       } else this.send(ws, 'snapshot', snapshot);
+      delete session.cache;
+      session.sentSnapshot = true;
+      ws.serializeAttachment(session);
       this.sent.set(ws, snapshot);
     } catch {
       this.meter.totals.errors++;
@@ -277,6 +325,8 @@ export class GameHubV2 extends DurableObject<Env> {
               leagueId: z.uuid(),
               clubId: z.string().optional(),
               localTables: z.boolean().optional(),
+              deltaProtocol: z.boolean().optional(),
+              cache: snapshotCacheSchema.optional(),
             })
             .parse(data);
           const identity = await authenticate(data, this.env.FIREBASE_PROJECT_ID);
@@ -288,6 +338,8 @@ export class GameHubV2 extends DurableObject<Env> {
             sessionId: crypto.randomUUID(),
             expires: Date.now() + 55 * 60000,
             localTables: options.localTables ?? false,
+            deltaProtocol: options.deltaProtocol ?? false,
+            ...(options.cache ? { cache: options.cache } : {}),
           };
           ws.serializeAttachment(session);
           this.service.setOnline(session.leagueId, identity.userId, session.sessionId, true);
@@ -311,7 +363,16 @@ export class GameHubV2 extends DurableObject<Env> {
             );
             this.send(ws, 'ack', { ok: true, requestId, revision });
             this.queueSnapshot(ws, session);
+          } else if (type === 'cache-offer') {
+            const manifest = snapshotCacheSchema.parse(data);
+            if (!this.sent.has(ws)) {
+              session.cache = manifest;
+              this.queueSnapshot(ws, session);
+            }
           } else if (type === 'sync') {
+            delete session.cache;
+            session.sentSnapshot = false;
+            ws.serializeAttachment(session);
             this.sent.delete(ws);
             this.queueSnapshot(ws, session);
           } else if (type === 'heartbeat') this.send(ws, 'pong', {});

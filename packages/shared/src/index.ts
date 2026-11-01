@@ -21,3 +21,6 @@ export * from './config/penalty-positions.js';
 export * from './config/participants-2026.js';
 
 export * from './config/fixed-cup-entrants.js';
+
+export * from './config/stadium-identity.js';
+export * from './snapshot-sync.js';

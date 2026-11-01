@@ -1,5 +1,5 @@
 import { showDraggedCard, startCardPointerDrag } from '../../ui/card-drag';
-import { PixelBadge } from '../../ui/pixel-badge';
+import { SquadAverages } from './squad-averages';
 import { PlayStylePicker } from './play-style-picker';
 import { TacticalAnalysis } from './tactical-analysis';
 import { positionLabel } from '../../ui/position-label';
@@ -201,12 +201,7 @@ export function LineupEditor({ snapshot, club, center }: ViewProps) {
     };
   });
   const chemistry = Math.round(entries.reduce((sum, entry) => sum + entry.chemistry, 0) / 11);
-  const overall = Math.round(
-    entries.reduce(
-      (sum, entry) => sum + fitnessOverall(entry.effectiveOverall, entry.player?.fitness ?? 100),
-      0,
-    ) / 11,
-  );
+
   const target = entries[selected];
   const players = club.playerIds
     .map((id) => state.players.byId[id])
@@ -280,19 +275,8 @@ export function LineupEditor({ snapshot, club, center }: ViewProps) {
       <div className="lineup-layout">
         <section className="tactics-panel">
           <div className="tactics-header lineup-club-summary">
-            <a className="lineup-club-identity" href={'#/trophies?club=' + club.id}>
-              <PixelBadge
-                name={club.name}
-                {...(club.crestUrl ? { url: club.crestUrl } : {})}
-                size={30}
-              />
-              <strong>{club.name}</strong>
-            </a>
             <div className="lineup-summary-metrics">
-              <div className="lineup-summary-stat">
-                <span>Força efetiva</span>
-                <strong>{overall}</strong>
-              </div>
+              <SquadAverages state={snapshot.state} club={club} />
               <div className="lineup-summary-stat">
                 <span>Entrosamento</span>
                 <strong>{chemistry}%</strong>

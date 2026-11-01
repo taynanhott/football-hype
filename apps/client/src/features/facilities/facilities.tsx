@@ -1,6 +1,6 @@
 import { Select, Option } from '../../ui/select';
 import { clubKit } from '@football/shared';
-import { STADIUM_SKINS, stadiumSkin } from '../../three/stadium-catalog';
+import { STADIUM_SKINS, linkedStadiumSkin } from '../../three/stadium-catalog';
 import { SECTORS, MARKETING_BENEFITS } from './center-sectors';
 import { CenterManagement, SectorGuide } from './center-management';
 import { lazy, Suspense, useState } from 'react';
@@ -179,24 +179,37 @@ export function Facilities(props: ViewProps & { training?: boolean }) {
                 Skin do Estádio
                 <Select
                   aria-label="Skin do Estádio"
-                  value={stadiumSkin(stadium) ?? ''}
-                  disabled={busy}
+                  value={
+                    stadium.skin && stadium.sectors.every((s) => s.level >= 4)
+                      ? stadium.skin
+                      : 'default'
+                  }
+                  disabled={busy || stadium.sectors.some((s) => s.level < 4)}
                   onValueChange={(value) =>
                     send({
                       type: 'customize',
-                      stadiumSkin: value as NonNullable<typeof stadium.skin>,
+                      stadiumSkin:
+                        value === 'default' ? null : (value as NonNullable<typeof stadium.skin>),
                       stadiumColor: stadium.color ?? '#315d55',
                       centerColor: center.color ?? '#e5dfcf',
                       ...clubKit(club),
                     })
                   }
                 >
+                  <Option value="default">
+                    {linkedStadiumSkin(stadium)
+                      ? 'Estádio original do clube'
+                      : 'Estrutura genérica · por nível'}
+                  </Option>
                   {STADIUM_SKINS.map((s) => (
                     <Option key={s[0]} value={s[0]}>
                       {s[1]}
                     </Option>
                   ))}
                 </Select>
+                {stadium.sectors.some((s) => s.level < 4) && (
+                  <small>Troca de skin liberada no nível 4 de todos os setores.</small>
+                )}
               </label>
             </>
           )}

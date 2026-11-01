@@ -1,0 +1,23 @@
+{
+  "baseline": "git HEAD",
+  "comparisonScope": ["financial-management", "regulations-2026", "football-data-import"],
+  "baselineFailures": [
+    "limites financeiros autoritativos bloqueia novas contratações se não sobrar teto salarial e aceita orçamento zerado",
+    "limites financeiros autoritativos reduz a verba após uma compra, sem reabrir o limite ao contratar",
+    "limites financeiros autoritativos revalida limites antes de assinar uma negociação já iniciada",
+    "regulamentos oficiais 2026 Sul-Americana espera os terceiros da Libertadores e cria playoffs com vaga direta dos líderes",
+    "regulamentos oficiais 2026 reinicia resultados e calendário preservando clube e elenco",
+    "base real normalizada importa identidades, mantém referências e confirma vínculos duplicados",
+    "base real normalizada preserva a Série A e a ausência de copas quando só essa divisão foi importada"
+  ],
+  "currentFailures": [
+    "base real normalizada importa identidades, mantém referências e confirma vínculos duplicados",
+    "base real normalizada preserva a Série A e a ausência de copas quando só essa divisão foi importada",
+    "limites financeiros autoritativos bloqueia novas contratações se não sobrar teto salarial e aceita orçamento zerado",
+    "limites financeiros autoritativos reduz a verba após uma compra, sem reabrir o limite ao contratar",
+    "limites financeiros autoritativos revalida limites antes de assinar uma negociação já iniciada",
+    "regulamentos oficiais 2026 Sul-Americana espera os terceiros da Libertadores e cria playoffs com vaga direta dos líderes",
+    "regulamentos oficiais 2026 reinicia resultados e calendário preservando clube e elenco"
+  ],
+  "newFailures": []
+}

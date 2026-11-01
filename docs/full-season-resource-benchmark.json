@@ -1,0 +1,174 @@
+{
+  "scope": "Local SQLite full season. Local CPU is not Cloudflare CPU. Returned rows are not billed scanned rows. Full snapshots model reconnect payloads, not real sockets.",
+  "completed": true,
+  "players": 10,
+  "datasetPlayers": 14012,
+  "alarms": 509,
+  "matches": 2305,
+  "virtualDays": 18.584027777777777,
+  "operations": {
+    "calendar": {
+      "count": 509,
+      "errors": 0,
+      "ms": 930142.9947999995,
+      "cpuMicros": 1095621000,
+      "writes": 167049,
+      "returnedRows": 649207,
+      "bytes": 0,
+      "errorExamples": []
+    },
+    "search": {
+      "count": 15000,
+      "errors": 0,
+      "ms": 86939.04160000368,
+      "cpuMicros": 107326000,
+      "writes": 0,
+      "returnedRows": 15000,
+      "bytes": 330595290,
+      "errorExamples": []
+    },
+    "ticket": {
+      "count": 1500,
+      "errors": 0,
+      "ms": 1406.521200001287,
+      "cpuMicros": 1423000,
+      "writes": 8960,
+      "returnedRows": 25459,
+      "bytes": 5537,
+      "errorExamples": []
+    },
+    "budget": {
+      "count": 1500,
+      "errors": 0,
+      "ms": 65465.391099996465,
+      "cpuMicros": 78715000,
+      "writes": 5974,
+      "returnedRows": 297253,
+      "bytes": 5540,
+      "errorExamples": []
+    },
+    "renew": {
+      "count": 1500,
+      "errors": 1500,
+      "ms": 5549.91729999982,
+      "cpuMicros": 6744000,
+      "writes": 0,
+      "returnedRows": 151200,
+      "bytes": 0,
+      "errorExamples": [
+        "Error: O jogador recusa um contrato tão longo. Prazo total máximo: 1 ano(s).",
+        "Error: O jogador tem mais de dois anos de contrato e não quer renegociar.",
+        "Error: O jogador recusa um contrato tão longo. Prazo total máximo: 2 ano(s)."
+      ]
+    },
+    "offer": {
+      "count": 1500,
+      "errors": 1500,
+      "ms": 341.24679999403816,
+      "cpuMicros": 283000,
+      "writes": 0,
+      "returnedRows": 3000,
+      "bytes": 0,
+      "errorExamples": ["Error: O clube não tem interesse em negociar"]
+    },
+    "reconnectSnapshot": {
+      "count": 1500,
+      "errors": 0,
+      "ms": 732163.8521999987,
+      "cpuMicros": 740845000,
+      "writes": 0,
+      "returnedRows": 1500,
+      "bytes": 152667831782,
+      "errorExamples": []
+    }
+  },
+  "daily": {
+    "2026-10-31": {
+      "writes": 8348,
+      "queries": 12588
+    },
+    "2026-11-01": {
+      "writes": 8795,
+      "queries": 14061
+    },
+    "2026-11-02": {
+      "writes": 10249,
+      "queries": 15687
+    },
+    "2026-11-03": {
+      "writes": 10704,
+      "queries": 16138
+    },
+    "2026-11-04": {
+      "writes": 9595,
+      "queries": 14849
+    },
+    "2026-11-05": {
+      "writes": 9178,
+      "queries": 14372
+    },
+    "2026-11-06": {
+      "writes": 9223,
+      "queries": 14450
+    },
+    "2026-11-07": {
+      "writes": 9325,
+      "queries": 14552
+    },
+    "2026-11-08": {
+      "writes": 9851,
+      "queries": 15165
+    },
+    "2026-11-09": {
+      "writes": 9467,
+      "queries": 14721
+    },
+    "2026-11-10": {
+      "writes": 8803,
+      "queries": 13997
+    },
+    "2026-11-11": {
+      "writes": 10054,
+      "queries": 15398
+    },
+    "2026-11-12": {
+      "writes": 8425,
+      "queries": 13589
+    },
+    "2026-11-13": {
+      "writes": 8826,
+      "queries": 14020
+    },
+    "2026-11-14": {
+      "writes": 9118,
+      "queries": 14342
+    },
+    "2026-11-15": {
+      "writes": 9201,
+      "queries": 14485
+    },
+    "2026-11-16": {
+      "writes": 10119,
+      "queries": 15433
+    },
+    "2026-11-17": {
+      "writes": 11708,
+      "queries": 17232
+    },
+    "2026-11-18": {
+      "writes": 10238,
+      "queries": 15738
+    },
+    "2026-11-19": {
+      "writes": 756,
+      "queries": 859
+    }
+  },
+  "writes": 182320,
+  "queries": 282588,
+  "returnedRows": 1178154,
+  "initialBytes": 9572352,
+  "finalBytes": 181858304,
+  "peakRssBytes": 3973095424,
+  "elapsedMs": 1825144.4627
+}

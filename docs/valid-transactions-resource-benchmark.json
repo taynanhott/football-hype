@@ -1,0 +1,72 @@
+{
+  "completedTransfer": true,
+  "scope": "Local real dataset, ten managers, synthetic cash headroom; renewals, repeated bids on one listed player, calendar review and salary signing. Not Cloudflare billing.",
+  "operations": {
+    "budget": {
+      "count": 10,
+      "errors": 0,
+      "ms": 17.625799999999344,
+      "cpuMicros": 47000,
+      "writes": 40,
+      "returnedRows": 429,
+      "bytes": 18,
+      "errorExamples": []
+    },
+    "renew": {
+      "count": 50,
+      "errors": 0,
+      "ms": 9655.801999999996,
+      "cpuMicros": 12047000,
+      "writes": 8180,
+      "returnedRows": 13170,
+      "bytes": 93,
+      "errorExamples": []
+    },
+    "policy": {
+      "count": 1,
+      "errors": 0,
+      "ms": 1.5517999999992753,
+      "cpuMicros": 0,
+      "writes": 4,
+      "returnedRows": 16,
+      "bytes": 2,
+      "errorExamples": []
+    },
+    "competingOffer": {
+      "count": 90,
+      "errors": 0,
+      "ms": 83.08759999999711,
+      "cpuMicros": 110000,
+      "writes": 420,
+      "returnedRows": 1510,
+      "bytes": 232,
+      "errorExamples": []
+    },
+    "reviewCalendar": {
+      "count": 11,
+      "errors": 0,
+      "ms": 3713.766200000002,
+      "cpuMicros": 5672000,
+      "writes": 1970,
+      "returnedRows": 3926,
+      "bytes": 0,
+      "errorExamples": []
+    },
+    "salarySigning": {
+      "count": 1,
+      "errors": 0,
+      "ms": 228.880799999999,
+      "cpuMicros": 250000,
+      "writes": 82,
+      "returnedRows": 316,
+      "bytes": 3,
+      "errorExamples": []
+    }
+  },
+  "writes": 11033,
+  "queries": 14630,
+  "returnedRows": 29242,
+  "initialBytes": 9572352,
+  "finalBytes": 16941056,
+  "elapsedMs": 13824.6112
+}
