@@ -1,5 +1,5 @@
 import { positionLabel } from '../../ui/position-label';
-import { memo } from 'react';
+import { memo, type CSSProperties } from 'react';
 import {
   COMPETITIONS,
   FORMATIONS,
@@ -205,7 +205,7 @@ export function MatchStatistics({
     value === undefined
       ? '—'
       : label === 'xG'
-        ? value.toFixed(2)
+        ? value.toFixed(1).replace('.', ',')
         : `${Math.round(value)}${label === 'Posse (%)' ? '%' : ''}`;
   return (
     <section className="match-statistics report-dark">
@@ -318,7 +318,17 @@ export const PlayerRatings = memo(
                 >
                   {rows.map((group, index) => (
                     <div key={index} className="ratings-player-row">
-                      {group.map((player) => {
+                      {group.map((player, transverse) => {
+                        const slotIndex = plan?.starters.indexOf(player.id) ?? -1;
+                        const slot = slots?.[slotIndex];
+                        const depth = slot
+                          ? 100 - slot.y
+                          : 10 + (index / Math.max(1, rows.length - 1)) * 80;
+                        const width = slot?.x ?? ((transverse + 1) / (group.length + 1)) * 100;
+                        const placement = {
+                          '--pitch-length': (side === 'home' ? depth : 100 - depth) + '%',
+                          '--pitch-width': (side === 'home' ? width : 100 - width) + '%',
+                        } as CSSProperties;
                         const rating = ratings[player.id];
                         const actions = visibleActions.filter(
                           (action) => action.playerId === player.id,
@@ -330,7 +340,8 @@ export const PlayerRatings = memo(
                           <div
                             key={player.id}
                             className="rated-player"
-                            title={`${player.name} · ${positionLabel(player.position)} · Nota ${rating?.toFixed(1) ?? 'indisponível'}`}
+                            style={placement}
+                            title={`${player.name} · ${positionLabel(player.position)} · Nota ${rating?.toFixed(1).replace('.', ',') ?? 'indisponível'}`}
                           >
                             <div className="rated-player-portrait">
                               <Portrait
@@ -353,7 +364,7 @@ export const PlayerRatings = memo(
                             <strong
                               className={`player-rating-chip ${rating === undefined ? 'unrated' : rating >= 7 ? 'good' : rating >= 5 ? 'average' : 'poor'}`}
                             >
-                              {rating?.toFixed(1) ?? '—'}
+                              {rating?.toFixed(1).replace('.', ',') ?? '—'}
                             </strong>
                             <span className="rated-player-name">
                               {player.shirtNumber} {player.name}

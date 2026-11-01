@@ -349,6 +349,9 @@ export function CompetitionDrawDetails({
           </nav>
         )}
       </footer>
+      <button type="button" className="modal-return" aria-label="Voltar" onClick={onClose}>
+        ← Voltar
+      </button>
     </dialog>
   );
 }

@@ -49,7 +49,9 @@ export function Career({ snapshot, club, trainerId }: ViewProps & { trainerId?: 
     ['Derrotas', losses],
     [
       'Aproveitamento',
-      games.length ? `${(((wins * 3 + draws) / (games.length * 3)) * 100).toFixed(1)}%` : '—',
+      games.length
+        ? `${(((wins * 3 + draws) / (games.length * 3)) * 100).toFixed(1).replace('.', ',')}%`
+        : '—',
     ],
     ['Gols feitos', games.reduce((s, g) => s + g.goals, 0)],
     ['Gols sofridos', games.reduce((s, g) => s + g.conceded, 0)],

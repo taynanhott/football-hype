@@ -59,6 +59,9 @@ export function LeagueSettings({ snapshot }: ViewProps) {
             aria-modal="true"
             aria-label="Confirmar saída"
           >
+            <button className="close-modal" onClick={() => setLeaving(false)} aria-label="Fechar">
+              Voltar
+            </button>
             <Icon name="shield" />
             <h2>Abandonar esta liga?</h2>
             <p>
@@ -220,6 +223,13 @@ export function LeagueSettings({ snapshot }: ViewProps) {
                 aria-modal="true"
                 aria-label="Confirmar expulsão"
               >
+                <button
+                  className="close-modal"
+                  onClick={() => setKickTarget(null)}
+                  aria-label="Fechar"
+                >
+                  Voltar
+                </button>
                 <h2>Expulsar participante da liga?</h2>
                 <p>
                   <strong>

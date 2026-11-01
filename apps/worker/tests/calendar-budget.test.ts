@@ -115,7 +115,7 @@ describe('temporada com a base real: um dia e dez treinadores', () => {
           await service.command(
             state.id,
             participant.userId,
-            { type: 'home-ticket-price', priceCents: 2500 + (edit % 20) * 2500 },
+            { type: 'home-ticket-price', priceCents: 10000 + (edit % 5) * 10000 },
             false,
             randomUUID(),
           );

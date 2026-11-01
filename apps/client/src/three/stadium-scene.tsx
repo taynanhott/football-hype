@@ -255,6 +255,7 @@ function StadiumWorld({
   focus?: 'training' | undefined;
   children?: ReactNode;
   matchView?: boolean;
+  paused?: boolean;
   showNeighborhood?: boolean;
   cameraLocked?: boolean;
   homeKit?: { primary: string; secondary: string };
@@ -403,6 +404,7 @@ export default function StadiumScene(props: {
   focus?: 'training';
   children?: ReactNode;
   matchView?: boolean;
+  paused?: boolean;
   showNeighborhood?: boolean;
   homeKit?: { primary: string; secondary: string };
   awayKit?: { primary: string; secondary: string };
@@ -443,8 +445,9 @@ export default function StadiumScene(props: {
       )}
       <SceneBoundary>
         <Canvas
-          shadows
-          dpr={[1, 1.25]}
+          frameloop={props.paused ? 'demand' : 'always'}
+          shadows={!mobile}
+          dpr={mobile ? 1 : [1, 1.25]}
           camera={{
             position:
               props.focus === 'training'
@@ -456,7 +459,7 @@ export default function StadiumScene(props: {
             near: 2,
             far: 900,
           }}
-          gl={{ antialias: true, powerPreference: 'low-power' }}
+          gl={{ antialias: !mobile, powerPreference: 'low-power' }}
           fallback={
             <>
               <div className="scene-fallback">Seu navegador não oferece visualização 3D.</div>

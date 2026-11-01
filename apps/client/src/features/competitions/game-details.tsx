@@ -1,8 +1,10 @@
+import { useFinishedResults } from '../../ui/use-finished-results';
 import { openModalPreservingScroll } from '../../ui/modal-scroll';
 import { useEffect, useRef, useState } from 'react';
 import { clubCalendarFixtures } from './club-calendar-fixtures';
 import { clubKit, COMPETITIONS, type Fixture, type WorldState } from '@football/shared';
 import {
+  startingAverage,
   matchDemand,
   matchProbabilities,
   pendingFixtures,
@@ -40,7 +42,7 @@ function calendarDay(at: number) {
   return Date.UTC(part('year'), part('month') - 1, part('day'));
 }
 export function GameDetails({
-  state,
+  state: rawState,
   fixture: initialFixture,
   clubId,
   onClose,
@@ -50,6 +52,7 @@ export function GameDetails({
   clubId: string;
   onClose: () => void;
 }) {
+  const state = useFinishedResults(rawState);
   const [now, setNow] = useState(Date.now);
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 30000);
@@ -163,8 +166,11 @@ export function GameDetails({
         {fixture.round}
       </h2>
       <div className="game-details-teams">
-        {[home, away].map((team, index) => (
-          <div key={index} style={{ borderTopColor: clubKit(team ?? { name: '' }).primary }}>
+        {[home, away].map((team) => (
+          <div
+            key={team?.id ?? 'pending'}
+            style={{ borderTopColor: clubKit(team ?? { name: '' }).primary }}
+          >
             <PixelBadge
               name={team?.name ?? 'A definir'}
               {...(team?.crestUrl ? { url: team.crestUrl } : {})}
@@ -186,7 +192,15 @@ export function GameDetails({
             ) : (
               <strong>A definir</strong>
             )}
-            <small>{index === 0 ? 'Mandante' : 'Visitante'}</small>
+            <small>
+              {team
+                ? 'Média titular: ' +
+                  startingAverage(state, team, fixture.scheduledAt).toLocaleString('pt-BR', {
+                    minimumFractionDigits: 1,
+                    maximumFractionDigits: 1,
+                  })
+                : '—'}
+            </small>
           </div>
         ))}
         <section className="game-details-scoreboard" aria-label="Placar da partida">
@@ -205,6 +219,7 @@ export function GameDetails({
       </div>
       {odds && (
         <section className="game-details-probabilities">
+          <small>Força da torcida da casa: {Math.round(odds.homeCrowdStrength * 100)}%</small>
           <h3>Chances do {state.clubs.byId[clubId]?.name ?? 'seu clube'}</h3>
           <div
             className="game-probability-bar"
@@ -275,6 +290,9 @@ export function GameDetails({
           <dd>{demand.importanceLabel}</dd>
         </div>
       </dl>
+      <button type="button" className="modal-return" aria-label="Voltar" onClick={onClose}>
+        ← Voltar
+      </button>
     </dialog>
   );
 }

@@ -1,3 +1,5 @@
+import { canLearnPosition } from './tactics.js';
+import { FORMATIONS } from '@football/shared';
 import { ageFatigueFactor, moraleSensitivity } from './player-contracts.js';
 import { upgradeUnstartedCompetitions } from '../competitions/upgrade-formats.js';
 import { resolveRegionalQualifiers } from '../competitions/regional-qualifiers.js';
@@ -69,6 +71,9 @@ export function playNextBatch(state: WorldState, processedAt: number): Result<Wo
   const injuries = { ...state.injuries };
   const development = { ...state.development };
   const debts = { ...state.debts };
+  const positionExperience = Object.fromEntries(
+    Object.entries(state.positionExperience ?? {}).map(([id, positions]) => [id, { ...positions }]),
+  );
   const chemistry = Object.fromEntries(
     Object.entries(state.chemistry).map(([id, matches]) => [id, { ...matches }]),
   );
@@ -255,6 +260,18 @@ export function playNextBatch(state: WorldState, processedAt: number): Result<Wo
       const restHours = load ? Math.max(0, (scheduledAt - load.lastPlayedAt) / 3600000) : 168;
       workload[player.id] = { lastPlayedAt: scheduledAt, consecutiveMatches: consecutive };
       if (player.clubId) {
+        const plan = result.tacticalPlans?.[player.clubId === home.id ? 'home' : 'away'];
+        const slot = plan
+          ? FORMATIONS[plan.formation][plan.starters.indexOf(player.id)]
+          : undefined;
+        if (slot && canLearnPosition(player.position, slot.position))
+          positionExperience[player.id] = {
+            ...positionExperience[player.id],
+            [slot.position]: Math.min(
+              15,
+              (positionExperience[player.id]?.[slot.position] ?? 0) + 1,
+            ),
+          };
         const matches = chemistry[player.clubId] ?? {};
         chemistry[player.clubId] = { ...matches, [player.id]: (matches[player.id] ?? 0) + 1 };
       }
@@ -454,6 +471,7 @@ export function playNextBatch(state: WorldState, processedAt: number): Result<Wo
       clubs: { ...state.clubs, byId: clubs },
       injuries,
       chemistry,
+      positionExperience,
       workload,
       development,
       debts,

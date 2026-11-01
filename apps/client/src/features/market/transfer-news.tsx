@@ -171,6 +171,25 @@ export function TransferNews({ state }: { state: WorldState }) {
           currency(offer.fee) +
           ', com contrato acertado entre clube e jogador.';
       }
+      const loan = state.management?.offers?.find((o) => o.id === offer.id && o.kind === 'loan');
+      if (loan) {
+        title =
+          (offer.status === 'completed' ? 'Empréstimo fechado: ' : 'Proposta de empréstimo: ') +
+          player +
+          ' no ' +
+          buyer;
+        body =
+          buyer +
+          ' oferece ' +
+          loan.months +
+          ' meses e paga ' +
+          loan.salaryPercent +
+          '% do salário (' +
+          currency(loan.salary) +
+          '/mês). O atleta retorna ao ' +
+          seller +
+          ' ao fim do contrato de empréstimo.';
+      }
       if (offer.withdrawn) {
         title = buyer + ' retira a oferta por ' + player;
         body = 'O clube desistiu da proposta. As conversas ficam suspensas por uma semana.';

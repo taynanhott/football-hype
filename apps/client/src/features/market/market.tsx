@@ -7,6 +7,8 @@ import { NegotiationChat } from './negotiation-chat';
 import { MoneyRange } from '../../ui/money-range';
 import { IncomingOffers } from '../players/player-management';
 import {
+  renewalTerms,
+  loanTerms,
   transferContext,
   interestLabel,
   potentialStars,
@@ -38,6 +40,21 @@ const SORT_OPTIONS: Record<string, string> = {
   name: 'Nome · A–Z',
 };
 export function Market({ snapshot, club, center, stadium }: ViewProps) {
+  const renewalCount = club.playerIds.filter((id) => {
+    const player = snapshot.state.players.byId[id];
+    return (
+      player &&
+      !snapshot.state.management?.loans?.[id] &&
+      renewalTerms(snapshot.state, player).demand
+    );
+  }).length;
+  const proposalCount =
+    snapshot.state.negotiations.filter((n) => n.sellerId === club.id && n.status === 'review')
+      .length +
+    renewalCount +
+    (snapshot.state.management?.offers?.filter(
+      (o) => o.sellerId === club.id && o.status === 'pending',
+    ).length ?? 0);
   const reviewingOffers = snapshot.state.negotiations.filter(
     (n) => n.buyerId === club.id && n.status === 'review',
   );
@@ -179,8 +196,9 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
   const candidates = searchResults
     .filter(
       (player) =>
-        exactNewsSearch ||
-        ((!player.academyClubId || !!player.clubId) && player.clubId !== club.id),
+        player.clubId !== club.id &&
+        !snapshot.state.management?.loans?.[player.id] &&
+        (exactNewsSearch || !player.academyClubId || !!player.clubId),
     )
     .filter((player) => {
       const seller = snapshot.state.clubs.byId[player.clubId ?? ''];
@@ -378,17 +396,10 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
                     }
                   </span>
                 )}
-                {value === 'Propostas' &&
-                  snapshot.state.management?.offers?.some(
-                    (offer) => offer.sellerId === club.id && offer.status === 'pending',
-                  ) && <span className="transfer-alert-dot" aria-label="Há propostas recebidas" />}
-                {value === 'Propostas' && (
-                  <span className="transfer-count">
-                    {snapshot.state.management?.offers?.filter(
-                      (offer) => offer.sellerId === club.id && offer.status === 'pending',
-                    ).length ?? 0}
-                  </span>
+                {value === 'Propostas' && proposalCount > 0 && (
+                  <span className="transfer-alert-dot" aria-label="Há propostas recebidas" />
                 )}
+                {value === 'Propostas' && <span className="transfer-count">{proposalCount}</span>}
               </button>
             ),
           )}
@@ -663,13 +674,17 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
                     </div>
                     <button
                       className="market-list-negotiate"
-                      disabled={context.blocked}
+                      disabled={
+                        context.blocked && !loanTerms(snapshot.state, player, club).available
+                      }
                       onClick={(event) => {
                         event.stopPropagation();
                         choose(player);
                       }}
                     >
-                      {context.blocked ? 'Indisponível' : 'Negociar ↗'}
+                      {context.blocked && !loanTerms(snapshot.state, player, club).available
+                        ? 'Indisponível'
+                        : 'Negociar ↗'}
                     </button>
                   </div>
                 );
@@ -727,11 +742,14 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
                     <footer className="offer-actions">
                       <button
                         className="negotiate-button"
-                        disabled={context.blocked}
+                        disabled={
+                          context.blocked && !loanTerms(snapshot.state, player, club).available
+                        }
                         onClick={() => choose(player)}
                       >
                         Iniciar negociação ↗
                       </button>
+
                       <button
                         className="secondary market-favorite-action"
                         aria-pressed={favorites.includes(player.id)}

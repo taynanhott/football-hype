@@ -6393,6 +6393,8 @@ dialog.modal {
 .renewal-years button {
   flex: 1;
   min-width: 48px;
+  white-space: nowrap;
+  padding-inline: 8px;
 }
 
 /* Transfer desk */
@@ -24040,8 +24042,8 @@ dialog.competition-draw-modal[open] {
     inset: 0;
     width: 100%;
     max-width: 100%;
-    height: 100dvh;
-    max-height: 100dvh;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
     margin: 0;
     border-radius: 0;
     padding: max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom));
@@ -27891,4 +27893,755 @@ button.squad-list-category {
 .individual-training-roster .training-roster-header .training-roster-sort .game-select {
   width: 100%;
   min-width: 0;
+}
+
+/* Immediate squad management and transfer proposals. */
+.squad-office {
+  grid-template-columns: minmax(0, 1fr);
+}
+.incoming-offer.loan-offer {
+  background: #d7efff;
+  color: #123a51;
+  border-color: #86bedc;
+}
+.incoming-offer.renewal-offer {
+  background: #fff0b3;
+  color: #483d12;
+  border-color: #d9ba49;
+  padding: 16px;
+}
+.tactical-mobile-tabs {
+  display: none;
+}
+@media (min-width: 901px) {
+  .transfer-news-page.twitter-news {
+    height: calc(100dvh - 120px);
+    overflow: hidden;
+    align-items: stretch;
+  }
+  .twitter-news .news-left-nav,
+  .twitter-news .news-discover {
+    position: static;
+    height: 100%;
+    overflow: hidden;
+  }
+  .twitter-news .transfer-news-panel {
+    height: 100%;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+}
+@media (max-width: 900px) {
+  .mobile-bottom-nav a,
+  .mobile-bottom-nav button {
+    flex: 1 1 33.333%;
+    width: 33.333%;
+    height: 100%;
+    border-radius: 0;
+  }
+  .mobile-bottom-nav svg {
+    pointer-events: none;
+  }
+  .tactical-mobile-tabs {
+    display: flex;
+    gap: 8px;
+  }
+  .tactical-mobile-tabs button {
+    flex: 1;
+    background: #153e30;
+    border: 1px solid #bca25d;
+    color: #fff0b3;
+  }
+  .tactical-mobile-tabs button[aria-selected='true'] {
+    background: #bca25d;
+    color: #153e30;
+  }
+  .tactical-analysis-columns[data-mobile-tab='strong'] .weak,
+  .tactical-analysis-columns[data-mobile-tab='weak'] .strong {
+    display: none;
+  }
+  .tactical-analysis-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .match-ratings-body .ratings-pitch {
+    grid-template-columns: minmax(0, 1fr);
+    min-height: 780px;
+  }
+  .match-ratings-body .ratings-half {
+    min-height: 380px;
+  }
+  .match-ratings-body .ratings-half-away {
+    border-left: 0;
+    border-top: 1px solid #b5d1b17a;
+  }
+  .match-ratings-body .ratings-formation {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+  }
+  .match-ratings-body .ratings-player-row {
+    flex-direction: row;
+    justify-content: space-evenly;
+  }
+  .match-ratings-body .rated-player {
+    width: auto;
+    flex: 1;
+  }
+  .match-ratings-body .ratings-pitch-lines::before {
+    inset: 50% 0 auto;
+    width: 100%;
+    height: 1px;
+  }
+  .match-ratings-body .ratings-pitch-lines i:first-child {
+    inset: 0 25% auto;
+    width: 50%;
+    height: 12%;
+  }
+  .match-ratings-body .ratings-pitch-lines i:last-child {
+    inset: auto 25% 0;
+    width: 50%;
+    height: 12%;
+  }
+  .transfer-news-page.twitter-news {
+    height: calc(100dvh - 150px);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .twitter-news .news-left-nav {
+    position: relative;
+    inset: auto;
+    flex: 0 0 auto;
+    z-index: 3;
+  }
+  .twitter-news .transfer-news-panel {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+  }
+  .twitter-news .news-timeline-header {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+  }
+  .twitter-news .news-discover {
+    flex: 0 0 auto;
+    order: -1;
+  }
+  .twitter-news .news-discover > :not(.news-search) {
+    display: none;
+  }
+  .twitter-news .news-search {
+    display: flex;
+  }
+  :is(dialog, .modal-backdrop > [role='dialog']):not(.compact-match-preview):not(
+      .competition-draw-modal
+    ):not(.club-calendar-modal):not(.calendar-pending-dialog),
+  dialog:not(.compact-match-preview):not(.competition-draw-modal):not(.club-calendar-modal):not(
+      .calendar-modal
+    ):not(.calendar-pending-dialog) {
+    position: fixed;
+    inset: 0 !important;
+    margin: 0 !important;
+    width: 100vw !important;
+    max-width: 100vw !important;
+    animation: none;
+    transform: none;
+    height: 100dvh !important;
+    min-height: 0;
+    max-height: 100dvh !important;
+    border-radius: 0;
+    box-sizing: border-box;
+    overflow-y: auto;
+    padding: max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom));
+  }
+  :is(dialog, .modal-backdrop > [role='dialog']):not(.compact-match-preview):not(
+      .competition-draw-modal
+    ):not(.club-calendar-modal):not(.calendar-modal)
+    .close-modal {
+    position: sticky;
+    inset: auto;
+    top: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100% !important;
+    min-width: 100%;
+    max-width: none !important;
+    height: 44px !important;
+    min-height: 44px;
+    margin: 0 0 12px;
+    flex: 0 0 auto;
+    grid-column: 1 / -1;
+    justify-self: stretch;
+    border: 1px solid #d2b76b;
+    border-radius: 8px;
+    background: #163e30;
+    color: #fff0b3;
+    z-index: 10;
+    font-size: 0;
+    transform: none;
+  }
+  :is(dialog, .modal-backdrop > [role='dialog']):not(.compact-match-preview):not(
+      .competition-draw-modal
+    ):not(.club-calendar-modal):not(.calendar-modal)
+    .close-modal
+    > * {
+    display: none;
+  }
+  :is(dialog, .modal-backdrop > [role='dialog']):not(.compact-match-preview):not(
+      .competition-draw-modal
+    ):not(.club-calendar-modal):not(.calendar-modal)
+    .close-modal::before {
+    content: '← Voltar';
+    position: static;
+    font-size: 15px;
+    font-weight: 800;
+    transform: none;
+    width: auto;
+    height: auto;
+    background: none;
+    border: 0;
+  }
+  :is(dialog, .modal-backdrop > [role='dialog']):not(.compact-match-preview):not(
+      .competition-draw-modal
+    ):not(.club-calendar-modal):not(.calendar-modal)
+    .close-modal::after {
+    display: none;
+  }
+}
+
+@media (max-width: 900px) {
+  dialog.negotiation-chat-dialog .negotiation-chat {
+    position: relative;
+    inset: auto;
+    height: 100%;
+    max-height: none;
+    width: 100%;
+  }
+  dialog.negotiation-chat-dialog .chat-phone-shell {
+    width: 100%;
+    height: 100%;
+    max-height: none;
+    padding: 0;
+    border: 0;
+  }
+  .market-filter-heading {
+    flex-wrap: wrap;
+  }
+  .market-filter-close {
+    order: -1;
+    width: 100%;
+    flex-basis: 100%;
+    height: 44px;
+    background: #163e30;
+    color: #fff0b3;
+  }
+  .market-filter-close svg {
+    display: none;
+  }
+  .market-filter-close::before {
+    content: '← Voltar';
+    font-weight: 800;
+  }
+  .chat-header {
+    flex-wrap: wrap;
+  }
+  .chat-header > button {
+    width: 100%;
+    flex-basis: 100%;
+    font-size: 0;
+    min-height: 44px;
+    background: #163e30;
+    color: #fff0b3;
+  }
+  .chat-header > button::before {
+    content: '← Voltar';
+    font-size: 15px;
+  }
+}
+
+.twitter-news .transfer-news-panel {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.twitter-news .transfer-news-feed {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.twitter-news .transfer-news-panel > :not(.transfer-news-feed) {
+  flex-shrink: 0;
+}
+@media (max-width: 900px) {
+  .twitter-news .transfer-news-panel {
+    overflow: hidden;
+  }
+  .twitter-news .news-left-nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .twitter-news .news-left-nav .news-network-logo,
+  .twitter-news .news-nav-profile,
+  .twitter-news .news-left-nav > a,
+  .twitter-news .news-tweet-button {
+    display: none;
+  }
+  .twitter-news .news-left-nav > button {
+    flex: 1;
+    min-width: 0;
+    padding: 8px 4px;
+    font-size: 11px;
+  }
+  .twitter-news .news-discover {
+    width: 100%;
+    order: 0;
+    padding: 6px;
+  }
+  .twitter-news .transfer-news-panel {
+    order: 1;
+  }
+  .twitter-news .news-discover .news-search {
+    margin: 0;
+  }
+  .main-content > .twitter-news {
+    padding-bottom: 0;
+  }
+  .market-filter-heading > div {
+    order: 1;
+  }
+  .market-filter-close {
+    min-width: 100%;
+  }
+  .chat-header > button {
+    min-width: 100%;
+  }
+}
+
+/* Use the recorded tactical coordinates in either field orientation. */
+.match-ratings-body .ratings-formation {
+  display: block;
+  position: relative;
+}
+.match-ratings-body .ratings-player-row {
+  display: contents;
+}
+.match-ratings-body .ratings-formation .rated-player {
+  position: absolute;
+  left: var(--pitch-length);
+  top: var(--pitch-width);
+  transform: translate(-50%, -50%);
+  width: 42px;
+  max-width: 24%;
+}
+@media (max-width: 900px) {
+  .match-ratings-body .ratings-formation .rated-player {
+    left: var(--pitch-width);
+    top: var(--pitch-length);
+    width: 60px;
+  }
+  .transfer-news-page.twitter-news {
+    min-height: 0;
+  }
+}
+
+.incoming-offers .incoming-offer.loan-offer :is(.offer-body, .offer-actions, .offer-buyer) {
+  background: linear-gradient(135deg, #e6f5ff, #bcdff5);
+}
+.incoming-offers .incoming-offer.renewal-offer .player-management {
+  background: #fff0b3;
+  color: #483d12;
+}
+.incoming-offers .incoming-offer.renewal-offer::before,
+.incoming-offers .incoming-offer.renewal-offer::after {
+  display: none;
+}
+@media (max-width: 900px) {
+  dialog:not(.compact-match-preview):not(.competition-draw-modal):not(.calendar-pending-dialog) {
+    scrollbar-gutter: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #bca25d #163e30;
+  }
+}
+
+/* Shared dialog frame: consistent dimensions and a permanent return row. */
+@media (min-width: 901px) {
+  dialog[open],
+  .modal-backdrop > [role='dialog'] {
+    position: fixed !important;
+    inset: 0 !important;
+    margin: auto !important;
+    width: min(1120px, calc(100vw - 48px)) !important;
+    max-width: min(1120px, calc(100vw - 48px)) !important;
+    height: min(780px, calc(100dvh - 48px)) !important;
+    max-height: min(780px, calc(100dvh - 48px)) !important;
+    box-sizing: border-box;
+    border-radius: 16px;
+  }
+}
+dialog[open] {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+dialog[open] > .modal-content {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 2px;
+}
+dialog[open] > .modal-return,
+.modal-backdrop > [role='dialog'] > .close-modal {
+  position: sticky !important;
+  inset: auto !important;
+  bottom: 0 !important;
+  order: 999;
+  flex: 0 0 44px;
+  margin: auto 0 0 !important;
+  width: 100% !important;
+  min-height: 44px;
+  max-width: none !important;
+  border: 1px solid #c7ad60;
+  border-radius: 8px;
+  background: #153e30;
+  color: #fff0b3;
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.2;
+  z-index: 30;
+}
+dialog[open] > :not(.modal-return) {
+  flex-shrink: 0;
+}
+dialog[open] > .modal-content,
+dialog[open] > .chat-phone-shell {
+  flex: 1;
+  min-height: 0;
+}
+dialog[open] .close-modal,
+dialog[open] .market-filter-close,
+dialog[open] .chat-header > button[aria-label^='Fechar'] {
+  display: none !important;
+}
+.negotiation-chat-dialog .chat-phone-shell {
+  width: 100%;
+  max-width: none;
+  height: auto;
+  padding: 0;
+}
+.negotiation-chat-dialog .negotiation-chat {
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  max-height: 100%;
+}
+.chat-deal-options,
+.chat-loan-composer .segmented {
+  display: flex;
+  gap: 10px;
+}
+.chat-deal-options {
+  padding: 10px 14px;
+  flex-shrink: 0;
+}
+.chat-deal-options button,
+.chat-loan-composer .segmented button {
+  flex: 1;
+  min-width: 0;
+  min-height: 40px;
+}
+.chat-deal-options [aria-pressed='true'],
+.chat-loan-composer [aria-pressed='true'] {
+  background: #d2b86e;
+  color: #153e30;
+}
+.chat-loan-composer {
+  display: grid;
+  gap: 12px;
+  padding: 12px 14px;
+  flex-shrink: 0;
+}
+.transfer-availability {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 16px 0;
+  padding: 14px;
+  border: 1px solid #bca25d;
+  border-radius: 10px;
+}
+.transfer-availability > .switch-row {
+  margin: 0;
+  gap: 9px;
+  padding: 12px;
+  min-height: 54px;
+  border-radius: 8px;
+}
+.transfer-availability > small,
+.transfer-availability > .loan-duration {
+  grid-column: 1/-1;
+}
+.loan-duration {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 18px;
+}
+.loan-duration .segmented {
+  display: flex;
+  gap: 10px;
+}
+.loan-duration button {
+  flex: 1;
+  min-height: 40px;
+}
+.player-management .player-policy-offers {
+  margin-top: 16px;
+  min-height: 44px;
+}
+.lineup-effective-average {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  color: #f5e3a7;
+  padding: 10px 14px;
+  background: #153e30;
+  border: 1px solid #bca25d;
+  border-radius: 8px;
+}
+.lineup-effective-average strong {
+  font-size: 22px;
+}
+.lineup-effective-average small {
+  margin-left: auto;
+}
+.squad-office {
+  height: calc(100dvh - 90px);
+  overflow: hidden;
+  min-height: 0;
+}
+.squad-office-roster {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+}
+.squad-office-controls {
+  flex-shrink: 0;
+}
+.squad-office-players,
+.squad-planning-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+@media (max-width: 900px) {
+  .transfer-availability {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+  .loan-duration {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+  .squad-office {
+    height: calc(100dvh - 100px);
+  }
+  .lineup-effective-average small {
+    width: 100%;
+    margin: 0;
+  }
+}
+
+.modal-backdrop > [role='dialog'] {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.modal-backdrop > [role='dialog'] > .close-modal {
+  font-size: 0;
+}
+.modal-backdrop > [role='dialog'] > .close-modal > * {
+  display: none;
+}
+.modal-backdrop > [role='dialog'] > .close-modal::before {
+  content: '← Voltar';
+  font-size: 15px;
+}
+.market-filter-dialog > .market-filter-surface {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+.negotiation-chat-dialog > .chat-phone-shell {
+  overflow: hidden;
+}
+
+.negotiation-chat-dialog .negotiation-chat {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+.negotiation-chat-dialog .negotiation-chat > * {
+  flex-shrink: 0;
+}
+.negotiation-chat-dialog .chat-history {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+.negotiation-chat-dialog .chat-phone-navigation {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .match-ratings-body .ratings-pitch {
+    grid-auto-flow: row;
+    grid-template-rows: repeat(2, minmax(380px, auto));
+    height: auto;
+  }
+}
+
+.negotiation-chat-dialog[open] > .chat-phone-shell {
+  flex: 1 1 0 !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  max-height: none;
+}
+.negotiation-chat-dialog .chat-phone-shell > .negotiation-chat {
+  height: 100% !important;
+  box-sizing: border-box;
+  padding: 0 !important;
+}
+.chat-loan-composer {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center;
+}
+.chat-loan-composer > .primary {
+  grid-column: 1/-1;
+}
+.chat-loan-composer label {
+  color: #fff0b3;
+  font-weight: 700;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
+}
+.chat-loan-composer label input {
+  width: 100%;
+  flex-basis: 100%;
+}
+@media (max-width: 900px) {
+  .chat-loan-composer {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Keep both columns inside the flipped player card at every roster width. */
+.player-card .card-back dl {
+  width: 100%;
+  min-width: 0;
+}
+.player-card .card-back dl > div {
+  display: grid;
+  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+.player-card .card-back dt,
+.player-card .card-back dd {
+  min-width: 0;
+  max-width: 100%;
+  font-size: clamp(8px, 5cqw, 11px);
+}
+.player-card .card-back dt {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.player-card .card-back dd {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-align: right;
+}
+.player-card .card-back dd a {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+/* Reserve portraits, names and fitness each have their own vertical space. */
+.lineup-editor .reserve-cards {
+  grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+  gap: 14px 8px;
+  align-items: start;
+}
+.lineup-editor .reserve-mini {
+  width: 100%;
+  max-width: 96px;
+  height: 112px;
+  min-height: 112px;
+  justify-self: center;
+}
+.lineup-editor .reserve-mini-rating {
+  top: 5px;
+  left: 4px;
+  font-size: 12px;
+}
+.lineup-editor .reserve-mini-portrait {
+  top: 20px;
+  left: calc(50% - 16px);
+  width: 38px;
+  height: 48px;
+  overflow: hidden;
+}
+.lineup-editor .reserve-mini-portrait .portrait {
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.lineup-editor .reserve-mini > strong {
+  top: auto;
+  bottom: 17px;
+  left: 4px;
+  width: calc(100% - 8px);
+  height: 22px;
+  margin: 0;
+  font-size: 10px;
+  line-height: 11px;
+  white-space: normal;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow-wrap: anywhere;
+}
+.lineup-editor .reserve-mini-fitness {
+  bottom: 3px;
+  left: 4px;
+  right: 4px;
+  height: 10px;
+  font-size: 7px;
+  line-height: 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lineup-editor .reserve-mini-fitness {
+  margin: 0;
+  padding: 0;
+  bottom: 2px;
+  height: 12px;
+  line-height: 11px;
+  border-top: 1px solid #8fb765;
+  box-sizing: border-box;
 }

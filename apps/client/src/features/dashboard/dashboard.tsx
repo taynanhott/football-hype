@@ -181,7 +181,7 @@ export function Dashboard({ snapshot, club, stadium, center }: ViewProps) {
                     </span>
                     <span className="dashboard-featured-rating">
                       <small>Média</small>
-                      <b>{(rating.sum / rating.count).toFixed(2)}</b>
+                      <b>{(rating.sum / rating.count).toFixed(1).replace('.', ',')}</b>
                     </span>
                   </button>
                 );

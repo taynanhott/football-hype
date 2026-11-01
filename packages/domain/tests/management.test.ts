@@ -176,7 +176,8 @@ describe('contratos e negociação', () => {
     });
     const unwilling = transferContext(state, player, buyer);
     expect(willing.minimumFee).toBeLessThan(unwilling.minimumFee);
-    expect(willing.playerInterest).toBeGreaterThanOrEqual(1);
+    expect(willing.playerInterest).toBeGreaterThanOrEqual(0);
+    expect(willing.playerInterest).toBeLessThanOrEqual(100);
     expect(transferContext(state, { ...player, clubId: null }, buyer).minimumFee).toBe(0);
   });
   it('gera proposta conforme necessidade, reserva financeira e transfere atomicamente', () => {

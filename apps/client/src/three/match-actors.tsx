@@ -353,16 +353,17 @@ function Runner({
   );
 }
 function Fireworks({ color: victoryColor }: { color: string }) {
+  const compact = useThree((s) => s.size.width < 900);
   const fireworks = useMemo(() => {
-    const rays = 56;
-    const trail = 8;
+    const rays = compact ? 16 : 56;
+    const trail = compact ? 3 : 8;
     const positions = new Float32Array(12 * rays * trail * 6);
     const colors = new Float32Array(positions.length);
     const geometry = new BufferGeometry();
     geometry.setAttribute('position', new BufferAttribute(positions, 3));
     geometry.setAttribute('color', new BufferAttribute(colors, 3));
     return { geometry, positions, colors, rays, trail };
-  }, []);
+  }, [compact]);
   useEffect(() => () => fireworks.geometry.dispose(), [fireworks]);
   useFrame(({ clock }) => {
     const { positions, colors, rays, trail, geometry } = fireworks;

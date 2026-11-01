@@ -12,25 +12,46 @@ import {
 import { effectiveOverall } from './management.js';
 import { isFifaWindow } from '../competitions/calendar.js';
 
-const RELATED = [
-  ['CB', 'DM'],
-  ['LB', 'RB'],
-  ['LB', 'LM', 'LW'],
-  ['RB', 'RM', 'RW'],
-  ['CM', 'DM', 'AM'],
-  ['LM', 'LW'],
-  ['RM', 'RW'],
-  ['LW', 'RW', 'ST'],
-  ['SS', 'ST', 'AM'],
-  ['LWB', 'LB', 'LM', 'LW'],
-  ['RWB', 'RB', 'RM', 'RW'],
-];
-export function positionFactor(natural: Position, assigned: Position): number {
+const POSITION_PATHS: Partial<Record<Position, readonly Position[]>> = {
+  GK: ['GK'],
+  CB: ['CB', 'DM', 'LB', 'RB'],
+  LB: ['LB', 'RB', 'LWB', 'LM', 'LW'],
+  RB: ['RB', 'LB', 'RWB', 'RM', 'RW'],
+  LWB: ['LWB', 'LB', 'LM', 'LW'],
+  RWB: ['RWB', 'RB', 'RM', 'RW'],
+  LW: ['LW', 'RW', 'LM', 'RM', 'LB', 'RB', 'LWB', 'RWB', 'ST', 'SS'],
+  RW: ['RW', 'LW', 'RM', 'LM', 'RB', 'LB', 'RWB', 'LWB', 'ST', 'SS'],
+  ST: ['ST', 'SS', 'LW', 'RW'],
+  SS: ['SS', 'ST', 'LW', 'RW', 'AM'],
+  CM: ['CM', 'DM', 'AM', 'LM', 'RM', 'LW', 'RW'],
+  DM: ['DM', 'CM', 'AM', 'LM', 'RM', 'LW', 'RW'],
+  AM: ['AM', 'CM', 'DM', 'LM', 'RM', 'LW', 'RW'],
+  LM: ['LM', 'RM', 'CM', 'DM', 'AM', 'LW', 'RW'],
+  RM: ['RM', 'LM', 'CM', 'DM', 'AM', 'LW', 'RW'],
+};
+export function canLearnPosition(natural: Position, assigned: Position) {
+  return POSITION_PATHS[natural]?.includes(assigned) ?? natural === assigned;
+}
+export function positionFactor(natural: Position, assigned: Position, matches = 0): number {
   if (natural === assigned) return 1;
   if (natural === 'GK' || assigned === 'GK') return TACTICS.goalkeeperMismatchFactor;
-  return RELATED.some((group) => group.includes(natural) && group.includes(assigned))
-    ? TACTICS.relatedPositionFactor
-    : TACTICS.wrongPositionFactor;
+  if (!canLearnPosition(natural, assigned)) return 0.45;
+  return 0.85 + (0.15 * Math.min(15, Math.max(0, matches))) / 15;
+}
+export function learnedPositionFactor(
+  state: WorldState,
+  player: PlayerSnapshot,
+  assigned: Position,
+) {
+  return positionFactor(
+    player.position,
+    assigned,
+    state.positionExperience?.[player.id]?.[assigned] ?? 0,
+  );
+}
+export function startingAverage(state: WorldState, club: ClubSnapshot, at = state.lastProcessedAt) {
+  const entries = resolveLineup(state, club, at);
+  return entries.reduce((sum, entry) => sum + (entry.player ? entry.effectiveOverall : 0), 0) / 11;
 }
 export function chemistryPercent(matches: number): number {
   return Math.min(100, (Math.max(0, matches) / TACTICS.chemistryMatches) * 100);
@@ -156,8 +177,8 @@ export function resolveLineup(
         .filter((candidate) => !used.has(candidate.id))
         .sort(
           (a, b) =>
-            b.overall * positionFactor(b.position, slot.position) * (0.5 + b.fitness / 200) -
-            a.overall * positionFactor(a.position, slot.position) * (0.5 + a.fitness / 200),
+            b.overall * learnedPositionFactor(state, b, slot.position) * (0.5 + b.fitness / 200) -
+            a.overall * learnedPositionFactor(state, a, slot.position) * (0.5 + a.fitness / 200),
         )[0];
     if (!player)
       return { ...slot, player: undefined, chemistry: 0, factor: 1, effectiveOverall: 0 };
@@ -167,7 +188,7 @@ export function resolveLineup(
       adaptation.formation,
       adaptation.style,
     );
-    const factor = positionFactor(player.position, slot.position);
+    const factor = learnedPositionFactor(state, player, slot.position);
     return {
       ...slot,
       player,

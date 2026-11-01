@@ -1,140 +1,140 @@
 import { expect, test } from '@playwright/test';
 
-test('auxiliar anota renovação e políticas localmente e confirma com um único envio', async ({
-  page,
-}) => {
+test('salva disponibilidade imediatamente e ocupa a tela no mobile', async ({ page }) => {
   test.setTimeout(60000);
+  page.setDefaultTimeout(10000);
   await page.goto('/');
   await page.getByRole('button', { name: /Nova carreira solo/ }).click();
   await page.getByRole('button', { name: 'Iniciar carreira', exact: true }).click();
-  await expect(page.locator('.save-queue-status')).toHaveText('✓ Carreira sincronizada', {
+  await expect(page.locator('.save-queue-status')).toContainText('sincronizada', {
     timeout: 20000,
   });
-  await page.goto('/#/squad');
-  await expect(page.locator('.squad-notebook')).toBeVisible();
-  const before = await page.evaluate(async () => {
-    const path = '/src/store/game-store.ts';
-    const { useGameStore } = await import(path);
-    return useGameStore.getState().snapshot.state.revision;
+  await page.evaluate(() => {
+    location.hash = '/squad';
   });
-  for (const index of [0, 1]) {
-    const row = page.locator('.squad-office-player').nth(index);
-    await row.getByRole('button', { name: 'Negociação', exact: true }).click();
-    await row.getByRole('switch', { name: 'Disponível para negociação' }).check();
-  }
-  let renewalAdded = false;
-  for (let index = 0; index < 10; index++) {
-    const row = page.locator('.squad-office-player').nth(index);
-    await row.getByRole('button', { name: 'Renegociação', exact: true }).click();
-    const renew = row.getByRole('button', { name: /^Anotar renovação/ });
-    if ((await renew.count()) && (await renew.isEnabled())) {
-      const range = row.locator('input.money-range');
-      const currentSalary = Number(await range.inputValue());
-      expect(Number(await range.getAttribute('max'))).toBe(currentSalary * 2);
-      expect(Number(await range.getAttribute('min'))).toBe(
-        Math.ceil((currentSalary * 0.5) / 500) * 500,
-      );
-      await range.fill(String(currentSalary * 2));
-      const fit = await row.evaluate((element) => {
-        const controls = element.querySelector('.squad-office-actions')!;
-        const button = element.querySelector('.negotiate-button')!;
-        return {
-          overflow: getComputedStyle(controls).overflowY,
-          buttonBottom: button.getBoundingClientRect().bottom,
-          rowBottom: element.getBoundingClientRect().bottom,
-        };
-      });
-      expect(fit.overflow).toBe('visible');
-      expect(fit.buttonBottom).toBeLessThan(fit.rowBottom - 8);
-      await page.screenshot({
-        path: 'test-results/squad-renewal-desktop.png',
-        animations: 'disabled',
-      });
-      await renew.click();
-      if (!(await page.locator('.notebook-summary').textContent())?.includes('3 ações anotadas'))
-        continue;
-      renewalAdded = true;
-      break;
-    }
-  }
-  expect(renewalAdded).toBe(true);
-  await expect(page.locator('.notebook-summary')).toContainText('3 ações anotadas');
-  const staged = await page.evaluate(async () => {
-    const path = '/src/store/game-store.ts';
-    const { useGameStore } = await import(path);
-    return {
-      revision: useGameStore.getState().snapshot.state.revision,
-      pending: useGameStore.getState().pendingActions,
-    };
+  await expect(page.locator('.squad-notebook')).toHaveCount(0);
+  const row = page.locator('.squad-office-player').first();
+  await row.getByRole('button', { name: 'Transferências', exact: true }).click();
+  await row.getByRole('radio', { name: 'Pôr no mercado', exact: true }).check();
+  await expect(page.locator('.save-queue-status')).toContainText('sincronizada', {
+    timeout: 20000,
   });
-  expect(staged).toEqual({ revision: before, pending: 0 });
-  // Count at the existing room boundary (the socket was established before this test step).
+  await page.evaluate(() => {
+    location.hash = '/finance';
+  });
+  await expect(page.locator('.finance-hub')).toBeVisible();
+  await page.evaluate(() => {
+    location.hash = '/squad';
+  });
+  await row.getByRole('button', { name: 'Transferências', exact: true }).click();
+  await expect(row.getByRole('radio', { name: 'Pôr no mercado', exact: true })).toBeChecked();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.locator('.squad-card-category').first().click();
+  await page
+    .locator('.squad-mobile-action-buttons')
+    .first()
+    .getByRole('button', { name: 'Transferências', exact: true })
+    .click();
+  const dialog = page.getByRole('dialog');
+  await expect(dialog).toBeVisible();
+  const bounds = await dialog.evaluate((el) => {
+    const r = el.getBoundingClientRect();
+    return { x: r.x, y: r.y, w: r.width, h: r.height, vw: innerWidth, vh: innerHeight };
+  });
+  expect(bounds.x).toBe(0);
+  expect(bounds.y).toBe(0);
+  expect(bounds.w).toBe(bounds.vw);
+  expect(bounds.h).toBe(bounds.vh);
+  const close = dialog.getByRole('button', { name: 'Fechar', exact: true });
+  expect(await close.evaluate((el) => el.getBoundingClientRect().width)).toBeGreaterThan(340);
+  expect(await close.evaluate((el) => el.getBoundingClientRect().bottom)).toBeGreaterThan(780);
+  await page.screenshot({ path: 'test-results/transfer-update-mobile.png' });
+  await close.click();
+  const nav = page.getByRole('navigation', { name: 'Atalhos de navegação' });
+  const widths = await nav
+    .locator('a,button')
+    .evaluateAll((els) => els.map((el) => el.getBoundingClientRect().width));
+  const navWidth = await nav.evaluate((el) => el.getBoundingClientRect().width);
+  for (const width of widths) expect(width).toBeCloseTo(navWidth / 3, 0);
+  await page.evaluate(() => {
+    location.hash = '/lineup';
+  });
+  await page.getByRole('button', { name: 'Análise tática', exact: true }).click();
+  await expect(page.locator('.tactical-analysis-group.strong')).toBeVisible();
+  await expect(page.locator('.tactical-analysis-group.weak')).toBeHidden();
+  await page.getByRole('tab', { name: 'Contras', exact: true }).click();
+  await expect(page.locator('.tactical-analysis-group.weak')).toBeVisible();
+  await expect(page.locator('.tactical-analysis-group.strong')).toBeHidden();
+  await page.getByRole('dialog').getByRole('button', { name: 'Fechar', exact: true }).click();
+  await page.evaluate(() => {
+    location.hash = '/market';
+  });
+  await page.getByRole('button', { name: 'Filtros', exact: true }).click();
+  const filters = page.getByRole('dialog', { name: 'Filtrar jogadores' });
+  await expect(filters).toBeVisible();
+  expect(await filters.evaluate((el) => el.getBoundingClientRect().width)).toBe(390);
+  expect(
+    await filters
+      .getByRole('button', { name: 'Voltar', exact: true })
+      .evaluate((el) => el.getBoundingClientRect().width),
+  ).toBeGreaterThan(340);
+  await filters.getByRole('button', { name: 'Voltar', exact: true }).click();
+  await page.clock.install();
   await page.evaluate(async () => {
     const path = '/src/store/game-store.ts';
     const { useGameStore } = await import(path);
-    const room = useGameStore.getState().room,
-      send = room.send.bind(room);
-    (window as unknown as { plannedSends: number }).plannedSends = 0;
-    room.send = (type: string, data: unknown) => {
-      if (type === 'command') (window as unknown as { plannedSends: number }).plannedSends++;
-      return send(type, data);
+    const store = useGameStore.getState();
+    const snapshot = store.snapshot;
+    const state = snapshot.state;
+    const ownId = state.participants.find(
+      (p: { userId: string }) => p.userId === store.userId,
+    ).clubId;
+    const fixture = state.fixtures.find(
+      (f: { homeId: string; awayId: string }) => f.homeId === ownId || f.awayId === ownId,
+    );
+    const home: string[] = state.clubs.byId[fixture.homeId].playerIds.slice(0, 11);
+    const away: string[] = state.clubs.byId[fixture.awayId].playerIds.slice(0, 11);
+    const result = {
+      fixtureId: fixture.id,
+      homeId: fixture.homeId,
+      awayId: fixture.awayId,
+      stadiumId: state.clubs.byId[fixture.homeId].stadiumId,
+      status: 'finished',
+      homeGoals: 1,
+      awayGoals: 0,
+      startedAt: Date.now() + store.clockOffset,
+      attendance: 1000,
+      revenue: 1000000,
+      seed: 1,
+      scorers: [],
+      ratings: Object.fromEntries([...home, ...away].map((id) => [id, 7])),
+      lineups: { home, away },
+      tacticalPlans: {
+        home: { formation: '4-3-3', starters: home, style: 'balanced' },
+        away: { formation: '4-3-3', starters: away, style: 'balanced' },
+      },
     };
+    useGameStore.setState({ snapshot: { ...snapshot, state: { ...state, results: [result] } } });
+    location.hash = '/dashboard';
   });
-  await page.getByRole('button', { name: 'Pode colocar em prática', exact: true }).click();
-  await expect(page.locator('.assistant-speech')).toContainText('Tudo certo', { timeout: 20000 });
-  expect(
-    await page.evaluate(() => (window as unknown as { plannedSends: number }).plannedSends),
-  ).toBe(1);
-  const row = page.locator('.squad-office-player').first();
-  await row.getByRole('button', { name: 'Negociação', exact: true }).click();
-  await row.getByRole('switch', { name: 'Disponível para negociação' }).uncheck();
-  await expect(page.locator('.notebook-summary')).toContainText('1 ação anotada');
-  await page.goto('/#/finances');
-  await page.goto('/#/squad');
-  await expect(page.locator('.notebook-summary')).toContainText('Prancheta aberta');
-  await expect(page.getByRole('button', { name: 'Limpar anotações' })).toHaveCount(0);
-  await expect(page.locator('.squad-office .squad-averages')).toHaveCount(0);
-  await page.locator('.squad-office-player').first().locator('.player-card').click();
-  await expect(
-    page.locator('.squad-office-player').first().locator('.card-back .eyebrow'),
-  ).toHaveCount(0);
-  await page.screenshot({
-    path: 'test-results/squad-office-desktop.png',
-    fullPage: false,
-    animations: 'disabled',
+  await expect(page).toHaveURL(/#\/matches$/);
+  await page.evaluate(() => {
+    location.hash = '/dashboard';
   });
-  await page.setViewportSize({ width: 390, height: 844 });
-  await expect(page.locator('.squad-notebook')).toBeVisible();
-  const mobileRow = page.locator('.squad-office-player').first();
-  await expect(mobileRow.locator('.squad-mobile-action-buttons button')).toHaveCount(3);
-  await expect(mobileRow.locator('.management-tabs')).toHaveCount(0);
-  await expect(mobileRow.getByText('Toque na carta para ver o verso')).toHaveCount(0);
-  await expect(mobileRow.getByRole('link', { name: /Propostas recebidas/ })).toHaveCount(0);
-  const sideBySide = await mobileRow.evaluate((element) => {
-    const card = element.querySelector('.player-card')!.getBoundingClientRect();
-    const actions = element.querySelector('.squad-mobile-action-buttons')!.getBoundingClientRect();
-    return actions.left >= card.right && actions.top < card.bottom;
+  await expect(page.locator('.club-calendar')).toBeVisible();
+  await expect(page.locator('.club-calendar-score')).toHaveCount(0);
+  await page.clock.fastForward(96000);
+  await expect(page.locator('.club-calendar-score')).toHaveCount(1);
+  await page.evaluate(() => {
+    location.hash = '/matches';
   });
-  expect(sideBySide).toBe(true);
-  await mobileRow.getByRole('button', { name: 'Negociação', exact: true }).click();
-  const dialog = page.getByRole('dialog', { name: /Negociação ·/ });
-  await expect(dialog).toBeVisible();
-  await expect(dialog.getByRole('link', { name: /Propostas recebidas/ })).toBeVisible();
-  await dialog.getByRole('switch', { name: 'Disponível para negociação' }).uncheck();
-  await expect(page.locator('.notebook-summary')).toContainText('1 ação anotada');
-  expect(
-    await page.evaluate(() => (window as unknown as { plannedSends: number }).plannedSends),
-  ).toBe(1);
-  await page.screenshot({ path: 'test-results/squad-action-mobile.png', animations: 'disabled' });
-  await dialog.getByRole('button', { name: 'Voltar ao elenco' }).click();
-  await expect(dialog).toHaveCount(0);
-  await mobileRow.scrollIntoViewIfNeeded();
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
-    true,
-  );
-  await page.screenshot({
-    path: 'test-results/squad-office-mobile.png',
-    fullPage: false,
-    animations: 'disabled',
+  await page.getByRole('tab', { name: 'Notas dos jogadores', exact: true }).click();
+  await expect(page.locator('.ratings-half')).toHaveCount(2);
+  const vertical = await page.locator('.ratings-pitch').evaluate((el) => {
+    const home = el.querySelector('.ratings-half-home')!.getBoundingClientRect();
+    const away = el.querySelector('.ratings-half-away')!.getBoundingClientRect();
+    return away.top >= home.bottom - 1;
   });
+  expect(vertical).toBe(true);
+  await page.screenshot({ path: 'test-results/match-ratings-update-mobile.png', fullPage: true });
 });

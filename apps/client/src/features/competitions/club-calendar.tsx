@@ -1,3 +1,4 @@
+import { useFinishedResults } from '../../ui/use-finished-results';
 import { CompetitionDrawDetails } from './competition-draw-details';
 import { clubCalendarFixtures, clubCalendarPendingGames } from './club-calendar-fixtures';
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
@@ -59,7 +60,8 @@ const routines = {
   eve: { label: 'Véspera', icon: '◷', color: '#8051b5' },
 };
 
-export function ClubCalendar({ state, clubId }: { state: WorldState; clubId: string }) {
+export function ClubCalendar({ state: rawState, clubId }: { state: WorldState; clubId: string }) {
+  const state = useFinishedResults(rawState);
   const [pendingGame, setPendingGame] = useState<
     ReturnType<typeof clubCalendarPendingGames>[number] | null
   >(null);
@@ -477,6 +479,9 @@ function PendingGameDetails({
           <Icon name="trophy" size={130} />
         </span>
       </div>
+      <button type="button" className="modal-return" aria-label="Voltar" onClick={onClose}>
+        ← Voltar
+      </button>
     </dialog>
   );
 }

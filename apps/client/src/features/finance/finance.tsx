@@ -190,7 +190,7 @@ export function Finance({ snapshot, club }: ViewProps) {
             },
             {
               label: 'Fôlego de caixa',
-              text: coverage.toFixed(1) + ' meses',
+              text: coverage.toFixed(1).replace('.', ',') + ' meses',
               note: 'Folha + estruturas',
               negative: coverage < 1,
             },
@@ -227,7 +227,7 @@ export function Finance({ snapshot, club }: ViewProps) {
               {coverage < 1
                 ? 'O caixa não cobre o próximo fechamento.'
                 : 'A reserva cobre aproximadamente ' +
-                  coverage.toFixed(1) +
+                  coverage.toFixed(1).replace('.', ',') +
                   ' meses sem novas receitas.'}
             </p>
             <ul>

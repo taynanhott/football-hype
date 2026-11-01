@@ -153,7 +153,7 @@ describe('sincronização do Worker com dez conexões', () => {
         sockets[0] as never,
         JSON.stringify({
           type: 'command',
-          data: { requestId: id, command: { type: 'home-ticket-price', priceCents: 7500 } },
+          data: { requestId: id, command: { type: 'home-ticket-price', priceCents: 20000 } },
         }),
       );
       await drain();
@@ -169,7 +169,7 @@ describe('sincronização do Worker com dez conexões', () => {
         sockets[0] as never,
         JSON.stringify({
           type: 'command',
-          data: { requestId: id, command: { type: 'home-ticket-price', priceCents: 7500 } },
+          data: { requestId: id, command: { type: 'home-ticket-price', priceCents: 20000 } },
         }),
       );
       await drain();
@@ -227,7 +227,7 @@ describe('sincronização do Worker com dez conexões', () => {
           type: 'command',
           data: {
             requestId: randomUUID(),
-            command: { type: 'home-ticket-price', priceCents: 12500 },
+            command: { type: 'home-ticket-price', priceCents: 30000 },
           },
         }),
       );
@@ -254,7 +254,7 @@ describe('sincronização do Worker com dez conexões', () => {
       await service.command(
         created.value.id,
         'coach-0',
-        { type: 'home-ticket-price', priceCents: 15000 },
+        { type: 'home-ticket-price', priceCents: 40000 },
         false,
         randomUUID(),
       );

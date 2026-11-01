@@ -22,7 +22,7 @@ import {
   resolveLineup,
   resolveBench,
   injuryProbability,
-  positionFactor,
+  learnedPositionFactor,
   effectiveOverall,
   temporaryModifiers,
 } from '@football/domain';
@@ -205,8 +205,10 @@ export function LineupEditor({ snapshot, club, center }: ViewProps) {
     .filter((player) => player !== undefined)
     .sort(
       (a, b) =>
-        effectiveOverall(state, b) * positionFactor(b.position, target?.position ?? b.position) -
-        effectiveOverall(state, a) * positionFactor(a.position, target?.position ?? a.position),
+        effectiveOverall(state, b) *
+          learnedPositionFactor(state, b, target?.position ?? b.position) -
+        effectiveOverall(state, a) *
+          learnedPositionFactor(state, a, target?.position ?? a.position),
     );
   const selectedPlayer = target?.player;
   const effects = selectedPlayer ? temporaryModifiers(state, selectedPlayer) : [];
@@ -255,6 +257,15 @@ export function LineupEditor({ snapshot, club, center }: ViewProps) {
   }
   return (
     <div className="lineup-editor">
+      <div className="lineup-effective-average">
+        Overall médio titular{' '}
+        <strong>
+          {(
+            entries.reduce((sum, e) => sum + (e.player ? e.effectiveOverall : 0), 0) / 11
+          ).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
+        </strong>
+        <small>Com bônus, penalidades e adaptação</small>
+      </div>
       {error && pending && (
         <div className="lineup-save-error" role="alert">
           <span>Não foi possível salvar as alterações.</span>
@@ -616,8 +627,9 @@ export function LineupEditor({ snapshot, club, center }: ViewProps) {
                               {positionLabel(player.position)} · OVR {player.overall} · Na posição{' '}
                               {Math.floor(
                                 effectiveOverall(state, player) *
-                                  positionFactor(
-                                    player.position,
+                                  learnedPositionFactor(
+                                    state,
+                                    player,
                                     target?.position ?? player.position,
                                   ),
                               )}{' '}

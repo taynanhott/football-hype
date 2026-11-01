@@ -1,14 +1,14 @@
 import { positionLabel } from '../../ui/position-label';
 import { MoneyRange } from '../../ui/money-range';
 import { useState } from 'react';
+import { ceilMoney, clubKit, MONEY_STEPS, type PlayerSnapshot } from '@football/shared';
 import {
-  ceilMoney,
-  clubKit,
-  MONEY_STEPS,
-  type PlayerSnapshot,
-  type GameCommand,
-} from '@football/shared';
-import { contractEnd, effectiveOverall, temporaryModifiers, renewalTerms } from '@football/domain';
+  contractEnd,
+  effectiveOverall,
+  temporaryModifiers,
+  renewalTerms,
+  loanTerms,
+} from '@football/domain';
 import type { ViewProps } from '../../ui/view-props';
 import { useGameStore } from '../../store/game-store';
 import { currency } from '../../ui/format';
@@ -18,21 +18,18 @@ import { ClubBadge, Icon } from '../../ui/icons';
 export function PlayerManagement({
   player,
   snapshot,
-  onPlan,
   planningBusy = false,
   initialSection = 'policy',
   hideTabs = false,
 }: Pick<ViewProps, 'snapshot'> & {
   player: PlayerSnapshot;
-  onPlan?: (command: GameCommand) => void;
   planningBusy?: boolean;
   initialSection?: 'renew' | 'policy' | 'effects';
   hideTabs?: boolean;
 }) {
   const state = snapshot.state,
-    sendNow = useGameStore((s) => s.send),
+    send = useGameStore((s) => s.send),
     serverBusy = useGameStore((s) => s.busy);
-  const send = onPlan ?? sendNow;
   const busy = serverBusy || planningBusy;
   const [section, setSection] = useState<'renew' | 'policy' | 'effects'>(initialSection);
   const policy = state.management?.policies?.[player.id] ?? {
@@ -40,11 +37,6 @@ export function PlayerManagement({
     rivals: false,
     interest: 35,
   };
-  const [interestDraft, setInterestDraft] = useState({
-    base: policy.interest,
-    value: policy.interest,
-  });
-  const interest = interestDraft.base === policy.interest ? interestDraft.value : policy.interest;
   const end = contractEnd(state, player),
     days = Math.ceil((end - state.lastProcessedAt) / 86400000);
   const [salaryDraft, setSalaryDraft] = useState({
@@ -52,6 +44,7 @@ export function PlayerManagement({
     value: player.salary.cents,
   });
   const [years, setYears] = useState(1);
+  const loan = loanTerms(state, player);
   const effects = temporaryModifiers(state, player);
   const terms = renewalTerms(state, player);
   const hasOffers =
@@ -142,75 +135,74 @@ export function PlayerManagement({
         </div>
       )}
       {section === 'policy' && (
-        <>
-          <label className="switch-row">
-            <input
-              type="checkbox"
-              role="switch"
-              checked={policy.available}
-              disabled={busy}
-              onChange={(e) =>
-                send({
-                  type: 'management',
-                  action: 'policy',
-                  playerId: player.id,
-                  ...policy,
-                  available: e.target.checked,
-                })
-              }
-            />
-            Disponível para negociação
-          </label>
-          <label className="switch-row">
-            <input
-              type="checkbox"
-              role="switch"
-              checked={policy.rivals}
-              disabled={busy || !policy.available}
-              onChange={(e) =>
-                send({
-                  type: 'management',
-                  action: 'policy',
-                  playerId: player.id,
-                  ...policy,
-                  rivals: e.target.checked,
-                })
-              }
-            />
-            Aceitar rivais
-          </label>
-          <label>
-            Interesse em vender: {interest}/100
-            <MoneyRange
-              min="1"
-              max="100"
-              value={interest}
-              onChange={(e) =>
-                setInterestDraft({ base: policy.interest, value: Number(e.target.value) })
-              }
-              disabled={busy || !policy.available}
-              onPointerUp={(e) =>
-                send({
-                  type: 'management',
-                  action: 'policy',
-                  playerId: player.id,
-                  ...policy,
-                  interest: Number(e.currentTarget.value),
-                })
-              }
-              onKeyUp={(e) => {
-                if (['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key))
+        <fieldset className="transfer-availability">
+          <legend>Disponibilidade</legend>
+          {(
+            [
+              { id: 'none', label: 'Fora do mercado' },
+              { id: 'sale', label: 'Pôr no mercado' },
+              { id: 'loan', label: 'Empréstimo' },
+            ] as const
+          ).map((option) => (
+            <label className="switch-row" key={option.id}>
+              <input
+                type="radio"
+                name={'availability:' + player.id}
+                checked={
+                  option.id === (policy.loanAvailable ? 'loan' : policy.available ? 'sale' : 'none')
+                }
+                disabled={
+                  busy ||
+                  Boolean(state.management?.loans?.[player.id]) ||
+                  (option.id === 'loan' && !loan.eligible)
+                }
+                onChange={() =>
                   send({
                     type: 'management',
                     action: 'policy',
                     playerId: player.id,
-                    ...policy,
-                    interest: Number(e.currentTarget.value),
-                  });
-              }}
-            />
-          </label>
-        </>
+                    available: option.id === 'sale',
+                    loanAvailable: option.id === 'loan',
+                  })
+                }
+              />
+              {option.label}
+            </label>
+          ))}
+          {!loan.eligible && (
+            <small>
+              Empréstimo exige reserva sem sequência, fora do perfil de promessa, e 1 ano de
+              contrato na volta.
+            </small>
+          )}
+          {policy.loanAvailable && (
+            <div className="loan-duration">
+              <span>Prazo autorizado</span>
+              <div className="segmented">
+                {([6, 12] as const).map((months) => (
+                  <button
+                    key={months}
+                    disabled={busy || months > loan.maxMonths}
+                    aria-pressed={
+                      (Math.min(policy.loanMonths ?? 12, loan.maxMonths) >= 12 ? 12 : 6) === months
+                    }
+                    onClick={() =>
+                      send({
+                        type: 'management',
+                        action: 'policy',
+                        playerId: player.id,
+                        ...policy,
+                        loanMonths: months,
+                      })
+                    }
+                  >
+                    {months === 6 ? '6 meses' : '1 temporada'}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </fieldset>
       )}
       {section === 'renew' && terms.reason && (
         <div className="renewal-refusal" role="status">
@@ -257,7 +249,7 @@ export function PlayerManagement({
                   key={n}
                   aria-pressed={years === n}
                   className={years === n ? 'selected' : ''}
-                  disabled={busy || (player.age >= 32 && n > terms.maxYears)}
+                  disabled={busy || n > terms.maxYears || n * 365 < days}
                   onClick={() => setYears(n)}
                 >
                   {n} {n === 1 ? 'ano' : 'anos'}
@@ -271,7 +263,8 @@ export function PlayerManagement({
               busy ||
               Boolean(terms.reason) ||
               salaryCents <= 0 ||
-              (player.age >= 32 && years > terms.maxYears)
+              years > terms.maxYears ||
+              years * 365 < days
             }
             onClick={() =>
               send({
@@ -283,7 +276,7 @@ export function PlayerManagement({
               })
             }
           >
-            {onPlan ? 'Anotar renovação' : 'Propor renovação'} · {currency(salaryCents)}
+            Propor renovação · {currency(salaryCents)}
           </button>
         </div>
       )}
@@ -311,6 +304,20 @@ export function IncomingOffers({ snapshot, club, playerId }: ViewProps & { playe
       (o) =>
         o.sellerId === club.id && o.status === 'pending' && (!playerId || o.playerId === playerId),
     ) ?? [];
+  const humanOffers = snapshot.state.negotiations.filter(
+    (n) =>
+      n.sellerId === club.id &&
+      n.status === 'review' &&
+      (n.expiresAt ?? Infinity) > snapshot.state.lastProcessedAt,
+  );
+  const renewals = club.playerIds.flatMap((id) => {
+    const player = snapshot.state.players.byId[id];
+    return player &&
+      !snapshot.state.management?.loans?.[id] &&
+      renewalTerms(snapshot.state, player).demand
+      ? [player]
+      : [];
+  });
   return (
     <section className="incoming-offers" data-presentation={presentation}>
       {offers.length > 0 && (
@@ -321,7 +328,7 @@ export function IncomingOffers({ snapshot, club, playerId }: ViewProps & { playe
           <span className="offer-status">{offers.length} pendentes</span>
         </div>
       )}
-      {!offers.length && (
+      {!offers.length && !renewals.length && !humanOffers.length && (
         <div className="offers-empty-state">
           <span className="offers-empty-icon">
             <Icon name="handshake" size={30} />
@@ -336,12 +343,51 @@ export function IncomingOffers({ snapshot, club, playerId }: ViewProps & { playe
         </div>
       )}
       <div className="incoming-offers-grid">
+        {humanOffers.map((n) => (
+          <article className="incoming-offer human-transfer-offer" key={n.id}>
+            <h3>
+              {snapshot.state.players.byId[n.playerId]?.name} · {currency(n.fee)}
+            </h3>
+            <p>
+              {snapshot.state.clubs.byId[n.buyerId]?.name} aguarda sua decisão. Validade: 2 semanas.
+            </p>
+            <div className="offer-actions">
+              <button
+                disabled={busy}
+                onClick={() =>
+                  send({ type: 'management', action: 'accept-transfer', offerId: n.id })
+                }
+              >
+                Aceitar e liberar conversa com o atleta
+              </button>
+              <button
+                disabled={busy}
+                onClick={() =>
+                  send({ type: 'management', action: 'reject-transfer', offerId: n.id })
+                }
+              >
+                Recusar
+              </button>
+            </div>
+          </article>
+        ))}
+
+        {renewals.map((player) => (
+          <article key={'renew:' + player.id} className="incoming-offer renewal-offer">
+            <h3>Renovação solicitada · {player.name}</h3>
+            <PlayerManagement player={player} snapshot={snapshot} initialSection="renew" hideTabs />
+          </article>
+        ))}
+
         {offers.map((o) => {
           const player = snapshot.state.players.byId[o.playerId];
           const buyer = snapshot.state.clubs.byId[o.buyerId];
           const difference = player ? o.fee - player.marketValue.cents : 0;
           return (
-            <article className="incoming-offer" key={o.id}>
+            <article
+              className={`incoming-offer ${o.kind === 'loan' ? 'loan-offer' : ''}`}
+              key={o.id}
+            >
               <header className="offer-buyer">
                 <ClubBadge
                   name={buyer?.name ?? 'Clube interessado'}
@@ -371,7 +417,14 @@ export function IncomingOffers({ snapshot, club, playerId }: ViewProps & { playe
                     />
                   ))}
                 <div className="incoming-offer-details">
-                  <span className="eyebrow">PROPOSTA DE COMPRA</span>
+                  <span className="eyebrow">
+                    {o.kind === 'loan' ? 'PROPOSTA DE EMPRÉSTIMO' : 'PROPOSTA DE COMPRA'}
+                  </span>
+                  {o.kind === 'loan' && (
+                    <p>
+                      {o.months} meses · {o.salaryPercent}% do salário ({currency(o.salary)}/mês)
+                    </p>
+                  )}
                   <h3>{player?.name ?? 'Jogador indisponível'}</h3>
                   {player && (
                     <p>
@@ -379,8 +432,10 @@ export function IncomingOffers({ snapshot, club, playerId }: ViewProps & { playe
                     </p>
                   )}
                   <div className="offer-amount">
-                    <span>Valor oferecido</span>
-                    <strong>{currency(o.fee)}</strong>
+                    <span>
+                      {o.kind === 'loan' ? 'Salário pago pelo tomador' : 'Valor oferecido'}
+                    </span>
+                    <strong>{currency(o.kind === 'loan' ? o.salary : o.fee)}</strong>
                     {player && (
                       <small>
                         Valor de mercado: {currency(player.marketValue.cents)}
@@ -389,7 +444,7 @@ export function IncomingOffers({ snapshot, club, playerId }: ViewProps & { playe
                       </small>
                     )}
                   </div>
-                  {player && (
+                  {player && o.kind !== 'loan' && (
                     <p className={`offer-comparison ${difference >= 0 ? 'positive' : 'negative'}`}>
                       {difference === 0
                         ? 'No valor de mercado'
@@ -405,7 +460,7 @@ export function IncomingOffers({ snapshot, club, playerId }: ViewProps & { playe
                   className="negotiate-button"
                   onClick={() => send({ type: 'management', action: 'accept', offerId: o.id })}
                 >
-                  Aceitar venda
+                  {o.kind === 'loan' ? 'Aceitar empréstimo' : 'Aceitar venda'}
                 </button>
                 <button
                   disabled={busy}

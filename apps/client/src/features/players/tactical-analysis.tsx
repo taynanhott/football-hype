@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { OpponentAdvice } from '../competitions/opponent-advice';
 import {
   formationSchema,
@@ -27,6 +28,7 @@ export function TacticalAnalysis({
   players: readonly PlayerSnapshot[];
   onClose: () => void;
 }) {
+  const [mobileTab, setMobileTab] = useState('strong');
   const played = new Set(state.results.map((result) => result.fixtureId));
   const nextFixture = state.fixtures
     .filter(
@@ -67,7 +69,19 @@ export function TacticalAnalysis({
         <strong>{FORMATION_LABELS[formation]}</strong>
         <span>{STYLE_LABELS[style]}</span>
       </div>
-      <div className="tactical-analysis-columns">
+      <div className="tactical-mobile-tabs" role="tablist" aria-label="Vantagens e desvantagens">
+        {['strong', 'weak'].map((tone) => (
+          <button
+            key={tone}
+            role="tab"
+            aria-selected={mobileTab === tone}
+            onClick={() => setMobileTab(tone)}
+          >
+            {tone === 'strong' ? 'Prós' : 'Contras'}
+          </button>
+        ))}
+      </div>
+      <div className="tactical-analysis-columns" data-mobile-tab={mobileTab}>
         {[
           { title: 'Forte contra', rows: strong, tone: 'strong', icon: 'trophy' },
           { title: 'Fraco contra', rows: weak, tone: 'weak', icon: 'shield' },

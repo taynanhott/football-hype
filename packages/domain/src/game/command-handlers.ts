@@ -4,7 +4,7 @@ import { seasonStart } from '../competitions/season-calendar.js';
 import { scheduleRegionalQualifiers } from '../competitions/regional-qualifiers.js';
 import { prepareAcademy } from './academy.js';
 import { financialLimits, consumeTransferBudget } from '../finance/financial-management.js';
-import { manageClub, transferContext, upgradePrice } from './management.js';
+import { manageClub, transferContext, upgradePrice, returnLoans } from './management.js';
 import { continentalPlaces, cupFinal } from '../competitions/qualification.js';
 import { scheduledFixtures } from '../competitions/fixtures.js';
 import {
@@ -57,7 +57,7 @@ export function handleCommand(input: CommandContext): Result<CommandOutcome> {
       action.priceCents < MONEY_STEPS.ticket ||
       action.priceCents > 50000)
   )
-    return failure(domainError('VALIDATION_ERROR', 'O ingresso deve custar entre R$ 25 e R$ 500'));
+    return failure(domainError('VALIDATION_ERROR', 'O ingresso deve custar entre 0,1 K e 0,5 K'));
   const context: CommandContext = {
     ...input,
     command:
@@ -431,6 +431,8 @@ function handleOffer({
   if (club.playerIds.length >= MAX_SQUAD_SIZE)
     return failure(domainError('VALIDATION_ERROR', 'O elenco atingiu o limite de 45 jogadores'));
   const player = state.players.byId[command.playerId];
+  if (state.management?.loans?.[command.playerId])
+    return failure(domainError('VALIDATION_ERROR', 'Jogador emprestado não pode ser negociado'));
   if (player?.academyClubId && !player.clubId)
     return failure(
       domainError('VALIDATION_ERROR', 'Atleta disponível apenas para promoção pela base'),
@@ -455,6 +457,67 @@ function handleOffer({
     .reverse()
     .find((n) => n.playerId === player.id && n.buyerId === club.id);
   const clock = state.lastProcessedAt;
+  if (player.clubId && state.participants.some((p) => p.clubId === player.clubId)) {
+    const pending = state.negotiations.find(
+      (n) => n.playerId === player.id && n.buyerId === club.id && n.status === 'review',
+    );
+    if (command.withdraw) {
+      if (!pending) return failure(domainError('VALIDATION_ERROR', 'Não há proposta para retirar'));
+      return success({
+        next: {
+          ...state,
+          negotiations: state.negotiations.map((n) =>
+            n.id === pending.id
+              ? {
+                  ...n,
+                  status: 'rejected',
+                  withdrawn: true,
+                  reply: 'O comprador retirou a proposta.',
+                }
+              : n,
+          ),
+        },
+        type: 'transfer.offered',
+        message: 'Proposta retirada',
+        amount: 0,
+      });
+    }
+    const policy = state.management?.policies?.[player.id];
+    if ((!policy?.available && !policy?.loanAvailable) || interest <= 0)
+      return failure(
+        domainError('VALIDATION_ERROR', 'Clube ou atleta indisponível para negociação'),
+      );
+    if (command.fee > financialLimits(state, club).transfer || command.fee > club.balance.cents)
+      return failure(domainError('INSUFFICIENT_FUNDS', 'A proposta ultrapassa seu orçamento'));
+    const offer: Negotiation = {
+      id: eventId,
+      playerId: player.id,
+      buyerId: club.id,
+      sellerId: player.clubId,
+      fee: command.fee,
+      offeredSalary: null,
+      offeredAt: clock,
+      expiresAt: clock + 14 * 86400000,
+      interest,
+      minimumSalary: context.minimumSalary,
+      status: 'review',
+      reply: 'Proposta enviada ao técnico. Aguarde a resposta dele para conversar com o jogador.',
+    };
+    return success({
+      next: {
+        ...state,
+        negotiations: [
+          ...state.negotiations.map((n) =>
+            n.id === pending?.id ? { ...n, status: 'rejected' as const } : n,
+          ),
+          offer,
+        ],
+      },
+      type: 'transfer.offered',
+      message: offer.reply!,
+      amount: 0,
+    });
+  }
   if ((previous?.blockedUntil ?? 0) > clock)
     return failure(
       domainError('VALIDATION_ERROR', 'Conversas suspensas por uma semana no calendário do jogo.'),
@@ -586,19 +649,21 @@ function handleOffer({
     revised: Boolean(activeReview),
     minimumFee: requiredFee,
     status: player.clubId ? 'review' : feeAcceptedState(),
-    ...(player.clubId
+    ...(player.clubId && !state.participants.some((p) => p.clubId === player.clubId)
       ? {
           reviewAt:
             state.negotiations.find((n) => n.playerId === player.id && n.status === 'review')
               ?.reviewAt ?? clock + 7 * 86400000,
         }
       : {}),
-    expiresAt: clock + (player.clubId ? 10 : 3) * 86400000,
+    expiresAt: clock + 14 * 86400000,
     minimumSalary: context.minimumSalary,
     reply: activeReview
       ? 'Aceito a nova oferta, vamos analisar.'
       : player.clubId
-        ? 'Gostamos da sua oferta. Vou conversar com a diretoria e o financeiro antes de dar uma resposta. Em uma semana te retorno; se acertarmos, você pode conversar com o jogador.'
+        ? state.participants.some((p) => p.clubId === player.clubId)
+          ? 'Proposta enviada ao técnico. Aguarde a resposta dele para conversar com o jogador.'
+          : 'Vou analisar com a diretoria. Em uma semana retorno; a proposta vale por duas semanas.'
         : 'Vamos conversar com o jogador.',
   };
   next = {
@@ -637,6 +702,8 @@ function handleSalary({
   const player = negotiation ? state.players.byId[negotiation.playerId] : undefined;
   if (!negotiation || !player)
     return failure(domainError('VALIDATION_ERROR', 'Negocie primeiro o valor de transferência'));
+  if (state.management?.loans?.[player.id])
+    return failure(domainError('VALIDATION_ERROR', 'Jogador emprestado não pode ser negociado'));
   if ((negotiation.expiresAt ?? Infinity) <= state.lastProcessedAt)
     return failure(
       domainError('VALIDATION_ERROR', 'O acordo expirou. Faça uma nova proposta ao clube.'),
@@ -923,7 +990,7 @@ function handleNewSeason({
     workload: {},
     participants: state.participants.map((member) => ({ ...member, ready: false })),
   };
-  next = scheduleRegionalQualifiers(state, next);
+  next = returnLoans(scheduleRegionalQualifiers(state, next), next.lastProcessedAt);
   type = 'season.started';
   message = `Temporada ${next.season} iniciada com acessos e descensos`;
   return success({ next, type, message, amount });

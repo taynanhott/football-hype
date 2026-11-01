@@ -233,6 +233,9 @@ export const worldStateSchema = z.strictObject({
     )
     .optional(),
   round: countSchema,
+  positionExperience: z
+    .record(entityIdSchema, z.record(z.string(), z.number().int().min(0).max(15)))
+    .optional(),
   revision: countSchema,
   status: z.enum(['active', 'finished']),
   clubs: normalizedSchema(clubSchema),
@@ -335,6 +338,8 @@ export const worldStateSchema = z.strictObject({
           entityIdSchema,
           z.object({
             available: z.boolean(),
+            loanAvailable: z.boolean().optional(),
+            loanMonths: z.union([z.literal(6), z.literal(12)]).optional(),
             rivals: z.boolean(),
             interest: z.number().int().min(1).max(100),
           }),
@@ -352,6 +357,17 @@ export const worldStateSchema = z.strictObject({
         )
         .optional(),
       contracts: z.record(entityIdSchema, z.number().int().nonnegative()).optional(),
+      loans: z
+        .record(
+          entityIdSchema,
+          z.object({
+            ownerId: entityIdSchema,
+            borrowerId: entityIdSchema,
+            endsAt: z.number(),
+            salaryPercent: z.union([z.literal(50), z.literal(75), z.literal(100)]),
+          }),
+        )
+        .optional(),
       offers: z
         .array(
           z.object({
@@ -361,6 +377,9 @@ export const worldStateSchema = z.strictObject({
             sellerId: entityIdSchema,
             fee: gameAmountSchema,
             salary: salaryAmountSchema,
+            kind: z.enum(['transfer', 'loan']).optional(),
+            months: z.number().int().min(1).max(60).optional(),
+            salaryPercent: z.union([z.literal(50), z.literal(75), z.literal(100)]).optional(),
             offeredAt: z.number().optional(),
             status: z.enum(['pending', 'accepted', 'rejected']),
           }),
@@ -572,6 +591,9 @@ const individualCommandSchema = z.discriminatedUnion('type', [
     type: z.literal('management'),
     action: z.enum([
       'policy',
+      'offer-loan',
+      'accept-transfer',
+      'reject-transfer',
       'renew',
       'reject-renewal',
       'accept',
@@ -588,6 +610,10 @@ const individualCommandSchema = z.discriminatedUnion('type', [
     target: z.string().optional(),
     playerLoads: z.record(entityIdSchema, z.enum(['light', 'moderate', 'intense'])).optional(),
     available: z.boolean().optional(),
+    loanAvailable: z.boolean().optional(),
+    loanMonths: z.union([z.literal(6), z.literal(12)]).optional(),
+    months: z.number().int().min(1).max(60).optional(),
+    salaryPercent: z.union([z.literal(50), z.literal(75), z.literal(100)]).optional(),
     rivals: z.boolean().optional(),
     interest: z.number().int().min(1).max(100).optional(),
     salary: salaryAmountSchema.optional(),

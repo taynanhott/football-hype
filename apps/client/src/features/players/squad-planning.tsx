@@ -7,16 +7,15 @@ import {
   playerPositionCategory,
 } from './field-position-order';
 import { currency } from '../../ui/format';
-import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
-import { clubKit, commandSchema, type GameCommand } from '@football/shared';
-import { executeCommand, temporaryModifiers, renewalTerms, contractEnd } from '@football/domain';
+import { useEffect, useState, useSyncExternalStore } from 'react';
+import { clubKit } from '@football/shared';
+import { temporaryModifiers, renewalTerms, contractEnd } from '@football/domain';
 import type { ViewProps } from '../../ui/view-props';
 import { useGameStore } from '../../store/game-store';
 
 import { positionLabel } from '../../ui/position-label';
 import { PlayerCard, Portrait } from './player-card';
 import { PlayerManagement } from './player-management';
-import { SquadAssistant } from './squad-assistant';
 
 import { PlayerModal } from './player-modal';
 import { Select, Option } from '../../ui/select';
@@ -34,15 +33,7 @@ const mobileActions = [
   { id: 'renew', label: 'Renegociação' },
 ] as const;
 
-type Settings = Extract<GameCommand, { type: 'club-settings' }>['commands'];
-type Notebook = { commands: Settings; requestId?: string };
-const empty = (): Notebook => ({ commands: [] });
 export function SquadPlanning({ snapshot, club }: ViewProps) {
-  const key = `football.squad-notebook.${snapshot.state.id}.${club.id}`;
-  const [notebook, setNotebook] = useState<Notebook>(empty);
-  const [message, setMessage] = useState(
-    'Vamos cuidar do elenco, professor. Escolha as ações nos jogadores e eu anoto tudo por aqui.',
-  );
   const [view, setView] = usePlayerPresentation();
   const [position, setPosition] = usePlayerPositionFilter('squad');
   const [collapsedList, toggleListCategory] = useCollapsedPlayerCategories('squad');
@@ -154,75 +145,8 @@ export function SquadPlanning({ snapshot, club }: ViewProps) {
     playerId: string;
     section: 'effects' | 'policy' | 'renew';
   } | null>(null);
-  const userId = useGameStore((s) => s.userId);
-  const connected = useGameStore((s) => s.connected);
-  const pending = useGameStore((s) => s.pendingActions);
-  const busy = useGameStore((s) => s.busy);
-  const locked = Boolean(notebook.requestId);
-  useEffect(() => {
-    try {
-      localStorage.removeItem(key);
-    } catch {
-      /* Old drafts are discarded. */
-    }
-  }, [key]);
-  useEffect(() => {
-    if (!notebook.requestId) return;
-    let active = true;
-    const check = (current: ReturnType<typeof useGameStore.getState>) => {
-      if (!active) return;
-      if (
-        current.confirmedActionId === notebook.requestId ||
-        current.snapshot?.ledger.some((event) => event.id === notebook.requestId)
-      ) {
-        setNotebook(empty());
-        setMessage(
-          'Tudo certo, professor. Coloquei nosso planejamento em prática. Podemos preparar os próximos passos.',
-        );
-      } else if (current.error && current.connected && current.pendingActions === 0) {
-        setNotebook((previous) => ({ commands: previous.commands }));
-        setMessage(
-          `Precisamos rever um ponto antes de seguir: ${current.error} Suas anotações continuam aqui.`,
-        );
-      }
-    };
-    const unsubscribe = useGameStore.subscribe(check);
-    queueMicrotask(() => check(useGameStore.getState()));
-    return () => {
-      active = false;
-      unsubscribe();
-    };
-  }, [notebook.requestId]);
-  const policies = useMemo(
-    () =>
-      Object.fromEntries(
-        notebook.commands.flatMap((c) =>
-          c.type === 'management' && c.action === 'policy' && c.playerId
-            ? [
-                [
-                  c.playerId,
-                  {
-                    available: c.available ?? false,
-                    rivals: c.rivals ?? false,
-                    interest: c.interest ?? 35,
-                  },
-                ],
-              ]
-            : [],
-        ),
-      ),
-    [notebook.commands],
-  );
-  const preview = {
-    ...snapshot,
-    state: {
-      ...snapshot.state,
-      management: {
-        ...snapshot.state.management,
-        policies: { ...snapshot.state.management?.policies, ...policies },
-      },
-    },
-  };
+  const locked = useGameStore((s) => s.busy);
+  const preview = snapshot;
   const players = club.playerIds
     .flatMap((id) => (snapshot.state.players.byId[id] ? [snapshot.state.players.byId[id]!] : []))
     .filter((p) => position === 'ALL' || p.position === position);
@@ -232,90 +156,8 @@ export function SquadPlanning({ snapshot, club }: ViewProps) {
   ].map((title) =>
     players.filter((player) => playerPositionCategory(player.position).title === title),
   );
-  function annotate(command: GameCommand) {
-    if (locked || command.type !== 'management') return;
-    const commands = notebook.commands.filter(
-      (c) =>
-        !(
-          c.type === 'management' &&
-          c.playerId === command.playerId &&
-          (c.action === 'policy') === (command.action === 'policy')
-        ),
-    );
-    const parsed = commandSchema.safeParse({
-      type: 'club-settings',
-      commands: [...commands, command],
-    });
-    if (!parsed.success || parsed.data.type !== 'club-settings') {
-      setMessage(
-        'Minha prancheta chegou ao limite de 50 ações. Vamos colocar este planejamento em prática primeiro.',
-      );
-      return;
-    }
-    const result = executeCommand(
-      snapshot.state,
-      parsed.data,
-      userId,
-      Date.now() + useGameStore.getState().clockOffset,
-      crypto.randomUUID(),
-    );
-    if (!result.ok) {
-      setMessage(`Antes de anotar, precisamos ajustar um detalhe: ${result.error.message}`);
-      return;
-    }
-    setNotebook({ commands: parsed.data.commands });
-    const name = snapshot.state.players.byId[command.playerId ?? '']?.name ?? 'o jogador';
-    setMessage(
-      command.action === 'renew'
-        ? `Entendido! Anotei a renovação de ${name}. Deseja mais alguma coisa ou posso colocar o planejamento em prática?`
-        : `Combinado, professor. Anotei esse ajuste para ${name}. Quer preparar mais alguma coisa?`,
-    );
-  }
-  function commit() {
-    if (locked || !connected || pending || busy || !notebook.commands.length) return;
-    const requestId = useGameStore
-      .getState()
-      .send({ type: 'club-settings', commands: notebook.commands });
-    if (requestId) {
-      setNotebook((previous) => ({ ...previous, requestId }));
-      setMessage(
-        'Pode deixar comigo. Estou colocando nosso planejamento em prática e aguardando a confirmação do clube.',
-      );
-    } else
-      setMessage(
-        useGameStore.getState().error ??
-          'Ainda não consegui falar com o clube. Suas anotações estão guardadas aqui.',
-      );
-  }
   return (
     <div className="squad-office">
-      <aside className="squad-notebook" aria-label="Planejamento do elenco">
-        <div className="assistant-name">
-          <span className="assistant-local">Prancheta do elenco</span>
-        </div>
-        <div className="assistant-speech" role="status" aria-live="polite" title={message}>
-          <span className="assistant-message">{message}</span>
-        </div>
-        <SquadAssistant writing={notebook.commands.length > 0} />
-        <div className="notebook-buttons">
-          <button
-            type="button"
-            className="primary"
-            disabled={locked || !connected || busy || pending > 0 || !notebook.commands.length}
-            onClick={commit}
-          >
-            {locked ? 'Colocando em prática…' : 'Pode colocar em prática'}
-          </button>
-        </div>
-        {!connected && (
-          <p className="notebook-connection">
-            Sem conexão com o clube. Você pode continuar anotando.
-          </p>
-        )}
-        {locked && !connected && (
-          <p>Reconecte à liga para conferir a confirmação. Não vou repetir o envio.</p>
-        )}
-      </aside>
       <section className="squad-office-roster" aria-label="Jogadores do elenco">
         <div className="squad-office-controls">
           <div className="squad-view-field">
@@ -562,9 +404,6 @@ export function SquadPlanning({ snapshot, club }: ViewProps) {
                               !preview.state.management?.policies?.[player.id]?.rivals,
                             )}
                           />
-                          {notebook.commands.some(
-                            (c) => c.type === 'management' && c.playerId === player.id,
-                          ) && <span className="squad-planned-badge">Anotado na prancheta</span>}
                         </div>
                         <div className="squad-office-actions">
                           {mobile ? (
@@ -640,7 +479,7 @@ export function SquadPlanning({ snapshot, club }: ViewProps) {
                             <PlayerManagement
                               player={player}
                               snapshot={preview}
-                              onPlan={annotate}
+
                               planningBusy={locked}
                             />
                           )}
@@ -666,7 +505,7 @@ export function SquadPlanning({ snapshot, club }: ViewProps) {
           <PlayerManagement
             player={preview.state.players.byId[selectedPlayerId]!}
             snapshot={preview}
-            onPlan={annotate}
+
             planningBusy={locked}
           />
         </PlayerModal>
@@ -674,7 +513,6 @@ export function SquadPlanning({ snapshot, club }: ViewProps) {
       {mobile && mobileAction && preview.state.players.byId[mobileAction.playerId] && (
         <PlayerModal
           className="squad-action-modal"
-          hideClose
           title={`${mobileActions.find((action) => action.id === mobileAction.section)!.label} · ${preview.state.players.byId[mobileAction.playerId]!.name}`}
           onClose={() => setMobileAction(null)}
         >
@@ -682,15 +520,11 @@ export function SquadPlanning({ snapshot, club }: ViewProps) {
             key={`${mobileAction.playerId}.${mobileAction.section}`}
             player={preview.state.players.byId[mobileAction.playerId]!}
             snapshot={preview}
-            onPlan={annotate}
+
             planningBusy={locked}
             initialSection={mobileAction.section}
             hideTabs
           />
-
-          <button type="button" className="primary" onClick={() => setMobileAction(null)}>
-            Voltar ao elenco
-          </button>
         </PlayerModal>
       )}
     </div>

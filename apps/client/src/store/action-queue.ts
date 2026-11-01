@@ -18,6 +18,8 @@ export function draftKey(command: GameCommand): string | undefined {
     case 'financial-plan':
     case 'home-ticket-price':
       return command.type;
+    case 'management':
+      return command.action === 'policy' ? `policy:${command.playerId}` : undefined;
     case 'ticket-price':
       return `${command.type}:${command.fixtureId}`;
     default:
@@ -67,17 +69,18 @@ export class ActionQueue {
     if (!this.confirmed || this.stopped) throw new Error('Reconecte à liga para sincronizar');
     if (this.actions.some((action) => barrier(action.command)))
       throw new Error('Aguarde a atualização da rodada');
-    if (this.actions.length >= 50) throw new Error('Aguarde a sincronização das ações pendentes');
+
     // Reject invalid actions immediately using the data already on the player's machine.
     const current = this.project();
     if (!barrier(command)) {
       const result = executeCommand(current.state, command, this.userId, at, id);
       if (!result.ok) throw new Error(result.error.message);
     }
-    const key = this.draftDelay ? draftKey(command) : undefined;
+    const key = draftKey(command);
     const replaced =
       key && this.actions.findIndex((action) => !action.sent && draftKey(action.command) === key);
     if (typeof replaced === 'number' && replaced >= 0) this.actions.splice(replaced, 1);
+    if (this.actions.length >= 50) throw new Error('Aguarde a sincronização das ações pendentes');
     this.actions.push({ id, command, at, sent: false });
     this.publish();
     this.pump();

@@ -2,9 +2,9 @@ import { openModalPreservingScroll } from '../../ui/modal-scroll';
 import { GeneratedPerson } from '../../ui/person-avatar';
 import { useEffect, useRef, useState } from 'react';
 import type { ViewProps } from '../../ui/view-props';
-import { transferContext, interestLabel } from '@football/domain';
+import { transferContext, interestLabel, loanTerms } from '@football/domain';
 import type { PlayerSnapshot } from '@football/shared';
-import { MONEY_STEPS } from '@football/shared';
+import { MONEY_STEPS, ceilMoney } from '@football/shared';
 import { currency } from '../../ui/format';
 import { MoneyRange } from '../../ui/money-range';
 import { useGameStore } from '../../store/game-store';
@@ -31,6 +31,8 @@ export function NegotiationChat({
   onContinue: () => void;
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const loanCloseTimer = useRef<number | undefined>(undefined);
+  useEffect(() => () => window.clearTimeout(loanCloseTimer.current), []);
   useEffect(() => openModalPreservingScroll(dialogRef.current), []);
   const [phoneTime, setPhoneTime] = useState(() => new Date());
   useEffect(() => {
@@ -38,6 +40,10 @@ export function NegotiationChat({
     return () => window.clearInterval(timer);
   }, []);
   const seller = snapshot.state.clubs.byId[player.clubId ?? ''];
+  const loan = loanTerms(snapshot.state, player, club);
+  const [dealType, setDealType] = useState<'buy' | 'loan' | null>(loan.available ? null : 'buy');
+  const [loanPercent, setLoanPercent] = useState(100);
+  const [loanMonths, setLoanMonths] = useState(6);
   const context = transferContext(snapshot.state, player, club);
   const history = snapshot.state.negotiations.filter(
     (n) => n.playerId === player.id && n.buyerId === club.id,
@@ -58,25 +64,25 @@ export function NegotiationChat({
   const typing = introCount < 3 || replyCount < history.length || busy || awaitingReply;
   useEffect(() => {
     if (introCount < 3) return;
-    const timer = window.setTimeout(() => setBudgetVisible(true), 1000);
+    const timer = window.setTimeout(() => setBudgetVisible(true), 500);
     return () => window.clearTimeout(timer);
   }, [introCount]);
   useEffect(() => {
     if (introCount < 3) {
-      const timer = window.setTimeout(() => setIntroCount((count) => count + 1), 3000);
+      const timer = window.setTimeout(() => setIntroCount((count) => count + 1), 500);
       return () => window.clearTimeout(timer);
     }
     if (replyCount < history.length) {
       const timer = window.setTimeout(() => {
         setReplyCount((count) => count + 1);
         setAwaitingReply(false);
-      }, 3000);
+      }, 1000);
       return () => window.clearTimeout(timer);
     }
   }, [introCount, replyCount, history.length]);
   useEffect(() => {
     if (!error) return;
-    const timer = window.setTimeout(() => setAwaitingReply(false), 3000);
+    const timer = window.setTimeout(() => setAwaitingReply(false), 1000);
     return () => window.clearTimeout(timer);
   }, [error]);
   useEffect(() => {
@@ -141,7 +147,8 @@ export function NegotiationChat({
             <span className="chat-date">Conversa sobre {player.name}</span>
             {introCount >= 1 && (
               <div className="chat-bubble incoming">
-                Olá! Vamos conversar sobre {player.name}. Qual é sua proposta?
+                Olá! Vamos conversar sobre {player.name}.{' '}
+                {loan.available ? 'Você prefere empréstimo ou compra?' : 'Qual é sua proposta?'}
               </div>
             )}
             {introCount >= 2 && (
@@ -152,6 +159,13 @@ export function NegotiationChat({
             )}
             {introCount >= 3 && (
               <div className="chat-bubble incoming">
+                {loan.available && (
+                  <>
+                    Aceitamos conversar sobre compra ou empréstimo. No empréstimo, o mínimo é{' '}
+                    {loan.minimumPercent}% do salário e o prazo máximo é{' '}
+                    {loan.maxMonths >= 12 ? '1 temporada' : '6 meses'}.{' '}
+                  </>
+                )}
                 Nosso interesse em vender é {interestLabel(context.clubInterest).toLowerCase()}. O
                 interesse do jogador é {interestLabel(context.playerInterest).toLowerCase()}.{' '}
               </div>
@@ -191,7 +205,7 @@ export function NegotiationChat({
                 contraproposta?
               </div>
             )}
-            {context.blocked && (
+            {context.blocked && dealType === 'buy' && (
               <div className="chat-bubble incoming">
                 Não estamos disponíveis para negociar esse jogador.
               </div>
@@ -208,9 +222,71 @@ export function NegotiationChat({
             )}
             <div ref={bottom} />
           </div>
-          {!typing &&
-          last?.status === 'salary' &&
-          (last.expiresAt ?? Infinity) > snapshot.state.lastProcessedAt ? (
+          {loan.available && budgetVisible && (
+            <div className="chat-deal-options" role="group" aria-label="Tipo de negociação">
+              <button aria-pressed={dealType === 'loan'} onClick={() => setDealType('loan')}>
+                Empréstimo
+              </button>
+              <button aria-pressed={dealType === 'buy'} onClick={() => setDealType('buy')}>
+                Compra
+              </button>
+            </div>
+          )}
+          {dealType === 'loan' ? (
+            <div className="chat-loan-composer">
+              <label>
+                Parte do salário:{' '}
+                <strong>
+                  {loanPercent}% ·{' '}
+                  {currency(
+                    ceilMoney((player.salary.cents * loanPercent) / 100, MONEY_STEPS.salary),
+                  )}
+                  /mês
+                </strong>
+                <MoneyRange
+                  aria-label="Percentual do salário"
+                  min={50}
+                  max={100}
+                  step={25}
+                  value={loanPercent}
+                  onChange={(e) => setLoanPercent(Number(e.target.value))}
+                />
+              </label>
+              <div className="segmented" role="group" aria-label="Duração do empréstimo">
+                {[6, 12].map((months) => (
+                  <button
+                    key={months}
+                    disabled={months > loan.maxMonths}
+                    aria-pressed={loanMonths === months}
+                    onClick={() => setLoanMonths(months)}
+                  >
+                    {months === 6 ? '6 meses' : '1 temporada'}
+                  </button>
+                ))}
+              </div>
+              <button
+                className="primary full"
+                disabled={typing || loanPercent < loan.minimumPercent}
+                onClick={() => {
+                  const id = useGameStore.getState().send({
+                    type: 'management',
+                    action: 'offer-loan',
+                    playerId: player.id,
+                    months: loanMonths,
+                    salaryPercent: loanPercent as 50 | 75 | 100,
+                  });
+                  if (id) {
+                    setAwaitingReply(true);
+                    loanCloseTimer.current = window.setTimeout(onClose, 1000);
+                  }
+                }}
+              >
+                Oferecer empréstimo
+              </button>
+            </div>
+          ) : dealType === null ? null : !typing &&
+            last?.status === 'salary' &&
+            (last.expiresAt ?? Infinity) > snapshot.state.lastProcessedAt ? (
             <div className="chat-composer">
               <button
                 className="primary full"
@@ -265,6 +341,9 @@ export function NegotiationChat({
           </div>
         </section>
       </div>
+      <button type="button" className="modal-return" aria-label="Voltar" onClick={onClose}>
+        ← Voltar
+      </button>
     </dialog>
   );
 }

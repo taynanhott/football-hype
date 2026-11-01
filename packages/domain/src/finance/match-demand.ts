@@ -85,10 +85,15 @@ export function matchDemand(state: WorldState, fixture: Fixture, priceOverride?:
       : importance > 1
         ? 'Reta final do campeonato'
         : 'Rodada regular';
+  const opponent = state.clubs.byId[fixture.awayId];
+  const variation =
+    ((Array.from(fixture.id).reduce((sum, char) => sum + char.charCodeAt(0), 0) % 21) - 10) / 100;
+  const appeal = clamp(0.85 + ((opponent?.leagueStrength ?? 80) - 50) / 200 + variation, 0.7, 1.4);
   const marketing = state.centers.byId[home?.trainingCenterId ?? '']?.levels.marketing ?? 1;
   const fairPriceCents = roundMoney(
     GAMEPLAY.baseTicketCents *
       1.2 *
+      appeal *
       (marketing >= 5 ? 1.3 : 1) *
       (1 + (importance - 1) * 1.5 + benefits.ticketPremium),
     MONEY_STEPS.ticket,
@@ -110,18 +115,19 @@ export function matchDemand(state: WorldState, fixture: Fixture, priceOverride?:
       (morale / 100) * GAMEPLAY.attendanceMoraleWeight +
       benefits.interest) *
     (marketing >= 5 ? 1.3 : 0.7 + form * 0.6) *
-    (1 + (importance - 1) * 0.3);
+    (1 + (importance - 1) * 0.3) *
+    appeal;
   const selloutPriceCents =
-    Math.floor(
+    Math.ceil(
       clamp(
         fairPriceCents * (1 + Math.log(Math.max(0.01, interest)) / 0.85),
         MONEY_STEPS.ticket,
-        45000,
+        20000,
       ) / MONEY_STEPS.ticket,
     ) * MONEY_STEPS.ticket;
   const minimumCrowdPriceCents = Math.min(
     50000,
-    ceilMoney(selloutPriceCents + (Math.log(100) * fairPriceCents) / 0.85, MONEY_STEPS.ticket),
+    ceilMoney(selloutPriceCents + 3 * MONEY_STEPS.ticket, MONEY_STEPS.ticket),
   );
   const commerce = benefits.commerce;
   const projection = projectTicketDemand(
@@ -154,13 +160,12 @@ export function projectTicketDemand(
   },
   rawPriceCents: number,
 ) {
-  const { capacity, selloutPriceCents, minimumCrowdPriceCents, commerce } = parameters;
+  const { capacity, selloutPriceCents, commerce } = parameters;
   const priceCents = Math.max(MONEY_STEPS.ticket, roundMoney(rawPriceCents, MONEY_STEPS.ticket));
-  const position = Math.max(
-    0,
-    Math.min(1, (priceCents - selloutPriceCents) / (minimumCrowdPriceCents - selloutPriceCents)),
-  );
-  const occupancy = position >= 1 ? 0.01 : Math.exp(-Math.log(100) * position);
+  // One price step sacrifices crowd strength for the highest gate revenue.
+  const level = Math.max(0, (priceCents - selloutPriceCents) / MONEY_STEPS.ticket);
+  const occupancy =
+    level <= 1 ? 1 - level * 0.24 : level >= 3 ? 0.01 : 0.76 * Math.exp(-1.5 * (level - 1));
   const attendance = Math.floor(capacity * occupancy);
   const ticketRevenue = roundMoney(attendance * priceCents);
   const consumptionRevenue = roundMoney(
@@ -197,5 +202,12 @@ export function matchProbabilities(state: WorldState, fixture: Fixture) {
   const difference = homeStrength - awayStrength + advantage;
   const draw = Math.round(28 * Math.exp(-Math.abs(difference) / 55));
   const home = Math.round((100 - draw) / (1 + Math.exp(-difference / 18)));
-  return { home, draw, away: 100 - home - draw, homeStrength, awayStrength };
+  return {
+    home,
+    draw,
+    away: 100 - home - draw,
+    homeStrength,
+    awayStrength,
+    homeCrowdStrength: fixture.neutral ? 0 : demand.occupancy,
+  };
 }

@@ -176,6 +176,9 @@ export function MarketFiltersDialog(props: FilterProps) {
           </button>
         </footer>
       </div>
+      <button type="button" className="modal-return" aria-label="Voltar" onClick={props.onClose}>
+        ← Voltar
+      </button>
     </dialog>
   );
 }

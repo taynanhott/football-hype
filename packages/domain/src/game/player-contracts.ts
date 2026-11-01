@@ -47,13 +47,15 @@ export function renewalTerms(state: WorldState, player: PlayerSnapshot) {
     MONEY_STEPS.salary,
   );
   const recent = record && state.lastProcessedAt - record.signedAt < 180 * DAY;
-  const reason = recent
-    ? 'Contrato renovado recentemente. O jogador não quer renegociar agora.'
-    : remaining > 730 && !demand
-      ? 'O jogador tem mais de dois anos de contrato e não quer renegociar.'
-      : morale < 30
-        ? 'Moral baixa: o jogador não quer renovar.'
-        : '';
+  const reason = state.management?.loans?.[player.id]
+    ? 'Jogador emprestado: a renovação será tratada no clube de origem.'
+    : recent
+      ? 'Contrato renovado recentemente. O jogador não quer renegociar agora.'
+      : remaining > 730 && !demand
+        ? 'O jogador tem mais de dois anos de contrato e não quer renegociar.'
+        : morale < 30
+          ? 'Moral baixa: o jogador não quer renovar.'
+          : '';
   return {
     morale: Math.round(morale),
     remaining,

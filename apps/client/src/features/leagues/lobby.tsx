@@ -848,6 +848,9 @@ function AuthenticatedLobby({ user }: { user: { uid: string; name: string } }) {
             aria-modal="true"
             aria-label="Entrar em uma liga"
           >
+            <button className="close-modal" onClick={() => setJoining(false)} aria-label="Fechar">
+              Voltar
+            </button>
             <header className="invite-ticket-header">
               <span className="invite-ticket-seal">
                 <Icon name="trophy" size={30} />

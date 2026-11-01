@@ -288,21 +288,21 @@ describe('serviço autoritativo de ligas', () => {
     const first = await service.command(
       id,
       host.userId,
-      { type: 'home-ticket-price', priceCents: 5000 },
+      { type: 'home-ticket-price', priceCents: 10000 },
       false,
       requestId,
     );
     const retry = await service.command(
       id,
       host.userId,
-      { type: 'home-ticket-price', priceCents: 7500 },
+      { type: 'home-ticket-price', priceCents: 20000 },
       false,
       requestId,
     );
     expect(retry).toBe(first);
     const saved = (await repository.load(id))!;
     expect(saved.events.filter((event) => event.id === requestId)).toHaveLength(1);
-    expect(saved.state.homeTicketPrices?.[saved.state.participants[0]!.clubId]).toBe(5000);
+    expect(saved.state.homeTicketPrices?.[saved.state.participants[0]!.clubId]).toBe(10000);
   });
   it('serializa criação concorrente e permite duas solos e uma multiplayer', async () => {
     const repository = new LocalLeagueRepository(undefined);

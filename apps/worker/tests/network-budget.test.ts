@@ -67,7 +67,7 @@ describe('orçamento de rede: dez jogadores', () => {
         30000,
       );
       queue.accept(snap(initial));
-      queue.enqueue({ type: 'home-ticket-price', priceCents: 7500 }, randomUUID(), now);
+      queue.enqueue({ type: 'home-ticket-price', priceCents: 20000 }, randomUUID(), now);
       vi.advanceTimersByTime(4999);
       expect(sent).toHaveLength(0);
       vi.advanceTimersByTime(1);
@@ -85,15 +85,17 @@ describe('orçamento de rede: dez jogadores', () => {
         30000,
       );
       marketQueue.accept(snap(world()));
-      marketQueue.enqueue({ type: 'home-ticket-price', priceCents: 5000 }, randomUUID(), now);
+      marketQueue.enqueue({ type: 'home-ticket-price', priceCents: 10000 }, randomUUID(), now);
       const playerId = initial.clubs.byId[initial.participants[0]!.clubId]!.playerIds[0]!;
       marketQueue.enqueue(
         { type: 'management', action: 'policy', playerId, available: true },
         randomUUID(),
         now,
       );
+      expect(sent).toHaveLength(1);
+      vi.advanceTimersByTime(30000);
       expect(sent).toHaveLength(2);
-      expect(sent[1]!.command.type).toBe('home-ticket-price');
+      expect(sent[1]!.command.type).toBe('club-settings');
       marketQueue.stop();
     } finally {
       vi.useRealTimers();
@@ -127,7 +129,7 @@ describe('orçamento de rede: dez jogadores', () => {
         queue.accept(snap(server));
         for (let edit = 0; edit < 100; edit++)
           queue.enqueue(
-            { type: 'home-ticket-price', priceCents: 2500 + (edit % 20) * 2500 },
+            { type: 'home-ticket-price', priceCents: 10000 + (edit % 5) * 10000 },
             randomUUID(),
             now,
           );
@@ -151,7 +153,7 @@ describe('orçamento de rede: dez jogadores', () => {
   it('sincroniza um lote atomicamente, rejeita mercado dentro dele e calcula tabelas locais iguais às do servidor', async () => {
     const initial = world();
     const commands: Extract<GameCommand, { type: 'club-settings' }>['commands'] = [
-      { type: 'home-ticket-price', priceCents: 7500 },
+      { type: 'home-ticket-price', priceCents: 20000 },
       { type: 'financial-plan', transfer: 0, salaries: 0 },
     ];
     expect(
@@ -168,7 +170,7 @@ describe('orçamento de rede: dez jogadores', () => {
       initial,
       {
         type: 'club-settings',
-        commands: [commands[0]!, { type: 'ticket-price', fixtureId: 'missing', priceCents: 5000 }],
+        commands: [commands[0]!, { type: 'ticket-price', fixtureId: 'missing', priceCents: 10000 }],
       },
       'coach-0',
       now,

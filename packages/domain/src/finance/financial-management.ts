@@ -1,8 +1,15 @@
+import { loanWage } from '../game/management.js';
 import { monthlyStructureCost } from './facility-costs.js';
 import { MONEY_STEPS, type ClubSnapshot, type WorldState, type GameEvent } from '@football/shared';
 
 export function clubPayroll(state: WorldState, club: ClubSnapshot) {
-  return club.playerIds.reduce((sum, id) => sum + (state.players.byId[id]?.salary.cents ?? 0), 0);
+  const ids = new Set([
+    ...club.playerIds,
+    ...Object.keys(state.management?.loans ?? {}).filter(
+      (id) => state.management?.loans?.[id]?.ownerId === club.id,
+    ),
+  ]);
+  return [...ids].reduce((sum, id) => sum + loanWage(state, id, club.id), 0);
 }
 /** Start just beyond the monthly expense marker, within available cash. */
 export function defaultFinancialPlan(state: WorldState, club: ClubSnapshot) {

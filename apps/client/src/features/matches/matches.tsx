@@ -97,11 +97,13 @@ export function Matches({ snapshot, club }: ViewProps) {
     frameContent(scene);
   };
   const minute = Math.min(90, (elapsed / MATCH_DURATION_MS) * 90);
-  useEffect(() => {
-    const timer = setInterval(() => setNow(Date.now()), 50);
-    return () => clearInterval(timer);
-  }, []);
   const playing = Boolean(result) && elapsed < MATCH_DURATION_MS;
+  const animating = Boolean(result) && elapsed < MATCH_DURATION_MS + 6000;
+  useEffect(() => {
+    if (!animating) return;
+    const timer = setInterval(() => setNow(Date.now()), 250);
+    return () => clearInterval(timer);
+  }, [animating]);
   useEffect(() => {
     if (!soundOn || !playing) return;
     const context = new AudioContext();
@@ -204,6 +206,7 @@ export function Matches({ snapshot, club }: ViewProps) {
               <StadiumScene
                 showNeighborhood
                 matchView
+                paused={!animating}
                 homeKit={clubKit(home ?? { name: '' })}
                 awayKit={clubKit(away ?? { name: '' })}
                 stadium={stadium}

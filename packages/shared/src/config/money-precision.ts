@@ -1,5 +1,5 @@
-/** Monetary steps in cents: R$ 1,000 generally, R$ 25 tickets, R$ 5 salaries. */
-export const MONEY_STEPS = Object.freeze({ general: 100000, ticket: 2500, salary: 500 });
+/** All economic amounts use one tenth of K (R$ 100). */
+export const MONEY_STEPS = Object.freeze({ general: 10000, ticket: 10000, salary: 10000 });
 export function roundMoney(cents: number, step: number = MONEY_STEPS.general): number {
   const limit = Math.floor(Number.MAX_SAFE_INTEGER / step) * step;
   return Math.max(-limit, Math.min(limit, Math.round(cents / step) * step));
@@ -9,5 +9,8 @@ export function ceilMoney(cents: number, step: number = MONEY_STEPS.general): nu
 }
 
 export function formatMoney(cents: number): string {
-  return `${Number((cents / 100000).toFixed(3))} $`;
+  return `${(cents / 100000).toLocaleString('pt-BR', {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  })} K`;
 }

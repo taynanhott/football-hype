@@ -59,7 +59,7 @@ export function contractEnd(state: WorldState, player: PlayerSnapshot) {
 }
 export function interestLabel(score: number) {
   return score <= 0
-    ? 'Nenhum interesse'
+    ? 'Nenhum'
     : score <= 25
       ? 'Baixo'
       : score <= 50
@@ -89,11 +89,16 @@ export function transferContext(
     (buyer.leagueStrength ?? division[buyer.division]) -
     (seller?.leagueStrength ?? (seller ? division[seller.division] : 35));
   const center = state.centers.byId[buyer.trainingCenterId];
-  const strength = squad.reduce((sum, p) => sum + p.overall, 0) / Math.max(1, squad.length);
+  const projectSquad = [...squad].sort((a, b) => b.overall - a.overall).slice(0, 11);
+  const strength =
+    projectSquad.reduce((sum, p) => sum + p.overall, 0) / Math.max(1, projectSquad.length);
   const playerReasons = [
-    { label: 'Projeto esportivo', value: 40 },
-    { label: 'Força da liga', value: Math.round(leagueGap * 0.95) },
-    { label: 'Força do elenco', value: Math.round((strength - player.overall) * 0.95) },
+    { label: 'Projeto esportivo', value: 32 },
+    { label: 'Força da liga', value: Math.round(leagueGap * (leagueGap < 0 ? 2.2 : 0.7)) },
+    {
+      label: 'Força do elenco',
+      value: Math.round((strength - player.overall) * (strength < player.overall ? 3.2 : 0.5)),
+    },
     {
       label: 'Concorrência na posição',
       value: -Math.min(
@@ -119,6 +124,10 @@ export function transferContext(
               : -4),
           0,
         ),
+    },
+    {
+      label: 'Compatibilidade com a elite',
+      value: player.overall >= 86 && strength < player.overall - 10 ? -65 : 0,
     },
     { label: 'Problemas financeiros', value: (state.debts[buyer.id] ?? 0) > 0 ? -20 : 0 },
   ];
@@ -153,7 +162,11 @@ export function transferContext(
       ),
     },
   ];
-  const blocked = Boolean(seller && human && (!policy?.available || (rival && !policy.rivals)));
+  const blocked = Boolean(
+    seller &&
+    human &&
+    ((!policy?.available && !policy?.loanAvailable) || (rival && !policy.rivals)),
+  );
   if (blocked) clubReasons.push({ label: 'Política do treinador impede a venda', value: -100 });
   const playerInterest = Math.max(
     0,
@@ -401,7 +414,12 @@ export function tacticalBonus(
   );
 }
 
-export function manageClub({ state, club, command }: CommandContext): Result<CommandOutcome> {
+export function manageClub({
+  state,
+  club,
+  command,
+  eventId,
+}: CommandContext): Result<CommandOutcome> {
   if (command.type !== 'management')
     return failure(domainError('VALIDATION_ERROR', 'Comando inválido'));
   const fail = (message: string) => failure(domainError('VALIDATION_ERROR', message));
@@ -409,6 +427,37 @@ export function manageClub({ state, club, command }: CommandContext): Result<Com
   const player = state.players.byId[command.playerId ?? ''];
   const done = (next: WorldState, message: string, amount = 0) =>
     success({ next, type: 'club.customized' as const, message, amount });
+  if (command.action === 'accept-transfer' || command.action === 'reject-transfer') {
+    const offer = state.negotiations.find(
+      (n) => n.id === command.offerId && n.sellerId === club.id && n.status === 'review',
+    );
+    if (
+      !offer ||
+      (offer.expiresAt ?? 0) <= state.lastProcessedAt ||
+      state.players.byId[offer.playerId]?.clubId !== club.id
+    )
+      return fail('Proposta indisponível ou expirada');
+    return done(
+      {
+        ...state,
+        negotiations: state.negotiations.map((n) =>
+          n.id === offer.id
+            ? {
+                ...n,
+                status: command.action === 'accept-transfer' ? 'salary' : 'rejected',
+                reply:
+                  command.action === 'accept-transfer'
+                    ? 'O técnico aceitou. Negociação com o jogador liberada.'
+                    : 'O técnico recusou a transferência.',
+              }
+            : n,
+        ),
+      },
+      command.action === 'accept-transfer'
+        ? 'Conversa com o jogador liberada'
+        : 'Proposta recusada',
+    );
+  }
   if (command.action === 'scout-academy')
     return done(prepareAcademy(state, club.id), 'Observação da base atualizada');
   if (command.action === 'dismiss-academy') {
@@ -571,14 +620,76 @@ export function manageClub({ state, club, command }: CommandContext): Result<Com
       -cost,
     );
   }
+  if (command.action === 'offer-loan') {
+    if (!player || !player.clubId || player.clubId === club.id || management.loans?.[player.id])
+      return fail('Jogador indisponível');
+    const seller = state.clubs.byId[player.clubId];
+    const terms = loanTerms(state, player, club);
+    if (!terms.eligible)
+      return fail('Jogador importante, promessa ou com sequência: empréstimo indisponível');
+    const months = command.months ?? 6;
+    if (![6, 12].includes(months) || months > terms.maxMonths)
+      return fail('Escolha 6 meses ou 1 temporada dentro do prazo autorizado');
+    if ((command.salaryPercent ?? 50) < terms.minimumPercent)
+      return fail('O técnico exige pelo menos ' + terms.minimumPercent + '% do salário');
+    const salaryPercent = command.salaryPercent ?? 50;
+    if (
+      state.lastProcessedAt + months * 30 * 86400000 + 365 * 86400000 >
+      contractEnd(state, player)
+    )
+      return fail('O jogador precisa voltar com pelo menos 1 ano de contrato');
+    if (
+      state.participants.some((p) => p.clubId === seller?.id) &&
+      !management.policies?.[player.id]?.loanAvailable
+    )
+      return fail('O clube não disponibilizou o jogador para empréstimo');
+    if (club.playerIds.length >= MAX_SQUAD_SIZE || !seller) return fail('Elenco sem espaço');
+    if (
+      (management.offers ?? []).some(
+        (o) => o.playerId === player.id && o.buyerId === club.id && o.status === 'pending',
+      )
+    )
+      return fail('Já existe proposta pendente');
+    const offer = {
+      id: 'loan:' + eventId,
+      playerId: player.id,
+      sellerId: seller.id,
+      buyerId: club.id,
+      kind: 'loan' as const,
+      months,
+      salaryPercent,
+      fee: 0,
+      salary: ceilMoney((player.salary.cents * salaryPercent) / 100, MONEY_STEPS.salary),
+      status: 'pending' as const,
+      offeredAt: state.lastProcessedAt,
+    };
+    management.offers = [...(management.offers ?? []), offer];
+    if (state.participants.some((p) => p.clubId === seller.id))
+      return done({ ...state, management }, 'Proposta de empréstimo enviada');
+    const loaned = acceptLoan({ ...state, management }, offer.id);
+    return loaned
+      ? done(loaned, 'Empréstimo contratado')
+      : fail('O empréstimo ultrapassa o orçamento');
+  }
   if (command.action === 'policy') {
     if (player?.clubId !== club.id) return fail('Escolha um jogador do seu elenco');
+    if (state.management?.loans?.[player.id])
+      return fail('Jogador emprestado não pode ser negociado');
+    if (
+      command.loanAvailable &&
+      contractEnd(state, player) < state.lastProcessedAt + 395 * 86400000
+    )
+      return fail('É necessário manter 1 ano de contrato após o empréstimo');
+    if (command.loanAvailable && !loanTerms(state, player).eligible)
+      return fail('Empréstimos são reservados a reservas sem sequência e sem perfil de promessa');
     management.policies = {
       ...management.policies,
       [player.id]: {
-        available: command.available ?? false,
-        rivals: command.rivals ?? false,
-        interest: command.interest ?? 35,
+        available: command.loanAvailable ? false : (command.available ?? false),
+        loanAvailable: command.loanAvailable ?? false,
+        loanMonths: command.loanMonths ?? (loanTerms(state, player).maxMonths >= 12 ? 12 : 6),
+        rivals: command.rivals ?? true,
+        interest: command.interest ?? 75,
       },
     };
     return done({ ...state, management }, 'Disponibilidade para transferências atualizada');
@@ -601,12 +712,16 @@ export function manageClub({ state, club, command }: CommandContext): Result<Com
     const terms = renewalTerms(state, player);
     if (terms.reason) return fail(terms.reason);
     const totalYears = command.years ?? 1;
-    if (player.age >= 32 && totalYears > terms.maxYears + 0.01)
+    if (totalYears > terms.maxYears)
       return fail(
         'O jogador recusa um contrato tão longo. Prazo total máximo: ' +
           terms.maxYears +
           ' ano(s).',
       );
+    if (totalYears * 365 < terms.remaining)
+      return fail('O prazo não pode reduzir o contrato atual');
+    if (management.loans?.[player.id])
+      return fail('Renove com o clube de origem após o empréstimo');
     const minimum = terms.minimumSalary;
     if (!command.salary || command.salary < minimum)
       return fail('Reajuste necessário: salário mínimo mensal de R$ ' + formatMoney(minimum));
@@ -730,7 +845,11 @@ export function manageClub({ state, club, command }: CommandContext): Result<Com
     );
   }
   const offer = management.offers?.find(
-    (o) => o.id === command.offerId && o.sellerId === club.id && o.status === 'pending',
+    (o) =>
+      o.id === command.offerId &&
+      o.sellerId === club.id &&
+      o.status === 'pending' &&
+      (o.offeredAt ?? state.createdAt) + 14 * 86400000 > state.lastProcessedAt,
   );
   if (!offer) return fail('Proposta indisponível');
   if (command.action === 'reject')
@@ -746,6 +865,12 @@ export function manageClub({ state, club, command }: CommandContext): Result<Com
       },
       'Proposta recusada',
     );
+  if (offer.kind === 'loan') {
+    const loaned = acceptLoan(state, offer.id);
+    return loaned
+      ? done(loaned, 'Empréstimo confirmado')
+      : fail('Empréstimo indisponível: confira contrato, elenco e orçamento');
+  }
   const sold = state.players.byId[offer.playerId],
     buyer = state.clubs.byId[offer.buyerId];
   if (!sold || sold.clubId !== club.id || !buyer || buyer.balance.cents < offer.fee + offer.salary)
@@ -810,38 +935,49 @@ export function manageClub({ state, club, command }: CommandContext): Result<Com
 export function settleMonthly(state: WorldState, at: number): WorldState {
   const management = { ...state.management };
   const charges = [...(management.charges ?? [])];
-  const clubs = { ...state.clubs.byId };
+  let clubs = { ...state.clubs.byId };
   const debts = { ...state.debts };
   const wageDebts = { ...management.wageDebts };
   // Calendar boundaries use Brasília's fixed UTC-3, including skipped months.
   const date = new Date(state.lastProcessedAt - 10800000);
   let boundary = Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 1, 3);
   while (boundary <= at) {
+    state = returnLoans({ ...state, clubs: { ...state.clubs, byId: clubs } }, boundary);
+    clubs = { ...state.clubs.byId };
+    management.loans = state.management?.loans;
     const month = new Date(boundary - 10800000).toISOString().slice(0, 7);
     for (const original of Object.values(clubs)) {
       if (charges.some((c) => c.clubId === original.id && c.month === month)) continue;
       const wages = roundMoney(
-        original.playerIds.reduce(
-          (sum, id) => sum + (state.players.byId[id]?.salary.cents ?? 0),
-          0,
-        ),
+        original.playerIds.reduce((sum, id) => sum + loanWage(state, id, original.id), 0),
+      );
+      const retainedWages = Object.entries(state.management?.loans ?? {}).reduce(
+        (sum, [id, loan]) =>
+          sum + (loan.ownerId === original.id ? loanWage(state, id, original.id) : 0),
+        0,
       );
       const maintenance = roundMoney(
         maintenanceBreakdown(state, original).reduce((sum, item) => sum + item.cost, 0),
       );
       const oldDebt = debts[original.id] ?? 0;
-      const owed = oldDebt + wages + maintenance;
+      const owed = oldDebt + wages + retainedWages + maintenance;
       const paid = Math.min(original.balance.cents, owed);
       debts[original.id] = roundMoney(owed - paid);
       // Settle old salary arrears first, then this month's salaries, then maintenance.
       wageDebts[original.id] = roundMoney(
-        Math.max(0, (wageDebts[original.id] ?? 0) + wages - paid),
+        Math.max(0, (wageDebts[original.id] ?? 0) + wages + retainedWages - paid),
       );
       clubs[original.id] = {
         ...original,
         balance: { ...original.balance, cents: roundMoney(original.balance.cents - paid) },
       };
-      charges.push({ clubId: original.id, month, wages, maintenance, unpaid: debts[original.id]! });
+      charges.push({
+        clubId: original.id,
+        month,
+        wages: wages + retainedWages,
+        maintenance,
+        unpaid: debts[original.id]!,
+      });
     }
     const next = new Date(boundary);
     boundary = Date.UTC(next.getUTCFullYear(), next.getUTCMonth() + 1, 1, 3);
@@ -855,23 +991,62 @@ export function settleMonthly(state: WorldState, at: number): WorldState {
 }
 export function generateIncomingOffers(state: WorldState): WorldState {
   const offers = [...(state.management?.offers ?? [])];
+  const humanClubIds = new Set(state.participants.map((p) => p.clubId));
+  const buyers = Object.values(state.clubs.byId)
+    .filter((b) => !humanClubIds.has(b.id))
+    .sort((a, b) => b.balance.cents - a.balance.cents);
   for (const member of state.participants) {
     const seller = state.clubs.byId[member.clubId];
     if (!seller) continue;
     for (const id of seller.playerIds) {
       const player = state.players.byId[id];
-      if (!player || !state.management?.policies?.[id]?.available) continue;
+      const policy = state.management?.policies?.[id];
+      if (
+        !player ||
+        state.management?.loans?.[id] ||
+        (!policy?.available && !policy?.loanAvailable)
+      )
+        continue;
       if (offers.some((o) => o.playerId === id && o.status === 'pending')) continue;
-      const candidates = Object.values(state.clubs.byId).filter(
-        (b) => b.id !== seller.id && !state.participants.some((p) => p.clubId === b.id),
-      );
-      for (const buyer of candidates.sort((a, b) => b.balance.cents - a.balance.cents)) {
+      for (const buyer of buyers) {
         const positionPlayers = buyer.playerIds.flatMap((pid) => {
           const p = state.players.byId[pid];
           return p?.position === player.position ? [p] : [];
         });
         if (positionPlayers.length >= 2 && positionPlayers.some((p) => p.overall >= player.overall))
           continue;
+        if (buyer.playerIds.length >= MAX_SQUAD_SIZE) continue;
+        if (policy?.loanAvailable) {
+          if (!loanTerms(state, player, buyer).eligible) continue;
+          const maxMonths = Math.min(
+            60,
+            Math.floor(
+              (contractEnd(state, player) - state.lastProcessedAt - 365 * 86400000) /
+                (30 * 86400000),
+            ),
+          );
+          if (maxMonths < 6) continue;
+          const salaryPercent = Math.max(
+            loanTerms(state, player, buyer).minimumPercent,
+            ([50, 75, 100] as const)[(state.round + player.age) % 3]!,
+          ) as 50 | 75 | 100;
+          const salary = ceilMoney((player.salary.cents * salaryPercent) / 100, MONEY_STEPS.salary);
+          if (salary > financialLimits(state, buyer).salary) continue;
+          offers.push({
+            id: 'loan:' + state.round + ':' + id + ':' + buyer.id,
+            playerId: id,
+            buyerId: buyer.id,
+            sellerId: seller.id,
+            kind: 'loan',
+            months: Math.min(maxMonths, policy.loanMonths ?? 12) >= 12 ? 12 : 6,
+            salaryPercent,
+            fee: 0,
+            salary,
+            status: 'pending',
+            offeredAt: state.lastProcessedAt,
+          });
+          break;
+        }
         const context = transferContext(state, player, buyer);
         if (context.blocked) continue;
         const fee = context.minimumFee,
@@ -904,4 +1079,173 @@ export function generateIncomingOffers(state: WorldState): WorldState {
     }
   }
   return { ...state, management: { ...state.management, offers } };
+}
+
+/** The stored salary remains the full wage; both clubs pay their rounded share. */
+export function loanWage(state: WorldState, playerId: string, clubId: string): number {
+  const player = state.players.byId[playerId];
+  if (!player) return 0;
+  const loan = state.management?.loans?.[playerId];
+  if (!loan) return player.clubId === clubId ? player.salary.cents : 0;
+  const share = Math.min(
+    player.salary.cents,
+    ceilMoney((player.salary.cents * loan.salaryPercent) / 100, MONEY_STEPS.salary),
+  );
+  return clubId === loan.borrowerId
+    ? share
+    : clubId === loan.ownerId
+      ? player.salary.cents - share
+      : 0;
+}
+function acceptLoan(state: WorldState, offerId: string): WorldState | undefined {
+  const offer = state.management?.offers?.find((o) => o.id === offerId && o.status === 'pending');
+  if (!offer || offer.kind !== 'loan') return;
+  const player = state.players.byId[offer.playerId];
+  const owner = state.clubs.byId[offer.sellerId],
+    borrower = state.clubs.byId[offer.buyerId];
+  const endsAt = state.lastProcessedAt + (offer.months ?? 6) * 30 * 86400000;
+  if (
+    !player ||
+    !owner ||
+    !borrower ||
+    player.clubId !== owner.id ||
+    !loanTerms(state, player, borrower).eligible ||
+    ![6, 12].includes(offer.months ?? 6) ||
+    (offer.months ?? 6) > loanTerms(state, player, borrower).maxMonths ||
+    (offer.salaryPercent ?? 50) < loanTerms(state, player, borrower).minimumPercent ||
+    (offer.offeredAt ?? state.createdAt) + 14 * 86400000 <= state.lastProcessedAt ||
+    state.management?.loans?.[player.id] ||
+    borrower.playerIds.length >= MAX_SQUAD_SIZE ||
+    endsAt + 365 * 86400000 > contractEnd(state, player) ||
+    (!state.management?.policies?.[player.id]?.loanAvailable &&
+      state.participants.some((p) => p.clubId === owner.id)) ||
+    borrower.balance.cents < offer.salary ||
+    offer.salary > financialLimits(state, borrower).salary
+  )
+    return;
+  return {
+    ...state,
+    management: {
+      ...state.management,
+      loans: {
+        ...state.management?.loans,
+        [player.id]: {
+          ownerId: owner.id,
+          borrowerId: borrower.id,
+          endsAt,
+          salaryPercent: offer.salaryPercent ?? 50,
+        },
+      },
+      offers: state.management?.offers?.map((o) =>
+        o.playerId === player.id && o.status === 'pending'
+          ? { ...o, status: o.id === offer.id ? 'accepted' : 'rejected' }
+          : o,
+      ),
+      policies: {
+        ...state.management?.policies,
+        [player.id]: { available: false, loanAvailable: false, rivals: true, interest: 75 },
+      },
+    },
+    players: {
+      ...state.players,
+      byId: { ...state.players.byId, [player.id]: { ...player, clubId: borrower.id } },
+    },
+    clubs: {
+      ...state.clubs,
+      byId: {
+        ...state.clubs.byId,
+        [owner.id]: { ...owner, playerIds: owner.playerIds.filter((id) => id !== player.id) },
+        [borrower.id]: { ...borrower, playerIds: [...borrower.playerIds, player.id] },
+      },
+    },
+  };
+}
+export function returnLoans(state: WorldState, at: number): WorldState {
+  const due = Object.entries(state.management?.loans ?? {}).filter(([, loan]) => loan.endsAt <= at);
+  if (!due.length) return state;
+  const loans = { ...state.management?.loans };
+  const players = { ...state.players.byId },
+    clubs = { ...state.clubs.byId };
+  for (const [id, loan] of due) {
+    const player = players[id],
+      owner = clubs[loan.ownerId],
+      borrower = clubs[loan.borrowerId];
+    if (!player || !owner || !borrower) continue;
+    players[id] = { ...player, clubId: owner.id };
+    clubs[owner.id] = { ...owner, playerIds: [...new Set([...owner.playerIds, id])] };
+    clubs[borrower.id] = { ...borrower, playerIds: borrower.playerIds.filter((pid) => pid !== id) };
+    delete loans[id];
+  }
+  return {
+    ...state,
+    management: { ...state.management, loans },
+    players: { ...state.players, byId: players },
+    clubs: { ...state.clubs, byId: clubs },
+  };
+}
+
+export function loanTerms(state: WorldState, player: PlayerSnapshot, buyer?: ClubSnapshot) {
+  const seller = state.clubs.byId[player.clubId ?? ''];
+  const squad =
+    seller?.playerIds.flatMap((id) => (state.players.byId[id] ? [state.players.byId[id]!] : [])) ??
+    [];
+  const better = squad.filter((p) => p.overall > player.overall).length;
+  const average = squad.reduce((sum, p) => sum + p.overall, 0) / Math.max(1, squad.length);
+  const prospect = player.age <= 23 && player.potential >= player.overall + 8;
+  const sequence = state.workload[player.id]?.consecutiveMatches ?? 0;
+  const shape = seller ? (state.tactics[seller.id]?.formation ?? '4-3-3') : '4-3-3';
+  const rolePlaces = Math.max(
+    1,
+    FORMATIONS[shape].filter((slot) => slot.position === player.position).length,
+  );
+  const roleRank = squad.filter(
+    (p) => p.position === player.position && p.overall > player.overall,
+  ).length;
+  let recentStarts = 0,
+    recentGames = 0;
+  for (let i = state.results.length - 1; i >= 0 && recentGames < 5; i--) {
+    const match = state.results[i]!;
+    if (match.homeId !== seller?.id && match.awayId !== seller?.id) continue;
+    recentGames++;
+    const side = match.homeId === seller?.id ? 'home' : 'away';
+    if ((match.lineups?.[side] ?? match.tacticalPlans?.[side]?.starters ?? []).includes(player.id))
+      recentStarts++;
+  }
+  const buyerAverage = buyer
+    ? buyer.playerIds.reduce((sum, id) => sum + (state.players.byId[id]?.overall ?? 0), 0) /
+      Math.max(1, buyer.playerIds.length)
+    : 100;
+  const eligible =
+    (!buyer || player.overall <= buyerAverage + 12) &&
+    !!seller &&
+    better >= 11 &&
+    roleRank >= rolePlaces &&
+    !state.tactics[seller.id]?.starters.includes(player.id) &&
+    recentStarts < 3 &&
+    player.overall <= average &&
+    !prospect &&
+    sequence < 3 &&
+    !state.management?.loans?.[player.id];
+  const willingness =
+    50 +
+    (average - player.overall) * 3 +
+    (sequence === 0 ? 15 : 0) -
+    (buyer && seller && isRival(buyer, seller) ? 20 : 0);
+  const minimumPercent = willingness >= 70 ? 50 : willingness >= 45 ? 75 : 100;
+  const maxMonths = Math.min(
+    buyer ? (state.management?.policies?.[player.id]?.loanMonths ?? 12) : 12,
+    Math.floor(
+      (contractEnd(state, player) - state.lastProcessedAt - 365 * 86400000) / (30 * 86400000),
+    ),
+  );
+  return {
+    eligible: eligible && maxMonths >= 6,
+    available:
+      eligible &&
+      maxMonths >= 6 &&
+      (!state.participants.some((p) => p.clubId === seller?.id) ||
+        !!state.management?.policies?.[player.id]?.loanAvailable),
+    minimumPercent,
+    maxMonths,
+  };
 }

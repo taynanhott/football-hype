@@ -196,7 +196,9 @@ export function IndividualTrainingRoster({
                   title="Projeção até o fim da temporada pela média real de todos os treinos e jogos registrados; trocar a carga não altera o histórico"
                 >
                   <span>
-                    {(projected >= 0 ? '+' : '−') + Math.abs(projected).toFixed(1) + '/temp.'}
+                    {(projected >= 0 ? '+' : '−') +
+                      Math.abs(projected).toFixed(1).replace('.', ',') +
+                      '/temp.'}
                   </span>
                   <meter
                     min="0"

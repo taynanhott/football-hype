@@ -64,6 +64,9 @@ export function PlayerDetails({
         />
       </div>
       <p>Clique na carta para alternar entre o retrato e os atributos.</p>
+      <button type="button" className="modal-return" aria-label="Voltar" onClick={onClose}>
+        ← Voltar
+      </button>
     </dialog>
   );
 }

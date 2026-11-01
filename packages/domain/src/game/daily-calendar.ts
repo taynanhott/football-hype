@@ -10,7 +10,7 @@ import { GAMEPLAY, type Fixture, type WorldState } from '@football/shared';
 import { scheduledFixtures } from '../competitions/fixtures.js';
 import { revalueGrowth } from '../players/development.js';
 import { hashSeed, mulberry32 } from '../simulation/random.js';
-import { settleMonthly } from './management.js';
+import { settleMonthly, returnLoans } from './management.js';
 
 export const GAME_DAY_MS = 86_400_000;
 const OFFSET = 10_800_000;
@@ -230,7 +230,19 @@ function advanceGameDaysInternal(state: WorldState, target: number): WorldState 
         fitness: Math.min(100, player.fitness + GAMEPLAY.fitnessRecovery),
       };
     }
-    state = { ...settleMonthly(state, day + GAME_DAY_MS), lastProcessedAt: day + GAME_DAY_MS };
+    const loanIds = Object.keys(state.management?.loans ?? {});
+    state = returnLoans(
+      {
+        ...settleMonthly(state, day + GAME_DAY_MS),
+        lastProcessedAt: day + GAME_DAY_MS,
+      },
+      day + GAME_DAY_MS,
+    );
+    for (const id of loanIds) {
+      const updated = state.players.byId[id];
+      if (updated && updated.clubId !== players[id]?.clubId)
+        players[id] = { ...players[id]!, clubId: updated.clubId };
+    }
   }
   return finishIndividualCycles(
     {
@@ -245,9 +257,30 @@ function advanceGameDaysInternal(state: WorldState, target: number): WorldState 
 }
 
 function finishIndividualCycles(state: WorldState, at: number): WorldState {
+  state = {
+    ...state,
+    negotiations: state.negotiations.map((n) =>
+      ['review', 'salary'].includes(n.status) && (n.expiresAt ?? Infinity) <= at
+        ? { ...n, status: 'rejected', reply: 'Proposta expirada após duas semanas.' }
+        : n,
+    ),
+    management: {
+      ...state.management,
+      offers: state.management?.offers?.map((o) =>
+        o.status === 'pending' && (o.offeredAt ?? state.createdAt) + 14 * GAME_DAY_MS <= at
+          ? { ...o, status: 'rejected' }
+          : o,
+      ),
+    },
+  };
   const due = new Set(
     state.negotiations
-      .filter((n) => n.status === 'review' && (n.reviewAt ?? Infinity) <= at)
+      .filter(
+        (n) =>
+          n.status === 'review' &&
+          !state.participants.some((p) => p.clubId === n.sellerId) &&
+          (n.reviewAt ?? Infinity) <= at,
+      )
       .map((n) => n.playerId),
   );
   for (const playerId of due) {
@@ -262,7 +295,7 @@ function finishIndividualCycles(state: WorldState, at: number): WorldState {
           ? {
               ...n,
               status: n.id === winner.id ? ('salary' as const) : ('rejected' as const),
-              expiresAt: (winner.reviewAt ?? at) + 3 * GAME_DAY_MS,
+              expiresAt: n.expiresAt ?? (n.offeredAt ?? at) + 14 * GAME_DAY_MS,
               reply:
                 n.id === winner.id
                   ? 'Melhor oferta aceita. Negociação com o jogador liberada.'
@@ -324,7 +357,7 @@ export function realTimeGameDate(state: WorldState, nextGameAt: number, realNow:
 
 export function advanceGameDays(state: WorldState, target: number): WorldState {
   return realizeCompetitionDraws(
-    advanceGameDaysInternal(normalizeRoundCalendar(state), target),
+    returnLoans(advanceGameDaysInternal(normalizeRoundCalendar(state), target), target),
     target,
   );
 }

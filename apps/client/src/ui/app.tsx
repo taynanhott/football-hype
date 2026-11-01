@@ -362,14 +362,16 @@ function GameApp() {
         <a
           href="#/dashboard"
           aria-label="Home"
-          aria-current={route === 'dashboard' ? 'page' : undefined}
+          aria-current={route === 'dashboard' && !menuOpen ? 'page' : undefined}
+          onClick={() => setMenuOpen(false)}
         >
           <Icon name="home" />
         </a>
         <a
           href="#/calendar"
           aria-label="Calendário"
-          aria-current={route === 'calendar' ? 'page' : undefined}
+          aria-current={route === 'calendar' && !menuOpen ? 'page' : undefined}
+          onClick={() => setMenuOpen(false)}
         >
           <Icon name="calendar" />
         </a>

@@ -1,3 +1,4 @@
+import { useFinishedResults } from '../../ui/use-finished-results';
 import { CompetitionDrawCard } from './competition-draw-details';
 import { cupReturnDate, REGIONAL_QUALIFIERS } from '@football/domain';
 import { Icon } from '../../ui/icons';
@@ -12,6 +13,7 @@ import { PixelBadge } from '../../ui/pixel-badge';
 import { dateTime } from '../../ui/format';
 
 export function Calendar({ snapshot, club }: ViewProps) {
+  const liveState = useFinishedResults(snapshot.state);
   const [competition, setCompetition] = useState(
     club.division === 'REGIONAL' ? 'serie-a' : `serie-${club.division.toLowerCase()}`,
   );
@@ -25,7 +27,7 @@ export function Calendar({ snapshot, club }: ViewProps) {
   const archive = snapshot.state.seasonArchives?.find((item) => item.season === selectedSeason);
   const state = archive
     ? { ...snapshot.state, competitionNotes: undefined, ...archive }
-    : snapshot.state;
+    : liveState;
   const seasons = [
     snapshot.state.season,
     ...(snapshot.state.seasonArchives ?? []).map((item) => item.season),
