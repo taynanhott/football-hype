@@ -430,7 +430,18 @@ function PendingGameDetails({
           <h2>{competition?.name ?? game.competitionId}</h2>
         </div>
         <button type="button" aria-label="Fechar" onClick={onClose}>
-          ×
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            aria-hidden="true"
+          >
+            <path d="m6 6 12 12M18 6 6 18" />
+          </svg>
         </button>
       </header>
       <div className="pending-cup-body">

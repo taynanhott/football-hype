@@ -189,15 +189,20 @@ export function GameDetails({
             <small>{index === 0 ? 'Mandante' : 'Visitante'}</small>
           </div>
         ))}
-        <strong className="game-details-score">
-          {result ? `${result.homeGoals}–${result.awayGoals}` : '×'}
-        </strong>
+        <section className="game-details-scoreboard" aria-label="Placar da partida">
+          <strong className="game-details-score">
+            {result ? `${result.homeGoals} - ${result.awayGoals}` : '×'}
+          </strong>
+          {result?.penalties && (
+            <p className="game-details-penalties">
+              <span>Pênaltis</span>
+              <strong>
+                {result.penalties.home} x {result.penalties.away}
+              </strong>
+            </p>
+          )}
+        </section>
       </div>
-      {result?.penalties && (
-        <p className="game-details-penalties">
-          Pênaltis: {result.penalties.home}–{result.penalties.away}
-        </p>
-      )}
       {odds && (
         <section className="game-details-probabilities">
           <h3>Chances do {state.clubs.byId[clubId]?.name ?? 'seu clube'}</h3>

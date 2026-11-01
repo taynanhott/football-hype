@@ -358,13 +358,14 @@ function StadiumWorld({
       />
       <OrbitControls
         makeDefault
-        enabled={!cameraLocked}
+        enableRotate={!cameraLocked}
+        enableZoom={!cameraLocked}
         enablePan={false}
         minDistance={matchView ? 55 : 90}
         maxDistance={focus === 'training' ? 400 : 360}
         target={focus === 'training' ? [250, 0, 0] : matchView ? [0, 0, 0] : [10, 0, 0]}
         maxPolarAngle={Math.PI / 2.15}
-        autoRotate={!matchView && !cameraLocked}
+        autoRotate={!matchView}
         autoRotateSpeed={0.2}
       />
     </>
@@ -407,13 +408,23 @@ export default function StadiumScene(props: {
   awayKit?: { primary: string; secondary: string };
 }) {
   const mobile = useSyncExternalStore(subscribeCameraMobile, cameraMobileSnapshot, () => false);
+  const [cameraUnlocked, setCameraUnlocked] = useState(false);
+  const cameraLocked = mobile && !cameraUnlocked;
   const [loaded, setLoaded] = useState(false);
   const ready = useCallback(() => setLoaded(true), []);
   return (
-    <div className="scene-root" data-scene-ready={loaded} data-camera-locked={mobile}>
-      {mobile && <div className="scene-scroll-surface" aria-hidden="true" />}
+    <div className="scene-root" data-scene-ready={loaded} data-camera-locked={cameraLocked}>
+      {cameraLocked && <div className="scene-scroll-surface" aria-hidden="true" />}
       {mobile && (
-        <span className="scene-camera-lock" role="img" aria-label="Câmera travada no celular">
+        <button
+          type="button"
+          className="scene-camera-lock"
+          aria-label={
+            cameraLocked ? 'Desbloquear controle da câmera' : 'Bloquear controle da câmera'
+          }
+          aria-pressed={cameraLocked}
+          onClick={() => setCameraUnlocked((value) => !value)}
+        >
           <svg
             viewBox="0 0 24 24"
             width="19"
@@ -424,9 +435,11 @@ export default function StadiumScene(props: {
             aria-hidden="true"
           >
             <rect x="5" y="10" width="14" height="11" rx="2" />
-            <path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3" />
+            <path
+              d={cameraLocked ? 'M8 10V7a4 4 0 0 1 8 0v3M12 14v3' : 'M8 10V7a4 4 0 0 1 8 0M12 14v3'}
+            />
           </svg>
-        </span>
+        </button>
       )}
       <SceneBoundary>
         <Canvas
@@ -452,7 +465,11 @@ export default function StadiumScene(props: {
           }
         >
           <Suspense fallback={null}>
-            <StadiumWorld {...props} cameraLocked={mobile} occupancy={props.occupancy ?? 0.85} />
+            <StadiumWorld
+              {...props}
+              cameraLocked={cameraLocked}
+              occupancy={props.occupancy ?? 0.85}
+            />
             <SceneReady ready={ready} />
           </Suspense>
         </Canvas>

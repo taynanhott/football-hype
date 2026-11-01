@@ -12,7 +12,7 @@ import { contractEnd, effectiveOverall, temporaryModifiers, renewalTerms } from 
 import type { ViewProps } from '../../ui/view-props';
 import { useGameStore } from '../../store/game-store';
 import { currency } from '../../ui/format';
-import { PlayerCard } from './player-card';
+import { PlayerCard, Portrait } from './player-card';
 import { ClubBadge, Icon } from '../../ui/icons';
 
 export function PlayerManagement({
@@ -114,6 +114,9 @@ export function PlayerManagement({
               onClick={() => setSection(item.id)}
             >
               {item.label}
+              {item.id === 'renew' && (terms.demand || days <= 180) && (
+                <span className="squad-notification-dot" aria-label="Renovação pendente" />
+              )}
               {item.id === 'policy' && hasOffers && (
                 <span
                   className="transfer-alert-dot"
@@ -300,6 +303,7 @@ export function PlayerManagement({
   );
 }
 export function IncomingOffers({ snapshot, club, playerId }: ViewProps & { playerId?: string }) {
+  const presentation = 'list' as const;
   const send = useGameStore((s) => s.send),
     busy = useGameStore((s) => s.busy);
   const offers =
@@ -308,13 +312,11 @@ export function IncomingOffers({ snapshot, club, playerId }: ViewProps & { playe
         o.sellerId === club.id && o.status === 'pending' && (!playerId || o.playerId === playerId),
     ) ?? [];
   return (
-    <section className="incoming-offers">
+    <section className="incoming-offers" data-presentation={presentation}>
       {offers.length > 0 && (
         <div className="incoming-offers-heading">
           <div>
-            <span className="eyebrow">MESA DE NEGOCIAÇÕES</span>
             <h2>Propostas recebidas</h2>
-            <p>Analise seu atleta e decida o próximo passo da transferência.</p>
           </div>
           <span className="offer-status">{offers.length} pendentes</span>
         </div>
@@ -355,14 +357,19 @@ export function IncomingOffers({ snapshot, club, playerId }: ViewProps & { playe
                 <span className="offer-status">Em análise</span>
               </header>
               <div className="offer-body">
-                {player && (
-                  <PlayerCard
-                    player={player}
-                    clubName={club.name}
-                    kit={clubKit(club)}
-                    modifier={effectiveOverall(snapshot.state, player) - player.overall}
-                  />
-                )}
+                {player &&
+                  (presentation === 'list' ? (
+                    <div className="offer-list-portrait">
+                      <Portrait player={player} clubName={club.name} kit={clubKit(club)} />
+                    </div>
+                  ) : (
+                    <PlayerCard
+                      player={player}
+                      clubName={club.name}
+                      kit={clubKit(club)}
+                      modifier={effectiveOverall(snapshot.state, player) - player.overall}
+                    />
+                  ))}
                 <div className="incoming-offer-details">
                   <span className="eyebrow">PROPOSTA DE COMPRA</span>
                   <h3>{player?.name ?? 'Jogador indisponível'}</h3>

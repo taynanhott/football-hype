@@ -33,6 +33,7 @@ type GameStore = {
   connected: boolean;
   busy: boolean;
   pendingActions: number;
+  confirmedActionId: string | null;
   error: string | null;
   connect: (id: string, clubId?: string) => Promise<void>;
   disconnect: () => void;
@@ -49,6 +50,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   connected: false,
   busy: false,
   pendingActions: 0,
+  confirmedActionId: null,
   error: null,
   clearError: () => set({ error: null }),
   connect: async (leagueId, clubId) => {
@@ -265,6 +267,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         if (parsed.data.requestId === activeId) clearTimeout(pending);
         if (queue.acknowledge(parsed.data.requestId, parsed.data.revision))
           set({ error: null, connected: true });
+        set({ confirmedActionId: parsed.data.requestId });
         if (queue.waitingForSnapshot)
           pending = setTimeout(() => {
             if (get().room === room && queue.waitingForSnapshot) room.send('sync');

@@ -1,28 +1,25 @@
+import { useCollapsedPlayerCategories } from '../../ui/use-collapsed-player-categories';
+import { usePlayerPositionFilter } from '../../ui/use-player-position-filter';
+import { Fragment } from 'react';
+import {
+  compareFieldPosition,
+  playerCategoryHeading,
+  playerPositionCategory,
+} from '../players/field-position-order';
+import { currency } from '../../ui/format';
 import { usePlayerPresentation } from '../../ui/use-player-presentation';
 import { PixelBadge } from '../../ui/pixel-badge';
 import { PlayerDetails } from '../players/player-details';
 import { SquadAverages } from '../players/squad-averages';
 import { positionLabel } from '../../ui/position-label';
-import { currency } from '../../ui/format';
 import { Select, Option } from '../../ui/select';
 import { contractEnd, potentialStars } from '@football/domain';
-const columns = [
-  'Jogador',
-  'Posição',
-  'Idade',
-  'Overall',
-  'Potencial',
-  'Condição',
-  'Salário mensal',
-  'Contrato',
-  'Disponível para negociação',
-];
 const positions = ['GK', 'CB', 'RB', 'LB', 'DM', 'CM', 'RM', 'LM', 'AM', 'RW', 'LW', 'SS', 'ST'];
 import { STYLE_LABELS } from '@football/domain';
 import { useGameStore } from '../../store/game-store';
-import { lazy, Suspense, useState } from 'react';
+import { lazy, Suspense, useState, useRef } from 'react';
 import { FORMATIONS, clubKit, type ClubSnapshot, type WorldState } from '@football/shared';
-import { PlayerCard } from '../players/player-card';
+import { PlayerCard, Portrait } from '../players/player-card';
 const StadiumScene = lazy(() => import('../../three/stadium-scene'));
 export function ClubInspection({
   state,
@@ -35,14 +32,25 @@ export function ClubInspection({
 }) {
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
   const selectedPlayer = selectedPlayerId ? state.players.byId[selectedPlayerId] : undefined;
-  const [position, setPosition] = useState('ALL');
-  const [presentation, setPresentation] = usePlayerPresentation();
-  const [sort, setSort] = useState({ column: 3, ascending: false });
-  const [hover, setHover] = useState<number | null>(null);
-  function toggleSort(column: number) {
-    setSort((old) => ({ column, ascending: old.column === column ? !old.ascending : true }));
+  const [position, setPosition] = usePlayerPositionFilter('club');
+  const [collapsedList, toggleListCategory] = useCollapsedPlayerCategories('club');
+  const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
+  function toggleCategory(category: string) {
+    setExpandedCategory((previous) => (previous === category ? null : category));
   }
-
+  const historyRef = useRef<HTMLDivElement>(null);
+  const [historyIndex, setHistoryIndex] = useState(0);
+  const historyCount = Math.min(
+    5,
+    state.results.filter((r) => r.homeId === club.id || r.awayId === club.id).length,
+  );
+  function moveHistory(direction: number) {
+    const container = historyRef.current;
+    const card = container?.querySelector<HTMLElement>('.club-history-match');
+    if (container && card)
+      container.scrollBy({ left: direction * (card.offsetWidth + 14), behavior: 'smooth' });
+  }
+  const [presentation, setPresentation] = usePlayerPresentation();
   const userId = useGameStore((s) => s.userId);
   const own = state.participants.some((p) => p.userId === userId && p.clubId === club.id);
   const stadium = state.stadiums.byId[club.stadiumId],
@@ -53,67 +61,53 @@ export function ClubInspection({
       .sort((a, b) => b.overall - a.overall || a.name.localeCompare(b.name));
     const players = all
       .filter((p) => position === 'ALL' || p.position === position)
-      .sort((a, b) => {
-        const value = (p: typeof a): string | number => {
-          switch (sort.column) {
-            case 0:
-              return p.name;
-            case 1:
-              return positions.indexOf(p.position);
-            case 2:
-              return p.age;
-            case 3:
-              return p.overall;
-            case 4:
-              return own ? p.potential : potentialStars(p.potential);
-            case 5:
-              return p.fitness;
-            case 6:
-              return p.salary.cents;
-            case 7:
-              return contractEnd(state, p);
-            default:
-              return Number(state.management?.policies?.[p.id]?.available ?? false);
-          }
-        };
-        const av = value(a),
-          bv = value(b);
-        const diff =
-          typeof av === 'string' && typeof bv === 'string'
-            ? av.localeCompare(bv, 'pt-BR')
-            : Number(av) - Number(bv);
-        return (sort.ascending ? diff : -diff) || a.name.localeCompare(b.name, 'pt-BR');
-      });
+      .sort(compareFieldPosition);
     return (
       <section className="club-inspection">
-        <div className="squad-controls-row">
-          <div className="toolbar squad-filters">
-            <label>
-              Posição
-              <Select value={position} onValueChange={setPosition}>
-                <Option value="ALL">Todas as posições</Option>
-                {positions
-                  .filter((p) => p !== 'SS')
-                  .map((p) => (
-                    <Option key={p} value={p}>
-                      {positionLabel(p)}
-                    </Option>
-                  ))}
-              </Select>
-            </label>
-            <label>
-              Apresentação
-              <Select value={presentation} onValueChange={setPresentation}>
-                <Option value="cards">Cartas</Option>
-                <Option value="list">Lista</Option>
-              </Select>
-            </label>
-          </div>
-          <SquadAverages state={state} club={club} />
-        </div>
+        <SquadAverages state={state} club={club} />
         <details className="panel club-match-history">
           <summary>Últimas 5 partidas · esquemas, táticas e escalações</summary>
-          <div className="club-history-grid">
+          {historyCount > 1 && (
+            <nav className="club-history-carousel-nav" aria-label="Navegar pelas últimas partidas">
+              <button
+                type="button"
+                aria-label="Partida anterior"
+                disabled={historyIndex === 0}
+                onClick={() => moveHistory(-1)}
+              >
+                ‹
+              </button>
+              <span aria-live="polite">
+                {historyIndex + 1} de {historyCount}
+              </span>
+              <button
+                type="button"
+                aria-label="Próxima partida"
+                disabled={historyIndex >= historyCount - 1}
+                onClick={() => moveHistory(1)}
+              >
+                ›
+              </button>
+            </nav>
+          )}
+          <div
+            className="club-history-grid"
+            ref={historyRef}
+            onScroll={(event) => {
+              const container = event.currentTarget;
+              const card = container.querySelector<HTMLElement>('.club-history-match');
+              if (card)
+                setHistoryIndex(
+                  Math.max(
+                    0,
+                    Math.min(
+                      historyCount - 1,
+                      Math.round(container.scrollLeft / (card.offsetWidth + 14)),
+                    ),
+                  ),
+                );
+            }}
+          >
             {state.results
               .filter((r) => r.homeId === club.id || r.awayId === club.id)
               .slice(-5)
@@ -196,120 +190,186 @@ export function ClubInspection({
             <p>Este clube ainda não disputou partidas.</p>
           )}
         </details>
+        <div className="squad-office-controls club-inspection-filters">
+          <div className="squad-view-field">
+            <span id="club-view-label">Visualização</span>
+            <div className="segmented" role="group" aria-labelledby="club-view-label">
+              <button
+                type="button"
+                aria-pressed={presentation === 'cards'}
+                onClick={() => setPresentation('cards')}
+              >
+                Cartas
+              </button>
+              <button
+                type="button"
+                aria-pressed={presentation === 'list'}
+                onClick={() => setPresentation('list')}
+              >
+                Lista
+              </button>
+            </div>
+          </div>
+          <label>
+            Posição
+            <Select value={position} onValueChange={setPosition}>
+              <Option value="ALL">Todas as posições</Option>
+              {positions
+                .filter((p) => p !== 'SS')
+                .map((p) => (
+                  <Option key={p} value={p}>
+                    {positionLabel(p)}
+                  </Option>
+                ))}
+            </Select>
+          </label>
+        </div>
         {presentation === 'cards' ? (
           <div className="squad-grid">
-            {players.map((player) => (
-              <div key={player.id}>
-                <PlayerCard
-                  player={player}
-                  clubName={club.name}
-                  kit={clubKit(club)}
-                  hidePotential={!own}
-                  contractExpiring={
-                    new Date(contractEnd(state, player)).getUTCFullYear() <= state.season
-                  }
-                  contractMonths={Math.max(
-                    0,
-                    Math.ceil(
-                      (contractEnd(state, player) - state.lastProcessedAt) / (30 * 86400000),
-                    ),
-                  )}
-                  rivalNegotiationBlocked={Boolean(
-                    state.management?.policies?.[player.id]?.available &&
-                    !state.management?.policies?.[player.id]?.rivals,
-                  )}
-                  negotiable={state.management?.policies?.[player.id]?.available ?? false}
-                />
-              </div>
+            {players.map((player, index) => (
+              <Fragment key={player.id}>
+                {playerCategoryHeading(players, index) && (
+                  <button
+                    type="button"
+                    className="squad-list-category squad-card-category"
+                    aria-expanded={
+                      expandedCategory === playerPositionCategory(player.position).title
+                    }
+                    onClick={() => toggleCategory(playerPositionCategory(player.position).title)}
+                  >
+                    <span>
+                      {expandedCategory === playerPositionCategory(player.position).title
+                        ? '▾'
+                        : '▸'}{' '}
+                      {playerCategoryHeading(players, index)}
+                    </span>
+                  </button>
+                )}
+                <div
+                  key={player.id}
+                  hidden={expandedCategory !== playerPositionCategory(player.position).title}
+                >
+                  <PlayerCard
+                    player={player}
+                    clubName={club.name}
+                    kit={clubKit(club)}
+                    hidePotential={!own}
+                    contractExpiring={
+                      new Date(contractEnd(state, player)).getUTCFullYear() <= state.season
+                    }
+                    contractMonths={Math.max(
+                      0,
+                      Math.ceil(
+                        (contractEnd(state, player) - state.lastProcessedAt) / (30 * 86400000),
+                      ),
+                    )}
+                    rivalNegotiationBlocked={Boolean(
+                      state.management?.policies?.[player.id]?.available &&
+                      !state.management?.policies?.[player.id]?.rivals,
+                    )}
+                    negotiable={state.management?.policies?.[player.id]?.available ?? false}
+                  />
+                </div>
+              </Fragment>
             ))}
           </div>
         ) : (
-          <div className="squad-table-scroll">
-            <table
-              className="squad-table"
-              data-hovered-column={hover ?? undefined}
-              onMouseLeave={() => setHover(null)}
-              onMouseOver={(event) => {
-                const cell = (event.target as HTMLElement).closest(
-                  'td,th',
-                ) as HTMLTableCellElement | null;
-                setHover(cell?.cellIndex ?? null);
-              }}
-              onClick={(event) => {
-                const cell = (event.target as HTMLElement).closest(
-                  'td,th',
-                ) as HTMLTableCellElement | null;
-                if (cell && !(event.target as HTMLElement).closest('button'))
-                  toggleSort(cell.cellIndex);
-              }}
-            >
-              <thead>
-                <tr>
-                  {columns.map((label, i) => (
-                    <th
-                      key={label}
-                      scope="col"
-                      aria-sort={
-                        sort.column === i ? (sort.ascending ? 'ascending' : 'descending') : 'none'
-                      }
-                    >
-                      <button className="squad-sort" onClick={() => toggleSort(i)}>
-                        {label} {sort.column === i ? (sort.ascending ? '↑' : '↓') : '↕'}
-                      </button>
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {players.map((p) => (
-                  <tr key={p.id}>
-                    <td>
-                      <button
-                        type="button"
-                        className="squad-list-name"
-                        onClick={() => setSelectedPlayerId(p.id)}
-                      >
-                        {p.name}
-                      </button>
-                    </td>
-                    <td>{positionLabel(p.position)}</td>
-                    <td>{p.age}</td>
-                    <td>{p.overall}</td>
-                    <td>
-                      {own ? (
-                        p.potential
-                      ) : (
-                        <span className="squad-potential">
-                          {'★'.repeat(potentialStars(p.potential))}
-                          {'☆'.repeat(5 - potentialStars(p.potential))}
+          <div className="squad-planning-list">
+            {players.map((player, index) => (
+              <Fragment key={player.id}>
+                {playerCategoryHeading(players, index) && (
+                  <button
+                    type="button"
+                    className="squad-list-category"
+                    aria-expanded={
+                      !collapsedList.includes(playerPositionCategory(player.position).title)
+                    }
+                    onClick={() =>
+                      toggleListCategory(playerPositionCategory(player.position).title)
+                    }
+                  >
+                    {playerCategoryHeading(players, index)}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  key={player.id}
+                  className="squad-planning-list-row"
+                  hidden={collapsedList.includes(playerPositionCategory(player.position).title)}
+                  aria-haspopup="dialog"
+                  onClick={() => setSelectedPlayerId(player.id)}
+                >
+                  <strong
+                    className="squad-list-overall"
+                    data-tier={
+                      player.overall >= 86
+                        ? 'diamond'
+                        : player.overall >= 78
+                          ? 'gold'
+                          : player.overall >= 70
+                            ? 'silver'
+                            : 'bronze'
+                    }
+                  >
+                    {player.overall}
+                  </strong>
+                  <span className="squad-list-portrait">
+                    <Portrait player={player} clubName={club.name} kit={clubKit(club)} />
+                  </span>
+                  <div className="squad-list-player-info">
+                    <strong>
+                      {player.name} - {positionLabel(player.position)}
+                    </strong>
+                    <div className="squad-list-player-facts">
+                      <div className="squad-list-facts-line">
+                        <span>
+                          Preço <b>{currency(player.marketValue.cents)}</b>
                         </span>
-                      )}
-                    </td>
-                    <td>{p.fitness}%</td>
-                    <td>{currency(p.salary.cents)}</td>
-                    <td>
-                      <span
-                        className={
-                          new Date(contractEnd(state, p)).getUTCFullYear() <= state.season
-                            ? 'contract-months is-urgent'
-                            : 'contract-months'
-                        }
-                        title="Meses restantes de contrato"
-                      >
-                        {Math.max(
-                          0,
-                          Math.ceil(
-                            (contractEnd(state, p) - state.lastProcessedAt) / (30 * 86400000),
-                          ),
-                        )}
-                        m
-                      </span>
-                    </td>
-                    <td>{state.management?.policies?.[p.id]?.available ? 'Sim' : 'Não'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                        <span>
+                          Salário <b>{currency(player.salary.cents)}</b> · Contrato{' '}
+                          <b
+                            className={
+                              contractEnd(state, player) - state.lastProcessedAt <= 180 * 86400000
+                                ? 'squad-contract-expiring'
+                                : undefined
+                            }
+                          >
+                            {Math.max(
+                              0,
+                              Math.ceil(
+                                (contractEnd(state, player) - state.lastProcessedAt) /
+                                  (30 * 86400000),
+                              ),
+                            )}
+                            m
+                          </b>
+                        </span>
+                      </div>
+                      <div className="squad-list-facts-line">
+                        <span>
+                          Potencial{' '}
+                          <b>
+                            {own
+                              ? player.potential
+                              : '★'.repeat(potentialStars(player.potential)) +
+                                '☆'.repeat(5 - potentialStars(player.potential))}
+                          </b>
+                        </span>
+                        <span>
+                          À venda{' '}
+                          <b>
+                            {state.management?.policies?.[player.id]?.available ? 'Sim' : 'Não'}
+                          </b>
+                        </span>
+                        <span>
+                          Idade <b>{player.age} anos</b>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </button>
+              </Fragment>
+            ))}
           </div>
         )}
         {!players.length && <p>Nenhum jogador encontrado.</p>}
@@ -333,7 +393,7 @@ export function ClubInspection({
     marketing: 'Marketing',
   };
   return (
-    <section className="club-inspection">
+    <section className="club-inspection club-facility-inspection">
       <div className="club-facility-scene" key={club.id + view}>
         <Suspense fallback={<p>Carregando estrutura…</p>}>
           <StadiumScene

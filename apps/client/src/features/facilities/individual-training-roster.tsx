@@ -54,8 +54,8 @@ export function IndividualTrainingRoster({
         <h3>Treino por jogador</h3>
         <span>{club.playerIds.length} atletas</span>
         <label className="training-roster-sort">
-          Ordenar por
-          <Select value={order} onValueChange={setOrder}>
+          <span className="training-sort-caption">Ordenar por</span>
+          <Select value={order} onValueChange={setOrder} aria-label="Ordenar treino por">
             <Option value="age">Idade</Option>
             <Option value="position">Posição</Option>
             <Option value="overall">Overall</Option>
@@ -64,28 +64,28 @@ export function IndividualTrainingRoster({
             <Option value="intense">Treino intenso</Option>
           </Select>
         </label>
-      </div>
-      <div className="training-save-bar">
-        <button
-          className="primary"
-          disabled={
-            busy ||
-            !Object.entries(draft).some(
-              ([id, load]) => load !== (center.operations?.playerLoads?.[id] ?? 'moderate'),
-            )
-          }
-          onClick={() => {
-            useGameStore.getState().clearError();
-            send({
-              type: 'management',
-              action: 'center',
-              target: 'save-training',
-              playerLoads: draft,
-            });
-          }}
-        >
-          {busy ? 'Salvando…' : 'Salvar treino'}
-        </button>
+        <div className="training-save-bar">
+          <button
+            className="primary"
+            disabled={
+              busy ||
+              !Object.entries(draft).some(
+                ([id, load]) => load !== (center.operations?.playerLoads?.[id] ?? 'moderate'),
+              )
+            }
+            onClick={() => {
+              useGameStore.getState().clearError();
+              send({
+                type: 'management',
+                action: 'center',
+                target: 'save-training',
+                playerLoads: draft,
+              });
+            }}
+          >
+            {busy ? 'Salvando…' : 'Salvar treino'}
+          </button>
+        </div>
       </div>
       <div className="training-roster-list">
         {orderedPlayers.map((player) => {

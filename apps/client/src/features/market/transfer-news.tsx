@@ -1,3 +1,4 @@
+import { useGameStore } from '../../store/game-store';
 import { useState } from 'react';
 import type { WorldState, Negotiation } from '@football/shared';
 import { PersonAvatar, type PersonAppearance } from '../../ui/person-avatar';
@@ -67,11 +68,41 @@ const COMPETITION_HEADLINES = [
   'entra na briga pela contratação de',
 ];
 export function TransferNews({ state }: { state: WorldState }) {
+  const userId = useGameStore((store) => store.userId);
+  const ownClubId = state.participants.find((member) => member.userId === userId)?.clubId;
+  function playerLink(offer: Negotiation) {
+    const competing =
+      offer.buyerId !== ownClubId &&
+      state.negotiations.some(
+        (entry) =>
+          entry.playerId === offer.playerId &&
+          entry.buyerId === ownClubId &&
+          entry.status === 'review',
+      );
+    return (
+      '#/market?player=' + encodeURIComponent(offer.playerId) + (competing ? '&tab=review' : '')
+    );
+  }
+  function linkedHeadline(text: string, offer: Negotiation) {
+    const name = state.players.byId[offer.playerId]?.name;
+    if (!name || !text.includes(name)) return text;
+    const index = text.indexOf(name);
+    return (
+      <>
+        {text.slice(0, index)}
+        <a className="news-player-link" href={playerLink(offer)}>
+          {name}
+        </a>
+        {text.slice(index + name.length)}
+      </>
+    );
+  }
   const [query, setQuery] = useState('');
   const [exploring, setExploring] = useState(false);
   const [topic, setTopic] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | 'completed' | 'saved'>('all');
   const [saved, setSaved] = useState<string[]>([]);
+  const humanClubs = new Set(state.participants.map((participant) => participant.clubId));
   const offers: Negotiation[] = [
     ...state.negotiations,
     ...(state.management?.offers ?? []).map((offer) => ({
@@ -85,7 +116,13 @@ export function TransferNews({ state }: { state: WorldState }) {
             ? ('completed' as const)
             : ('rejected' as const),
     })),
-  ].sort((a, b) => (a.offeredAt ?? 0) - (b.offeredAt ?? 0));
+  ]
+    .filter(
+      (offer) =>
+        humanClubs.has(offer.buyerId) ||
+        (offer.sellerId !== undefined && humanClubs.has(offer.sellerId)),
+    )
+    .sort((a, b) => (a.offeredAt ?? 0) - (b.offeredAt ?? 0));
   const news = offers
     .map((offer, index) => {
       const buyer = state.clubs.byId[offer.buyerId]?.name ?? 'Clube interessado';
@@ -367,7 +404,7 @@ export function TransferNews({ state }: { state: WorldState }) {
                           .replace(/[̀-ͯ]/g, '')}
                       </span>
                     </div>
-                    <h3>{title}</h3>
+                    <h3>{linkedHeadline(title, offer)}</h3>
                     <p>{body}</p>
                     <small>
                       {offer.offeredAt

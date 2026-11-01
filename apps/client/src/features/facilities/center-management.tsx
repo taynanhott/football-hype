@@ -9,6 +9,7 @@ import { Select, Option } from '../../ui/select';
 
 import { SECTORS, MARKETING_BENEFITS } from './center-sectors';
 export function SectorGuide({ sector, rules = false }: { sector: string; rules?: boolean }) {
+  const [rulesExpanded, setRulesExpanded] = useState(false);
   const info = SECTORS[sector];
   if (!info) return null;
   return (
@@ -19,30 +20,43 @@ export function SectorGuide({ sector, rules = false }: { sector: string; rules?:
       <div>
         <strong>{info.person}</strong>
         {rules ? (
-          <div className="coordinator-training-rules">
-            <p>
-              <b>Até alcançar o potencial</b> · Treinos e jogos oficiais preenchem a barra de
-              evolução. Cada barra completa aumenta +1 de overall, até o potencial. No ciclo
-              individual, atletas com menos de 33 anos recebem +1 ao concluir, sem ultrapassar esse
-              limite.
-            </p>
-            <p>
-              <b>Potencial alcançado</b> · A barra amarela carrega devagar no intenso, mantém no
-              moderado e regride no leve. Ao completar, concede bônus de treinamento, até +3. No
-              ciclo individual, menores de 33 anos recebem +1 temporário por 15 jogos em que
-              atuarem.
-            </p>
-            <p>
-              <b>Acima de 33 anos</b> · A barra vermelha representa desgaste: leve avança
-              normalmente, moderado avança devagar e intenso pausa. O ciclo individual reduz a barra
-              até zero, sem devolver overall já perdido.
-            </p>
-            <p className="coordinator-training-note">
-              O ciclo dura 60 dias. Jogos oficiais contam como treino intenso para quem atua. O
-              nível do CT melhora os efeitos, e a projeção por temporada usa o histórico real de
-              treinos e jogos.
-            </p>
-          </div>
+          <>
+            <button
+              type="button"
+              className="coordinator-rules-toggle"
+              aria-expanded={rulesExpanded}
+              onClick={() => setRulesExpanded((value) => !value)}
+            >
+              <span>
+                {rulesExpanded ? 'Vamos entender o treinamento' : 'Quer entender como funciona?'}
+              </span>
+              <small>{rulesExpanded ? 'Clique para recolher ▴' : 'Clique para expandir ▾'}</small>
+            </button>
+            <div className="coordinator-training-rules" data-expanded={rulesExpanded}>
+              <p>
+                <b>Até alcançar o potencial</b> · Treinos e jogos oficiais preenchem a barra de
+                evolução. Cada barra completa aumenta +1 de overall, até o potencial. No ciclo
+                individual, atletas com menos de 33 anos recebem +1 ao concluir, sem ultrapassar
+                esse limite.
+              </p>
+              <p>
+                <b>Potencial alcançado</b> · A barra amarela carrega devagar no intenso, mantém no
+                moderado e regride no leve. Ao completar, concede bônus de treinamento, até +3. No
+                ciclo individual, menores de 33 anos recebem +1 temporário por 15 jogos em que
+                atuarem.
+              </p>
+              <p>
+                <b>Acima de 33 anos</b> · A barra vermelha representa desgaste: leve avança
+                normalmente, moderado avança devagar e intenso pausa. O ciclo individual reduz a
+                barra até zero, sem devolver overall já perdido.
+              </p>
+              <p className="coordinator-training-note">
+                O ciclo dura 60 dias. Jogos oficiais contam como treino intenso para quem atua. O
+                nível do CT melhora os efeitos, e a projeção por temporada usa o histórico real de
+                treinos e jogos.
+              </p>
+            </div>
+          </>
         ) : (
           <p>{info.tip}</p>
         )}
@@ -67,6 +81,7 @@ export function CenterManagement({
   const send = useGameStore((s) => s.send);
   const busy = useGameStore((s) => s.busy);
   const [playerId, setPlayerId] = useState('');
+  const [individualExpanded, setIndividualExpanded] = useState(false);
   const state = snapshot.state;
   const ops = center.operations;
   const level = center.levels[sector as keyof typeof center.levels];
@@ -102,88 +117,108 @@ export function CenterManagement({
         {(treatment || sector === 'coaching') && (
           <section className="management-block">
             <div className="section-header">
-              <h3>{treatment ? 'Tratamento Plus' : 'Treino individual'}</h3>
+              <h3
+                className={sector === 'coaching' ? 'individual-training-desktop-title' : undefined}
+              >
+                {treatment ? 'Tratamento Plus' : 'Treino individual'}
+              </h3>
+              {sector === 'coaching' && (
+                <button
+                  type="button"
+                  className="individual-training-toggle"
+                  aria-expanded={individualExpanded}
+                  onClick={() => setIndividualExpanded((value) => !value)}
+                >
+                  Treino individual {individualExpanded ? '▴' : '▾'}
+                </button>
+              )}
               <span className="pill">
                 {occupied} / {slots} vagas
               </span>
             </div>
-            {treatment && (
-              <p>
-                Recuperação 50% mais rápida. Pagamento único por atendimento; a vaga é liberada ao
-                terminar a recuperação.
-              </p>
-            )}
-            {sector === 'coaching' ? null : slots === 0 ? (
-              <div className="locked-feature">
-                🔒 Disponível no nível 3. Níveis 4 e 5 liberam mais uma vaga cada.
-              </div>
-            ) : (
-              <>
-                <label>
-                  Selecionar jogador
-                  <Select
-                    aria-label="Selecionar jogador para atendimento"
-                    value={playerId}
-                    onValueChange={setPlayerId}
+            <div
+              className="individual-training-expandable"
+              data-collapsible={sector === 'coaching'}
+              data-expanded={individualExpanded}
+            >
+              {treatment && (
+                <p>
+                  Recuperação 50% mais rápida. Pagamento único por atendimento; a vaga é liberada ao
+                  terminar a recuperação.
+                </p>
+              )}
+              {sector === 'coaching' ? null : slots === 0 ? (
+                <div className="locked-feature">
+                  🔒 Disponível no nível 3. Níveis 4 e 5 liberam mais uma vaga cada.
+                </div>
+              ) : (
+                <>
+                  <label>
+                    Selecionar jogador
+                    <Select
+                      aria-label="Selecionar jogador para atendimento"
+                      value={playerId}
+                      onValueChange={setPlayerId}
+                    >
+                      <Option value="">Escolha um jogador</Option>
+                      {eligible.map((p) => (
+                        <Option key={p.id} value={p.id}>
+                          {p.name} ·{' '}
+                          {medical
+                            ? `${state.injuries[p.id]} dias de recuperação`
+                            : `${Math.round(p.fitness)}% de condição · OVR ${p.overall}`}
+                        </Option>
+                      ))}
+                    </Select>
+                  </label>
+                  <button
+                    className="primary full"
+                    disabled={
+                      busy ||
+                      !eligible.some((p) => p.id === playerId) ||
+                      occupied >= slots ||
+                      club.balance.cents < cost
+                    }
+                    onClick={() => act(treatment ? sector : 'individual')}
                   >
-                    <Option value="">Escolha um jogador</Option>
-                    {eligible.map((p) => (
-                      <Option key={p.id} value={p.id}>
-                        {p.name} ·{' '}
-                        {medical
-                          ? `${state.injuries[p.id]} dias de recuperação`
-                          : `${Math.round(p.fitness)}% de condição · OVR ${p.overall}`}
-                      </Option>
-                    ))}
-                  </Select>
-                </label>
-                <button
-                  className="primary full"
-                  disabled={
-                    busy ||
-                    !eligible.some((p) => p.id === playerId) ||
-                    occupied >= slots ||
-                    club.balance.cents < cost
+                    Iniciar · {currency(cost)}
+                  </button>
+                  {occupied >= slots && <p>Todas as vagas estão ocupadas.</p>}
+                  {eligible.length === 0 && <p>Nenhum jogador elegível no momento.</p>}
+                </>
+              )}
+              {(treatment && slots > 0) || sector === 'coaching' ? (
+                <FitnessGym
+                  club={club}
+                  snapshot={snapshot}
+                  active={
+                    sector === 'coaching' ? (ops?.individual.map((t) => t.playerId) ?? []) : active
                   }
-                  onClick={() => act(treatment ? sector : 'individual')}
-                >
-                  Iniciar · {currency(cost)}
-                </button>
-                {occupied >= slots && <p>Todas as vagas estão ocupadas.</p>}
-                {eligible.length === 0 && <p>Nenhum jogador elegível no momento.</p>}
-              </>
-            )}
-            {(treatment && slots > 0) || sector === 'coaching' ? (
-              <FitnessGym
-                club={club}
-                snapshot={snapshot}
-                active={
-                  sector === 'coaching' ? (ops?.individual.map((t) => t.playerId) ?? []) : active
-                }
-                slots={sector === 'coaching' ? 3 : slots}
-                medical={medical}
-                coaching={sector === 'coaching'}
-              />
-            ) : (
-              <div className="active-treatments">
-                {treatment
-                  ? active.map((id) => (
-                      <div key={id}>
-                        <strong>{state.players.byId[id]?.name ?? 'Jogador'}</strong>
-                        <span>Plus ativo · recuperação +50%</span>
-                      </div>
-                    ))
-                  : ops?.individual.map((t) => (
-                      <div key={t.playerId}>
-                        <strong>{state.players.byId[t.playerId]?.name ?? 'Jogador'}</strong>
-                        <span>
-                          {Math.max(0, Math.ceil((t.endsAt - state.lastProcessedAt) / 86400000))}{' '}
-                          dias restantes · +1 OVR ao concluir
-                        </span>
-                      </div>
-                    ))}
-              </div>
-            )}
+                  slots={sector === 'coaching' ? 3 : slots}
+                  medical={medical}
+                  coaching={sector === 'coaching'}
+                />
+              ) : (
+                <div className="active-treatments">
+                  {treatment
+                    ? active.map((id) => (
+                        <div key={id}>
+                          <strong>{state.players.byId[id]?.name ?? 'Jogador'}</strong>
+                          <span>Plus ativo · recuperação +50%</span>
+                        </div>
+                      ))
+                    : ops?.individual.map((t) => (
+                        <div key={t.playerId}>
+                          <strong>{state.players.byId[t.playerId]?.name ?? 'Jogador'}</strong>
+                          <span>
+                            {Math.max(0, Math.ceil((t.endsAt - state.lastProcessedAt) / 86400000))}{' '}
+                            dias restantes · +1 OVR ao concluir
+                          </span>
+                        </div>
+                      ))}
+                </div>
+              )}
+            </div>
           </section>
         )}
         {medical && (

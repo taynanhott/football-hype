@@ -15,6 +15,30 @@ export function Lobby() {
   const session = useSession();
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const credentialStage = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const stage = credentialStage.current;
+    const assembly = stage?.querySelector<HTMLElement>('.credential-assembly');
+    const badge = assembly?.querySelector<HTMLElement>('.coach-access-badge');
+    if (!stage || !assembly || !badge) return;
+    const fit = () => {
+      const height = 235 + badge.offsetHeight;
+      const angle = (8 * Math.PI) / 180;
+      const width = 240 * Math.cos(angle) + height * Math.sin(angle);
+      const rotatedHeight = height * Math.cos(angle) + 240 * Math.sin(angle);
+      const scale = Math.max(
+        0,
+        Math.min((stage.clientWidth - 32) / width, (stage.clientHeight - 24) / rotatedHeight),
+      );
+      assembly.style.height = height + 'px';
+      assembly.style.setProperty('--credential-scale', String(scale));
+    };
+    const observer = new ResizeObserver(fit);
+    observer.observe(stage);
+    observer.observe(badge);
+    fit();
+    return () => observer.disconnect();
+  }, [session.user]);
   async function login() {
     setError('');
     setBusy(true);
@@ -47,39 +71,41 @@ export function Lobby() {
       </header>
       {!session.user ? (
         <div className="login-welcome">
-          <div className="stadium-art" aria-hidden="true">
-            <svg className="access-lanyard" viewBox="0 0 420 500">
-              <path
-                className="lanyard-strap"
-                d="M206 235C173 204 113 112 132 58C149 10 267 8 290 60C313 111 254 205 219 235"
-              />
-              <path
-                className="lanyard-stitch"
-                d="M206 235C173 204 113 112 132 58C149 10 267 8 290 60C313 111 254 205 219 235"
-              />
-            </svg>
-            <div className="coach-access-badge">
-              <span className="badge-metal-clip" />
-              <div className="badge-brand">
-                <BrandMark size={44} />
-                <span>
-                  FOOTBALL HYPE<small>CREDENCIAL OFICIAL</small>
-                </span>
-              </div>
-              <div className="badge-coach-profile">
-                <GeneratedPerson name="Treinador" className="credential-person" />
-                <div>
-                  <span>COMISSÃO TÉCNICA</span>
-                  <strong>TREINADOR</strong>
+          <div className="stadium-art" ref={credentialStage} aria-hidden="true">
+            <div className="credential-assembly">
+              <svg className="access-lanyard" viewBox="0 0 420 500">
+                <path
+                  className="lanyard-strap"
+                  d="M206 235C173 204 113 112 132 58C149 10 267 8 290 60C313 111 254 205 219 235"
+                />
+                <path
+                  className="lanyard-stitch"
+                  d="M206 235C173 204 113 112 132 58C149 10 267 8 290 60C313 111 254 205 219 235"
+                />
+              </svg>
+              <div className="coach-access-badge">
+                <span className="badge-metal-clip" />
+                <div className="badge-brand">
+                  <BrandMark size={44} />
+                  <span>
+                    FOOTBALL HYPE<small>CREDENCIAL OFICIAL</small>
+                  </span>
                 </div>
-              </div>
-              <div className="badge-permission">
-                <span>ACESSO LIBERADO</span>
-                <strong>Vestiário e área técnica</strong>
-              </div>
-              <div className="badge-bottom">
-                <span className="badge-barcode" />
-                <b>2026</b>
+                <div className="badge-coach-profile">
+                  <GeneratedPerson name="Treinador" className="credential-person" />
+                  <div>
+                    <span>COMISSÃO TÉCNICA</span>
+                    <strong>TREINADOR</strong>
+                  </div>
+                </div>
+                <div className="badge-permission">
+                  <span>ACESSO LIBERADO</span>
+                  <strong>Vestiário e área técnica</strong>
+                </div>
+                <div className="badge-bottom">
+                  <span className="badge-barcode" />
+                  <b>2026</b>
+                </div>
               </div>
             </div>
           </div>

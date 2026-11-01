@@ -462,27 +462,31 @@ function TrophyGalleryContent({
               ),
           )}
 
-        <div className="trophy-gallery trophy-gallery-compact">
-          {displayedTrophies.map((t) => {
-            const rule = COMPETITIONS.find((c) => c.id === t.competitionId);
-            return (
-              <article
-                className="panel trophy-card"
-                data-earned={trophies.some((item) => item.competitionId === t.competitionId)}
-                key={`${t.season}:${t.competitionId}`}
-              >
-                <CompetitionTrophy
-                  competitionId={t.competitionId}
-                  name={rule?.name ?? t.competitionId}
-                />
-                <h2>
-                  <b>{trophies.filter((item) => item.competitionId === t.competitionId).length}x</b>{' '}
-                  {rule?.name ?? t.competitionId}
-                </h2>
-              </article>
-            );
-          })}
-        </div>
+        {!inspectingClub && (
+          <div className="trophy-gallery trophy-gallery-compact">
+            {displayedTrophies.map((t) => {
+              const rule = COMPETITIONS.find((c) => c.id === t.competitionId);
+              return (
+                <article
+                  className="panel trophy-card"
+                  data-earned={trophies.some((item) => item.competitionId === t.competitionId)}
+                  key={`${t.season}:${t.competitionId}`}
+                >
+                  <CompetitionTrophy
+                    competitionId={t.competitionId}
+                    name={rule?.name ?? t.competitionId}
+                  />
+                  <h2>
+                    <b>
+                      {trophies.filter((item) => item.competitionId === t.competitionId).length}x
+                    </b>{' '}
+                    {rule?.name ?? t.competitionId}
+                  </h2>
+                </article>
+              );
+            })}
+          </div>
+        )}
       </div>
     </>
   );
