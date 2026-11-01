@@ -159,7 +159,7 @@ function GameApp() {
       <CoachEditor
         key={profileKey}
         profile={coachProfile}
-        trophies={state.trophies.filter((trophy) => trophy.coachUserId === userId)}
+
         onSave={async (profile) => {
           await request(`/api/leagues/${state.id}/profile`, {
             method: 'POST',
@@ -238,7 +238,19 @@ function GameApp() {
               >
                 <Icon name={item.id} />
                 <span>{item.label}</span>
-                {item.id === 'market' && <span className="nav-dot" />}
+                {item.id === 'market' &&
+                  ((state.management?.offers?.some(
+                    (offer) => offer.sellerId === club.id && offer.status === 'pending',
+                  ) ??
+                    false) ||
+                    state.negotiations.some(
+                      (offer) => offer.buyerId === club.id && offer.status === 'review',
+                    )) && (
+                    <span
+                      className="transfer-alert-dot"
+                      aria-label="Há propostas recebidas ou negociações em análise"
+                    />
+                  )}
               </a>
             ),
           )}
@@ -252,6 +264,7 @@ function GameApp() {
           </span>
           <div>
             <strong>{coachProfile.name}</strong>
+            <span className="sidebar-coach-edit">Editar treinador</span>
             <div className="save-queue-status" role="status">
               {!connected
                 ? 'Reconecte para sincronizar a carreira'

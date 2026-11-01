@@ -20,7 +20,7 @@ export function PlayerManagement({
   snapshot,
   onPlan,
   planningBusy = false,
-  initialSection = 'effects',
+  initialSection = 'policy',
   hideTabs = false,
 }: Pick<ViewProps, 'snapshot'> & {
   player: PlayerSnapshot;
@@ -40,6 +40,11 @@ export function PlayerManagement({
     rivals: false,
     interest: 35,
   };
+  const [interestDraft, setInterestDraft] = useState({
+    base: policy.interest,
+    value: policy.interest,
+  });
+  const interest = interestDraft.base === policy.interest ? interestDraft.value : policy.interest;
   const end = contractEnd(state, player),
     days = Math.ceil((end - state.lastProcessedAt) / 86400000);
   const [salaryDraft, setSalaryDraft] = useState({
@@ -49,6 +54,13 @@ export function PlayerManagement({
   const [years, setYears] = useState(1);
   const effects = temporaryModifiers(state, player);
   const terms = renewalTerms(state, player);
+  const hasOffers =
+    state.management?.offers?.some(
+      (offer) =>
+        offer.playerId === player.id &&
+        offer.sellerId === player.clubId &&
+        offer.status === 'pending',
+    ) ?? false;
   const salaryMinimum = ceilMoney(player.salary.cents * 0.5, MONEY_STEPS.salary);
   const salaryMaximum = player.salary.cents * 2;
   const salaryCents =
@@ -86,8 +98,8 @@ export function PlayerManagement({
         <div className="management-tabs" role="group" aria-label="Gestão do jogador">
           {(
             [
+              { id: 'policy', label: 'Transferências' },
               { id: 'effects', label: 'Bônus e penalidades' },
-              { id: 'policy', label: 'Negociação' },
               { id: 'renew', label: 'Renegociação' },
             ] as const
           ).map((item) => (
@@ -95,9 +107,19 @@ export function PlayerManagement({
               key={item.id}
               className={section === item.id ? 'selected' : ''}
               aria-pressed={section === item.id}
+              disabled={
+                (item.id === 'effects' && !effects.length) ||
+                (item.id === 'renew' && Boolean(terms.reason))
+              }
               onClick={() => setSection(item.id)}
             >
               {item.label}
+              {item.id === 'policy' && hasOffers && (
+                <span
+                  className="transfer-alert-dot"
+                  aria-label="Proposta recebida para este jogador"
+                />
+              )}
             </button>
           ))}
         </div>
@@ -155,13 +177,14 @@ export function PlayerManagement({
             Aceitar rivais
           </label>
           <label>
-            Interesse em vender: {policy.interest}/100
-            <input
-              type="range"
+            Interesse em vender: {interest}/100
+            <MoneyRange
               min="1"
               max="100"
-              defaultValue={policy.interest}
-              key={policy.interest}
+              value={interest}
+              onChange={(e) =>
+                setInterestDraft({ base: policy.interest, value: Number(e.target.value) })
+              }
               disabled={busy || !policy.available}
               onPointerUp={(e) =>
                 send({
@@ -262,9 +285,16 @@ export function PlayerManagement({
         </div>
       )}
       {section === 'policy' && (
-        <a className="player-policy-offers" href="#/market?tab=proposals">
+        <button
+          type="button"
+          className="player-policy-offers"
+          disabled={!hasOffers}
+          onClick={() => {
+            location.hash = '/market?tab=proposals';
+          }}
+        >
           Propostas recebidas ↗
-        </a>
+        </button>
       )}
     </section>
   );

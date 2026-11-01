@@ -1,14 +1,15 @@
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import { clubKit, commandSchema, type GameCommand } from '@football/shared';
-import { executeCommand } from '@football/domain';
+import { executeCommand, temporaryModifiers, renewalTerms } from '@football/domain';
 import type { ViewProps } from '../../ui/view-props';
 import { useGameStore } from '../../store/game-store';
-import { currency } from '../../ui/format';
+
 import { positionLabel } from '../../ui/position-label';
 import { PlayerCard } from './player-card';
 import { PlayerManagement } from './player-management';
 import { SquadAssistant } from './squad-assistant';
 import { PlayerModal } from './player-modal';
+import { Select, Option } from '../../ui/select';
 
 const mobileQuery = '(max-width: 760px)';
 const mobileSnapshot = () => window.matchMedia(mobileQuery).matches;
@@ -18,8 +19,8 @@ const subscribeMobile = (change: () => void) => {
   return () => media.removeEventListener('change', change);
 };
 const mobileActions = [
+  { id: 'policy', label: 'Transferências' },
   { id: 'effects', label: 'Bônus e penalidades' },
-  { id: 'policy', label: 'Negociação' },
   { id: 'renew', label: 'Renegociação' },
 ] as const;
 
@@ -179,53 +180,6 @@ export function SquadPlanning({ snapshot, club }: ViewProps) {
           {message}
         </div>
         <SquadAssistant writing={notebook.commands.length > 0} />
-        <div className="notebook-summary">
-          <strong>
-            {notebook.commands.length
-              ? `${notebook.commands.length} ${notebook.commands.length === 1 ? 'ação anotada' : 'ações anotadas'}`
-              : 'Prancheta aberta'}
-          </strong>
-          <small>
-            {locked
-              ? 'Aguardando confirmação do clube'
-              : 'Anotações locais · só executadas com sua autorização'}
-          </small>
-        </div>
-        {notebook.commands.length > 0 && (
-          <ol className="notebook-actions">
-            {notebook.commands.map((c, index) => {
-              if (c.type !== 'management') return null;
-              const player = snapshot.state.players.byId[c.playerId ?? ''];
-              return (
-                <li key={`${c.playerId}.${c.action}`}>
-                  <span>
-                    <strong>{player?.name ?? 'Jogador'}</strong>
-                    <small>
-                      {c.action === 'renew'
-                        ? `Renovar por ${c.years} ano(s) · ${currency(c.salary ?? 0)}/mês`
-                        : c.action === 'policy'
-                          ? `Negociação: ${c.available ? 'disponível' : 'indisponível'} · ${c.interest}/100`
-                          : 'Recusar pedido de valorização'}
-                    </small>
-                  </span>
-                  <button
-                    type="button"
-                    disabled={locked}
-                    aria-label={`Remover ação de ${player?.name ?? 'jogador'}`}
-                    onClick={() => {
-                      setNotebook({ commands: notebook.commands.filter((_, i) => i !== index) });
-                      setMessage(
-                        'Retirei essa anotação. O restante do planejamento continua aqui.',
-                      );
-                    }}
-                  >
-                    ×
-                  </button>
-                </li>
-              );
-            })}
-          </ol>
-        )}
         <div className="notebook-buttons">
           <button
             type="button"
@@ -258,20 +212,34 @@ export function SquadPlanning({ snapshot, club }: ViewProps) {
           </label>
           <label>
             Posição
-            <select value={position} onChange={(e) => setPosition(e.target.value)}>
-              <option value="ALL">Todas</option>
+            <Select value={position} onValueChange={setPosition} aria-label="Posição">
+              <Option value="ALL">Todas</Option>
               {[
-                ...new Set(
-                  club.playerIds
-                    .map((id) => snapshot.state.players.byId[id]?.position)
-                    .filter(Boolean),
-                ),
-              ].map((p) => (
-                <option key={p} value={p}>
-                  {positionLabel(p!)}
-                </option>
-              ))}
-            </select>
+                'GK',
+                'CB',
+                'RB',
+                'LB',
+                'RWB',
+                'LWB',
+                'DM',
+                'CM',
+                'RM',
+                'LM',
+                'AM',
+                'RW',
+                'LW',
+                'SS',
+                'ST',
+              ]
+                .filter((p) =>
+                  club.playerIds.some((id) => snapshot.state.players.byId[id]?.position === p),
+                )
+                .map((p) => (
+                  <Option key={p} value={p}>
+                    {positionLabel(p)}
+                  </Option>
+                ))}
+            </Select>
           </label>
         </div>
         <div className="squad-office-players">
@@ -293,12 +261,51 @@ export function SquadPlanning({ snapshot, club }: ViewProps) {
                       <button
                         type="button"
                         key={action.id}
-                        disabled={locked}
+                        disabled={
+                          locked ||
+                          (action.id === 'effects' &&
+                            !temporaryModifiers(preview.state, player).length) ||
+                          (action.id === 'renew' &&
+                            Boolean(renewalTerms(preview.state, player).reason))
+                        }
                         aria-haspopup="dialog"
                         onClick={() => setMobileAction({ playerId: player.id, section: action.id })}
                       >
                         {action.label}
-                        <span aria-hidden="true">↗</span>
+                        {action.id === 'policy' &&
+                          snapshot.state.management?.offers?.some(
+                            (offer) =>
+                              offer.playerId === player.id &&
+                              offer.sellerId === club.id &&
+                              offer.status === 'pending',
+                          ) && (
+                            <span
+                              className="transfer-alert-dot"
+                              aria-label="Proposta recebida para este jogador"
+                            />
+                          )}
+                        <svg
+                          viewBox="0 0 24 24"
+                          width="26"
+                          height="26"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.8"
+                          aria-hidden="true"
+                        >
+                          {action.id === 'effects' ? (
+                            <>
+                              <path d="M12 3 4 6v6c0 5 8 9 8 9s8-4 8-9V6Z" />
+                              <path d="m8 12 3 3 5-6" />
+                            </>
+                          ) : action.id === 'policy' ? (
+                            <path d="M4 8h15m-4-4 4 4-4 4M20 16H5m4-4-4 4 4 4" />
+                          ) : (
+                            <>
+                              <path d="M5 3h10l4 4v14H5ZM14 3v5h5M8 12h8M8 16h6" />
+                            </>
+                          )}
+                        </svg>
                       </button>
                     ))}
                   </div>
@@ -321,6 +328,7 @@ export function SquadPlanning({ snapshot, club }: ViewProps) {
       {mobile && mobileAction && preview.state.players.byId[mobileAction.playerId] && (
         <PlayerModal
           className="squad-action-modal"
+          hideClose
           title={`${mobileActions.find((action) => action.id === mobileAction.section)!.label} · ${preview.state.players.byId[mobileAction.playerId]!.name}`}
           onClose={() => setMobileAction(null)}
         >
@@ -333,9 +341,7 @@ export function SquadPlanning({ snapshot, club }: ViewProps) {
             initialSection={mobileAction.section}
             hideTabs
           />
-          <p className="squad-action-modal-note">
-            Suas escolhas ficam na prancheta. O auxiliar só executa quando você autorizar.
-          </p>
+
           <button type="button" className="primary" onClick={() => setMobileAction(null)}>
             Voltar ao elenco
           </button>

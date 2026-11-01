@@ -8,12 +8,14 @@ export function PlayerModal({
   children,
   className = '',
   hideTitle = false,
+  hideClose = false,
 }: {
   title: string;
   onClose: () => void;
   children: ReactNode;
   className?: string;
   hideTitle?: boolean;
+  hideClose?: boolean;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   useEffect(() => {
@@ -29,20 +31,22 @@ export function PlayerModal({
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <button className="close-modal" aria-label="Fechar" onClick={onClose}>
-        <svg
-          width="18"
-          height="18"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          aria-hidden="true"
-        >
-          <path d="m6 6 12 12M18 6 6 18" />
-        </svg>
-      </button>
+      {!hideClose && (
+        <button className="close-modal" aria-label="Fechar" onClick={onClose}>
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            aria-hidden="true"
+          >
+            <path d="m6 6 12 12M18 6 6 18" />
+          </svg>
+        </button>
+      )}
       {!hideTitle && <h2>{title}</h2>}
       {children}
     </dialog>

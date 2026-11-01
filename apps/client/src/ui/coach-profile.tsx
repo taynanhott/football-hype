@@ -1,5 +1,4 @@
-import { COMPETITIONS } from '@football/shared';
-import { CompetitionTrophy } from './competition-trophy';
+import { Select, Option } from './select';
 import type { CoachProfile } from './coach-profile-storage';
 import { PersonAvatar } from './person-avatar';
 import { useState } from 'react';
@@ -10,10 +9,9 @@ export function CoachAvatar({ profile }: { profile: CoachProfile }) {
 export function CoachEditor({
   profile,
   onSave,
-  trophies = [],
 }: {
   profile: CoachProfile;
-  trophies?: readonly { competitionId: string }[];
+
   onSave: (profile: CoachProfile) => void | Promise<void>;
 }) {
   const [draft, setDraft] = useState(profile);
@@ -88,53 +86,53 @@ export function CoachEditor({
         </fieldset>
         <label>
           Cabelo
-          <select value={draft.hair} onChange={(e) => update({ hair: e.target.value })}>
-            <option value="curto">Curto</option>
-            <option value="cacheado">Cacheado</option>
-            <option value="longo">Longo</option>
-            <option value="raspado">Raspado</option>
-            <option value="ondulado">Ondulado</option>
-            <option value="topete">Topete</option>
-            <option value="franja">Franja</option>
-            <option value="moicano">Moicano</option>
-            <option value="trancas">Tranças</option>
-            <option value="coque">Coque</option>
-            <option value="careca">Careca</option>
-          </select>
+          <Select value={draft.hair} onValueChange={(value) => update({ hair: value })}>
+            <Option value="curto">Curto</Option>
+            <Option value="cacheado">Cacheado</Option>
+            <Option value="longo">Longo</Option>
+            <Option value="raspado">Raspado</Option>
+            <Option value="ondulado">Ondulado</Option>
+            <Option value="topete">Topete</Option>
+            <Option value="franja">Franja</Option>
+            <Option value="moicano">Moicano</Option>
+            <Option value="trancas">Tranças</Option>
+            <Option value="coque">Coque</Option>
+            <Option value="careca">Careca</Option>
+          </Select>
         </label>
         <label>
           Barba
-          <select value={draft.beard} onChange={(e) => update({ beard: e.target.value })}>
-            <option value="nenhuma">Sem barba</option>
-            <option value="curta">Curta</option>
-            <option value="cheia">Cheia</option>
-            <option value="bigode">Bigode</option>
-            <option value="cavanhaque">Cavanhaque</option>
-            <option value="longa">Longa</option>
-          </select>
+          <Select value={draft.beard} onValueChange={(value) => update({ beard: value })}>
+            <Option value="nenhuma">Sem barba</Option>
+            <Option value="curta">Curta</Option>
+            <Option value="cheia">Cheia</Option>
+            <Option value="bigode">Bigode</Option>
+            <Option value="cavanhaque">Cavanhaque</Option>
+            <Option value="longa">Longa</Option>
+          </Select>
         </label>
 
         <label>
           Modelo da roupa
-          <select
+          <Select
             value={draft.outfitStyle}
-            onChange={(e) => update({ outfitStyle: e.target.value })}
+            onValueChange={(value) => update({ outfitStyle: value })}
           >
-            <option value="agasalho">Agasalho</option>
-            <option value="polo">Polo</option>
-            <option value="camisa">Camisa listrada</option>
-            <option value="camiseta">Camiseta</option>
-            <option value="terno">Terno com gravata</option>
-          </select>
+            <Option value="agasalho">Agasalho</Option>
+            <Option value="polo">Polo</Option>
+            <Option value="camisa">Camisa listrada</Option>
+            <Option value="camiseta">Camiseta</Option>
+            <Option value="terno">Terno com gravata</Option>
+          </Select>
         </label>
         <label>
           Óculos
-          <select value={draft.glasses} onChange={(e) => update({ glasses: e.target.value })}>
-            <option value="nenhum">Sem óculos</option>
-            <option value="retangular">Retangular</option>
-            <option value="redondo">Redondo</option>
-            <option value="solar">Óculos de sol</option>
-          </select>
+          <Select value={draft.glasses} onValueChange={(value) => update({ glasses: value })}>
+            <Option value="nenhum">Sem óculos</Option>
+            <Option value="retangular">Retangular</Option>
+            <Option value="redondo">Redondo</Option>
+            <Option value="solar">Óculos de sol</Option>
+          </Select>
         </label>
         <fieldset className="coach-colors">
           <legend>Cores e detalhes</legend>
@@ -218,22 +216,6 @@ export function CoachEditor({
         </button>
         <span role="status">{saved ? '✓ Perfil salvo na carreira' : ''}</span>
       </div>
-      <section className="coach-trophy-shelf" aria-label="Troféus do treinador">
-        <h2>Conquistas do treinador</h2>
-        <div className="trophy-gallery trophy-gallery-compact">
-          {COMPETITIONS.filter((rule) => rule.id !== 'pre-libertadores').map((rule) => {
-            const count = trophies.filter((trophy) => trophy.competitionId === rule.id).length;
-            return (
-              <article className="panel trophy-card" data-earned={count > 0} key={rule.id}>
-                <CompetitionTrophy competitionId={rule.id} name={rule.name} />
-                <h2>
-                  <b>{count}x</b> {rule.name}
-                </h2>
-              </article>
-            );
-          })}
-        </div>
-      </section>
     </form>
   );
 }

@@ -335,6 +335,10 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
                     }
                   </span>
                 )}
+                {value === 'Propostas' &&
+                  snapshot.state.management?.offers?.some(
+                    (offer) => offer.sellerId === club.id && offer.status === 'pending',
+                  ) && <span className="transfer-alert-dot" aria-label="Há propostas recebidas" />}
                 {value === 'Propostas' && (
                   <span className="transfer-count">
                     {snapshot.state.management?.offers?.filter(

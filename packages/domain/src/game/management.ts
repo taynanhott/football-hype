@@ -326,11 +326,11 @@ export function tacticalBonus(
 ) {
   const roles: Record<PlayStyle, string[]> = {
     balanced: ['CM', 'CB'],
-    wings: ['LW', 'RW', 'LM', 'RM', 'LB', 'RB'],
+    wings: ['LW', 'RW', 'LM', 'RM', 'LB', 'RB', 'LWB', 'RWB'],
     gegenpress: ['ST', 'CM', 'DM', 'LW', 'RW'],
     'low-block': ['CB', 'DM', 'GK'],
     possession: ['CM', 'DM', 'AM'],
-    counter: ['ST', 'LW', 'RW', 'AM'],
+    counter: ['ST', 'SS', 'LW', 'RW', 'AM'],
   };
   const key = players.filter((p) => roles[style].includes(p.position));
   const quality =
@@ -345,31 +345,49 @@ export function tacticalBonus(
   };
   const matchup =
     (beats[style].includes(opponent) ? 2 : 0) - (beats[opponent].includes(style) ? 2 : 0);
-  const shape =
-    style === 'wings' && ['4-3-3', '3-4-3', '4-2-4'].includes(formation)
-      ? 1
-      : style === 'low-block' && formation === '5-3-2'
-        ? 1
-        : 0;
-  const weakness = style === 'wings' && ['4-3-1-2', '3-4-1-2'].includes(opposingFormation) ? 1 : 0;
   const profile = (shape: Formation) => {
     const slots = FORMATIONS[shape];
+    const count = (roles: string[]) => slots.filter((s) => roles.includes(s.position)).length;
     return {
-      mid: slots.filter((s) => ['CM', 'DM', 'AM'].includes(s.position)).length,
-      attack: slots.filter((s) => ['LW', 'RW', 'ST'].includes(s.position)).length,
-      defense: slots.filter((s) => ['CB', 'LB', 'RB'].includes(s.position)).length,
+      mid: count(['CM', 'DM', 'AM', 'SS']),
+      attack: count(['LW', 'RW', 'ST', 'SS']),
+      defense: count(['CB', 'LB', 'RB', 'LWB', 'RWB']),
+      width: count(['LW', 'RW', 'LM', 'RM', 'LWB', 'RWB']),
+      holding: count(['DM']),
+      creators: count(['AM', 'CM', 'SS']),
     };
   };
   const a = profile(formation),
     b = profile(opposingFormation);
+  const fit = (plan: PlayStyle, p: ReturnType<typeof profile>) => {
+    switch (plan) {
+      case 'balanced':
+        return 1 - Math.abs(p.attack - 3) * 0.25 - Math.abs(p.defense - 4) * 0.25;
+      case 'wings':
+        return p.width * 0.3 - (p.width === 0 ? 0.75 : 0);
+      case 'gegenpress':
+        return (p.attack + p.mid) * 0.2 - (p.defense >= 5 ? 0.5 : 0);
+      case 'low-block':
+        return (p.defense + p.holding) * 0.2 - (p.attack >= 4 ? 0.75 : 0);
+      case 'possession':
+        return (p.mid + p.creators) * 0.15 - (p.mid < 3 ? 0.5 : 0);
+      case 'counter':
+        return p.attack * 0.2 + p.holding * 0.2 - (p.attack < 2 ? 0.5 : 0);
+    }
+  };
+  const shape = fit(style, a) - fit(opponent, b);
+  const weakness =
+    style === 'wings' && b.width === 0 ? 0.75 : opponent === 'wings' && a.width === 0 ? -0.75 : 0;
   const formationMatchup = Math.max(
     -1,
     Math.min(
       1,
       (a.mid * b.attack -
         b.mid * a.attack +
-        (a.attack * b.defense - b.attack * a.defense) +
-        (a.defense * b.mid - b.defense * a.mid)) /
+        a.attack * b.defense -
+        b.attack * a.defense +
+        a.defense * b.mid -
+        b.defense * a.mid) /
         8,
     ),
   );

@@ -35,7 +35,7 @@ const dayKey = (timestamp: number) =>
   }).format(timestamp);
 const drawThemes: Record<string, { label: string; color: string; surface: string; ink: string }> = {
   'copa-brasil': { label: 'Copa do Brasil', color: '#239358', surface: '#e1efdf', ink: '#185134' },
-  libertadores: { label: 'Libertadores', color: '#bd9635', surface: '#f4e9be', ink: '#604918' },
+  libertadores: { label: 'Liberta', color: '#bd9635', surface: '#f4e9be', ink: '#604918' },
   'pre-libertadores': {
     label: 'Pré-Liberta',
     color: '#8c7445',
@@ -67,6 +67,8 @@ export function ClubCalendar({ state, clubId }: { state: WorldState; clubId: str
   const selectedDraw = state.competitionDraws?.find((draw) => draw.id === selectedDrawId);
   const today = dayKey(state.lastProcessedAt);
   const [selectedGame, setSelectedGame] = useState<Fixture | null>(null);
+  const swipeStart = useRef<{ x: number; y: number } | null>(null);
+  const suppressClickUntil = useRef(0);
   const [viewedMonth, setViewedMonth] = useState<{ day: string; date: Date } | null>(null);
   const month = viewedMonth?.day === today ? viewedMonth.date : new Date(`${today}T12:00:00Z`);
   const fixtures = clubCalendarFixtures(state, clubId);
@@ -81,15 +83,42 @@ export function ClubCalendar({ state, clubId }: { state: WorldState; clubId: str
     setViewedMonth({ day: today, date: new Date(Date.UTC(year, monthIndex + delta, 1, 12)) });
   return (
     <>
-      <section className="club-calendar" aria-labelledby="club-calendar-title">
+      <section
+        className="club-calendar"
+        aria-labelledby="club-calendar-title"
+        onTouchStart={(event) => {
+          const touch = event.touches[0];
+          swipeStart.current =
+            event.touches.length === 1 && touch ? { x: touch.clientX, y: touch.clientY } : null;
+        }}
+        onTouchCancel={() => {
+          swipeStart.current = null;
+        }}
+        onTouchEnd={(event) => {
+          const start = swipeStart.current,
+            touch = event.changedTouches[0];
+          swipeStart.current = null;
+          if (!start || !touch || event.touches.length) return;
+          const dx = touch.clientX - start.x,
+            dy = touch.clientY - start.y;
+          if (Math.abs(dx) < 45 || Math.abs(dx) <= Math.abs(dy) * 1.4) return;
+          suppressClickUntil.current = Date.now() + 400;
+          moveMonth(dx < 0 ? 1 : -1);
+        }}
+        onClickCapture={(event) => {
+          if (Date.now() < suppressClickUntil.current) {
+            event.preventDefault();
+            event.stopPropagation();
+          }
+        }}
+      >
         <header className="club-calendar-heading">
           <div>
             <h2 id="club-calendar-title">
-              {new Intl.DateTimeFormat('pt-BR', {
-                month: 'long',
-                year: 'numeric',
-                timeZone: 'UTC',
-              }).format(month)}
+              <span className="calendar-title-month">
+                {new Intl.DateTimeFormat('pt-BR', { month: 'long', timeZone: 'UTC' }).format(month)}
+              </span>{' '}
+              <span className="calendar-title-year">de {year}</span>
             </h2>
           </div>
           <button className="club-calendar-today" onClick={() => setViewedMonth(null)}>
@@ -193,7 +222,9 @@ export function ClubCalendar({ state, clubId }: { state: WorldState; clubId: str
                       >
                         <Icon name="trophy" size={14} />
                         <strong>
-                          {COMPETITIONS.find((rule) => rule.id === game.competitionId)?.name}
+                          {game.competitionId === 'libertadores'
+                            ? 'Liberta'
+                            : COMPETITIONS.find((rule) => rule.id === game.competitionId)?.name}
                         </strong>
                         <small>Adversário a definir</small>
                         <small>{game.label}</small>
@@ -215,10 +246,11 @@ export function ClubCalendar({ state, clubId }: { state: WorldState; clubId: str
                       title={`Sorteio · ${COMPETITIONS.find((r) => r.id === draw.competitionId)?.name ?? draw.competitionId}`}
                       onClick={() => setSelectedDrawId(draw.id)}
                     >
-                      <Icon name="trophy" size={12} />
                       <span className="calendar-draw-label">
-                        <small>Sorteio</small>
-                        <strong>
+                        <small>
+                          <Icon name="trophy" size={10} /> Sorteio
+                        </small>
+                        <strong className="calendar-draw-name">
                           {drawThemes[draw.competitionId]?.label ??
                             COMPETITIONS.find((r) => r.id === draw.competitionId)?.name ??
                             draw.competitionId}
@@ -260,18 +292,24 @@ export function ClubCalendar({ state, clubId }: { state: WorldState; clubId: str
                             {...(opponent?.crestUrl ? { url: opponent.crestUrl } : {})}
                             size={14}
                           />
-                          <strong>
+                          <strong className="calendar-draw-name">
                             {matches.length > 1 ? (
                               <span>{matches.length} jogos ›</span>
                             ) : (
                               <>
-                                {home ? 'Casa' : 'Fora'} <span>{opponent?.abbreviation}</span>
+                                <span className="calendar-match-location">
+                                  {home ? 'Casa' : 'Fora'}{' '}
+                                </span>
+                                <span>{opponent?.abbreviation ?? 'TBD'}</span>
                               </>
                             )}
                           </strong>
                           <small>{competition?.name ?? fixture.competitionId}</small>
-                          {result && matches.length === 1 && (
-                            <b>
+                          {result && (
+                            <b
+                              className="club-calendar-score"
+                              aria-label={`Placar: ${result.homeGoals} a ${result.awayGoals}`}
+                            >
                               {result.homeGoals}–{result.awayGoals}
                             </b>
                           )}

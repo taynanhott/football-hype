@@ -21,6 +21,9 @@ const RELATED = [
   ['LM', 'LW'],
   ['RM', 'RW'],
   ['LW', 'RW', 'ST'],
+  ['SS', 'ST', 'AM'],
+  ['LWB', 'LB', 'LM', 'LW'],
+  ['RWB', 'RB', 'RM', 'RW'],
 ];
 export function positionFactor(natural: Position, assigned: Position): number {
   if (natural === assigned) return 1;

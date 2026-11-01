@@ -11,6 +11,9 @@ const labels: Record<string, string> = {
   ST: 'CA',
   LM: 'ME',
   RM: 'MD',
+  SS: 'SA',
+  LWB: 'ADE',
+  RWB: 'ADD',
 };
 export function positionLabel(position: string | undefined): string {
   return position ? (labels[position] ?? position) : '—';

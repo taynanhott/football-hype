@@ -170,6 +170,7 @@ function AuthenticatedLobby({ user }: { user: { uid: string; name: string } }) {
     }[];
   } | null>(null);
   const [error, setError] = useState('');
+  const [loadingSaveId, setLoadingSaveId] = useState<string | null>(null);
   const connect = useGameStore((state) => state.connect);
   const busy = useGameStore((state) => state.busy);
   const queryClient = useQueryClient();
@@ -394,11 +395,19 @@ function AuthenticatedLobby({ user }: { user: { uid: string; name: string } }) {
           {error}
         </p>
       )}
-      {leagues.isLoading && (
-        <div className="career-loading" role="status" aria-label="Carregando suas carreiras">
+      {(leagues.isLoading || (busy && loadingSaveId !== null)) && (
+        <div
+          className="career-loading career-loading-screen"
+          role="status"
+          aria-live="polite"
+          aria-label="Carregando carreira"
+        >
           <span className="career-loading-ball" aria-hidden="true">
             <Icon name="ball" size={36} />
           </span>
+          <strong>
+            {leagues.isLoading ? 'Carregando suas carreiras…' : 'Carregando carreira…'}
+          </strong>
         </div>
       )}
       {leagues.error && (
@@ -415,7 +424,7 @@ function AuthenticatedLobby({ user }: { user: { uid: string; name: string } }) {
           </button>
         </p>
       )}
-      {!creating && !leagues.isLoading && !(joining && invitation) && (
+      {!creating && !(joining && invitation) && (
         <section className="career-saves">
           {leagues.data?.map((league) => (
             <article className="career-save" key={league.id}>
@@ -452,7 +461,11 @@ function AuthenticatedLobby({ user }: { user: { uid: string; name: string } }) {
               <button
                 className="career-save-open"
                 disabled={busy}
-                onClick={() => void connect(league.id)}
+                aria-busy={busy && loadingSaveId === league.id}
+                onClick={() => {
+                  setLoadingSaveId(league.id);
+                  void connect(league.id);
+                }}
               >
                 <span className="career-save-mode">
                   {league.mode === 'offline' ? 'Carreira solo' : 'Liga multiplayer'}

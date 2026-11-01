@@ -11,6 +11,8 @@ import {
   GAMEPLAY,
   clubKit,
   formationSchema,
+  FORMATION_LINKS,
+  FORMATION_LABELS,
   type PlayStyle,
   type Formation,
   type Lineup,
@@ -140,13 +142,8 @@ export function LineupEditor({ snapshot, club, center }: ViewProps) {
     starters,
     style,
   );
-  const formationRows = [...new Set(resolvedEntries.map((entry) => entry.y))].sort((a, b) => b - a);
   const fieldHeight = 620;
-  const rowY = (index: number) => 88 - (index / Math.max(1, formationRows.length - 1)) * 74;
-  const entries = resolvedEntries.map((entry) => ({
-    ...entry,
-    y: rowY(formationRows.indexOf(entry.y)),
-  }));
+  const entries = resolvedEntries;
   const pitchTop = 3;
   const pitchBottom = 97;
   const pitchMiddle = (pitchTop + pitchBottom) / 2;
@@ -188,9 +185,9 @@ export function LineupEditor({ snapshot, club, center }: ViewProps) {
     return () => clearTimeout(timer);
   }, [pending, busy, connected, error, draftKey, ids.length, send]);
   const sectors = [
-    { name: 'Ataque', positions: ['LW', 'RW', 'ST'] },
+    { name: 'Ataque', positions: ['LW', 'RW', 'SS', 'ST'] },
     { name: 'Meio-campo', positions: ['DM', 'CM', 'AM', 'LM', 'RM'] },
-    { name: 'Defesa', positions: ['GK', 'CB', 'LB', 'RB'] },
+    { name: 'Defesa', positions: ['GK', 'CB', 'LB', 'RB', 'LWB', 'RWB'] },
   ].map((sector) => {
     const members = entries.filter((entry) => sector.positions.includes(entry.position));
     return {
@@ -292,7 +289,7 @@ export function LineupEditor({ snapshot, club, center }: ViewProps) {
                 aria-hidden="true"
               >
                 <path
-                  d={`M8 ${pitchTop}H92V${pitchBottom}H8ZM8 ${pitchMiddle}H92M30 ${pitchTop}V${pitchTop + penaltyDepth}H70V${pitchTop}M30 ${pitchBottom}V${pitchBottom - penaltyDepth}H70V${pitchBottom}`}
+                  d={`M3 ${pitchTop}H97V${pitchBottom}H3ZM3 ${pitchMiddle}H97M30 ${pitchTop}V${pitchTop + penaltyDepth}H70V${pitchTop}M30 ${pitchBottom}V${pitchBottom - penaltyDepth}H70V${pitchBottom}`}
                   fill="none"
                   stroke="#e6f0ce55"
                   strokeWidth=".4"
@@ -306,29 +303,29 @@ export function LineupEditor({ snapshot, club, center }: ViewProps) {
                   stroke="#e6f0ce55"
                   strokeWidth=".4"
                 />
-                {entries.flatMap((entry, index) =>
-                  entries
-                    .slice(index + 1)
-                    .filter((other) => Math.hypot(other.x - entry.x, other.y - entry.y) < 37)
-                    .map((other) => (
-                      <line
-                        key={`${entry.x}-${entry.y}-${other.x}-${other.y}`}
-                        x1={entry.x}
-                        y1={entry.y}
-                        x2={other.x}
-                        y2={other.y}
-                        stroke={
-                          Math.min(entry.chemistry, other.chemistry) >= 80
-                            ? '#a5d96c'
-                            : Math.min(entry.chemistry, other.chemistry) >= 40
-                              ? '#dbc45b'
-                              : '#bc7961'
-                        }
-                        strokeWidth=".5"
-                        opacity=".7"
-                      />
-                    )),
-                )}
+                {FORMATION_LINKS[formation].map(([from, to]) => {
+                  const entry = entries[from]!;
+                  const other = entries[to]!;
+                  return (
+                    <line
+                      key={from + '-' + to}
+                      x1={entry.x}
+                      y1={entry.y}
+                      x2={other.x}
+                      y2={other.y}
+                      stroke={
+                        Math.min(entry.chemistry, other.chemistry) >= 80
+                          ? '#a5d96c'
+                          : Math.min(entry.chemistry, other.chemistry) >= 40
+                            ? '#dbc45b'
+                            : '#bc7961'
+                      }
+                      strokeDasharray={entry.factor < 1 || other.factor < 1 ? '1.2 .8' : undefined}
+                      strokeWidth=".5"
+                      opacity=".8"
+                    />
+                  );
+                })}
               </svg>
               {entries.map((entry, index) => (
                 <button
@@ -451,7 +448,9 @@ export function LineupEditor({ snapshot, club, center }: ViewProps) {
                 onValueChange={(value) => changeFormation(formationSchema.parse(value))}
               >
                 {formationSchema.options.map((name) => (
-                  <Option key={name}>{name}</Option>
+                  <Option key={name} value={name}>
+                    {FORMATION_LABELS[name]}
+                  </Option>
                 ))}
               </Select>
             </label>

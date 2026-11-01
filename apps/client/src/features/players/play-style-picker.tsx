@@ -37,7 +37,7 @@ const STYLES: { id: PlayStyle; icon: string; description: string }[] = [
     id: 'low-block',
     icon: 'shield',
     description:
-      'Zagueiros, volantes e goleiro com bom overall e condição física fortalecem a defesa. Combina com 5-3-2 e leva vantagem contra gegenpress.',
+      'Zagueiros, volantes e goleiro com bom overall e condição física fortalecem a defesa. Combina com 5-3-2 e 5-4-1 e leva vantagem contra gegenpress.',
   },
 ];
 export function PlayStylePicker({

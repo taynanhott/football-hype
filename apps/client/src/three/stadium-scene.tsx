@@ -10,6 +10,7 @@ import {
   useRef,
   useState,
   useCallback,
+  useSyncExternalStore,
   useEffect,
   type ReactNode,
 } from 'react';
@@ -242,6 +243,7 @@ function StadiumWorld({
   children,
   matchView,
   showNeighborhood = true,
+  cameraLocked = false,
   onSelectSector,
   homeKit,
   awayKit,
@@ -254,6 +256,7 @@ function StadiumWorld({
   children?: ReactNode;
   matchView?: boolean;
   showNeighborhood?: boolean;
+  cameraLocked?: boolean;
   homeKit?: { primary: string; secondary: string };
   awayKit?: { primary: string; secondary: string };
 }) {
@@ -355,12 +358,13 @@ function StadiumWorld({
       />
       <OrbitControls
         makeDefault
+        enabled={!cameraLocked}
         enablePan={false}
         minDistance={matchView ? 55 : 90}
         maxDistance={focus === 'training' ? 400 : 360}
         target={focus === 'training' ? [250, 0, 0] : matchView ? [0, 0, 0] : [10, 0, 0]}
         maxPolarAngle={Math.PI / 2.15}
-        autoRotate={!matchView}
+        autoRotate={!matchView && !cameraLocked}
         autoRotateSpeed={0.2}
       />
     </>
@@ -382,6 +386,14 @@ class SceneBoundary extends Component<{ children: ReactNode }, { failed: boolean
     );
   }
 }
+const cameraMobileQuery = '(max-width: 760px)';
+const cameraMobileSnapshot = () => window.matchMedia(cameraMobileQuery).matches;
+const subscribeCameraMobile = (change: () => void) => {
+  const media = window.matchMedia(cameraMobileQuery);
+  media.addEventListener('change', change);
+  return () => media.removeEventListener('change', change);
+};
+
 export default function StadiumScene(props: {
   stadium: StadiumSnapshot;
   center: TrainingCenterSnapshot;
@@ -394,10 +406,28 @@ export default function StadiumScene(props: {
   homeKit?: { primary: string; secondary: string };
   awayKit?: { primary: string; secondary: string };
 }) {
+  const mobile = useSyncExternalStore(subscribeCameraMobile, cameraMobileSnapshot, () => false);
   const [loaded, setLoaded] = useState(false);
   const ready = useCallback(() => setLoaded(true), []);
   return (
-    <div className="scene-root" data-scene-ready={loaded}>
+    <div className="scene-root" data-scene-ready={loaded} data-camera-locked={mobile}>
+      {mobile && <div className="scene-scroll-surface" aria-hidden="true" />}
+      {mobile && (
+        <span className="scene-camera-lock" role="img" aria-label="Câmera travada no celular">
+          <svg
+            viewBox="0 0 24 24"
+            width="19"
+            height="19"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            aria-hidden="true"
+          >
+            <rect x="5" y="10" width="14" height="11" rx="2" />
+            <path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3" />
+          </svg>
+        </span>
+      )}
       <SceneBoundary>
         <Canvas
           shadows
@@ -422,7 +452,7 @@ export default function StadiumScene(props: {
           }
         >
           <Suspense fallback={null}>
-            <StadiumWorld {...props} occupancy={props.occupancy ?? 0.85} />
+            <StadiumWorld {...props} cameraLocked={mobile} occupancy={props.occupancy ?? 0.85} />
             <SceneReady ready={ready} />
           </Suspense>
         </Canvas>

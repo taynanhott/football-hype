@@ -1,10 +1,23 @@
 import { GeneratedPerson } from '../../ui/person-avatar';
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type CSSProperties,
+} from 'react';
 import { COMPETITIONS, type WorldState } from '@football/shared';
 import { openModalPreservingScroll } from '../../ui/modal-scroll';
 import { PixelBadge } from '../../ui/pixel-badge';
 import { dateTime } from '../../ui/format';
 import { Icon } from '../../ui/icons';
+const mobileDrawSnapshot = () => window.matchMedia('(max-width: 620px)').matches;
+const subscribeMobileDraw = (change: () => void) => {
+  const media = window.matchMedia('(max-width: 620px)');
+  media.addEventListener('change', change);
+  return () => media.removeEventListener('change', change);
+};
 export type CompetitionDraw = NonNullable<WorldState['competitionDraws']>[number];
 function DrawAvatar({ player = false }: { player?: boolean }) {
   return (
@@ -24,6 +37,7 @@ export function CompetitionDrawDetails({
   draw: CompetitionDraw;
   onClose: () => void;
 }) {
+  const mobile = useSyncExternalStore(subscribeMobileDraw, mobileDrawSnapshot, () => false);
   const dialog = useRef<HTMLDialogElement>(null);
   useEffect(() => openModalPreservingScroll(dialog.current), []);
   const completed = draw.completedAt !== undefined;
@@ -202,7 +216,9 @@ export function CompetitionDrawDetails({
       <div className="ceremony-results">
         {!completed ? (
           <div className="ceremony-entrants">
-            {draw.participantIds.slice(page * 8, page * 8 + 8).map((id) => club(id))}
+            {draw.participantIds
+              .slice(mobile ? 0 : page * 8, mobile ? undefined : page * 8 + 8)
+              .map((id) => club(id))}
           </div>
         ) : draw.kind === 'groups' ? (
           <div className="ceremony-groups">
@@ -225,44 +241,46 @@ export function CompetitionDrawDetails({
           </div>
         ) : (
           <div className="ceremony-ties">
-            {entries.slice(page * 4, page * 4 + 4).map((e, index) => (
-              <div className="ceremony-tie" key={e.id}>
-                <small>{String(page * 4 + index + 1).padStart(2, '0')}</small>
-                {page * 4 + index < revealed ? (
-                  <>
-                    <div className="ceremony-tie-home">{club(e.homeId)}</div>
-                    <b className="ceremony-tie-versus" aria-label="contra">
-                      <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
-                        <path
-                          d="m4 4 8 8M12 4l-8 8"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                        />
-                      </svg>
-                    </b>
-                    <div className="ceremony-tie-away">{e.awayId && club(e.awayId)}</div>
-                  </>
-                ) : (
-                  <>
-                    <span className="ceremony-placeholder">A definir</span>
-                    <b className="ceremony-tie-versus" aria-label="contra">
-                      <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
-                        <path
-                          d="m4 4 8 8M12 4l-8 8"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                        />
-                      </svg>
-                    </b>
-                    <span className="ceremony-placeholder">A definir</span>
-                  </>
-                )}
-              </div>
-            ))}
+            {entries
+              .slice(mobile ? 0 : page * 4, mobile ? undefined : page * 4 + 4)
+              .map((e, index) => (
+                <div className="ceremony-tie" key={e.id}>
+                  <small>{String((mobile ? 0 : page * 4) + index + 1).padStart(2, '0')}</small>
+                  {(mobile ? 0 : page * 4) + index < revealed ? (
+                    <>
+                      <div className="ceremony-tie-home">{club(e.homeId)}</div>
+                      <b className="ceremony-tie-versus" aria-label="contra">
+                        <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
+                          <path
+                            d="m4 4 8 8M12 4l-8 8"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                          />
+                        </svg>
+                      </b>
+                      <div className="ceremony-tie-away">{e.awayId && club(e.awayId)}</div>
+                    </>
+                  ) : (
+                    <>
+                      <span className="ceremony-placeholder">A definir</span>
+                      <b className="ceremony-tie-versus" aria-label="contra">
+                        <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
+                          <path
+                            d="m4 4 8 8M12 4l-8 8"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                          />
+                        </svg>
+                      </b>
+                      <span className="ceremony-placeholder">A definir</span>
+                    </>
+                  )}
+                </div>
+              ))}
           </div>
         )}
       </div>
@@ -272,7 +290,7 @@ export function CompetitionDrawDetails({
             ? `${Math.max(0, draw.participantIds.length - (draw.kind === 'groups' ? revealed : revealed * 2))} clubes no globo`
             : 'Aguardando a data do sorteio'}
         </span>
-        {completed && draw.kind === 'groups' ? (
+        {mobile ? null : completed && draw.kind === 'groups' ? (
           <nav aria-label="Grupos do sorteio">
             <button
               disabled={groupPage === 0}

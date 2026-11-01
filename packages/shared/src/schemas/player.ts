@@ -27,6 +27,9 @@ export const positionSchema = z.enum([
   'ST',
   'LM',
   'RM',
+  'SS',
+  'LWB',
+  'RWB',
 ]);
 const colorSchema = z.string().regex(/^#[0-9a-fA-F]{6}$/);
 

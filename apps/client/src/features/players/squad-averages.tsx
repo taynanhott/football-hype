@@ -8,7 +8,7 @@ export function SquadAverages({ state, club }: { state: WorldState; club: ClubSn
     { label: 'Geral', positions: null },
     { label: 'Ataque', positions: ['LW', 'RW', 'SS', 'ST'] },
     { label: 'Meio', positions: ['DM', 'CM', 'RM', 'LM', 'AM'] },
-    { label: 'Defesa', positions: ['CB', 'RB', 'LB'] },
+    { label: 'Defesa', positions: ['CB', 'RB', 'LB', 'LWB', 'RWB'] },
     { label: 'Goleiros', positions: ['GK'] },
   ];
   return (

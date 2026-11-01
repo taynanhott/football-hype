@@ -1,6 +1,7 @@
 import { OpponentAdvice } from '../competitions/opponent-advice';
 import {
   formationSchema,
+  FORMATION_LABELS,
   playStyleSchema,
   type WorldState,
   type Formation,
@@ -63,7 +64,7 @@ export function TacticalAnalysis({
       <div className="tactical-analysis-selection">
         <small className="tactical-current-label">Tática atual</small>
         <Icon name="pitch" size={28} />
-        <strong>{formation}</strong>
+        <strong>{FORMATION_LABELS[formation]}</strong>
         <span>{STYLE_LABELS[style]}</span>
       </div>
       <div className="tactical-analysis-columns">
@@ -85,7 +86,7 @@ export function TacticalAnalysis({
                   <section className="tactical-analysis-scheme" key={scheme} aria-label={scheme}>
                     <h4>
                       <Icon name="pitch" size={16} />
-                      {scheme}
+                      {FORMATION_LABELS[scheme]}
                     </h4>
                     <ul>
                       {styles.map((row) => (
