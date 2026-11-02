@@ -1,4 +1,5 @@
 import { positionLabel } from '../../ui/position-label';
+import { layoutLineupCards } from '../players/lineup-card-layout';
 import { memo, type CSSProperties } from 'react';
 import {
   COMPETITIONS,
@@ -295,7 +296,9 @@ export const PlayerRatings = memo(
               state.players.byId[id] ? [state.players.byId[id]!] : [],
             );
             const plan = result.tacticalPlans?.[side];
-            const slots = plan ? FORMATIONS[plan.formation] : undefined;
+            const slots = plan
+              ? layoutLineupCards(FORMATIONS[plan.formation], 330, 480, 61.2, 82.8, plan.formation)
+              : undefined;
             const groups = slots
               ? [...new Set(slots.map((slot) => slot.y))].map((y) =>
                   slots.flatMap((slot, index) => {

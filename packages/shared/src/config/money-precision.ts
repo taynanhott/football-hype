@@ -9,8 +9,13 @@ export function ceilMoney(cents: number, step: number = MONEY_STEPS.general): nu
 }
 
 export function formatMoney(cents: number): string {
+  if (Math.abs(cents) < 100000) {
+    return (cents / 100).toLocaleString('pt-BR', {
+      maximumFractionDigits: 2,
+    });
+  }
   return `${(cents / 100000).toLocaleString('pt-BR', {
-    minimumFractionDigits: 1,
+    minimumFractionDigits: 0,
     maximumFractionDigits: 1,
   })} K`;
 }

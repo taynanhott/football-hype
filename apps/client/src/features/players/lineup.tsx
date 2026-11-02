@@ -8,7 +8,7 @@ import { positionLabel } from '../../ui/position-label';
 import { Select, Option } from '../../ui/select';
 import { PlayerCard } from './player-card';
 import { Overall } from './overall';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import {
   GAMEPLAY,
   clubKit,
@@ -35,11 +35,48 @@ import { Portrait } from './pixel-portrait';
 import { PlayerModal } from './player-modal';
 import { LineupPresets } from './lineup-presets';
 import { MatchBench } from './match-bench';
+import { layoutLineupCards } from './lineup-card-layout';
+import { cardPlayerName } from './card-player-name';
+import { clubAvailabilityAt } from './player-availability';
 
+const mobileLineupQuery = '(max-width: 760px)';
+const mobileLineupSnapshot = () => window.matchMedia(mobileLineupQuery).matches;
+const subscribeMobileLineup = (change: () => void) => {
+  const media = window.matchMedia(mobileLineupQuery);
+  media.addEventListener('change', change);
+  return () => media.removeEventListener('change', change);
+};
 const emptyInstructions: MatchInstructions = { substitutions: [], protected: [], situations: [] };
 
 export function LineupEditor({ snapshot, club, center }: ViewProps) {
+  const mobile = useSyncExternalStore(subscribeMobileLineup, mobileLineupSnapshot, () => false);
+  const pitchRef = useRef<HTMLDivElement>(null);
+  const [pitchSize, setPitchSize] = useState({
+    width: 300,
+    height: 480,
+    cardWidth: 61.2,
+    cardHeight: 93.6,
+  });
+  useEffect(() => {
+    const pitch = pitchRef.current;
+    if (!pitch) return;
+    const measure = () => {
+      const card = pitch.querySelector('.tactics-player')?.getBoundingClientRect();
+      if (!card) return;
+      setPitchSize({
+        width: pitch.clientWidth,
+        height: pitch.clientHeight,
+        cardWidth: card.width,
+        cardHeight: card.height,
+      });
+    };
+    const observer = new ResizeObserver(measure);
+    observer.observe(pitch);
+    measure();
+    return () => observer.disconnect();
+  }, []);
   const state = snapshot.state;
+  const availabilityAt = clubAvailabilityAt(state, club);
   const [analysisOpen, setAnalysisOpen] = useState(false);
   const [formation, setFormation] = useState<Formation>(
     state.tactics[club.id]?.formation ?? '4-3-3',
@@ -50,8 +87,8 @@ export function LineupEditor({ snapshot, club, center }: ViewProps) {
     resolveBench(
       state,
       club,
-      state.nextScheduledAt,
-      resolveLineup(state, club, state.nextScheduledAt).flatMap((entry) =>
+      availabilityAt,
+      resolveLineup(state, club, availabilityAt).flatMap((entry) =>
         entry.player ? [entry.player.id] : [],
       ),
     ),
@@ -144,31 +181,21 @@ export function LineupEditor({ snapshot, club, center }: ViewProps) {
   const resolvedEntries = resolveLineup(
     state,
     club,
-    state.nextScheduledAt,
+    availabilityAt,
     state.players.byId,
     formation,
     starters,
     style,
   );
   const fieldHeight = 620;
-  const upperRows = [
-    ...new Set(resolvedEntries.map((entry) => entry.y).filter((y) => y <= 60)),
-  ].sort((a, b) => a - b);
-  const widestGap = upperRows.slice(1).reduce(
-    (largest, y, index) => {
-      const previous = upperRows[index]!;
-      return y - previous > largest.size ? { before: previous, size: y - previous } : largest;
-    },
-    { before: -1, size: 0 },
+  const entries = layoutLineupCards(
+    resolvedEntries,
+    pitchSize.width,
+    pitchSize.height,
+    pitchSize.cardWidth,
+    pitchSize.cardHeight,
+    formation,
   );
-  const forwardShift = Math.min(6, Math.max(0, widestGap.size - 22));
-  const entries = resolvedEntries.map((entry) => {
-    if (entry.position === 'CB' && entry.x === 50) return { ...entry, y: Math.min(entry.y, 74) };
-    if (entry.position === 'SS' && entry.x === 50) return { ...entry, y: Math.max(entry.y, 30) };
-    if (formation === '3-2-4-1' && entry.position === 'DM') return { ...entry, y: 59 };
-    if (entry.y <= widestGap.before) return { ...entry, y: entry.y + forwardShift };
-    return entry;
-  });
   const pitchTop = 3;
   const pitchBottom = 97;
   const pitchMiddle = (pitchTop + pitchBottom) / 2;
@@ -179,9 +206,7 @@ export function LineupEditor({ snapshot, club, center }: ViewProps) {
     return Math.max(1, overall - penalty);
   };
   const ids = entries.flatMap((entry) => (entry.player ? [entry.player.id] : []));
-  const reserves = bench.filter(
-    (id) => !ids.includes(id) && club.playerIds.includes(id) && medicallyAvailable(state, id),
-  );
+  const reserves = resolveBench(state, club, availabilityAt, ids, bench);
   const activeInstructions = {
     ...instructions,
     substitutions: instructions.substitutions.filter(
@@ -274,7 +299,7 @@ export function LineupEditor({ snapshot, club, center }: ViewProps) {
       resolveLineup(
         state,
         club,
-        state.nextScheduledAt,
+        availabilityAt,
         ids.length === 11 ? pool : state.players.byId,
         value,
         [],
@@ -295,6 +320,49 @@ export function LineupEditor({ snapshot, club, center }: ViewProps) {
     setDirty(true);
     setSelectionOpen(false);
   }
+  const formationControl = (
+    <Select
+      aria-label="Formação"
+      className="formation-select"
+      menuMinWidth={240}
+      value={formation}
+      onValueChange={(value) => changeFormation(formationSchema.parse(value))}
+    >
+      {formationSchema.options.map((name) => (
+        <Option key={name} value={name}>
+          <span className="match-option-content">
+            <FormationIcon formation={name} />
+            <span>{FORMATION_LABELS[name]}</span>
+          </span>
+        </Option>
+      ))}
+    </Select>
+  );
+  const tacticalControls = (
+    <>
+      {' '}
+      <PlayStylePicker
+        value={style}
+        onChange={(value) => {
+          setStyle(value);
+          setDirty(true);
+        }}
+      />
+      <button className="tactical-analysis-button" onClick={() => setAnalysisOpen(true)}>
+        Análise tática
+      </button>
+      {analysisOpen && (
+        <TacticalAnalysis
+          state={state}
+          clubId={club.id}
+          formation={formation}
+          style={style}
+          players={entries.flatMap((entry) => (entry.player ? [entry.player] : []))}
+          onClose={() => setAnalysisOpen(false)}
+        />
+      )}
+    </>
+  );
   return (
     <div className="lineup-editor">
       {error && pending && (
@@ -328,12 +396,12 @@ export function LineupEditor({ snapshot, club, center }: ViewProps) {
           const loadedIds = resolveLineup(
             state,
             club,
-            state.nextScheduledAt,
+            availabilityAt,
             state.players.byId,
             plan.formation,
             plan.starters,
           ).flatMap((entry) => (entry.player ? [entry.player.id] : []));
-          setBench(resolveBench(state, club, state.nextScheduledAt, loadedIds, plan.bench));
+          setBench(resolveBench(state, club, availabilityAt, loadedIds, plan.bench));
           setDirty(true);
           lastAttempt.current = '';
           useGameStore.getState().clearError();
@@ -351,8 +419,9 @@ export function LineupEditor({ snapshot, club, center }: ViewProps) {
                 </div>
               </div>
             </div>
+            {mobile && <div className="lineup-mobile-formation">{formationControl}</div>}
             <div className="tactics-scroll">
-              <div className="tactics-field" style={{ height: fieldHeight }}>
+              <div ref={pitchRef} className="tactics-field" style={{ height: fieldHeight }}>
                 <svg
                   className="tactics-lines"
                   viewBox="0 0 100 100"
@@ -433,7 +502,11 @@ export function LineupEditor({ snapshot, club, center }: ViewProps) {
                             : 'diamond'
                     }
                     className={`tactics-player ${selected === index ? 'selected' : ''} ${entry.factor < 1 ? 'out-of-position' : ''}`}
-                    style={{ left: `${entry.x}%`, top: `${entry.y}%` }}
+                    style={{
+                      left: `${entry.x}%`,
+                      top: `${entry.y}%`,
+                      zIndex: Math.round(entry.y * 10),
+                    }}
                     aria-label={`Posição ${index + 1} ${positionLabel(entry.position)}: ${entry.player?.name ?? 'Vazia'}`}
                     aria-pressed={selected === index}
                     onClick={() => {
@@ -456,17 +529,23 @@ export function LineupEditor({ snapshot, club, center }: ViewProps) {
                       <small>{positionLabel(entry.position)}</small>
                     </span>
                     {entry.player && <Portrait player={entry.player} />}
-                    <strong>{entry.player?.name ?? 'Sem atleta'}</strong>
+                    <strong title={entry.player?.name}>
+                      {entry.player ? cardPlayerName(entry.player.name) : 'Sem atleta'}
+                    </strong>
                     <span
                       className="chemistry-meter"
                       aria-label={`Condicionamento físico ${Math.round(entry.player?.fitness ?? 0)}%`}
                     >
                       <i style={{ width: `${entry.player?.fitness ?? 0}%` }} />
+                      <span>{Math.round(entry.player?.fitness ?? 0)}% COND</span>
                     </span>
                   </button>
                 ))}
               </div>
             </div>
+            {mobile && (
+              <div className="tactics-clipboard lineup-integrated-tactics">{tacticalControls}</div>
+            )}
             <MatchBench
               state={state}
               club={club}
@@ -531,50 +610,15 @@ export function LineupEditor({ snapshot, club, center }: ViewProps) {
           </div>
         </div>
         <div className="tactics-sidebar">
-          <aside className="tactics-clipboard" aria-label="Prancheta tática">
-            <span className="clipboard-pencil" aria-hidden="true" />
-            <span className="eyebrow">PLANO DE JOGO</span>
+          {!mobile && (
+            <aside className="tactics-clipboard" aria-label="Prancheta tática">
+              <span className="clipboard-pencil" aria-hidden="true" />
+              <span className="eyebrow">PLANO DE JOGO</span>
 
-            <label>
-              Formação
-              <Select
-                aria-label="Formação"
-                className="formation-select"
-                menuMinWidth={240}
-                value={formation}
-                onValueChange={(value) => changeFormation(formationSchema.parse(value))}
-              >
-                {formationSchema.options.map((name) => (
-                  <Option key={name} value={name}>
-                    <span className="match-option-content">
-                      <FormationIcon formation={name} />
-                      <span>{FORMATION_LABELS[name]}</span>
-                    </span>
-                  </Option>
-                ))}
-              </Select>
-            </label>
-            <PlayStylePicker
-              value={style}
-              onChange={(value) => {
-                setStyle(value);
-                setDirty(true);
-              }}
-            />
-            <button className="tactical-analysis-button" onClick={() => setAnalysisOpen(true)}>
-              Análise tática
-            </button>
-            {analysisOpen && (
-              <TacticalAnalysis
-                state={state}
-                clubId={club.id}
-                formation={formation}
-                style={style}
-                players={entries.flatMap((entry) => (entry.player ? [entry.player] : []))}
-                onClose={() => setAnalysisOpen(false)}
-              />
-            )}
-          </aside>
+              <label>Formação{formationControl}</label>
+              {tacticalControls}
+            </aside>
+          )}
           <MatchInstructionsEditor
             state={state}
             club={club}
@@ -635,7 +679,8 @@ export function LineupEditor({ snapshot, club, center }: ViewProps) {
                         <p className="negative">
                           <b>{chemistryPenalty} · Entrosamento</b>
                           <small>
-                            {target?.chemistry}% de adaptação · Melhora ao jogar pelo clube.
+                            {Math.round(target?.chemistry ?? 0)}% de adaptação · Melhora ao jogar
+                            pelo clube.
                           </small>
                         </p>
                       )}
@@ -670,9 +715,7 @@ export function LineupEditor({ snapshot, club, center }: ViewProps) {
                       const risk = injuryProbability(
                         player.fitness,
                         (load?.consecutiveMatches ?? 0) + 1,
-                        load
-                          ? Math.max(0, (state.nextScheduledAt - load.lastPlayedAt) / 3600000)
-                          : 168,
+                        load ? Math.max(0, (availabilityAt - load.lastPlayedAt) / 3600000) : 168,
                         center.levels.medical,
                       );
                       return (

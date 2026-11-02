@@ -38,6 +38,38 @@ function fixture() {
   return { state, club };
 }
 describe('escalação, entrosamento e carga', () => {
+  it('substitui convocado pelo maior overall da posição e recompõe o banco sem mover outros titulares', () => {
+    const { state: original, club: initialClub } = fixture();
+    const starters = resolveLineup(original, initialClub, now).map((slot) => slot.player!.id);
+    const template = original.players.byId[starters[0]!]!;
+    const reserve = { ...template, id: stableId(990, 1), overall: 79, fitness: 60 };
+    const otherReserve = { ...template, id: stableId(990, 2), overall: 78, fitness: 100 };
+    const unrelated = { ...template, id: stableId(990, 3), overall: 77, fitness: 100 };
+    const club = {
+      ...initialClub,
+      playerIds: [...initialClub.playerIds, reserve.id, otherReserve.id, unrelated.id],
+    };
+    const players = Object.fromEntries(
+      Object.entries(original.players.byId).map(([id, player]) => [id, { ...player, overall: 70 }]),
+    );
+    players[template.id] = { ...template, overall: 85 };
+    for (const player of [reserve, otherReserve, unrelated]) players[player.id] = player;
+    const state: WorldState = {
+      ...original,
+      clubs: { ...original.clubs, byId: { ...original.clubs.byId, [club.id]: club } },
+      players: { ...original.players, byId: players },
+      tactics: {
+        ...original.tactics,
+        [club.id]: { formation: '4-3-3', starters, bench: [reserve.id, otherReserve.id] },
+      },
+    };
+    const at = Date.parse('2026-03-25T18:00:00-03:00');
+    const lineup = resolveLineup(state, club, at).map((slot) => slot.player!.id);
+    expect(lineup[0]).toBe(reserve.id);
+    expect(lineup.slice(1)).toEqual(starters.slice(1));
+    expect(resolveBench(state, club, at, lineup)).toEqual([unrelated.id, otherReserve.id]);
+    expect(new Set([...lineup, ...resolveBench(state, club, at, lineup)]).size).toBe(13);
+  });
   it('adapta formação e estilo em três jogos e conserva combinações dominadas após seis', () => {
     const { state: initial, club } = fixture();
     const base = initializeStartingChemistry(initial);

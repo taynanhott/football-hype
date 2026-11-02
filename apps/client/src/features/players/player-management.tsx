@@ -411,7 +411,23 @@ export function IncomingOffers({ snapshot, club, playerId }: ViewProps & { playe
                     {buyer?.name ?? 'Clube interessado'} ↗
                   </a>
                 </div>
-                <span className="offer-status">Pendente</span>
+                {player && (
+                  <span
+                    className="offer-status market-overall-badge"
+                    data-tier={
+                      player.overall <= 69
+                        ? 'bronze'
+                        : player.overall <= 77
+                          ? 'silver'
+                          : player.overall <= 85
+                            ? 'gold'
+                            : 'diamond'
+                    }
+                    aria-label={`Overall ${player.overall}`}
+                  >
+                    {player.overall}
+                  </span>
+                )}
               </header>
               <div className="offer-body">
                 {player &&

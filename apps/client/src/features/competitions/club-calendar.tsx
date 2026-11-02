@@ -4,7 +4,11 @@ import { clubCalendarFixtures, clubCalendarPendingGames } from './club-calendar-
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { openModalPreservingScroll } from '../../ui/modal-scroll';
 import { clubDayRoutine, pendingFixtures, realFixtureTime } from '@football/domain';
-import { COMPETITIONS, type Fixture, type WorldState } from '@football/shared';
+import { COMPETITIONS, clubKit, type Fixture, type WorldState } from '@football/shared';
+import { Portrait } from '../players/pixel-portrait';
+import { positionLabel } from '../../ui/position-label';
+import { fifaCalendarBoundary } from './fifa-calendar';
+import { PlayerModal } from '../players/player-modal';
 import { PixelBadge } from '../../ui/pixel-badge';
 import { dateTime } from '../../ui/format';
 import { Icon } from '../../ui/icons';
@@ -62,6 +66,7 @@ const routines = {
 
 export function ClubCalendar({ state: rawState, clubId }: { state: WorldState; clubId: string }) {
   const state = useFinishedResults(rawState);
+  const [selectedFifa, setSelectedFifa] = useState<ReturnType<typeof fifaCalendarBoundary>>();
   const [pendingGame, setPendingGame] = useState<
     ReturnType<typeof clubCalendarPendingGames>[number] | null
   >(null);
@@ -75,6 +80,21 @@ export function ClubCalendar({ state: rawState, clubId }: { state: WorldState; c
   const month = viewedMonth?.day === today ? viewedMonth.date : new Date(`${today}T12:00:00Z`);
   const fixtures = clubCalendarFixtures(state, clubId);
   const pendingGames = clubCalendarPendingGames(state, clubId);
+  const completedIds = new Set(state.results.map((result) => result.fixtureId));
+  const missedGames = selectedFifa
+    ? fixtures.filter((fixture) => {
+        const day = dayKey(fixture.scheduledAt);
+        return (
+          day >= selectedFifa.start && day <= selectedFifa.end && !completedIds.has(fixture.id)
+        );
+      }).length
+    : 0;
+  const returnDate = selectedFifa
+    ? new Date(new Date(`${selectedFifa.end}T12:00:00Z`).getTime() + 86400000).toLocaleDateString(
+        'pt-BR',
+        { day: '2-digit', month: '2-digit', timeZone: 'America/Sao_Paulo' },
+      )
+    : '';
   const year = month.getUTCFullYear(),
     monthIndex = month.getUTCMonth();
   const offset = new Date(Date.UTC(year, monthIndex, 1)).getUTCDay();
@@ -158,6 +178,7 @@ export function ClubCalendar({ state: rawState, clubId }: { state: WorldState; c
             const date = new Date(Date.UTC(year, monthIndex, index - offset + 1, 12));
             const key = date.toISOString().slice(0, 10);
             const inMonth = date.getUTCMonth() === monthIndex;
+            const fifaBoundary = inMonth ? fifaCalendarBoundary(key) : undefined;
             const drawOnDay = (state.competitionDraws ?? []).filter(
               (draw) => draw.participantIds.includes(clubId) && dayKey(draw.scheduledAt) === key,
             );
@@ -218,6 +239,28 @@ export function ClubCalendar({ state: rawState, clubId }: { state: WorldState; c
                   />
                 )}
                 <time dateTime={key}>{date.getUTCDate()}</time>
+                {fifaBoundary &&
+                  (fifaBoundary.kind === 'Início' ? (
+                    <button
+                      type="button"
+                      className={`calendar-fifa-event ${matches.length || drawOnDay.length || pendingOnDay ? 'compact' : ''}`}
+                      aria-label="Início da Data FIFA · Ver convocados"
+                      title="Início da Data FIFA · Ver convocados"
+                      onClick={() => setSelectedFifa(fifaBoundary)}
+                    >
+                      <span>Início</span>
+                      <strong>Data FIFA</strong>
+                    </button>
+                  ) : (
+                    <span
+                      className={`calendar-fifa-event ${matches.length || drawOnDay.length || pendingOnDay ? 'compact' : ''}`}
+                      aria-label="Fim da Data FIFA"
+                      title="Último dia da Data FIFA"
+                    >
+                      <span>Fim</span>
+                      <strong>Data FIFA</strong>
+                    </span>
+                  ))}
                 {inMonth &&
                   pendingGames
                     .filter((game) => dayKey(game.scheduledAt) === key)
@@ -333,7 +376,8 @@ export function ClubCalendar({ state: rawState, clubId }: { state: WorldState; c
                         </button>
                       );
                     })
-                  ) : pendingGames.some((game) => dayKey(game.scheduledAt) === key) ? null : (
+                  ) : fifaBoundary ||
+                    pendingGames.some((game) => dayKey(game.scheduledAt) === key) ? null : (
                     <>
                       <span className="club-calendar-routine-icon" aria-hidden="true">
                         {routine === routines.training || routine === routines.recovery ? (
@@ -350,6 +394,9 @@ export function ClubCalendar({ state: rawState, clubId }: { state: WorldState; c
           })}
         </div>
         <div className="club-calendar-legend">
+          <span>
+            <i style={{ background: '#397bb3' }} /> Data FIFA
+          </span>
           {competitions.map((id) => (
             <span key={id}>
               <i style={{ background: competitionColor(id) }} />
@@ -364,6 +411,62 @@ export function ClubCalendar({ state: rawState, clubId }: { state: WorldState; c
           ))}
         </div>
       </section>
+      {selectedFifa && (
+        <PlayerModal
+          title="Convocados · Data FIFA"
+          onClose={() => setSelectedFifa(undefined)}
+          className="calendar-fifa-modal"
+        >
+          <div className="calendar-fifa-summary">
+            <span>
+              <Icon name="calendar" size={16} /> Retorno ao clube <strong>{returnDate}</strong>
+            </span>
+            <span>
+              <Icon name="matches" size={16} />
+              <strong>{missedGames}</strong>{' '}
+              {missedGames === 1 ? 'jogo agendado' : 'jogos agendados'} no período
+            </span>
+          </div>
+          <ul className="calendar-fifa-players">
+            {state.clubs.byId[clubId]?.playerIds.flatMap((id) => {
+              const player = state.players.byId[id];
+              return player && player.overall >= 80
+                ? [
+                    <li key={id}>
+                      <span className="calendar-callup-portrait">
+                        <Portrait
+                          player={player}
+                          clubName={state.clubs.byId[clubId]?.name}
+                          kit={clubKit(state.clubs.byId[clubId] ?? { name: '' })}
+                        />
+                      </span>
+                      <span className="calendar-callup-info">
+                        <strong>{player.name}</strong>
+                        <small>{positionLabel(player.position)} · Convocado</small>
+                        <span className="calendar-callup-absence">
+                          {missedGames
+                            ? `Fora de ${missedGames} ${missedGames === 1 ? 'jogo agendado' : 'jogos agendados'}`
+                            : 'Sem jogos agendados no período'}
+                        </span>
+                      </span>
+                      <span
+                        className="calendar-callup-overall market-overall-badge"
+                        aria-label={`Overall ${player.overall}`}
+                        data-tier={player.overall <= 85 ? 'gold' : 'diamond'}
+                      >
+                        <small>OVR</small>
+                        <strong>{player.overall}</strong>
+                      </span>
+                    </li>,
+                  ]
+                : [];
+            })}
+          </ul>
+          {!state.clubs.byId[clubId]?.playerIds.some(
+            (id) => (state.players.byId[id]?.overall ?? 0) >= 80,
+          ) && <p>Nenhum jogador convocado.</p>}
+        </PlayerModal>
+      )}
       {selectedDraw && (
         <CompetitionDrawDetails
           state={state}

@@ -12,6 +12,7 @@ import { useGameStore } from '../store/game-store';
 import { Lobby } from '../features/leagues/lobby';
 import { Dashboard } from '../features/dashboard/dashboard';
 import { LineupEditor } from '../features/players/lineup';
+import { clubUnavailablePlayers } from '../features/players/player-availability';
 import { Squad } from '../features/players/squad';
 import { Market } from '../features/market/market';
 import { Facilities } from '../features/facilities/facilities';
@@ -143,6 +144,7 @@ function GameApp() {
       </div>
     );
   const props = { snapshot, club, stadium, center };
+  const hasUnavailablePlayers = clubUnavailablePlayers(state, club).length > 0;
   const ready = state.participants.filter((member) => member.ready).length;
   const view =
     route === 'coach' ? (
@@ -228,6 +230,9 @@ function GameApp() {
               >
                 <Icon name={item.id} />
                 <span>{item.label}</span>
+                {item.id === 'lineup' && hasUnavailablePlayers && (
+                  <span className="transfer-alert-dot" aria-label="Há jogadores indisponíveis" />
+                )}
                 {item.id === 'market' &&
                   ((state.management?.offers?.some(
                     (offer) => offer.sellerId === club.id && offer.status === 'pending',
@@ -344,6 +349,21 @@ function GameApp() {
           <Icon name="menu" />
           <span>Menu</span>
         </button>
+        <a
+          href="#/lineup"
+          aria-label="Escalação"
+          aria-current={route === 'lineup' && !menuOpen ? 'page' : undefined}
+          onClick={() => setMenuOpen(false)}
+        >
+          <Icon name="lineup" />
+          <span>Escalação</span>
+          {hasUnavailablePlayers && (
+            <span
+              className="transfer-alert-dot lineup-nav-alert"
+              aria-label="Há jogadores indisponíveis"
+            />
+          )}
+        </a>
         <a
           href="#/dashboard"
           aria-label="Home"

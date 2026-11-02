@@ -159,7 +159,7 @@ export function OpponentAdvice({
                 : 'Confronto tático equilibrado com os esquemas recentes do adversário.'}
             <strong>
               {recommendation.tactical > 0 ? '+' : ''}
-              {recommendation.tactical.toFixed(1).replace('.', ',')} OVR no confronto
+              {Math.round(recommendation.tactical)} OVR no confronto
             </strong>
           </p>
         )}
@@ -182,9 +182,8 @@ export function OpponentAdvice({
           </span>
         </div>
         <p className="opponent-advice-cost">
-          Perda por entrosamento: −{recommendation.loss.toFixed(1).replace('.', ',')} OVR. A
-          sugestão compara a força ajustada do time com a vantagem tática contra o histórico
-          recente.
+          Perda por entrosamento: −{Math.round(recommendation.loss)} OVR. A sugestão compara a força
+          ajustada do time com a vantagem tática contra o histórico recente.
         </p>
         <small className="opponent-advice-footnote">
           {plans.length

@@ -19,9 +19,20 @@ import {
 import { IDS, unwrap, playerInput, clubInput } from '../../../tests/fixtures/domain.js';
 
 describe('precisão monetária do jogo', () => {
-  it('formata milhares com ponto e uma casa decimal com vírgula', () => {
+  it('formata milhares e exibe a casa decimal apenas quando necessária', () => {
     expect(formatMoney(123456000)).toBe('1.234,6 K');
-    expect(formatMoney(0)).toBe('0,0 K');
+    expect(formatMoney(0)).toBe('0');
+    expect(formatMoney(12300000)).toBe('123 K');
+    expect(formatMoney(12340000)).toBe('123,4 K');
+    expect(formatMoney(-12300000)).toBe('-123 K');
+  });
+  it('exibe valores abaixo de mil sem o sufixo K', () => {
+    expect(formatMoney(50000)).toBe('500');
+    expect(formatMoney(10000)).toBe('100');
+    expect(formatMoney(99999)).toBe('999,99');
+    expect(formatMoney(-50000)).toBe('-500');
+    expect(formatMoney(100000)).toBe('1 K');
+    expect(formatMoney(-100000)).toBe('-1 K');
   });
   it('normaliza cadastros existentes por categoria sem manter centavos', () => {
     const player = playerSchema.parse(

@@ -502,8 +502,12 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
                 ☆ Favoritos
               </button>
             </div>
-            <button className="secondary" onClick={() => setFiltersOpen(true)}>
-              <Icon name="filter" /> Filtros{hasFilters ? ' ativos' : ''}
+            <button
+              className={`secondary market-filter-button${hasFilters ? ' active' : ''}`}
+              aria-label={hasFilters ? 'Filtro: filtros ativos' : 'Filtro'}
+              onClick={() => setFiltersOpen(true)}
+            >
+              <Icon name="filter" /> Filtro
             </button>
             <label className="market-sort-label">
               Ordenar por
@@ -638,14 +642,6 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
         <IncomingOffers snapshot={snapshot} club={club} center={center} stadium={stadium} />
       ) : (
         <>
-          {hasFilters && (
-            <div className="toolbar">
-              <span>Filtros ativos podem ocultar jogadores da busca.</span>
-              <button className="secondary" onClick={() => setFiltersOpen(true)}>
-                Editar filtros
-              </button>
-            </div>
-          )}
           {viewMode === 'list' ? (
             <div className="market-player-list" role="list" aria-label="Jogadores no mercado">
               {players.map((player) => {

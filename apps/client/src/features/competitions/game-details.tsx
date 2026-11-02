@@ -71,12 +71,14 @@ export function GameDetails({
   }, []);
   const home = state.clubs.byId[fixture.homeId],
     away = state.clubs.byId[fixture.awayId];
-  const stadium = state.stadiums.byId[fixture.stadiumId ?? home?.stadiumId ?? ''];
   const result = state.results.find((item) => item.fixtureId === fixture.id);
+  const completedIds = new Set(state.results.map((item) => item.fixtureId));
+  const upcomingFixture = fixtures.find((item) => !completedIds.has(item.id));
+  const showOverall = !result && upcomingFixture?.id === fixture.id;
   const realAt = result?.startedAt ?? realFixtureTime(state, pendingFixtures(state), fixture);
   const demand = matchDemand(state, fixture);
-  const prediction = matchProbabilities(state, fixture);
-  const odds = result ? undefined : prediction;
+  const prediction = showOverall ? matchProbabilities(state, fixture) : undefined;
+  const odds = prediction;
   const isHome = fixture.homeId === clubId;
   const win = odds ? (isHome ? odds.home : odds.away) : 0;
   const loss = odds ? (isHome ? odds.away : odds.home) : 0;
@@ -167,11 +169,12 @@ export function GameDetails({
       </h2>
       <div className="game-details-teams">
         {[home, away].map((team) => {
-          const average = team
-            ? Math.floor(
-                team.id === fixture.homeId ? prediction.homeStrength : prediction.awayStrength,
-              )
-            : 0;
+          const average =
+            team && prediction
+              ? Math.floor(
+                  team.id === fixture.homeId ? prediction.homeStrength : prediction.awayStrength,
+                )
+              : 0;
           return (
             <div
               key={team?.id ?? 'pending'}
@@ -198,21 +201,23 @@ export function GameDetails({
               ) : (
                 <strong>A definir</strong>
               )}
-              <span
-                className="game-details-team-overall"
-                data-tier={
-                  average <= 69
-                    ? 'bronze'
-                    : average <= 77
-                      ? 'silver'
-                      : average <= 85
-                        ? 'gold'
-                        : 'diamond'
-                }
-                aria-label={`Média titular ${average}`}
-              >
-                <strong>{average || '—'}</strong>
-              </span>
+              {showOverall && (
+                <span
+                  className="game-details-team-overall"
+                  data-tier={
+                    average <= 69
+                      ? 'bronze'
+                      : average <= 77
+                        ? 'silver'
+                        : average <= 85
+                          ? 'gold'
+                          : 'diamond'
+                  }
+                  aria-label={`Média titular ${average}`}
+                >
+                  <strong>{average || '—'}</strong>
+                </span>
+              )}
             </div>
           );
         })}
@@ -260,7 +265,7 @@ export function GameDetails({
           <dt>
             <Icon name="stadium" /> Estádio
           </dt>
-          <dd>{stadium?.name ?? 'A definir'}</dd>
+          <dd>{home?.name ?? 'A definir'}</dd>
         </div>
         <div>
           <dt>

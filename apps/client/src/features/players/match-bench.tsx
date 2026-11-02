@@ -1,14 +1,12 @@
 import { showDraggedCard, startCardPointerDrag } from '../../ui/card-drag';
 import { positionLabel } from '../../ui/position-label';
+import { Icon } from '../../ui/icons';
+import { cardPlayerName } from './card-player-name';
+import { clubUnavailablePlayers } from './player-availability';
 import { useState } from 'react';
 import type { ClubSnapshot, PlayerSnapshot, WorldState } from '@football/shared';
 import { clubKit } from '@football/shared';
-import {
-  effectiveOverall,
-  temporaryModifiers,
-  isFifaWindow,
-  medicallyAvailable,
-} from '@football/domain';
+import { effectiveOverall, temporaryModifiers } from '@football/domain';
 import { Overall } from './overall';
 import { Portrait } from './pixel-portrait';
 import { PlayerCard } from './player-card';
@@ -45,9 +43,8 @@ export function MatchBench({
   const players = orderedIds.flatMap((id) =>
     state.players.byId[id] && !starters.includes(id) ? [state.players.byId[id]!] : [],
   );
-  const available = (player: PlayerSnapshot) =>
-    medicallyAvailable(state, player.id) &&
-    !(isFifaWindow(state.nextScheduledAt) && player.overall >= 80);
+  const unavailableIds = new Set(clubUnavailablePlayers(state, club).map((player) => player.id));
+  const available = (player: PlayerSnapshot) => !unavailableIds.has(player.id);
   const moveCard = (id: string, targetId: string | null, related: boolean) => {
     if (id === targetId || !club.playerIds.includes(id)) return;
     if (!starters.includes(id) && reserves.includes(id) === related) {
@@ -95,7 +92,7 @@ export function MatchBench({
                 : `${players.filter((player) => !reserves.includes(player.id)).length} atletas`}
             </span>
             <span className="reserve-toggle" aria-hidden="true">
-              ⌄
+              <Icon name="chevron-down" size={16} />
             </span>
           </summary>
           <div className="reserve-cards">
@@ -144,13 +141,14 @@ export function MatchBench({
                   <span className="reserve-mini-portrait">
                     <Portrait player={player} clubName={club.name} kit={clubKit(club)} />
                   </span>
-                  <strong>{player.name}</strong>
+                  <strong title={player.name}>{cardPlayerName(player.name)}</strong>
                   <span className="reserve-mini-fitness">
                     {available(player)
-                      ? `${player.fitness}% condição`
+                      ? `${Math.round(player.fitness)}% COND`
                       : state.injuries[player.id]
                         ? 'Lesionado'
-                        : 'Seleção nacional'}
+                        : 'Convocado'}
+                    {available(player) && <i style={{ width: `${player.fitness}%` }} />}
                   </span>
                 </button>
               ))}

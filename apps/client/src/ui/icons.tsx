@@ -1,6 +1,8 @@
 import { PixelBadge } from './pixel-badge';
 import { type ClubKit } from '@football/shared';
 const PATHS: Record<string, string> = {
+  flag: 'M5 21V3M5 4c4-3 10 3 14 0v10c-4 3-10-3-14 0',
+  'chevron-down': 'M6 9l6 6 6-6',
   trash: 'M4 7h16M9 7V4h6v3M6 7l1 14h10l1-14M10 11v6M14 11v6',
   logout: 'M9 4H4v16h5M10 12h11M17 8l4 4-4 4',
   back: 'M20 12H4M10 6l-6 6 6 6',

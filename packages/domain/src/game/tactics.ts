@@ -179,6 +179,9 @@ export function resolveLineup(
         !(isFifaWindow(at) && (player?.overall ?? 0) >= 80),
     );
   const used = new Set<string>();
+  const retainedStarters = new Set(
+    available.filter((player) => desired.includes(player.id)).map((player) => player.id),
+  );
   return FORMATIONS[shape].map((slot, index) => {
     const requested = available.find(
       (player) => player.id === desired[index] && !used.has(player.id),
@@ -186,12 +189,19 @@ export function resolveLineup(
     const player =
       requested ??
       available
-        .filter((candidate) => !used.has(candidate.id))
-        .sort(
-          (a, b) =>
+        .filter((candidate) => !used.has(candidate.id) && !retainedStarters.has(candidate.id))
+        .sort((a, b) => {
+          if (desired[index]) {
+            const samePosition =
+              Number(b.position === slot.position) - Number(a.position === slot.position);
+            if (samePosition) return samePosition;
+            if (a.position === slot.position) return b.overall - a.overall || b.fitness - a.fitness;
+          }
+          return (
             b.overall * learnedPositionFactor(state, b, slot.position) * (0.5 + b.fitness / 200) -
-            a.overall * learnedPositionFactor(state, a, slot.position) * (0.5 + a.fitness / 200),
-        )[0];
+            a.overall * learnedPositionFactor(state, a, slot.position) * (0.5 + a.fitness / 200)
+          );
+        })[0];
     if (!player)
       return { ...slot, player: undefined, chemistry: 0, factor: 1, effectiveOverall: 0 };
     used.add(player.id);
@@ -235,8 +245,30 @@ export function resolveBench(
         !(isFifaWindow(at) && player!.overall >= 80),
     );
   const requested = preferred ?? state.tactics[club.id]?.bench;
-  if (requested?.length)
-    return requested.filter((id) => available.some((player) => player.id === id)).slice(0, 12);
+  if (requested?.length) {
+    const selected = new Set(
+      requested.filter((id) => available.some((player) => player.id === id)).slice(0, 12),
+    );
+    return requested
+      .slice(0, 12)
+      .flatMap((id) => {
+        if (available.some((player) => player.id === id)) return [id];
+        if (starters.includes(id) && !state.tactics[club.id]?.bench?.includes(id)) return [];
+        if (!club.playerIds.includes(id)) return [];
+        const position = state.players.byId[id]?.position;
+        const replacement = available
+          .filter((player) => !selected.has(player.id))
+          .sort(
+            (a, b) =>
+              Number(b.position === position) - Number(a.position === position) ||
+              b.overall - a.overall,
+          )[0];
+        if (!replacement) return [];
+        selected.add(replacement.id);
+        return [replacement.id];
+      })
+      .filter((id, index, ids) => ids.indexOf(id) === index);
+  }
   return available
     .sort(
       (a, b) =>

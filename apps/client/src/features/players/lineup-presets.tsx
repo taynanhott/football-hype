@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import type { Lineup, WorldState } from '@football/shared';
 import { STYLE_LABELS } from '@football/domain';
+import { Icon } from '../../ui/icons';
 import { useGameStore } from '../../store/game-store';
 
 export function LineupPresets({
@@ -14,7 +15,7 @@ export function LineupPresets({
 }) {
   const root = useRef<HTMLElement>(null);
   const bodyId = useId();
-  const [expanded, setExpanded] = useState(true);
+  const [expanded, setExpanded] = useState(false);
   useEffect(() => {
     const closeMenus = (event: PointerEvent | KeyboardEvent) => {
       if (event instanceof KeyboardEvent && event.key !== 'Escape') return;
@@ -64,7 +65,9 @@ export function LineupPresets({
       >
         <span>▤ ESCALAÇÕES SALVAS</span>
         <small>{presets.length}/3</small>
-        <span aria-hidden="true">{expanded ? '⌃' : '⌄'}</span>
+        <span className="lineup-collapse-icon" aria-hidden="true">
+          <Icon name="chevron-down" size={16} />
+        </span>
       </button>
       <div className="lineup-presets-heading">
         <div>

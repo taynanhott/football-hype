@@ -31,6 +31,12 @@ test('dia inteiro abre detalhes, folha preenche modal e mercado não recarrega e
     'linear-gradient',
   );
   await page.screenshot({ path: 'test-results/calendar-pixel-rating.png' });
+  await details.getByRole('button', { name: 'Próximo jogo', exact: true }).click();
+  await expect(details.locator('.game-details-team-overall')).toHaveCount(0);
+  await expect(details.locator('.game-details-probabilities')).toHaveCount(0);
+  await details.getByRole('button', { name: 'Jogo anterior', exact: true }).click();
+  await expect(details.locator('.game-details-team-overall')).toHaveCount(2);
+  await expect(details.locator('.game-details-probabilities')).toHaveCount(1);
   await details.getByRole('button', { name: 'Voltar', exact: true }).click();
   await page.evaluate(() => {
     location.hash = '/finance';
@@ -84,6 +90,9 @@ test('dia inteiro abre detalhes, folha preenche modal e mercado não recarrega e
         };
       });
       expect(layout).toEqual({ fits: true, rows: 2, inside: true, full: true });
+      await expect
+        .poll(() => page.evaluate(() => document.documentElement.scrollHeight - window.innerHeight))
+        .toBeLessThanOrEqual(1);
     }
     await page.screenshot({ path: `test-results/${route}-all-tabs-two-rows.png` });
   }

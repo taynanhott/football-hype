@@ -82,7 +82,7 @@ export function matchDemand(state: WorldState, fixture: Fixture, priceOverride?:
           ? 'Semifinal'
           : 'Mata-mata'))
     : continental
-      ? 'Competição continental'
+      ? 'Internacional'
       : importance > 1
         ? 'Reta final do campeonato'
         : 'Rodada regular';

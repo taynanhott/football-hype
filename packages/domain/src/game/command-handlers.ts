@@ -114,7 +114,7 @@ export function handleCommand(input: CommandContext): Result<CommandOutcome> {
           homeTicketPrices: { ...state.homeTicketPrices, [club.id]: command.priceCents },
         },
         type: 'tickets.updated',
-        message: `${club.name}: ingresso para jogos em casa definido em R$ ${(command.priceCents / 100).toFixed(0)}`,
+        message: `${club.name}: ingresso para jogos em casa definido em R$ ${formatMoney(command.priceCents)}`,
         amount: 0,
       });
     }
@@ -144,7 +144,7 @@ export function handleCommand(input: CommandContext): Result<CommandOutcome> {
           ticketPrices: { ...state.ticketPrices, [fixture.id]: command.priceCents },
         },
         type: 'tickets.updated',
-        message: `${club.name}: ingresso definido em R$ ${(command.priceCents / 100).toFixed(0)} para o jogo contra ${state.clubs.byId[fixture.awayId]?.name ?? 'adversário'}`,
+        message: `${club.name}: ingresso definido em R$ ${formatMoney(command.priceCents)} para o jogo contra ${state.clubs.byId[fixture.awayId]?.name ?? 'adversário'}`,
         amount: 0,
       });
     }

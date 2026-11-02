@@ -8,7 +8,8 @@ import {
   type WorldState,
   type ClubSnapshot,
 } from '@football/shared';
-import { STYLE_LABELS, medicallyAvailable, isFifaWindow } from '@football/domain';
+import { STYLE_LABELS } from '@football/domain';
+import { clubAvailabilityReturns, clubUnavailablePlayers } from './player-availability';
 import { Select, Option } from '../../ui/select';
 import { PlayerModal } from './player-modal';
 import { Portrait } from './pixel-portrait';
@@ -30,13 +31,8 @@ const scores = {
   losing: 'Se perdendo',
 } as const;
 export function UnavailablePlayers({ state, club }: { state: WorldState; club: ClubSnapshot }) {
-  const unavailable = club.playerIds.flatMap((id) => {
-    const p = state.players.byId[id];
-    return p &&
-      (!medicallyAvailable(state, id) || (isFifaWindow(state.nextScheduledAt) && p.overall >= 80))
-      ? [p]
-      : [];
-  });
+  const unavailable = clubUnavailablePlayers(state, club);
+  const returns = clubAvailabilityReturns(state, club);
   if (!unavailable.length)
     return (
       <section className="match-instructions unavailable-players" aria-label="Indisponíveis">
@@ -51,21 +47,64 @@ export function UnavailablePlayers({ state, club }: { state: WorldState; club: C
     <details className="match-instructions unavailable-players">
       <summary>✚ Indisponíveis · {unavailable.length}</summary>
       {unavailable.length ? (
-        unavailable.map((p) => (
-          <div className="bench-player" key={p.id}>
-            <Portrait player={p} />
-            <span>
-              <strong>{p.name}</strong>
-              <small>
-                {positionLabel(p.position)} ·{' '}
-                {state.injuries[p.id]
-                  ? `Lesionado · ${state.injuries[p.id]} dias`
-                  : 'Seleção nacional'}
-              </small>
-            </span>
-            <b>{p.overall}</b>
-          </div>
-        ))
+        unavailable.map((p) => {
+          const forecast = returns.get(p.id);
+          return (
+            <div className="unavailable-player-card" key={p.id}>
+              <span className="unavailable-player-portrait">
+                <Portrait player={p} clubName={club.name} kit={clubKit(club)} />
+              </span>
+              <span className="unavailable-player-info">
+                <strong>{p.name}</strong>
+                <small>
+                  {positionLabel(p.position)} ·{' '}
+                  {forecast?.injured && (
+                    <span className="unavailable-reason">
+                      <Icon name="recovery" size={12} /> Lesionado
+                    </span>
+                  )}
+                  {forecast?.calledUp && (
+                    <span className="unavailable-reason">
+                      <Icon name="flag" size={12} /> Convocado
+                    </span>
+                  )}
+                </small>
+                {forecast && (
+                  <>
+                    <span className="unavailable-player-games">
+                      {forecast.games
+                        ? `Faltam ${forecast.games} ${forecast.games === 1 ? 'jogo' : 'jogos'} para voltar`
+                        : 'Volta antes do próximo jogo'}
+                    </span>
+                    <small>
+                      Retorno {forecast.injured ? 'previsto ' : ''}
+                      {new Date(forecast.at).toLocaleDateString('pt-BR', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        timeZone: 'America/Sao_Paulo',
+                      })}
+                    </small>
+                  </>
+                )}
+              </span>
+              <span
+                className="unavailable-player-overall market-overall-badge"
+                data-tier={
+                  p.overall <= 69
+                    ? 'bronze'
+                    : p.overall <= 77
+                      ? 'silver'
+                      : p.overall <= 85
+                        ? 'gold'
+                        : 'diamond'
+                }
+                aria-label={`Overall ${p.overall}`}
+              >
+                <strong>{p.overall}</strong>
+              </span>
+            </div>
+          );
+        })
       ) : (
         <p>Todo o elenco está disponível.</p>
       )}
@@ -92,13 +131,7 @@ export function MatchInstructionsEditor({
   const [draft, setDraft] = useState<Partial<Plan> | null>(null);
   const [step, setStep] = useState<'out' | 'in' | 'when' | 'score'>('out');
   const [protect, setProtect] = useState(false);
-  const unavailable = club.playerIds.flatMap((id) => {
-    const p = state.players.byId[id];
-    return p &&
-      (!medicallyAvailable(state, id) || (isFifaWindow(state.nextScheduledAt) && p.overall >= 80))
-      ? [p]
-      : [];
-  });
+  const unavailable = clubUnavailablePlayers(state, club);
   const playerList = (ids: string[], choose: (id: string) => void) => (
     <div className="bench-list">
       {ids.flatMap((id) => {

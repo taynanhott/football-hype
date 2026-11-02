@@ -16,6 +16,7 @@ export function useCollapsedPlayerCategories(scope: 'squad' | 'club') {
   const userId = useGameStore((state) => state.userId);
   const key = `football.player-categories.${scope}.${userId ?? 'guest'}`;
   const [collapsed, setCollapsed] = useState<string[]>(() => {
+    if (scope === 'squad') return [];
     try {
       const saved: unknown = JSON.parse(localStorage.getItem(key) ?? '[]');
       return Array.isArray(saved)

@@ -18,8 +18,24 @@ import { CompetitionStatus } from './competition-status';
 import { ClubCalendar } from '../competitions/club-calendar';
 
 const StadiumScene = lazy(() => import('../../three/stadium-scene'));
+const MOBILE_SHORTCUTS = [
+  { id: 'squad', label: 'Elenco' },
+  { id: 'finance', label: 'Finanças' },
+  { id: 'market', label: 'Transferências' },
+  { id: 'news', label: 'Noticiário' },
+  { id: 'stadium', label: 'Estádio' },
+  { id: 'training', label: 'Centro de Treinamento' },
+  { id: 'matches', label: 'Central de Partidas' },
+  { id: 'trophies', label: 'Carreira' },
+];
 export function Dashboard({ snapshot, club, stadium, center }: ViewProps) {
   const { state } = snapshot;
+  const hasTransferNotifications =
+    (state.management?.offers?.some(
+      (offer) => offer.sellerId === club.id && offer.status === 'pending',
+    ) ??
+      false) ||
+    state.negotiations.some((offer) => offer.buyerId === club.id && offer.status === 'review');
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
   const selectedPlayer = selectedPlayerId ? state.players.byId[selectedPlayerId] : undefined;
   const ratings = new Map<string, { sum: number; count: number }>();
@@ -49,80 +65,114 @@ export function Dashboard({ snapshot, club, stadium, center }: ViewProps) {
     .reverse();
   return (
     <div className="football-dashboard">
-      <div className="page-heading dashboard-club-hero">
-        <div className="dashboard-club-identity">
-          <PixelBadge
-            name={club.name}
-            {...(club.crestUrl ? { url: club.crestUrl } : {})}
-            size={76}
-          />
-          <div className="dashboard-journey-club">
-            <a href={'#/trophies?club=' + club.id}>{club.name}</a>
-            <span>
-              {new Intl.DisplayNames(['pt-BR'], { type: 'region' }).of(club.country)} · Série{' '}
-              {club.division}
-            </span>
-          </div>
-          <div className="dashboard-season-progress">
-            <span className="dashboard-journey-label">Sua jornada</span>
-            <div className="dashboard-season-label">
-              <strong>
-                <Icon name="calendar" size={18} />
-                Temporada {state.season}
-              </strong>
+      <div className="dashboard-club-overview">
+        <div className="page-heading dashboard-club-hero">
+          <span
+            className="dashboard-mobile-overall market-overall-badge"
+            data-tier={
+              average <= 69
+                ? 'bronze'
+                : average <= 77
+                  ? 'silver'
+                  : average <= 85
+                    ? 'gold'
+                    : 'diamond'
+            }
+            aria-label={`Força do elenco: Overall ${average}`}
+          >
+            <small>OVR</small>
+            <strong>{average}</strong>
+          </span>
+          <div className="dashboard-club-identity">
+            <PixelBadge
+              name={club.name}
+              {...(club.crestUrl ? { url: club.crestUrl } : {})}
+              size={76}
+            />
+            <div className="dashboard-journey-club">
+              <a href={'#/trophies?club=' + club.id}>{club.name}</a>
               <span>
-                {state.round
-                  ? state.round + ' rodadas globais disputadas'
-                  : 'Uma história em branco.'}
+                {new Intl.DisplayNames(['pt-BR'], { type: 'region' }).of(club.country)} · Série{' '}
+                {club.division}
               </span>
             </div>
-            <progress
-              aria-label="Progresso da temporada"
-              max={100}
-              value={Math.min(
-                100,
-                (state.results.length / Math.max(1, state.fixtures.length + state.cups.length)) *
+            <div className="dashboard-season-progress">
+              <span className="dashboard-journey-label">Sua jornada</span>
+              <div className="dashboard-season-label">
+                <strong>
+                  <Icon name="calendar" size={18} />
+                  Temporada {state.season}
+                </strong>
+                <span>
+                  {state.round
+                    ? state.round + ' rodadas globais disputadas'
+                    : 'Uma história em branco.'}
+                </span>
+              </div>
+              <progress
+                aria-label="Progresso da temporada"
+                max={100}
+                value={Math.min(
                   100,
-              )}
-            />
+                  (state.results.length / Math.max(1, state.fixtures.length + state.cups.length)) *
+                    100,
+                )}
+              />
+            </div>
           </div>
         </div>
+        <div className="stat-grid dashboard-quick-stats">
+          <Metric
+            label="Força do elenco"
+            value={String(average)}
+            note={players.length + ' atletas'}
+            icon="squad"
+          />
+          <Metric
+            label="Caixa do clube"
+            value={compactMoney(club.balance.cents)}
+            note="Saldo disponível"
+            icon="finance"
+          />
+          <Metric
+            label="Despesas mensais"
+            value={compactMoney(monthlyExpenses)}
+            note="Salários + manutenção"
+            icon="calendar"
+          />
+          <Metric
+            label="Próximo confronto"
+            value={nextOpponent?.name ?? 'A definir'}
+            note={
+              nextMatch
+                ? (() => {
+                    const at = realFixtureTime(state, pendingFixtures(state), nextMatch);
+                    return at === undefined
+                      ? dateTime(nextMatch.scheduledAt)
+                      : `${dateTime(at)} · Brasília (vida real)`;
+                  })()
+                : 'Sem partida agendada'
+            }
+            icon="matches"
+          />
+        </div>
       </div>
-      <div className="stat-grid dashboard-quick-stats">
-        <Metric
-          label="Força do elenco"
-          value={String(average)}
-          note={players.length + ' atletas'}
-          icon="squad"
-        />
-        <Metric
-          label="Caixa do clube"
-          value={compactMoney(club.balance.cents)}
-          note="Saldo disponível"
-          icon="finance"
-        />
-        <Metric
-          label="Despesas mensais"
-          value={compactMoney(monthlyExpenses)}
-          note="Salários + manutenção"
-          icon="calendar"
-        />
-        <Metric
-          label="Próximo confronto"
-          value={nextOpponent?.name ?? 'A definir'}
-          note={
-            nextMatch
-              ? (() => {
-                  const at = realFixtureTime(state, pendingFixtures(state), nextMatch);
-                  return at === undefined
-                    ? dateTime(nextMatch.scheduledAt)
-                    : `${dateTime(at)} · Brasília (vida real)`;
-                })()
-              : 'Sem partida agendada'
-          }
-          icon="matches"
-        />
-      </div>
+      <nav className="dashboard-mobile-shortcuts" aria-label="Acessos rápidos">
+        {MOBILE_SHORTCUTS.map((item) => (
+          <a key={item.id} href={`#/${item.id}`}>
+            <Icon name={item.id} size={20} />
+            <span>{item.label}</span>
+            {item.id === 'market' && hasTransferNotifications ? (
+              <span
+                className="transfer-alert-dot"
+                aria-label="Há propostas recebidas ou negociações em análise"
+              />
+            ) : (
+              <Icon name="arrow" size={14} />
+            )}
+          </a>
+        ))}
+      </nav>
       <div className="dashboard-middle">
         <section className="arena-card">
           <div className="arena-title">
@@ -136,9 +186,6 @@ export function Dashboard({ snapshot, club, stadium, center }: ViewProps) {
               <StadiumScene stadium={stadium} center={center} />
             </Suspense>
           </div>
-          <a className="arena-link" href="#/stadium">
-            Conhecer e melhorar a arena <Icon name="arrow" />
-          </a>
           <span className="arena-caption">ARRASTE PARA EXPLORAR · ROLE PARA APROXIMAR</span>
         </section>
         <ClubCalendar state={state} clubId={club.id} />
@@ -209,15 +256,40 @@ export function Dashboard({ snapshot, club, stadium, center }: ViewProps) {
               const fixture =
                 state.fixtures.find((item) => item.id === result.fixtureId) ??
                 state.cups.find((item) => item.id === result.fixtureId);
+              const home = state.clubs.byId[result.homeId ?? fixture?.homeId ?? ''];
+              const away = state.clubs.byId[result.awayId ?? fixture?.awayId ?? ''];
               return (
                 <div className="result-row" key={result.fixtureId}>
-                  <span>{state.clubs.byId[fixture?.homeId ?? '']?.abbreviation ?? 'Casa'}</span>
-                  <strong>
-                    {result.homeGoals}
-                    <span>:</span>
-                    {result.awayGoals}
-                  </strong>
-                  <span>{state.clubs.byId[fixture?.awayId ?? '']?.abbreviation ?? 'Fora'}</span>
+                  <span className="dashboard-result-team">
+                    <PixelBadge
+                      name={home?.name ?? 'Casa'}
+                      {...(home?.crestUrl ? { url: home.crestUrl } : {})}
+                      size={24}
+                    />
+                    <span>{home?.name ?? 'Casa'}</span>
+                  </span>
+                  <span className="dashboard-result-score">
+                    <strong>
+                      {result.homeGoals}
+                      <span>:</span>
+                      {result.awayGoals}
+                    </strong>
+                    {result.penalties && (
+                      <small
+                        aria-label={`Pênaltis: ${result.penalties.home} a ${result.penalties.away}`}
+                      >
+                        Pên. {result.penalties.home} × {result.penalties.away}
+                      </small>
+                    )}
+                  </span>
+                  <span className="dashboard-result-team">
+                    <PixelBadge
+                      name={away?.name ?? 'Fora'}
+                      {...(away?.crestUrl ? { url: away.crestUrl } : {})}
+                      size={24}
+                    />
+                    <span>{away?.name ?? 'Fora'}</span>
+                  </span>
                 </div>
               );
             })

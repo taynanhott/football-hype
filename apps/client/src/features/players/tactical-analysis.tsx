@@ -44,7 +44,7 @@ export function TacticalAnalysis({
     Math.min(99, lineup.reduce((sum, p) => sum + p.effectiveOverall, 0) / 11 + bonus),
   );
   const chemistry = Math.floor(lineup.reduce((sum, p) => sum + p.chemistry, 0) / 11);
-  const formatted = (value: number) => value.toLocaleString('pt-BR', { maximumFractionDigits: 1 });
+  const formatted = (value: number) => Math.round(value).toLocaleString('pt-BR');
   // Compare tactical matchups with equal player quality; team ratings stay in the summary.
   const referencePlayers = (shape: Formation) =>
     FORMATIONS[shape].flatMap((slot, index) =>

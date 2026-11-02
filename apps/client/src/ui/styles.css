@@ -21838,6 +21838,26 @@ body::-webkit-scrollbar-corner {
   color: #284a37;
 }
 @media (max-width: 700px) {
+  dialog.club-customization-modal,
+  dialog.center-management-modal:has(.sector-marketing) {
+    width: calc(100vw - 20px) !important;
+    max-width: calc(100vw - 20px);
+    max-height: calc(100dvh - 20px);
+    padding: 12px;
+    gap: 8px;
+    box-sizing: border-box;
+  }
+  .club-customization-modal .modal-title,
+  .center-management-modal:has(.sector-marketing) .modal-title {
+    margin: 0 0 8px;
+    font-size: 17px;
+    line-height: 1.25;
+  }
+  .center-management-modal .sector-marketing .sector-avatar {
+    width: 40px;
+    height: 48px;
+    flex: 0 0 40px;
+  }
   .club-customization-modal .customization {
     grid-template-columns: 140px minmax(0, 1fr) !important;
   }
@@ -27935,8 +27955,8 @@ button.squad-list-category {
 @media (max-width: 900px) {
   .mobile-bottom-nav a,
   .mobile-bottom-nav button {
-    flex: 1 1 33.333%;
-    width: 33.333%;
+    flex: 0 0 25%;
+    width: 25%;
     height: 100%;
     border-radius: 0;
   }
@@ -29271,6 +29291,11 @@ dialog[open] .chat-header > button[aria-label^='Fechar'] {
     grid-template-columns: 90px minmax(0, 1fr);
     gap: 8px;
   }
+  .competition-controls .competition-selectors label:first-child,
+  .competition-controls .competition-selectors label:last-child {
+    width: 100%;
+    min-width: 0;
+  }
   .competition-controls .competition-view-tabs > button {
     flex-direction: column;
     gap: 4px;
@@ -29776,8 +29801,15 @@ dialog.modal.ledger-book-modal[open] {
 }
 
 @media (max-width: 900px) {
+  .workspace:has(.facilities-page) {
+    padding-bottom: calc(64px + env(safe-area-inset-bottom));
+  }
+  .workspace .main-content:has(> .facilities-page) {
+    padding-bottom: 8px;
+  }
   .facilities-page {
     height: var(--facility-page-height, calc(100dvh - 90px));
+    padding-bottom: 12px;
     display: grid;
     grid-template-rows: auto minmax(80px, 1fr) auto auto;
     gap: 8px;
@@ -29815,7 +29847,7 @@ dialog.modal.ledger-book-modal[open] {
   .facilities-page .facility-two-row-tabs {
     margin: 0;
     grid-template-rows: repeat(2, 34px);
-    gap: 8px;
+    gap: 4px;
   }
   .facilities-page .facility-two-row-tabs > button {
     height: 34px;
@@ -30864,8 +30896,8 @@ dialog[open].modal.player-management-modal.match-plan-modal {
 }
 @media (min-width: 901px) {
   dialog[open].game-details-modal.compact-match-preview {
-    width: min(900px, calc(100vw - 48px)) !important;
-    max-width: min(900px, calc(100vw - 48px)) !important;
+    width: min(640px, calc(100vw - 48px)) !important;
+    max-width: min(640px, calc(100vw - 48px)) !important;
     height: fit-content !important;
     min-height: 0;
     max-height: calc(100dvh - 32px) !important;
@@ -30878,17 +30910,15 @@ dialog[open].modal.player-management-modal.match-plan-modal {
     padding: 10px 12px;
   }
   .game-details-modal.compact-match-preview .game-details-teams {
-    grid-template-columns: minmax(0, 1fr) 112px minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) max-content minmax(0, 1fr);
     gap: 12px;
   }
   .game-details-modal.compact-match-preview .game-details-teams > div {
-    display: grid;
-    grid-template-columns: 56px minmax(0, 1fr);
-    grid-template-rows: auto auto;
+    display: flex;
+    flex-direction: column;
     align-items: center;
     align-content: center;
-    justify-items: start;
-    gap: 8px 12px;
+    gap: 6px;
     min-height: 116px;
     padding: 12px;
   }
@@ -30900,8 +30930,8 @@ dialog[open].modal.player-management-modal.match-plan-modal {
   .game-details-modal .game-details-club-link {
     grid-column: 2;
     grid-row: 1;
-    justify-content: flex-start;
-    text-align: left;
+    justify-content: center;
+    text-align: center;
     font-size: 14px;
   }
   .game-details-modal .game-details-team-overall {
@@ -30928,4 +30958,1314 @@ dialog[open].modal.player-management-modal.match-plan-modal {
     font-size: 13px;
     line-height: 1.35;
   }
+}
+
+/* Readable condition labels share a dark scoreboard strip across lineup cards. */
+.lineup-editor .tactics-player .chemistry-meter,
+.lineup-editor .reserve-mini[data-tier] .reserve-mini-fitness {
+  bottom: 3px;
+  left: 3px;
+  right: 3px;
+  height: 16px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 3px;
+  background: #102d24;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+  white-space: nowrap;
+}
+.lineup-editor .tactics-player .chemistry-meter {
+  overflow: hidden;
+}
+.lineup-editor .tactics-player .chemistry-meter i {
+  position: absolute;
+  bottom: 0;
+  height: 2px;
+  background: #70edaa;
+}
+.lineup-editor .tactics-player .chemistry-meter > span {
+  position: relative;
+}
+.lineup-editor .tactics-player > strong,
+.lineup-editor .reserve-mini > strong {
+  bottom: 21px;
+}
+.market-controls .market-filter-button.active {
+  background: #f1dfa1;
+  border-color: #d7b75c;
+  color: #173d2d;
+  box-shadow: inset 0 0 0 1px #d7b75c55;
+}
+.market-controls .market-filter-button.active:hover {
+  background: #f8e9b9;
+}
+@media (min-width: 761px) {
+  .lineup-editor .tactics-panel {
+    --lineup-card-width: 60px;
+    --lineup-card-height: 80px;
+  }
+  .lineup-editor .reserve-cards {
+    grid-template-columns: repeat(auto-fill, 72px);
+    justify-content: space-between;
+    gap: 10px 6px;
+  }
+  .lineup-editor .reserve-mini {
+    width: 72px;
+    max-width: 72px;
+    height: 94px;
+    min-height: 94px;
+  }
+  .lineup-editor .reserve-mini-portrait {
+    top: 4px;
+    left: 22px;
+    width: 38px;
+    height: 44px;
+  }
+  .lineup-editor .tactics-player .portrait {
+    left: 16px;
+    width: 40px;
+    height: 42px;
+  }
+  .lineup-editor .tactics-player .chemistry-meter {
+    font-size: 9px;
+  }
+}
+
+/* Compact club identity controls keep the full kit palette within the dialog. */
+.club-customization-modal .club-kit-controls {
+  min-width: 0;
+}
+.center-management-modal:has(.sector-marketing) .center-management {
+  line-height: 1.35;
+}
+.center-management-modal .sector-marketing .sector-guide {
+  padding: 8px 10px;
+  gap: 8px;
+}
+.center-management-modal .sector-marketing .sector-guide p,
+.center-management-modal .sector-marketing .management-passive {
+  margin: 4px 0;
+  font-size: 11px;
+}
+.center-management-modal .sector-marketing .marketing-benefits {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 8px 0;
+}
+.center-management-modal .sector-marketing .marketing-benefits li {
+  padding: 8px 10px;
+  font-size: 12px;
+}
+.center-management-modal .sector-marketing .marketing-benefits li:last-child {
+  grid-column: 1 / -1;
+}
+.center-management-modal .sector-marketing .marketing-benefits span {
+  margin-bottom: 3px;
+  font-size: 10px;
+}
+@media (max-width: 700px) {
+  .club-customization-modal .customization {
+    grid-template-columns: minmax(0, 1fr) !important;
+    padding: 8px !important;
+    gap: 8px !important;
+    margin: 0;
+  }
+  .club-customization-modal .club-kit-stage {
+    min-height: 0;
+    flex-direction: row;
+    padding: 4px 10px;
+    gap: 12px;
+  }
+  .club-customization-modal .club-kit-stage svg {
+    width: 56px;
+    height: 63px;
+  }
+  .club-customization-modal .club-kit-stage > span {
+    font-size: 9px;
+    letter-spacing: 1px;
+  }
+  .club-customization-modal .club-kit-controls {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .club-customization-modal .club-color-field {
+    gap: 4px;
+  }
+  .club-customization-modal .club-color-field > span {
+    min-height: 26px;
+    font-size: 11px;
+    line-height: 13px;
+  }
+  .club-customization-modal .coach-swatches {
+    display: grid !important;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 4px !important;
+  }
+  .club-customization-modal .coach-swatches button,
+  .club-customization-modal .club-custom-color {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 26px;
+    height: 24px !important;
+    min-height: 24px !important;
+    box-sizing: border-box;
+  }
+  .club-customization-modal .club-kit-controls > label {
+    min-width: 0;
+    margin: 0;
+    font-size: 11px;
+    gap: 4px;
+  }
+  .club-customization-modal .club-kit-controls .game-select {
+    width: 100%;
+    min-width: 0;
+  }
+  .club-customization-modal .club-kit-controls > .primary {
+    min-width: 0;
+    padding: 6px;
+    font-size: 11px;
+  }
+}
+@media (max-height: 500px) and (min-width: 550px) {
+  .club-customization-modal .customization {
+    grid-template-columns: 100px minmax(0, 1fr) !important;
+  }
+  .club-customization-modal .club-kit-stage {
+    flex-direction: column;
+  }
+  .club-customization-modal .club-kit-stage > span {
+    text-align: center;
+  }
+}
+
+.dashboard-mobile-overall,
+.dashboard-mobile-shortcuts {
+  display: none;
+}
+@media (max-width: 760px) {
+  .football-dashboard .dashboard-club-hero {
+    position: relative;
+    margin-bottom: 0;
+    padding: 12px 70px 12px 12px;
+    border-radius: 12px 12px 0 0;
+  }
+  .football-dashboard .dashboard-club-identity {
+    flex-wrap: nowrap;
+    gap: 10px;
+    min-width: 0;
+  }
+  .football-dashboard .dashboard-club-identity > :first-child {
+    width: 52px !important;
+    height: 52px !important;
+    flex: 0 0 52px;
+  }
+  .football-dashboard .dashboard-club-identity > .official-club-badge > :is(img, svg, canvas) {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+  .football-dashboard .dashboard-journey-club a {
+    font-size: 16px;
+    overflow-wrap: anywhere;
+  }
+  .football-dashboard .dashboard-journey-club > span {
+    font-size: 10px;
+  }
+  .football-dashboard .dashboard-season-progress {
+    display: none;
+  }
+  .dashboard-mobile-overall {
+    display: grid;
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 1;
+    width: 48px;
+    padding: 5px 0;
+    gap: 3px;
+    border: 1px solid;
+    border-radius: 8px;
+    text-align: center;
+  }
+  .dashboard-mobile-overall small {
+    font-size: 9px;
+    font-weight: 800;
+  }
+  .dashboard-mobile-overall strong {
+    font-size: 23px;
+    line-height: 1;
+  }
+  .football-dashboard .stat-grid.dashboard-quick-stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0;
+    margin: 0 0 12px;
+    border: 1px solid #b79d5a80;
+    border-top: 0;
+    border-radius: 0 0 12px 12px;
+    overflow: hidden;
+    background: #f3efdf;
+  }
+  .football-dashboard .dashboard-quick-stats .metric:first-child,
+  .football-dashboard .dashboard-quick-stats .metric > p {
+    display: none;
+  }
+  .football-dashboard .dashboard-quick-stats .metric {
+    grid-template-columns: 16px minmax(0, 1fr);
+    align-content: start;
+    gap: 5px 4px;
+    padding: 10px 6px;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    background: transparent;
+  }
+  .football-dashboard .dashboard-quick-stats .metric + .metric {
+    border-left: 1px solid #b79d5a50;
+  }
+  .football-dashboard .dashboard-quick-stats .metric:nth-child(2) {
+    border-left: 0;
+  }
+  .football-dashboard .dashboard-quick-stats .metric > div > svg {
+    grid-column: 1;
+    grid-row: 1;
+    width: 16px;
+    height: 16px;
+    padding: 0;
+    background: transparent;
+  }
+  .football-dashboard .dashboard-quick-stats .metric > div > span {
+    grid-column: 2;
+    font-size: clamp(7px, 2vw, 9px);
+    align-self: center;
+    white-space: nowrap;
+  }
+  .football-dashboard .dashboard-quick-stats .metric > strong {
+    grid-column: 1 / -1;
+    font-size: 14px;
+    line-height: 1.25;
+    white-space: nowrap;
+    overflow-wrap: normal;
+  }
+  .football-dashboard .dashboard-quick-stats .metric:last-child > strong {
+    font-size: 12px;
+  }
+  .dashboard-mobile-shortcuts {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .dashboard-mobile-shortcuts a {
+    display: grid;
+    grid-template-columns: 20px minmax(0, 1fr) 14px;
+    align-items: center;
+    gap: 7px;
+    min-height: 48px;
+    padding: 8px;
+    border: 1px solid #bda35d;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #255a3e, #143b2d);
+    color: #fff0c0;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.3;
+    box-shadow:
+      inset 0 1px #ffffff15,
+      0 2px 5px #10251d25;
+  }
+  .dashboard-mobile-shortcuts a:is(:hover, :focus-visible) {
+    background: #2c714b;
+    outline: 2px solid #e2c778;
+    outline-offset: 1px;
+  }
+}
+@media (max-width: 620px) {
+  .sidebar.mobile-open {
+    width: min(360px, calc(100vw - 24px));
+    padding: 12px;
+    gap: 8px;
+    bottom: calc(64px + env(safe-area-inset-bottom));
+    box-sizing: border-box;
+  }
+  .sidebar.mobile-open .brand {
+    margin: 0;
+    gap: 8px;
+  }
+  .sidebar.mobile-open .brand > svg {
+    width: 32px;
+    height: 32px;
+  }
+  .sidebar.mobile-open .nav-caption {
+    margin: 0;
+    padding: 0 4px;
+  }
+  .sidebar.mobile-open nav {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-auto-rows: minmax(0, 1fr);
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: 480px;
+    gap: 5px;
+    width: 100%;
+    height: auto;
+  }
+  .sidebar.mobile-open nav a {
+    min-width: 0;
+    min-height: 0;
+    padding: 4px 9px;
+    gap: 6px;
+    font-size: 11px;
+    line-height: 1.25;
+    border: 1px solid #73957540;
+    border-radius: 11px;
+    box-sizing: border-box;
+  }
+  .sidebar.mobile-open nav a > svg {
+    width: 18px;
+    height: 18px;
+    flex: 0 0 18px;
+  }
+  .sidebar.mobile-open .sidebar-exit {
+    min-height: 32px;
+    margin: 0;
+    padding: 6px 8px;
+    font-size: 11px;
+  }
+  .sidebar.mobile-open .sidebar-user {
+    margin-top: auto;
+    padding: 6px 0 0;
+    gap: 6px;
+  }
+  .sidebar.mobile-open .sidebar-user .avatar {
+    width: 32px;
+    height: 40px;
+    flex: 0 0 32px;
+  }
+  .sidebar.mobile-open .sidebar-user :is(small, .save-queue-status, .sidebar-coach-edit) {
+    font-size: 10px;
+    line-height: 1.3;
+  }
+}
+@media (max-width: 620px) and (max-height: 520px) {
+  .sidebar.mobile-open {
+    padding: 6px 10px;
+    gap: 4px;
+  }
+  .sidebar.mobile-open > .brand,
+  .sidebar.mobile-open > .nav-caption {
+    display: none;
+  }
+  .sidebar.mobile-open nav {
+    gap: 3px;
+  }
+  .sidebar.mobile-open nav a {
+    min-height: 0;
+    padding: 3px 6px;
+    font-size: 10px;
+  }
+  .sidebar.mobile-open .sidebar-user {
+    padding-top: 3px;
+  }
+}
+
+/* Keep the club and its indicators together while preserving the season progress. */
+.dashboard-club-overview {
+  display: contents;
+}
+@media (max-width: 760px) {
+  .dashboard-club-overview {
+    display: block;
+    min-width: 0;
+  }
+  .football-dashboard .dashboard-club-hero {
+    padding-right: 12px;
+  }
+  .football-dashboard .dashboard-club-identity {
+    display: grid;
+    grid-template-columns: 52px minmax(0, 1fr);
+    gap: 10px;
+  }
+  .football-dashboard .dashboard-journey-club {
+    padding-right: 58px;
+  }
+  .football-dashboard .dashboard-club-identity .dashboard-season-progress {
+    display: block;
+    grid-column: 1 / -1;
+    width: 100%;
+    margin: 0;
+    padding: 2px 0 0;
+  }
+  .football-dashboard .dashboard-season-label {
+    margin-bottom: 7px;
+    gap: 5px;
+  }
+  .football-dashboard .dashboard-season-label strong {
+    font-size: 12px;
+  }
+  .football-dashboard .dashboard-season-label > span {
+    font-size: 10px;
+  }
+  .football-dashboard .dashboard-journey-label {
+    margin-bottom: 5px;
+    font-size: 9px;
+  }
+  .football-dashboard .dashboard-club-overview .dashboard-quick-stats {
+    margin: 0;
+  }
+}
+
+/* Size entry screens from their available viewport instead of intrinsic card heights. */
+body:has(.lobby-clubs) {
+  min-width: 0;
+}
+.lobby-clubs,
+.lobby-clubs .club-selection,
+.lobby-clubs .lobby-header {
+  min-width: 0;
+  max-width: 100%;
+}
+.lobby-clubs:has(.login-welcome) {
+  height: 100dvh;
+  min-height: 100dvh;
+}
+.lobby-clubs:has(.login-welcome) .login-welcome {
+  min-height: 0;
+}
+.lobby-clubs:has(.login-welcome) .stadium-art {
+  min-height: 0;
+}
+@media (max-width: 760px) {
+  .lobby-clubs .lobby-header .brand {
+    min-width: 0;
+    gap: 8px;
+  }
+  .lobby-clubs .lobby-header .brand > span {
+    min-width: 0;
+    font-size: 14px;
+    overflow-wrap: anywhere;
+  }
+  .lobby-clubs .login-welcome {
+    grid-template-rows: minmax(0, 1fr) auto;
+    margin-top: 8px;
+  }
+  .login-welcome .stadium-art {
+    height: auto;
+  }
+  .login-welcome .login-access {
+    padding: 8px 12px 12px;
+    gap: 8px;
+  }
+  .lobby-clubs:has(.career-saves) {
+    height: 100dvh;
+    min-height: 100dvh;
+    padding: 10px 10px max(10px, env(safe-area-inset-bottom));
+  }
+  .lobby-clubs:has(.career-saves) .club-selection {
+    margin-top: 8px;
+    min-width: 0;
+  }
+  .lobby-clubs:has(.career-saves) .club-selection > .career-toolbar {
+    margin: 0 0 8px;
+    min-height: 32px;
+    gap: 8px;
+  }
+  .lobby-clubs:has(.career-saves) .career-actions {
+    margin: 0;
+  }
+  .lobby-clubs:has(.career-saves) .career-actions > button {
+    min-width: 0;
+    min-height: 70px;
+    padding: 8px 4px;
+    gap: 5px;
+  }
+  .lobby-clubs:has(.career-saves) .career-actions strong {
+    font-size: 11px;
+  }
+  .lobby-clubs .career-saves {
+    min-height: 0;
+    min-width: 0;
+    grid-template-rows: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .lobby-clubs .career-save,
+  .lobby-clubs .career-empty-slot,
+  .lobby-clubs .career-save-open {
+    min-width: 0;
+    min-height: 0;
+  }
+  .lobby-clubs .career-save-open {
+    grid-template-columns: 44px minmax(0, 1fr);
+    padding: 8px 10px;
+    gap: 4px 10px;
+  }
+  .lobby-clubs .career-save-open .official-club-badge {
+    width: 44px !important;
+    height: 44px !important;
+  }
+  .lobby-clubs .career-save-open > strong {
+    font-size: 16px;
+  }
+  .lobby-clubs .career-save-stats {
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    padding: 0;
+  }
+  .lobby-clubs .career-save-stats b {
+    font-size: 13px;
+  }
+  .lobby-clubs .career-empty-slot {
+    padding: 8px;
+  }
+}
+@media (min-width: 761px) {
+  .lobby-clubs:has(.career-saves) {
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+  }
+  .lobby-clubs:has(.career-saves) .lobby-header {
+    flex-shrink: 0;
+  }
+  .lobby-clubs:has(.career-saves) .club-selection {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .lobby-clubs:has(.career-saves) .career-toolbar {
+    margin: 0 0 12px;
+    flex-shrink: 0;
+  }
+  .lobby-clubs:has(.career-saves) .career-actions {
+    margin: 0;
+    flex-shrink: 0;
+  }
+  .lobby-clubs:has(.career-saves) .career-actions > button {
+    min-height: 0;
+    padding: clamp(12px, 2dvh, 24px);
+    gap: 10px;
+  }
+  .lobby-clubs .career-saves {
+    flex: 1;
+    min-height: 0;
+    grid-template-rows: minmax(0, 1fr);
+    margin-top: 12px;
+  }
+  .lobby-clubs .career-save-open,
+  .lobby-clubs .career-empty-slot {
+    min-height: 0;
+    height: 100%;
+    aspect-ratio: auto;
+    padding: 16px;
+    gap: 12px;
+  }
+}
+html:has(.lobby-clubs) {
+  scrollbar-gutter: auto;
+}
+
+/* Club navigation uses the same faceted lighting as the calendar tiles. */
+:is(.dashboard-mobile-shortcuts, .sidebar nav) a {
+  --nav-hue: 145;
+  --nav-facet: polygon(22% 0, 100% 0, 100% 100%, 0 100%);
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background:
+    repeating-linear-gradient(120deg, #ffffff05 0 9px, #00000008 9px 18px),
+    linear-gradient(120deg, hsl(var(--nav-hue) 40% 29%), hsl(var(--nav-hue) 38% 17%));
+  border: 1px solid hsl(var(--nav-hue) 36% 57% / 0.8);
+  color: #fff4d8;
+  box-shadow:
+    inset 0 1px #ffffff16,
+    0 2px 5px #061a1925;
+}
+:is(.dashboard-mobile-shortcuts, .sidebar nav) a::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: 0 0 0 44%;
+  background: linear-gradient(135deg, #ffffff1f, #ffffff03);
+  clip-path: var(--nav-facet);
+  pointer-events: none;
+}
+:is(.dashboard-mobile-shortcuts, .sidebar nav) a::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background: linear-gradient(115deg, transparent 55%, #ffffff0d 55% 56%, transparent 56%);
+  pointer-events: none;
+}
+:is(.dashboard-mobile-shortcuts, .sidebar nav) a[href='#/dashboard'] {
+  --nav-hue: 145;
+  --nav-facet: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+}
+:is(.dashboard-mobile-shortcuts, .sidebar nav) a[href='#/squad'] {
+  --nav-hue: 120;
+  --nav-facet: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%);
+}
+:is(.dashboard-mobile-shortcuts, .sidebar nav) a[href='#/lineup'] {
+  --nav-hue: 270;
+  --nav-facet: polygon(0 0, 100% 50%, 0 100%);
+}
+:is(.dashboard-mobile-shortcuts, .sidebar nav) a[href='#/finance'] {
+  --nav-hue: 42;
+  --nav-facet: polygon(35% 0, 100% 0, 65% 100%, 0 100%);
+}
+:is(.dashboard-mobile-shortcuts, .sidebar nav) a[href='#/market'] {
+  --nav-hue: 207;
+  --nav-facet: polygon(0 0, 70% 0, 100% 100%, 30% 100%);
+}
+:is(.dashboard-mobile-shortcuts, .sidebar nav) a[href='#/news'] {
+  --nav-hue: 19;
+  --nav-facet: polygon(50% 0, 100% 38%, 80% 100%, 20% 100%, 0 38%);
+}
+:is(.dashboard-mobile-shortcuts, .sidebar nav) a[href='#/calendar'] {
+  --nav-hue: 330;
+  --nav-facet: polygon(25% 0, 75% 0, 100% 25%, 100% 75%, 75% 100%, 25% 100%, 0 75%, 0 25%);
+}
+:is(.dashboard-mobile-shortcuts, .sidebar nav) a[href='#/stadium'] {
+  --nav-hue: 164;
+  --nav-facet: polygon(20% 0, 100% 0, 80% 100%, 0 100%);
+}
+:is(.dashboard-mobile-shortcuts, .sidebar nav) a[href='#/training'] {
+  --nav-hue: 187;
+  --nav-facet: polygon(0 0, 100% 0, 50% 100%);
+}
+:is(.dashboard-mobile-shortcuts, .sidebar nav) a[href='#/matches'] {
+  --nav-hue: 358;
+  --nav-facet: polygon(0 25%, 75% 0, 100% 75%, 25% 100%);
+}
+:is(.dashboard-mobile-shortcuts, .sidebar nav) a[href='#/trophies'] {
+  --nav-hue: 290;
+  --nav-facet: polygon(0 0, 100% 0, 90% 65%, 50% 100%, 10% 65%);
+}
+:is(.dashboard-mobile-shortcuts, .sidebar nav) a[href='#/settings'] {
+  --nav-hue: 72;
+  --nav-facet: polygon(15% 0, 100% 15%, 85% 100%, 0 85%);
+}
+.dashboard-mobile-shortcuts a:is(:hover, :focus-visible),
+.sidebar nav a:is(:hover, :focus-visible, .active) {
+  background:
+    repeating-linear-gradient(120deg, #ffffff08 0 9px, #00000008 9px 18px),
+    linear-gradient(120deg, hsl(var(--nav-hue) 43% 35%), hsl(var(--nav-hue) 38% 22%));
+  color: #fff9e6;
+  border-color: #e7cd82;
+}
+.sidebar nav a.active {
+  box-shadow:
+    inset 3px 0 #f2d583,
+    inset 0 1px #ffffff20;
+}
+
+/* Equal columns keep team identities aligned with the match and penalty scores. */
+.football-dashboard .dashboard-season-summary .result-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  padding: 4px 6px;
+}
+.dashboard-result-team {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-width: 0;
+  color: #234e3b;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+.dashboard-result-team > .official-club-badge {
+  flex: 0 0 24px;
+}
+.dashboard-result-team > span:last-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.dashboard-result-score {
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 2px;
+  min-width: 0;
+  text-align: center;
+}
+.dashboard-result-score > strong {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 4px 8px;
+  border-radius: 7px;
+  background: #203849;
+  color: #fff;
+  font-size: 12px;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+.dashboard-result-score > small {
+  color: #405b4a;
+  font-size: 9px;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+/* Draw metadata stays in normal flow below the competition on desktop cells. */
+@media (min-width: 621px) {
+  .club-calendar .calendar-draw-label {
+    gap: 1px;
+  }
+  .club-calendar .calendar-draw-label .calendar-draw-name {
+    order: 0;
+    font-size: clamp(6px, 12cqw, 9px);
+    line-height: 1.15;
+  }
+  .club-calendar .calendar-draw-label small {
+    position: static;
+    order: 1;
+    width: auto;
+    font-size: clamp(6px, 10cqw, 8px);
+    line-height: 1.15;
+    letter-spacing: 0;
+  }
+}
+
+/* Search and sorting share the same label baseline and control height. */
+@media (max-width: 760px) {
+  .transfer-hub .transfer-searchbar > :is(.search-label, .market-sort-label) {
+    display: grid;
+    grid-template-rows: 14px 36px;
+    gap: 5px;
+    align-content: end;
+    align-self: end;
+    margin: 0;
+    padding: 0;
+    font-size: 11px;
+    line-height: 14px;
+  }
+  .transfer-hub .transfer-searchbar .search-label input {
+    margin: 0;
+  }
+  .transfer-hub .transfer-searchbar .market-sort-label > .game-select {
+    min-height: 36px;
+    height: 36px;
+  }
+  .transfer-hub .transfer-searchbar > :is(.market-view-toggle, .market-focus) {
+    height: 40px;
+    min-height: 40px;
+    margin: 0;
+    padding: 3px;
+    align-self: end;
+    box-sizing: border-box;
+  }
+  .transfer-hub .transfer-searchbar :is(.market-view-toggle, .market-focus) button {
+    height: 32px;
+    min-height: 32px;
+    margin: 0;
+  }
+}
+
+/* Starter cards reserve separate bands for the portrait, name and condition. */
+.lineup-editor .tactics-player {
+  width: 76px;
+  height: 108px;
+  min-height: 108px;
+}
+.lineup-editor .tactics-player .portrait {
+  top: 5px;
+  left: 27px;
+  width: 44px;
+  height: 48px;
+}
+.lineup-editor .tactics-player > strong {
+  left: 3px;
+  right: 3px;
+  bottom: 24px;
+  height: 26px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  font-family: 'Segoe UI', sans-serif;
+  font-size: 10px;
+  line-height: 12px;
+  color: #172c30;
+  background: transparent;
+}
+.lineup-editor .tactics-player .chemistry-meter {
+  bottom: 4px;
+  height: 16px;
+  line-height: 14px;
+  background: transparent;
+  color: #102d24;
+  font-family: 'Segoe UI', sans-serif;
+  font-size: 10px;
+  font-weight: 800;
+  overflow: visible;
+}
+.lineup-editor .tactics-player .chemistry-meter i {
+  height: 3px;
+  border-radius: 2px;
+  background: #17623c;
+}
+@media (max-width: 760px) {
+  .lineup-editor .tactics-player {
+    width: 68px;
+    height: 104px;
+    min-height: 104px;
+    transform: translate(-50%, -50%) scale(0.9);
+  }
+  .lineup-editor .tactics-player .portrait {
+    left: 25px;
+    width: 38px;
+    height: 44px;
+  }
+  .lineup-editor .tactics-player .chemistry-meter {
+    font-size: 9px;
+  }
+}
+
+/* Consistent compact bands for every lineup card, including reserves. */
+.lineup-editor .tactics-player,
+.lineup-editor .reserve-mini {
+  height: 94px;
+  min-height: 94px;
+}
+.lineup-editor .tactics-player .portrait,
+.lineup-editor .reserve-mini-portrait {
+  top: 5px;
+  height: 45px;
+}
+.lineup-editor .tactics-player > strong,
+.lineup-editor .reserve-mini > strong {
+  top: 52px;
+  bottom: auto;
+  left: 4px;
+  right: 4px;
+  width: auto;
+  height: 13px;
+  margin: 0;
+  padding: 0;
+  display: block;
+  font-family: 'Segoe UI', sans-serif;
+  font-size: 10px;
+  line-height: 13px;
+  white-space: nowrap;
+  overflow-wrap: normal;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
+}
+.lineup-editor .tactics-player .chemistry-meter,
+.lineup-editor .reserve-mini[data-tier] .reserve-mini-fitness {
+  top: 66px;
+  bottom: auto;
+  left: 6px;
+  right: 6px;
+  height: 17px;
+  margin: 0;
+  padding: 0 0 4px;
+  border: 0;
+  background: transparent;
+  color: #102d24;
+  font-family: 'Segoe UI', sans-serif;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 13px;
+  text-align: center;
+  overflow: hidden;
+}
+.lineup-editor .tactics-player .chemistry-meter i,
+.lineup-editor .reserve-mini-fitness i {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 3px;
+  max-width: 100%;
+  border-radius: 2px;
+  background: #17623c;
+}
+@media (max-width: 760px) {
+  .lineup-editor .tactics-player,
+  .lineup-editor .reserve-mini {
+    height: 92px;
+    min-height: 92px;
+  }
+  .lineup-editor .tactics-player .portrait,
+  .lineup-editor .reserve-mini-portrait {
+    height: 43px;
+  }
+  .lineup-editor .tactics-player > strong,
+  .lineup-editor .reserve-mini > strong {
+    top: 50px;
+  }
+  .lineup-editor .tactics-player .chemistry-meter,
+  .lineup-editor .reserve-mini[data-tier] .reserve-mini-fitness {
+    top: 64px;
+    font-size: 9px;
+  }
+}
+
+/* Lower rows paint above upper rows so floating modifiers remain visible. */
+.lineup-editor .tactics-rating,
+.lineup-editor .reserve-mini-rating {
+  z-index: 5;
+  overflow: visible;
+}
+.lineup-editor .tactics-rating .overall-modifier,
+.lineup-editor .reserve-mini-rating .overall-modifier {
+  z-index: 10;
+}
+.lineup-editor .reserve-mini {
+  overflow: visible;
+}
+.lineup-editor .tactics-field {
+  isolation: isolate;
+}
+
+@media (max-width: 760px) {
+  .lineup-editor .lineup-mobile-formation {
+    grid-column: 1 / -1;
+    min-width: 0;
+  }
+  .lineup-editor .lineup-mobile-formation .game-select {
+    width: 100%;
+    min-width: 0;
+  }
+  .lineup-editor .tactics-panel > .lineup-integrated-tactics {
+    grid-column: 1 / -1;
+    width: 100%;
+    min-width: 0;
+    min-height: 0;
+    margin: 0;
+    padding: 10px 0 0;
+    border: 0;
+    border-top: 1px solid #c5a45266;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+  .lineup-editor .lineup-integrated-tactics::before,
+  .lineup-editor .lineup-integrated-tactics::after {
+    display: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .lineup-editor .lineup-presets[data-expanded='false'] {
+    min-height: 0;
+    padding: 5px 12px;
+  }
+  .lineup-editor .lineup-presets[data-expanded='false'] > .lineup-presets-toggle {
+    min-height: 28px;
+    height: 28px;
+    padding: 0;
+  }
+  .lineup-editor .tactics-panel > .tactics-header {
+    grid-row: 1;
+  }
+  .lineup-editor .tactics-panel > .lineup-mobile-formation {
+    grid-row: 2;
+  }
+  .lineup-editor .tactics-panel > .tactics-scroll {
+    grid-row: 3;
+  }
+  .lineup-editor .tactics-panel > .lineup-integrated-tactics {
+    grid-row: 4;
+  }
+  .lineup-editor .tactics-panel > .reserve-roster {
+    grid-row: 5;
+  }
+  .lineup-editor .tactics-panel > .tactics-footer {
+    grid-row: 6;
+  }
+}
+
+/* The skin picker owns its entire hit area above the interactive 3D canvas. */
+.facility-scene .scene-legend {
+  z-index: 10;
+  pointer-events: auto;
+}
+.facility-scene > .scene-root {
+  isolation: isolate;
+  z-index: 0;
+}
+.facility-scene .stadium-skin-control .game-select-trigger > * {
+  pointer-events: none;
+}
+
+/* Compact modifiers fit in the reserved gap even in five-line formations. */
+.lineup-editor .tactics-rating .overall-modifier {
+  bottom: 100%;
+  min-width: 24px;
+  height: 14px;
+  padding: 0 3px;
+  font-size: 11px;
+  line-height: 12px;
+}
+
+.lineup-editor :is(.lineup-collapse-icon, .reserve-toggle) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid #c5a45266;
+  border-radius: 7px;
+  color: #edd18a;
+  line-height: 1;
+  transition: transform 0.15s;
+}
+.lineup-presets-toggle[aria-expanded='true'] .lineup-collapse-icon {
+  transform: rotate(180deg);
+}
+.lineup-editor :is(.lineup-collapse-icon, .reserve-toggle) svg {
+  display: block;
+  flex-shrink: 0;
+}
+
+.club-calendar .club-calendar-day .calendar-fifa-event {
+  container-type: inline-size;
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  margin: 1px 0 0;
+  padding: 2px 1px;
+  border: 1px solid #86bcdd;
+  border-radius: 4px;
+  background: linear-gradient(135deg, #174b70, #246888);
+  color: #fff4cb;
+  font-size: 8px;
+  line-height: 1.15;
+}
+.club-calendar .calendar-fifa-event strong {
+  font-size: clamp(5px, 18cqw, 8px);
+  white-space: nowrap;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+.club-calendar .club-calendar-day .calendar-fifa-event.compact {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 26px;
+  padding: 1px;
+  font-size: 6px;
+}
+.club-calendar .calendar-fifa-event.compact > span {
+  display: none;
+}
+@media (min-width: 901px) {
+  dialog[open].calendar-fifa-modal {
+    width: min(520px, calc(100vw - 48px)) !important;
+    height: auto !important;
+    max-height: calc(100dvh - 48px) !important;
+  }
+}
+
+dialog[open].modal.calendar-fifa-modal {
+  width: min(520px, calc(100vw - 28px)) !important;
+  height: fit-content !important;
+  min-height: 0 !important;
+  max-height: calc(100dvh - 32px) !important;
+}
+dialog[open].calendar-fifa-modal > .modal-content {
+  flex: 0 1 auto;
+}
+.calendar-fifa-players {
+  list-style: none;
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  max-height: 55dvh;
+  overflow-y: auto;
+}
+.calendar-fifa-players li {
+  padding: 8px 10px;
+  border: 1px solid #a5bc9766;
+  border-radius: 7px;
+  color: #f6eed3;
+  background: #1d4a34;
+}
+.club-calendar .calendar-fifa-event:not(button) {
+  cursor: default;
+}
+
+.calendar-fifa-summary {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 12px;
+  padding: 9px 10px;
+  border: 1px solid #c5a45280;
+  border-radius: 8px;
+  background: #102f25;
+  color: #eee5c4;
+  font-size: 11px;
+}
+.calendar-fifa-summary > span {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.calendar-fifa-summary svg {
+  color: #e5c66f;
+}
+.calendar-fifa-players li {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 42px;
+  align-items: center;
+  gap: 10px;
+}
+.calendar-callup-portrait {
+  display: block;
+  position: relative;
+  width: 44px;
+  height: 52px;
+  overflow: hidden;
+  border-radius: 6px;
+  background: #ffffff0d;
+}
+.calendar-callup-portrait .portrait {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.calendar-callup-info {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+.calendar-callup-info > strong {
+  font-size: 12px;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+.calendar-callup-info > small {
+  color: #c8d9c3;
+  font-size: 10px;
+}
+.calendar-callup-absence {
+  color: #efcf88;
+  font-size: 10px;
+  line-height: 1.2;
+}
+.calendar-callup-overall {
+  display: grid;
+  justify-items: center;
+  gap: 3px;
+  padding: 6px 3px;
+  border: 1px solid;
+  border-radius: 7px;
+}
+.calendar-callup-overall small {
+  font-size: 8px;
+}
+.calendar-callup-overall strong {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.mobile-bottom-nav .lineup-nav-alert {
+  position: absolute;
+  top: 7px;
+  left: calc(50% + 12px);
+}
+
+.unavailable-player-card {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) 42px;
+  align-items: center;
+  gap: 9px;
+  margin-top: 7px;
+  padding: 9px;
+  border: 1px solid #9fb58a66;
+  border-radius: 10px;
+  background: linear-gradient(125deg, #254e39, #17392d);
+  color: #f4eed7;
+}
+.unavailable-player-portrait {
+  position: relative;
+  width: 42px;
+  height: 52px;
+  overflow: hidden;
+  border-radius: 7px;
+  background: #ffffff0a;
+}
+.unavailable-player-portrait .portrait {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.unavailable-player-info {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+.unavailable-player-info > strong {
+  font-size: 12px;
+  line-height: 1.2;
+}
+.unavailable-player-info > small {
+  font-size: 10px;
+  color: #c8d8bf;
+  line-height: 1.2;
+}
+.unavailable-player-games {
+  font-size: 10px;
+  line-height: 1.25;
+  color: #f2d482;
+  font-weight: 700;
+}
+.unavailable-player-overall {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  padding: 7px 3px;
+  border: 1px solid;
+  border-radius: 8px;
+}
+.unavailable-player-overall small {
+  font-size: 8px;
+}
+.unavailable-player-overall strong {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.unavailable-player-info > small:has(.unavailable-reason) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+}
+.unavailable-reason {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.unavailable-reason svg {
+  flex-shrink: 0;
+  color: #efcf88;
 }

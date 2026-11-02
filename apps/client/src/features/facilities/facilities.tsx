@@ -198,7 +198,7 @@ export function Facilities(props: ViewProps & { training?: boolean }) {
           <span className="live-dot">VISUALIZAÇÃO 3D</span>
           {!training && (
             <>
-              <label className="stadium-skin-control">
+              <div className="stadium-skin-control">
                 <span>Estádio</span>
                 <Select
                   aria-label="Skin do Estádio"
@@ -233,7 +233,7 @@ export function Facilities(props: ViewProps & { training?: boolean }) {
                 {stadium.sectors.some((s) => s.level < 4) && (
                   <small>Troca de skin liberada no nível 4 de todos os setores.</small>
                 )}
-              </label>
+              </div>
             </>
           )}
         </div>
