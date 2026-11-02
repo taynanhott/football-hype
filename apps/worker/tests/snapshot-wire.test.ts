@@ -1,6 +1,28 @@
-import { expect, it } from 'vitest';
+import { expect, it, vi } from 'vitest';
 import { encodeSnapshotMessage } from '../src/snapshot-wire';
 import { decodeSnapshotMessage } from '../../client/src/store/snapshot-wire';
+
+it('compacta histórico por partes e preserva acentos, caracteres e valores financeiros', async () => {
+  const data = {
+    state: {
+      history: Array.from({ length: 6000 }, (_, index) => ({
+        name: 'São Paulo ⚽',
+        cents: 123456789 + index,
+        coordinates: Array.from({ length: 44 }, (_, offset) => index + offset),
+        optional: undefined,
+      })),
+    },
+  };
+  const expected = JSON.stringify({ type: 'snapshot', data });
+  const stringify = vi.spyOn(JSON, 'stringify');
+  try {
+    const encoded = await encodeSnapshotMessage('snapshot', data, true);
+    expect(stringify.mock.calls.some(([value]) => value?.data === data)).toBe(false);
+    expect(await decodeSnapshotMessage(encoded)).toBe(expected);
+  } finally {
+    stringify.mockRestore();
+  }
+});
 
 it('transfere uma carreira acima de 32 MB compactada sem perder conteúdo', async () => {
   const data = {

@@ -10,6 +10,7 @@ import type {
   LeagueSummary,
   SavedLeague,
 } from '../../server/src/repositories/league-repository.js';
+import { leagueWakePlan, nextPlannedWake } from './wake-policy.js';
 
 type SqlStorageValue = string | number | null | ArrayBuffer;
 type Mode = 'offline' | 'multiplayer';
@@ -44,6 +45,7 @@ export class DurableLeagueRepository implements LeagueRepository {
     sql.exec(
       `CREATE TABLE IF NOT EXISTS draws(user_id TEXT, mode TEXT, value TEXT, PRIMARY KEY(user_id,mode))`,
     );
+    sql.exec('CREATE TABLE IF NOT EXISTS league_wakes(league_id TEXT PRIMARY KEY, value TEXT)');
   }
   private write(id: string, branch: string, value: unknown) {
     const json = JSON.stringify(value);
@@ -103,6 +105,11 @@ export class DurableLeagueRepository implements LeagueRepository {
   private metadata(state: WorldState) {
     const { id, name, mode, season, round, administratorId } = state;
     this.sql.exec(
+      'INSERT INTO league_wakes VALUES (?,?) ON CONFLICT(league_id) DO UPDATE SET value=excluded.value',
+      id,
+      JSON.stringify(leagueWakePlan(state)),
+    );
+    this.sql.exec(
       `INSERT INTO leagues VALUES (?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET revision=excluded.revision,status=excluded.status,due=excluded.due,summary=excluded.summary`,
       id,
       state.revision,
@@ -150,9 +157,17 @@ export class DurableLeagueRepository implements LeagueRepository {
           'event:%',
         ),
       ];
-      state = worldStateSchema.parse(
-        Object.fromEntries(branches.map(({ branch }) => [branch, this.read(id, branch)])),
-      );
+      const stored = new Set(branches.map(({ branch }) => branch));
+      if (branches.some(({ branch }) => !Object.hasOwn(worldStateSchema.shape, branch)))
+        throw new Error('Dados de carreira inválidos');
+      // Validate one branch at a time so raw JSON and its validated copy of the
+      // entire career never coexist. Missing branches still receive schema defaults.
+      state = Object.fromEntries(
+        Object.entries(worldStateSchema.shape).map(([branch, schema]) => [
+          branch,
+          schema.parse(stored.has(branch) ? this.read(id, branch) : undefined),
+        ]),
+      ) as WorldState;
     }
     const events = [
       ...this.sql.exec<{ sequence: number; metadata: string }>(
@@ -295,6 +310,32 @@ export class DurableLeagueRepository implements LeagueRepository {
     return [...this.sql.exec<{ id: string }>("SELECT id FROM leagues WHERE status='active'")].map(
       (r) => r.id,
     );
+  }
+  async wakeDeadlines(now: number): Promise<number[]> {
+    const rows = [
+      ...this.sql.exec<{ id: string; value: string | null }>(
+        "SELECT leagues.id,league_wakes.value FROM leagues LEFT JOIN league_wakes ON leagues.id=league_wakes.league_id WHERE leagues.status='active'",
+      ),
+    ];
+    const deadlines: number[] = [];
+    for (const row of rows) {
+      let plan: ReturnType<typeof leagueWakePlan>;
+      if (row.value) plan = JSON.parse(row.value) as ReturnType<typeof leagueWakePlan>;
+      else {
+        // Existing careers build this small scheduling index once, without changing their revision.
+        const saved = await this.load(row.id, { eventPatches: false });
+        if (!saved) continue;
+        plan = leagueWakePlan(saved.state);
+        this.sql.exec(
+          'INSERT OR REPLACE INTO league_wakes VALUES (?,?)',
+          row.id,
+          JSON.stringify(plan),
+        );
+      }
+      const at = nextPlannedWake(plan, now);
+      if (at !== undefined) deadlines.push(at);
+    }
+    return deadlines;
   }
   async due(now: number): Promise<readonly string[]> {
     return [

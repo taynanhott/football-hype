@@ -1,8 +1,33 @@
 import { describe, expect, it } from 'vitest';
+import { matchResultSchema } from '@football/shared';
 import { createWorld, playNextBatch, simulateMatch } from '../src/index.js';
 import { unwrap } from '../../../tests/fixtures/domain.js';
 const now = Date.parse('2026-10-26T15:00:00Z');
 describe('relatórios persistentes de partidas', () => {
+  it('mantém coordenadas válidas para salvar avanços com reposições na linha de fundo', () => {
+    const state = unwrap(
+      createWorld({
+        id: '00000090-0000-4000-8000-000000000005',
+        name: 'Partida',
+        mode: 'offline',
+        userId: 'host',
+        now,
+      }),
+    );
+    const fixture = { ...state.fixtures[0]!, id: 'restart-coordinate-regression' };
+    const home = state.clubs.byId[fixture.homeId]!;
+    const away = state.clubs.byId[fixture.awayId]!;
+    for (let seed = 0; seed < 100; seed++) {
+      const result = simulateMatch(
+        fixture,
+        home.playerIds.slice(0, 11).map((id) => state.players.byId[id]!),
+        away.playerIds.slice(0, 11).map((id) => state.players.byId[id]!),
+        state.stadiums.byId[home.stadiumId]!,
+        seed,
+      );
+      expect(matchResultSchema.safeParse(result).success, `seed ${seed}`).toBe(true);
+    }
+  });
   it('as estatísticas e placar correspondem aos lances e expulsos não voltam a jogar', () => {
     const state = unwrap(
       createWorld({
@@ -30,6 +55,7 @@ describe('relatórios persistentes de partidas', () => {
         seed,
       );
       expect(result.durationMs).toBe(90000);
+      expect(matchResultSchema.safeParse(result).success).toBe(true);
       expect(result.statistics!.home.possession + result.statistics!.away.possession).toBe(100);
       for (const side of ['home', 'away'] as const) {
         const events = result.actions!.filter((a) => a.side === side);

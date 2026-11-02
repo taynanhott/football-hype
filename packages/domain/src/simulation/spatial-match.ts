@@ -212,7 +212,9 @@ export function spatialMatch(
       ...(actor ? { playerId: actor.id } : {}),
       coordinates: players.flatMap((p) => {
         const point = poses[p.id]!;
-        return [Math.round(point.x * 10), Math.round(point.z * 10)];
+        // Restarts can place the carrier on the goal line or behind it.
+        // Keep the recorded player positions inside the playable pitch.
+        return [Math.round(clamp(point.x, -32, 32) * 10), Math.round(clamp(point.z, -50, 50) * 10)];
       }),
       ...extra,
     };

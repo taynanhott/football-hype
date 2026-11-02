@@ -5,7 +5,6 @@ import type { Identity } from '../../server/src/auth/identity.js';
 import { DurableLeagueRepository } from './repository.js';
 import { authenticate } from './auth.js';
 import { datasetProvider } from './dataset.js';
-import { nextLeagueWake } from './wake-policy.js';
 import type { GameSnapshot } from '@football/shared';
 import { UsageMeter } from './usage-meter.js';
 import { encodeSnapshotMessage } from './snapshot-wire.js';
@@ -229,6 +228,7 @@ export class GameHubV2 extends DurableObject<Env> {
     );
   }
   private send(ws: WebSocket, type: string, data: unknown) {
+    if (ws.readyState === 2 || ws.readyState === 3) return;
     const payload = JSON.stringify({ type, data });
     this.meter.totals.sentMessages++;
     this.meter.totals.sentBytes += new TextEncoder().encode(payload).byteLength;
@@ -237,7 +237,9 @@ export class GameHubV2 extends DurableObject<Env> {
     ws.send(payload);
   }
   private async sendSnapshot(ws: WebSocket, session: Session, type: string, data: unknown) {
+    if (ws.readyState === 2 || ws.readyState === 3) return;
     const payload = await encodeSnapshotMessage(type, data, session.compressedSnapshots === true);
+    if (ws.readyState === 2 || ws.readyState === 3) return;
     this.meter.totals.sentMessages++;
     this.meter.totals.sentBytes +=
       typeof payload === 'string'
@@ -314,9 +316,15 @@ export class GameHubV2 extends DurableObject<Env> {
       session.sentSnapshot = true;
       ws.serializeAttachment(session);
       this.sent.set(ws, snapshot);
-    } catch {
+    } catch (error) {
       this.meter.totals.errors++;
-      ws.close(1008, 'Participação encerrada');
+      console.error(JSON.stringify({ event: 'game.snapshot.failed', message: errorText(error) }));
+      if (ws.readyState !== 2 && ws.readyState !== 3) {
+        this.send(ws, 'error', {
+          message: 'Não foi possível carregar a carreira. Seus dados salvos foram preservados.',
+        });
+        ws.close(errorText(error) === 'Acesso negado' ? 1008 : 1011, 'Falha ao carregar carreira');
+      }
     }
   }
   override async webSocketMessage(ws: WebSocket, message: string | ArrayBuffer): Promise<void> {
@@ -412,12 +420,7 @@ export class GameHubV2 extends DurableObject<Env> {
   }
   private async schedule() {
     const now = Date.now();
-    const deadlines: number[] = [];
-    for (const id of await this.repository.active()) {
-      const saved = await this.repository.load(id, { eventPatches: false });
-      const at = saved && nextLeagueWake(saved.state, now);
-      if (at !== undefined) deadlines.push(at);
-    }
+    const deadlines = await this.repository.wakeDeadlines(now);
     for (const ws of this.ctx.getWebSockets()) {
       const session = ws.deserializeAttachment() as Session | null;
       if (session) deadlines.push(Math.max(now + 1000, session.expires));

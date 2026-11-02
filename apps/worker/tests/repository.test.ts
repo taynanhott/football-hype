@@ -1,5 +1,6 @@
 import { DatabaseSync } from 'node:sqlite';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
+import { nextLeagueWake } from '../src/wake-policy.js';
 import { LeagueService } from '../../server/src/application/league-service.js';
 import { DurableLeagueRepository, type SqlStore } from '../src/repository.js';
 import { FileDataProvider } from '../../server/src/repositories/file-data-provider.js';
@@ -63,6 +64,15 @@ describe('Durable SQLite: atomicidade e recuperação', () => {
         repo.append(id, before.state.revision, saved.state, saved.events.at(-1)!),
       ).rejects.toThrow();
       expect((await reload.load(id))?.state.revision).toBe(revision);
+      const now = Date.parse('2026-10-28T15:00:00Z');
+      const load = vi.spyOn(reload, 'load');
+      expect(await reload.wakeDeadlines(now)).toEqual([nextLeagueWake(saved.state, now)]);
+      expect(load).not.toHaveBeenCalled();
+      db.prepare('DELETE FROM league_wakes WHERE league_id=?').run(id);
+      expect(await reload.wakeDeadlines(now)).toEqual([nextLeagueWake(saved.state, now)]);
+      expect(load).toHaveBeenCalledTimes(1);
+      await reload.wakeDeadlines(now);
+      expect(load).toHaveBeenCalledTimes(1);
       expect((await repo.summariesForUser(user.userId))[0]?.id).toBe(id);
       await expect(repo.remove(id, 'intruder', Date.now())).rejects.toThrow();
       await repo.remove(id, user.userId, Date.now());

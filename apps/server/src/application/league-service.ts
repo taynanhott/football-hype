@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { randomUUID, randomInt } from 'node:crypto';
 import {
   applyEvent,
+  success,
   normalizeRoundCalendar,
   upgradeUnstartedCompetitions,
   playNextBatch,
@@ -35,6 +36,15 @@ import type { LeagueRepository } from '../repositories/league-repository.js';
 import type { Identity } from '../auth/identity.js';
 
 export class LeagueService {
+  /** Only for events just validated by recordEvent or executeCommand in this service. */
+  private applyRecordedEvent(
+    state: import('@football/shared').WorldState,
+    event: import('@football/shared').GameEvent,
+  ) {
+    if (event.sequence !== state.revision + 1) return applyEvent(state, event);
+    // Parsing again would clone every historical match and player a second time.
+    return success(Object.assign({}, state, event.patch, { revision: event.sequence }));
+  }
   private readonly onlineSessions = new Map<string, Set<string>>();
   setOnline(leagueId: string, userId: string, sessionId: string, online: boolean) {
     const key = `${leagueId}:${userId}`;
@@ -207,7 +217,7 @@ export class LeagueService {
       );
       throw new Error(event.error.message, { cause: event.error.issues });
     }
-    const applied = applyEvent(previous, event.value);
+    const applied = this.applyRecordedEvent(previous, event.value);
     if (!applied.ok) {
       console.error(
         JSON.stringify({
@@ -815,7 +825,7 @@ export class LeagueService {
           member.userId === userId ? { ...member, lastSeenAt: this.now() } : member,
         );
       }
-      const applied = applyEvent(saved.state, event.value);
+      const applied = this.applyRecordedEvent(saved.state, event.value);
       if (!applied.ok) throw new Error(applied.error.message);
       await this.repository.append(id, saved.state.revision, applied.value, event.value);
       let revision = applied.value.revision;
@@ -834,7 +844,7 @@ export class LeagueService {
           randomUUID(),
         );
         if (accelerated.ok) {
-          const state = applyEvent(applied.value, accelerated.value);
+          const state = this.applyRecordedEvent(applied.value, accelerated.value);
           if (state.ok) {
             await this.repository.append(
               id,
