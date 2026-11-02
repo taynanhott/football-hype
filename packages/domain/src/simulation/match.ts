@@ -10,7 +10,7 @@ import {
   type PlayStyle,
 } from '@football/shared';
 import { hashSeed, mulberry32 } from './random.js';
-import { spatialMatch } from './spatial-match.js';
+import { spatialMatch, type MatchOptions } from './spatial-match.js';
 import { completedMatchState } from '../multiplayer/machines.js';
 
 export interface MatchStrategy {
@@ -38,6 +38,7 @@ export function simulateMatch(
   strategy: MatchStrategy = balancedStrategy,
   economics?: { attendance: number; occupancy: number; revenue: number; priceCents: number },
   styles?: { home: PlayStyle; away: PlayStyle },
+  options?: MatchOptions,
 ): MatchResult {
   const matchSeed = hashSeed(seed, fixture.id);
   const random = mulberry32(matchSeed);
@@ -60,7 +61,7 @@ export function simulateMatch(
     occupancy * GAMEPLAY.cauldronBonus * Math.sqrt(attendance / GAMEPLAY.referenceAttendance);
   const difference =
     strategy.strength(home) - strategy.strength(away) + (fixture.neutral ? 0 : advantage);
-  const simulation = spatialMatch(home, away, random, difference, styles);
+  const simulation = spatialMatch(home, away, random, difference, styles, options);
   const commerce = benefits.commerce;
   return {
     fixtureId: fixture.id,

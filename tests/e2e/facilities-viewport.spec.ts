@@ -24,6 +24,28 @@ test('CT e estádio cabem na tela com painéis de altura estável', async ({ pag
       { width: 360, height: 640 },
     ]) {
       await page.setViewportSize(size);
+      const gaps = await tabs.evaluateAll((buttons) => {
+        const boxes = buttons.map((button) => button.getBoundingClientRect());
+        const rows = [...new Set(boxes.map((box) => box.top))].sort((a, b) => a - b);
+        const distances: number[] = [];
+        for (const top of rows) {
+          const row = boxes.filter((box) => box.top === top).sort((a, b) => a.left - b.left);
+          row.slice(1).forEach((box, i) => distances.push(box.left - row[i]!.right));
+        }
+        if (rows.length > 1)
+          distances.push(
+            rows[1]! -
+              Math.max(...boxes.filter((box) => box.top === rows[0]).map((box) => box.bottom)),
+          );
+        return {
+          rows: rows.length,
+          min: Math.min(...distances),
+          heights: boxes.map((box) => box.height),
+        };
+      });
+      expect(gaps.rows).toBe(2);
+      expect(gaps.min).toBeGreaterThanOrEqual(7);
+      expect(gaps.heights.every((height) => height === 34)).toBe(true);
       let firstHeight = 0;
       for (let i = 0; i < (await tabs.count()); i++) {
         await tabs.nth(i).click();

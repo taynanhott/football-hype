@@ -40,6 +40,10 @@ const STYLES: { id: PlayStyle; icon: string; description: string }[] = [
       'Zagueiros, volantes e goleiro com bom overall e condição física fortalecem a defesa. Combina com 5-3-2 e 5-4-1 e leva vantagem contra gegenpress.',
   },
 ];
+export const PLAY_STYLE_ICONS = Object.fromEntries(
+  STYLES.map(({ id, icon }) => [id, icon]),
+) as Record<PlayStyle, string>;
+
 export function PlayStylePicker({
   value,
   onChange,

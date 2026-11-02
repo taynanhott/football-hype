@@ -24,6 +24,7 @@ export function Select({
   disabled = false,
   id,
   className = '',
+  menuMinWidth = 0,
   'aria-label': ariaLabel,
 }: {
   children: ReactNode;
@@ -32,6 +33,7 @@ export function Select({
   disabled?: boolean;
   id?: string;
   className?: string;
+  menuMinWidth?: number;
   'aria-label'?: string;
 }) {
   const listId = useId();
@@ -80,7 +82,7 @@ export function Select({
       const above = rect.top - 12;
       const up = below < 200 && above > below;
       const height = Math.min(320, Math.max(80, up ? above : below));
-      const width = Math.min(rect.width, window.innerWidth - 24);
+      const width = Math.min(Math.max(rect.width, menuMinWidth), window.innerWidth - 24);
       Object.assign(list.style, {
         width: `${width}px`,
         maxHeight: `${height}px`,
@@ -97,7 +99,7 @@ export function Select({
       window.removeEventListener('scroll', position, true);
       list.hidePopover();
     };
-  }, [open]);
+  }, [open, menuMinWidth]);
   useLayoutEffect(() => {
     if (open)
       menu.current?.querySelector(`[data-index="${active}"]`)?.scrollIntoView({ block: 'nearest' });

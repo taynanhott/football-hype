@@ -67,9 +67,7 @@ test('cabeçalho legível no empréstimo e listas de táticas nas duas abas', as
     await page.setViewportSize(size);
     await expect(async () => {
       const bounds = await page.locator('.tactics-field').boundingBox();
-      const nav = await page.locator('.mobile-bottom-nav').boundingBox();
-      expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(nav!.y);
-      expect(bounds!.height).toBeLessThanOrEqual(bounds!.width * 1.6 + 1);
+      expect(bounds!.height).toBe(480);
       await expect(page.locator('.lineup-club-summary')).toBeInViewport();
       await expect(page.locator('.tactics-chemistry')).toHaveCount(0);
       const cards = await page.locator('.tactics-player').evaluateAll((elements) =>
@@ -81,7 +79,7 @@ test('cabeçalho legível no empréstimo e listas de táticas nas duas abas', as
       expect(cards).toHaveLength(11);
       for (const card of cards) {
         expect(card.top).toBeGreaterThanOrEqual(0);
-        expect(card.bottom).toBeLessThanOrEqual(nav!.y);
+        expect(card.bottom).toBeLessThanOrEqual(bounds!.y + bounds!.height);
       }
       const overlapping = await page.locator('.tactics-player').evaluateAll((elements) => {
         const boxes = elements.map((element) => {

@@ -1,3 +1,5 @@
+import { MatchInstructionsEditor, UnavailablePlayers } from './match-instructions';
+import { FormationIcon } from './formation-icon';
 import { showDraggedCard, startCardPointerDrag } from '../../ui/card-drag';
 import { SquadAverages } from './squad-averages';
 import { PlayStylePicker } from './play-style-picker';
@@ -16,6 +18,7 @@ import {
   type PlayStyle,
   type Formation,
   type Lineup,
+  type MatchInstructions,
 } from '@football/shared';
 import {
   medicallyAvailable,
@@ -33,35 +36,9 @@ import { PlayerModal } from './player-modal';
 import { LineupPresets } from './lineup-presets';
 import { MatchBench } from './match-bench';
 
+const emptyInstructions: MatchInstructions = { substitutions: [], protected: [], situations: [] };
+
 export function LineupEditor({ snapshot, club, center }: ViewProps) {
-  const fieldRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const field = fieldRef.current;
-    if (!field) return;
-    const fit = () => {
-      if (!window.matchMedia('(max-width: 760px)').matches) return;
-      const viewport = window.visualViewport;
-      const bottom = Math.min(
-        (viewport?.height ?? window.innerHeight) + (viewport?.offsetTop ?? 0),
-        document.querySelector('.mobile-bottom-nav')?.getBoundingClientRect().top ?? Infinity,
-      );
-      const top = field.getBoundingClientRect().top + window.scrollY;
-      const height = Math.max(220, Math.min(bottom - top - 100, field.clientWidth * 1.6, 560));
-      field.style.setProperty('--mobile-pitch-height', `${height}px`);
-      field.style.setProperty('--mobile-card-scale', String(Math.min(1, height / 640)));
-    };
-    fit();
-    const observer = new ResizeObserver(fit);
-    const header = field.closest('.tactics-panel')?.querySelector('.tactics-header');
-    if (header) observer.observe(header);
-    window.addEventListener('resize', fit);
-    window.visualViewport?.addEventListener('resize', fit);
-    return () => {
-      observer.disconnect();
-      window.removeEventListener('resize', fit);
-      window.visualViewport?.removeEventListener('resize', fit);
-    };
-  }, []);
   const state = snapshot.state;
   const [analysisOpen, setAnalysisOpen] = useState(false);
   const [formation, setFormation] = useState<Formation>(
@@ -78,6 +55,9 @@ export function LineupEditor({ snapshot, club, center }: ViewProps) {
         entry.player ? [entry.player.id] : [],
       ),
     ),
+  );
+  const [instructions, setInstructions] = useState<MatchInstructions>(
+    state.tactics[club.id]?.instructions ?? emptyInstructions,
   );
   const [selected, setSelected] = useState(0);
   const [selectionOpen, setSelectionOpen] = useState(false);
@@ -171,7 +151,24 @@ export function LineupEditor({ snapshot, club, center }: ViewProps) {
     style,
   );
   const fieldHeight = 620;
-  const entries = resolvedEntries;
+  const upperRows = [
+    ...new Set(resolvedEntries.map((entry) => entry.y).filter((y) => y <= 60)),
+  ].sort((a, b) => a - b);
+  const widestGap = upperRows.slice(1).reduce(
+    (largest, y, index) => {
+      const previous = upperRows[index]!;
+      return y - previous > largest.size ? { before: previous, size: y - previous } : largest;
+    },
+    { before: -1, size: 0 },
+  );
+  const forwardShift = Math.min(6, Math.max(0, widestGap.size - 22));
+  const entries = resolvedEntries.map((entry) => {
+    if (entry.position === 'CB' && entry.x === 50) return { ...entry, y: Math.min(entry.y, 74) };
+    if (entry.position === 'SS' && entry.x === 50) return { ...entry, y: Math.max(entry.y, 30) };
+    if (formation === '3-2-4-1' && entry.position === 'DM') return { ...entry, y: 59 };
+    if (entry.y <= widestGap.before) return { ...entry, y: entry.y + forwardShift };
+    return entry;
+  });
   const pitchTop = 3;
   const pitchBottom = 97;
   const pitchMiddle = (pitchTop + pitchBottom) / 2;
@@ -185,7 +182,21 @@ export function LineupEditor({ snapshot, club, center }: ViewProps) {
   const reserves = bench.filter(
     (id) => !ids.includes(id) && club.playerIds.includes(id) && medicallyAvailable(state, id),
   );
-  const draftKey = JSON.stringify({ formation, starters: ids, style, bench: reserves });
+  const activeInstructions = {
+    ...instructions,
+    substitutions: instructions.substitutions.filter(
+      (p) =>
+        ids.includes(p.out) && reserves.includes(p.in) && !instructions.protected.includes(p.out),
+    ),
+    protected: instructions.protected.filter((id) => ids.includes(id)),
+  };
+  const draftKey = JSON.stringify({
+    formation,
+    starters: ids,
+    style,
+    bench: reserves,
+    instructions: activeInstructions,
+  });
   const saved = state.tactics[club.id];
   const savedKey = saved
     ? JSON.stringify({
@@ -193,6 +204,7 @@ export function LineupEditor({ snapshot, club, center }: ViewProps) {
         starters: saved.starters,
         style: saved.style ?? 'balanced',
         bench: saved.bench ?? [],
+        instructions: saved.instructions ?? emptyInstructions,
       })
     : '';
   const pending = dirty && draftKey !== savedKey;
@@ -299,169 +311,225 @@ export function LineupEditor({ snapshot, club, center }: ViewProps) {
           </button>
         </div>
       )}
+      <LineupPresets
+        presets={state.lineupPresets?.[club.id] ?? []}
+        current={{
+          formation,
+          starters: ids,
+          style,
+          bench: reserves,
+          instructions: activeInstructions,
+        }}
+        onLoad={(plan) => {
+          setInstructions(plan.instructions ?? emptyInstructions);
+          setFormation(plan.formation);
+          setStyle(plan.style ?? 'balanced');
+          setStarters([...plan.starters]);
+          const loadedIds = resolveLineup(
+            state,
+            club,
+            state.nextScheduledAt,
+            state.players.byId,
+            plan.formation,
+            plan.starters,
+          ).flatMap((entry) => (entry.player ? [entry.player.id] : []));
+          setBench(resolveBench(state, club, state.nextScheduledAt, loadedIds, plan.bench));
+          setDirty(true);
+          lastAttempt.current = '';
+          useGameStore.getState().clearError();
+        }}
+      />
       <div className="lineup-layout">
-        <section className="tactics-panel">
-          <div className="tactics-header lineup-club-summary">
-            <div className="lineup-summary-metrics">
-              <SquadAverages state={snapshot.state} club={club} lineup={entries} />
-              <div className="lineup-summary-stat">
-                <span>Entrosamento</span>
-                <strong>{chemistry}%</strong>
+        <div className="lineup-main-column">
+          <section className="tactics-panel">
+            <div className="tactics-header lineup-club-summary">
+              <div className="lineup-summary-metrics">
+                <SquadAverages state={snapshot.state} club={club} lineup={entries} />
+                <div className="lineup-summary-stat">
+                  <span>Entrosamento</span>
+                  <strong>{chemistry}%</strong>
+                </div>
               </div>
             </div>
-          </div>
-          <div className="tactics-scroll">
-            <div ref={fieldRef} className="tactics-field" style={{ height: fieldHeight }}>
-              <svg
-                className="tactics-lines"
-                viewBox="0 0 100 100"
-                preserveAspectRatio="none"
-                aria-hidden="true"
-              >
-                <path
-                  d={`M3 ${pitchTop}H97V${pitchBottom}H3ZM3 ${pitchMiddle}H97M30 ${pitchTop}V${pitchTop + penaltyDepth}H70V${pitchTop}M30 ${pitchBottom}V${pitchBottom - penaltyDepth}H70V${pitchBottom}`}
-                  fill="none"
-                  stroke="#e6f0ce55"
-                  strokeWidth=".4"
-                />
-                <ellipse
-                  cx="50"
-                  cy={pitchMiddle}
-                  rx="13"
-                  ry={(pitchBottom - pitchTop) * 0.1}
-                  fill="none"
-                  stroke="#e6f0ce55"
-                  strokeWidth=".4"
-                />
-                {FORMATION_LINKS[formation].map(([from, to]) => {
-                  const entry = entries[from]!;
-                  const other = entries[to]!;
-                  return (
-                    <line
-                      key={from + '-' + to}
-                      x1={entry.x}
-                      y1={entry.y}
-                      x2={other.x}
-                      y2={other.y}
-                      stroke={
-                        Math.min(entry.chemistry, other.chemistry) >= 80
-                          ? '#a5d96c'
-                          : Math.min(entry.chemistry, other.chemistry) >= 40
-                            ? '#dbc45b'
-                            : '#bc7961'
-                      }
-                      strokeDasharray={entry.factor < 1 || other.factor < 1 ? '1.2 .8' : undefined}
-                      strokeWidth=".5"
-                      opacity=".8"
-                    />
-                  );
-                })}
-              </svg>
-              {entries.map((entry, index) => (
-                <button
-                  key={index}
-                  data-lineup-slot={index}
-                  data-dragging={dragging === entry.player?.id}
-                  draggable={!!entry.player}
-                  onPointerDown={(event) => {
-                    if (entry.player) startCardPointerDrag(event, entry.player.id);
-                  }}
-                  onDragStart={(event) => {
-                    if (!entry.player) return;
-                    event.dataTransfer.setData('text/plain', entry.player.id);
-                    event.dataTransfer.effectAllowed = 'move';
-                    showDraggedCard(event);
-                    setDragging(entry.player.id);
-                  }}
-                  onDragEnd={() => setDragging(null)}
-                  onDragOver={(event) => event.preventDefault()}
-                  onDrop={(event) => {
-                    event.preventDefault();
-                    assign(event.dataTransfer.getData('text/plain'), index);
-                    setDragging(null);
-                  }}
-                  data-tier={
-                    (entry.player?.overall ?? 0) <= 69
-                      ? 'bronze'
-                      : (entry.player?.overall ?? 0) <= 77
-                        ? 'silver'
-                        : (entry.player?.overall ?? 0) <= 85
-                          ? 'gold'
-                          : 'diamond'
-                  }
-                  className={`tactics-player ${selected === index ? 'selected' : ''} ${entry.factor < 1 ? 'out-of-position' : ''}`}
-                  style={{ left: `${entry.x}%`, top: `${entry.y}%` }}
-                  aria-label={`Posição ${index + 1} ${positionLabel(entry.position)}: ${entry.player?.name ?? 'Vazia'}`}
-                  aria-pressed={selected === index}
-                  onClick={() => {
-                    if (suppressClick.current) {
-                      suppressClick.current = false;
-                      return;
-                    }
-                    setSelected(index);
-                    setSelectionOpen(true);
-                  }}
+            <div className="tactics-scroll">
+              <div className="tactics-field" style={{ height: fieldHeight }}>
+                <svg
+                  className="tactics-lines"
+                  viewBox="0 0 100 100"
+                  preserveAspectRatio="none"
+                  aria-hidden="true"
                 >
-                  <span className="tactics-rating">
-                    <Overall
-                      base={entry.player?.overall ?? 0}
-                      modifier={
-                        fitnessOverall(entry.effectiveOverall, entry.player?.fitness ?? 100) -
-                        (entry.player?.overall ?? 0)
+                  <path
+                    d={`M3 ${pitchTop}H97V${pitchBottom}H3ZM3 ${pitchMiddle}H97M30 ${pitchTop}V${pitchTop + penaltyDepth}H70V${pitchTop}M30 ${pitchBottom}V${pitchBottom - penaltyDepth}H70V${pitchBottom}`}
+                    fill="none"
+                    stroke="#e6f0ce55"
+                    strokeWidth=".4"
+                  />
+                  <ellipse
+                    cx="50"
+                    cy={pitchMiddle}
+                    rx="13"
+                    ry={(pitchBottom - pitchTop) * 0.1}
+                    fill="none"
+                    stroke="#e6f0ce55"
+                    strokeWidth=".4"
+                  />
+                  {FORMATION_LINKS[formation].map(([from, to]) => {
+                    const entry = entries[from]!;
+                    const other = entries[to]!;
+                    return (
+                      <line
+                        key={from + '-' + to}
+                        x1={entry.x}
+                        y1={entry.y}
+                        x2={other.x}
+                        y2={other.y}
+                        stroke={
+                          Math.min(entry.chemistry, other.chemistry) >= 80
+                            ? '#a5d96c'
+                            : Math.min(entry.chemistry, other.chemistry) >= 40
+                              ? '#dbc45b'
+                              : '#bc7961'
+                        }
+                        strokeDasharray={
+                          entry.factor < 1 || other.factor < 1 ? '1.2 .8' : undefined
+                        }
+                        strokeWidth=".5"
+                        opacity=".8"
+                      />
+                    );
+                  })}
+                </svg>
+                {entries.map((entry, index) => (
+                  <button
+                    key={index}
+                    data-lineup-slot={index}
+                    data-dragging={dragging === entry.player?.id}
+                    draggable={!!entry.player}
+                    onPointerDown={(event) => {
+                      if (entry.player) startCardPointerDrag(event, entry.player.id);
+                    }}
+                    onDragStart={(event) => {
+                      if (!entry.player) return;
+                      event.dataTransfer.setData('text/plain', entry.player.id);
+                      event.dataTransfer.effectAllowed = 'move';
+                      showDraggedCard(event);
+                      setDragging(entry.player.id);
+                    }}
+                    onDragEnd={() => setDragging(null)}
+                    onDragOver={(event) => event.preventDefault()}
+                    onDrop={(event) => {
+                      event.preventDefault();
+                      assign(event.dataTransfer.getData('text/plain'), index);
+                      setDragging(null);
+                    }}
+                    data-tier={
+                      (entry.player?.overall ?? 0) <= 69
+                        ? 'bronze'
+                        : (entry.player?.overall ?? 0) <= 77
+                          ? 'silver'
+                          : (entry.player?.overall ?? 0) <= 85
+                            ? 'gold'
+                            : 'diamond'
+                    }
+                    className={`tactics-player ${selected === index ? 'selected' : ''} ${entry.factor < 1 ? 'out-of-position' : ''}`}
+                    style={{ left: `${entry.x}%`, top: `${entry.y}%` }}
+                    aria-label={`Posição ${index + 1} ${positionLabel(entry.position)}: ${entry.player?.name ?? 'Vazia'}`}
+                    aria-pressed={selected === index}
+                    onClick={() => {
+                      if (suppressClick.current) {
+                        suppressClick.current = false;
+                        return;
                       }
-                    />
-                    <small>{positionLabel(entry.position)}</small>
-                  </span>
-                  {entry.player && <Portrait player={entry.player} />}
-                  <strong>{entry.player?.name ?? 'Sem atleta'}</strong>
-                  <span
-                    className="chemistry-meter"
-                    aria-label={`Condicionamento físico ${Math.round(entry.player?.fitness ?? 0)}%`}
+                      setSelected(index);
+                      setSelectionOpen(true);
+                    }}
                   >
-                    <i style={{ width: `${entry.player?.fitness ?? 0}%` }} />
-                  </span>
-                </button>
-              ))}
+                    <span className="tactics-rating">
+                      <Overall
+                        base={entry.player?.overall ?? 0}
+                        modifier={
+                          fitnessOverall(entry.effectiveOverall, entry.player?.fitness ?? 100) -
+                          (entry.player?.overall ?? 0)
+                        }
+                      />
+                      <small>{positionLabel(entry.position)}</small>
+                    </span>
+                    {entry.player && <Portrait player={entry.player} />}
+                    <strong>{entry.player?.name ?? 'Sem atleta'}</strong>
+                    <span
+                      className="chemistry-meter"
+                      aria-label={`Condicionamento físico ${Math.round(entry.player?.fitness ?? 0)}%`}
+                    >
+                      <i style={{ width: `${entry.player?.fitness ?? 0}%` }} />
+                    </span>
+                  </button>
+                ))}
+              </div>
             </div>
+            <MatchBench
+              state={state}
+              club={club}
+              starters={ids}
+              reserves={reserves}
+              onMove={(id, targetId, related) => {
+                if (
+                  !club.playerIds.includes(id) ||
+                  !medicallyAvailable(state, id) ||
+                  id === targetId
+                )
+                  return;
+                const slot = ids.indexOf(id);
+                if (slot >= 0) {
+                  if (targetId) assign(targetId, slot);
+                  return;
+                }
+                const next = [...reserves];
+                const source = next.indexOf(id);
+                const target = targetId ? next.indexOf(targetId) : -1;
+                if (related) {
+                  if (source >= 0) return;
+                  if (target >= 0) next[target] = id;
+                  else if (source < 0 && next.length < 12) next.push(id);
+                } else if (source >= 0) {
+                  if (targetId && medicallyAvailable(state, targetId)) next[source] = targetId;
+                  else next.splice(source, 1);
+                }
+                if (
+                  next.length === reserves.length &&
+                  next.every((id, index) => id === reserves[index])
+                )
+                  return;
+                setBench(next);
+                setDirty(true);
+              }}
+              onChange={(next) => {
+                setBench(next);
+                setDirty(true);
+              }}
+            />
+          </section>
+          <div className="lineup-support">
+            <UnavailablePlayers state={state} club={club} />
+            <section className="sector-chemistry" aria-label="Entrosamento por setor">
+              <span className="eyebrow">CONEXÃO EM CAMPO</span>
+              {sectors.map((sector) => (
+                <div className="sector-chemistry-row" key={sector.name}>
+                  <div>
+                    <span>{sector.name}</span>
+                    <strong>{sector.percent}%</strong>
+                  </div>
+                  <meter
+                    min={0}
+                    max={100}
+                    value={sector.percent}
+                    aria-label={`Entrosamento do ${sector.name.toLowerCase()}`}
+                  />
+                </div>
+              ))}
+            </section>
           </div>
-          <MatchBench
-            state={state}
-            club={club}
-            starters={ids}
-            reserves={reserves}
-            onMove={(id, targetId, related) => {
-              if (!club.playerIds.includes(id) || !medicallyAvailable(state, id) || id === targetId)
-                return;
-              const slot = ids.indexOf(id);
-              if (slot >= 0) {
-                if (targetId) assign(targetId, slot);
-                return;
-              }
-              const next = [...reserves];
-              const source = next.indexOf(id);
-              const target = targetId ? next.indexOf(targetId) : -1;
-              if (related) {
-                if (source >= 0) return;
-                if (target >= 0) next[target] = id;
-                else if (source < 0 && next.length < 12) next.push(id);
-              } else if (source >= 0) {
-                if (targetId && medicallyAvailable(state, targetId)) next[source] = targetId;
-                else next.splice(source, 1);
-              }
-              if (
-                next.length === reserves.length &&
-                next.every((id, index) => id === reserves[index])
-              )
-                return;
-              setBench(next);
-              setDirty(true);
-            }}
-            onChange={(next) => {
-              setBench(next);
-              setDirty(true);
-            }}
-          />
-        </section>
+        </div>
         <div className="tactics-sidebar">
           <aside className="tactics-clipboard" aria-label="Prancheta tática">
             <span className="clipboard-pencil" aria-hidden="true" />
@@ -471,12 +539,17 @@ export function LineupEditor({ snapshot, club, center }: ViewProps) {
               Formação
               <Select
                 aria-label="Formação"
+                className="formation-select"
+                menuMinWidth={240}
                 value={formation}
                 onValueChange={(value) => changeFormation(formationSchema.parse(value))}
               >
                 {formationSchema.options.map((name) => (
                   <Option key={name} value={name}>
-                    {FORMATION_LABELS[name]}
+                    <span className="match-option-content">
+                      <FormationIcon formation={name} />
+                      <span>{FORMATION_LABELS[name]}</span>
+                    </span>
                   </Option>
                 ))}
               </Select>
@@ -502,42 +575,15 @@ export function LineupEditor({ snapshot, club, center }: ViewProps) {
               />
             )}
           </aside>
-          <section className="sector-chemistry" aria-label="Entrosamento por setor">
-            <span className="eyebrow">CONEXÃO EM CAMPO</span>
-            {sectors.map((sector) => (
-              <div className="sector-chemistry-row" key={sector.name}>
-                <div>
-                  <span>{sector.name}</span>
-                  <strong>{sector.percent}%</strong>
-                </div>
-                <meter
-                  min={0}
-                  max={100}
-                  value={sector.percent}
-                  aria-label={`Entrosamento do ${sector.name.toLowerCase()}`}
-                />
-              </div>
-            ))}
-          </section>
-          <LineupPresets
-            presets={state.lineupPresets?.[club.id] ?? []}
-            current={{ formation, starters: ids, style, bench: reserves }}
-            onLoad={(plan) => {
-              setFormation(plan.formation);
-              setStyle(plan.style ?? 'balanced');
-              setStarters([...plan.starters]);
-              const loadedIds = resolveLineup(
-                state,
-                club,
-                state.nextScheduledAt,
-                state.players.byId,
-                plan.formation,
-                plan.starters,
-              ).flatMap((entry) => (entry.player ? [entry.player.id] : []));
-              setBench(resolveBench(state, club, state.nextScheduledAt, loadedIds, plan.bench));
+          <MatchInstructionsEditor
+            state={state}
+            club={club}
+            starters={ids}
+            reserves={reserves}
+            value={activeInstructions}
+            onChange={(value) => {
+              setInstructions(value);
               setDirty(true);
-              lastAttempt.current = '';
-              useGameStore.getState().clearError();
             }}
           />
         </div>

@@ -45,6 +45,7 @@ export function MatchActors({
       result.lineups?.home ?? ids.filter((id) => state.players.byId[id]?.clubId === home?.id),
       result.lineups?.away ?? ids.filter((id) => state.players.byId[id]?.clubId === away?.id),
       ids.filter((id) => state.players.byId[id]?.position === 'GK'),
+      result.substitutions,
     );
   }, [result, state.players, home?.id, away?.id]);
   const view = samplePlayback(timeline, minute);
@@ -70,7 +71,9 @@ export function MatchActors({
       {Object.entries(view.positions).map(([id, point]) => {
         if (view.frame?.dismissed.includes(id)) return null;
         const side =
-          (result.lineups?.home.includes(id) ?? state.players.byId[id]?.clubId === home?.id)
+          result.lineups?.home.includes(id) ||
+          result.substitutions?.some((s) => s.in === id && s.side === 'home') ||
+          state.players.byId[id]?.clubId === home?.id
             ? 'home'
             : 'away';
         const club = side === 'home' ? home : away;

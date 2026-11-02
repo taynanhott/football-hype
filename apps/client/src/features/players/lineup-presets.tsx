@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import type { Lineup, WorldState } from '@football/shared';
 import { STYLE_LABELS } from '@football/domain';
 import { useGameStore } from '../../store/game-store';
@@ -13,6 +13,8 @@ export function LineupPresets({
   onLoad: (lineup: Lineup) => void;
 }) {
   const root = useRef<HTMLElement>(null);
+  const bodyId = useId();
+  const [expanded, setExpanded] = useState(true);
   useEffect(() => {
     const closeMenus = (event: PointerEvent | KeyboardEvent) => {
       if (event instanceof KeyboardEvent && event.key !== 'Escape') return;
@@ -47,7 +49,23 @@ export function LineupPresets({
     setName(initial);
   }
   return (
-    <section ref={root} className="lineup-presets" aria-label="Presets de escalação">
+    <section
+      ref={root}
+      className="lineup-presets"
+      aria-label="Presets de escalação"
+      data-expanded={expanded}
+    >
+      <button
+        type="button"
+        className="lineup-presets-toggle"
+        aria-expanded={expanded}
+        aria-controls={bodyId}
+        onClick={() => setExpanded(!expanded)}
+      >
+        <span>▤ ESCALAÇÕES SALVAS</span>
+        <small>{presets.length}/3</small>
+        <span aria-hidden="true">{expanded ? '⌃' : '⌄'}</span>
+      </button>
       <div className="lineup-presets-heading">
         <div>
           <h2>
@@ -56,122 +74,125 @@ export function LineupPresets({
         </div>
         <small>{presets.length}/3</small>
       </div>
-      {editing !== null && (
-        <form
-          className="preset-name-form"
-          onSubmit={(event) => {
-            event.preventDefault();
-            if (unavailable || !name.trim()) return;
-            if (editing === 'new')
-              send({
-                type: 'lineup-preset',
-                action: 'create',
-                id: crypto.randomUUID(),
-                name: name.trim(),
-                lineup: structuredClone(current),
-              });
-            else send({ type: 'lineup-preset', action: 'rename', id: editing, name: name.trim() });
-            setEditing(null);
-          }}
-        >
-          <label htmlFor="preset-name">
-            {editing === 'new' ? 'Nome do novo preset' : 'Editar nome do preset'}
-          </label>
-          <input
-            id="preset-name"
-            value={name}
-            maxLength={40}
-            autoFocus
-            placeholder="Ex.: Time principal"
-            onChange={(event) => setName(event.target.value)}
-          />
-          <button className="primary" disabled={unavailable || !name.trim()}>
-            {editing === 'new' ? 'Salvar preset atual' : 'Salvar nome'}
-          </button>
-          <button type="button" className="secondary" onClick={() => setEditing(null)}>
-            Cancelar
-          </button>
-        </form>
-      )}
-      <div className="lineup-presets-grid">
-        {presets.map((preset) => (
-          <article
-            className={`lineup-preset ${loadedId === preset.id ? 'is-loaded' : ''}`}
-            key={preset.id}
+      <div className="lineup-presets-body" id={bodyId}>
+        {editing !== null && (
+          <form
+            className="preset-name-form"
+            onSubmit={(event) => {
+              event.preventDefault();
+              if (unavailable || !name.trim()) return;
+              if (editing === 'new')
+                send({
+                  type: 'lineup-preset',
+                  action: 'create',
+                  id: crypto.randomUUID(),
+                  name: name.trim(),
+                  lineup: structuredClone(current),
+                });
+              else
+                send({ type: 'lineup-preset', action: 'rename', id: editing, name: name.trim() });
+              setEditing(null);
+            }}
           >
-            <button
-              type="button"
-              className="preset-load"
-              disabled={unavailable}
-              onClick={() => {
-                onLoad(structuredClone(preset.lineup));
-              }}
-              aria-label={`Carregar preset ${preset.name}`}
-            >
-              <span>
-                <strong>{preset.name}</strong>
-                <small>
-                  {preset.lineup.formation} · {STYLE_LABELS[preset.lineup.style ?? 'balanced']}
-                </small>
-              </span>
+            <label htmlFor="preset-name">
+              {editing === 'new' ? 'Nome do novo preset' : 'Editar nome do preset'}
+            </label>
+            <input
+              id="preset-name"
+              value={name}
+              maxLength={40}
+              autoFocus
+              placeholder="Ex.: Time principal"
+              onChange={(event) => setName(event.target.value)}
+            />
+            <button className="primary" disabled={unavailable || !name.trim()}>
+              {editing === 'new' ? 'Salvar preset atual' : 'Salvar nome'}
             </button>
-            <details className="preset-menu">
-              <summary aria-label={`Ações do preset ${preset.name}`}>···</summary>
-              <div
-                className="preset-actions"
-                onClick={(event) => {
-                  if ((event.target as HTMLElement).closest('button')) {
-                    const menu = event.currentTarget.closest('details');
-                    if (menu) menu.open = false;
-                  }
+            <button type="button" className="secondary" onClick={() => setEditing(null)}>
+              Cancelar
+            </button>
+          </form>
+        )}
+        <div className="lineup-presets-grid">
+          {presets.map((preset) => (
+            <article
+              className={`lineup-preset ${loadedId === preset.id ? 'is-loaded' : ''}`}
+              key={preset.id}
+            >
+              <button
+                type="button"
+                className="preset-load"
+                disabled={unavailable}
+                onClick={() => {
+                  onLoad(structuredClone(preset.lineup));
                 }}
+                aria-label={`Carregar preset ${preset.name}`}
               >
-                <button
-                  type="button"
-                  disabled={unavailable}
-                  onClick={() => edit(preset.id, preset.name)}
-                >
-                  Editar nome
-                </button>
-                <button
-                  type="button"
-                  disabled={unavailable || current.starters.length !== 11}
-                  onClick={() =>
-                    send({
-                      type: 'lineup-preset',
-                      action: 'update',
-                      id: preset.id,
-                      lineup: current,
-                    })
-                  }
-                >
-                  Atualizar escalação
-                </button>
-                <button
-                  type="button"
-                  className="preset-delete"
-                  disabled={unavailable}
-                  onClick={() => {
-                    send({ type: 'lineup-preset', action: 'delete', id: preset.id });
-                    if (editing === preset.id) setEditing(null);
+                <span>
+                  <strong>{preset.name}</strong>
+                  <small>
+                    {preset.lineup.formation} · {STYLE_LABELS[preset.lineup.style ?? 'balanced']}
+                  </small>
+                </span>
+              </button>
+              <details className="preset-menu">
+                <summary aria-label={`Ações do preset ${preset.name}`}>···</summary>
+                <div
+                  className="preset-actions"
+                  onClick={(event) => {
+                    if ((event.target as HTMLElement).closest('button')) {
+                      const menu = event.currentTarget.closest('details');
+                      if (menu) menu.open = false;
+                    }
                   }}
                 >
-                  Excluir
-                </button>
-              </div>
-            </details>
-          </article>
-        ))}
-        {presets.length < 3 && (
-          <button
-            type="button"
-            className="preset-create"
-            disabled={unavailable || current.starters.length !== 11}
-            onClick={() => edit('new')}
-          >
-            + Salvar atual
-          </button>
-        )}
+                  <button
+                    type="button"
+                    disabled={unavailable}
+                    onClick={() => edit(preset.id, preset.name)}
+                  >
+                    Editar nome
+                  </button>
+                  <button
+                    type="button"
+                    disabled={unavailable || current.starters.length !== 11}
+                    onClick={() =>
+                      send({
+                        type: 'lineup-preset',
+                        action: 'update',
+                        id: preset.id,
+                        lineup: current,
+                      })
+                    }
+                  >
+                    Atualizar escalação
+                  </button>
+                  <button
+                    type="button"
+                    className="preset-delete"
+                    disabled={unavailable}
+                    onClick={() => {
+                      send({ type: 'lineup-preset', action: 'delete', id: preset.id });
+                      if (editing === preset.id) setEditing(null);
+                    }}
+                  >
+                    Excluir
+                  </button>
+                </div>
+              </details>
+            </article>
+          ))}
+          {presets.length < 3 && (
+            <button
+              type="button"
+              className="preset-create"
+              disabled={unavailable || current.starters.length !== 11}
+              onClick={() => edit('new')}
+            >
+              + Salvar atual
+            </button>
+          )}
+        </div>
       </div>
     </section>
   );

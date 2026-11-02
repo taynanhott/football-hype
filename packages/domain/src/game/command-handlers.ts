@@ -270,6 +270,18 @@ export function handleCommand(input: CommandContext): Result<CommandOutcome> {
     }
     case 'lineup': {
       if (
+        command.instructions?.substitutions.some((plan) =>
+          command.instructions?.protected.includes(plan.out),
+        )
+      )
+        return failure(
+          domainError('VALIDATION_ERROR', 'Um jogador protegido não pode ter uma troca planejada'),
+        );
+      if (
+        (command.instructions?.substitutions ?? []).some(
+          (p) => !command.starters.includes(p.out) || !(command.bench ?? []).includes(p.in),
+        ) ||
+        (command.instructions?.protected ?? []).some((id) => !command.starters.includes(id)) ||
         command.starters.length !== 11 ||
         new Set(command.starters).size !== 11 ||
         command.starters.some((id) => statePlayerInvalid(context.state, context.club, id)) ||
@@ -291,6 +303,7 @@ export function handleCommand(input: CommandContext): Result<CommandOutcome> {
             ...context.state.tactics,
             [context.club.id]: {
               formation: command.formation,
+              ...(command.instructions ? { instructions: command.instructions } : {}),
               starters: command.starters,
               bench: command.bench ?? [],
               ...(command.style ? { style: command.style } : {}),

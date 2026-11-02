@@ -595,7 +595,47 @@ export const playStyleSchema = z.enum([
   'counter',
 ]);
 export type PlayStyle = z.infer<typeof playStyleSchema>;
+export const matchInstructionsSchema = z.strictObject({
+  substitutions: z
+    .array(
+      z.strictObject({
+        out: entityIdSchema,
+        in: entityIdSchema,
+        when: z.union([
+          z.literal(60),
+          z.literal(70),
+          z.literal(80),
+          z.literal(90),
+          z.literal('fatigue'),
+        ]),
+        score: z.enum(['always', 'winning', 'drawing', 'losing']),
+      }),
+    )
+    .max(3)
+    .refine(
+      (plans) =>
+        new Set(plans.map((p) => p.out)).size === plans.length &&
+        new Set(plans.map((p) => p.in)).size === plans.length,
+      'Não repita jogadores nas trocas',
+    ),
+  protected: z.array(entityIdSchema).max(2),
+  situations: z
+    .array(
+      z.strictObject({
+        trigger: z.enum(['winning-two', 'losing-60', 'drawing-75']),
+        style: playStyleSchema.optional(),
+        formation: formationSchema.optional(),
+      }),
+    )
+    .max(3)
+    .refine(
+      (rules) => new Set(rules.map((r) => r.trigger)).size === rules.length,
+      'Não repita situações',
+    ),
+});
+export type MatchInstructions = z.infer<typeof matchInstructionsSchema>;
 export const lineupSchema = z.strictObject({
+  instructions: matchInstructionsSchema.optional(),
   bench: z
     .array(entityIdSchema)
     .max(12)

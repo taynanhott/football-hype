@@ -1,9 +1,12 @@
 import {
+  FORMATIONS,
   penaltyPositions,
   type MatchResult,
   type PlayerSnapshot,
   type PlayStyle,
 } from '@football/shared';
+import { matchManagement, type MatchOptions } from './match-management.js';
+export type { MatchOptions } from './match-management.js';
 type Side = 'home' | 'away';
 type Point = { x: number; z: number };
 type Action = NonNullable<MatchResult['actions']>[number];
@@ -22,10 +25,12 @@ export function spatialMatch(
   away: readonly PlayerSnapshot[],
   random: () => number,
   strength: number,
-  styles: { home: PlayStyle; away: PlayStyle } = { home: 'balanced', away: 'balanced' },
+  initialStyles: { home: PlayStyle; away: PlayStyle } = { home: 'balanced', away: 'balanced' },
+  options: MatchOptions = {},
 ) {
-  const teams = { home, away };
-  const players = [...home, ...away];
+  const styles = { ...initialStyles };
+  const teams = { home: home.map((p) => ({ ...p })), away: away.map((p) => ({ ...p })) };
+  const players = [...teams.home, ...teams.away];
   const poses: Record<string, Point> = {};
   const bases: Record<string, Point> = {};
   const dismissed = new Set<string>();
@@ -115,7 +120,7 @@ export function spatialMatch(
     ...new Map(players.filter((p) => !dismissed.has(p.id)).map((p) => [p.id, p])).values(),
   ];
   const constrain = (player: PlayerSnapshot, point: Point) => {
-    const team: Side = home.some((p) => p.id === player.id) ? 'home' : 'away';
+    const team: Side = teams.home.some((p) => p.id === player.id) ? 'home' : 'away';
     return player.position === 'GK'
       ? round({
           x: clamp(point.x, -6, 6),
@@ -162,6 +167,26 @@ export function spatialMatch(
     const contact = { x: start.x + t * dx, z: start.z + t * dz };
     return { t, contact, gap: distance(point, contact) };
   };
+  const rateAction = (action: Action) => {
+    const id = action.playerId;
+    if (id) {
+      let delta = 0;
+      if (action.type === 'pass') delta = action.outcome === 'intercepted' ? -0.12 : 0.018;
+      if (action.type === 'shot')
+        delta = action.outcome === 'goal' ? 0.25 : action.onTarget ? 0.18 : -0.16;
+      if (action.type === 'tackle' || action.type === 'interception') delta = 0.22;
+      if (action.type === 'dribble') delta = 0.07;
+      if (action.type === 'cross') delta = action.outcome === 'complete' ? 0.12 : -0.05;
+      if (action.type === 'foul') delta = -0.15;
+      ratings[id] = (ratings[id] ?? 6) + delta;
+    }
+    if (action.type === 'shot' && action.keeperId)
+      ratings[action.keeperId] =
+        (ratings[action.keeperId] ?? 6) +
+        (action.outcome === 'saved' ? 0.35 : action.outcome === 'goal' ? -0.5 : 0);
+    if (action.type === 'pass' && action.interceptorId)
+      ratings[action.interceptorId] = (ratings[action.interceptorId] ?? 6) + 0.18;
+  };
   const emit = (
     minute: number,
     type: Action['type'],
@@ -176,7 +201,7 @@ export function spatialMatch(
         penaltyPositions(poses, actor?.id, keeper(side === 'home' ? 'away' : 'home')?.id, from),
       );
     }
-    actions.push({
+    const action: Action = {
       minute,
       type,
       side,
@@ -190,11 +215,37 @@ export function spatialMatch(
         return [Math.round(point.x * 10), Math.round(point.z * 10)];
       }),
       ...extra,
-    });
+    };
+    rateAction(action);
+    actions.push(action);
   };
+  const management = matchManagement(
+    options,
+    teams,
+    styles,
+    ratings,
+    dismissed,
+    (out, replacement) => {
+      players[players.findIndex((p) => p.id === out.id)] = replacement;
+      bases[replacement.id] = { ...bases[out.id]! };
+      poses[replacement.id] = { ...poses[out.id]! };
+      if (carrier?.id === out.id) carrier = replacement;
+      if (incoming?.player.id === out.id) incoming = { ...incoming, player: replacement };
+      if (crossTarget?.id === out.id) crossTarget = replacement;
+    },
+    (team, formation) => {
+      teams[team].forEach((p, i) => {
+        const slot = FORMATIONS[formation][i];
+        if (!slot) return;
+        p.position = slot.position;
+        bases[p.id] = { x: (slot.x - 50) * 0.62, z: (50 - slot.y) * direction(team) };
+      });
+    },
+  );
   // Movement and the ball share the same pitch coordinates on the server and in 3D.
   for (let step = 0; step < 180; step++) {
     const minute = (step * 90) / 180;
+    management.update(minute, homeGoals, awayGoals);
     const opposite: Side = side === 'home' ? 'away' : 'home';
     const dir = direction(side);
     statistics[side].possession++;
@@ -619,27 +670,6 @@ export function spatialMatch(
   statistics.away.possession = 100 - statistics.home.possession;
   for (const team of ['home', 'away'] as const)
     statistics[team].xg = Math.round(statistics[team].xg * 100) / 100;
-  // Evaluate participation and outcomes, so tactical roles are reflected in match ratings.
-  for (const action of actions) {
-    const id = action.playerId;
-    if (id) {
-      let delta = 0;
-      if (action.type === 'pass') delta = action.outcome === 'intercepted' ? -0.12 : 0.018;
-      if (action.type === 'shot')
-        delta = action.outcome === 'goal' ? 0.25 : action.onTarget ? 0.18 : -0.16;
-      if (action.type === 'tackle' || action.type === 'interception') delta = 0.22;
-      if (action.type === 'dribble') delta = 0.07;
-      if (action.type === 'cross') delta = action.outcome === 'complete' ? 0.12 : -0.05;
-      if (action.type === 'foul') delta = -0.15;
-      ratings[id] = (ratings[id] ?? 6) + delta;
-    }
-    if (action.type === 'shot' && action.keeperId)
-      ratings[action.keeperId] =
-        (ratings[action.keeperId] ?? 6) +
-        (action.outcome === 'saved' ? 0.35 : action.outcome === 'goal' ? -0.5 : 0);
-    if (action.type === 'pass' && action.interceptorId)
-      ratings[action.interceptorId] = (ratings[action.interceptorId] ?? 6) + 0.18;
-  }
   for (const team of ['home', 'away'] as const) {
     const conceded = team === 'home' ? awayGoals : homeGoals;
     for (const player of team === 'home' ? home : away) {
@@ -648,9 +678,12 @@ export function spatialMatch(
         (ratings[player.id] ?? 6) + (defending ? (conceded === 0 ? 0.7 : -conceded * 0.28) : 0);
     }
   }
+  management.update(90, homeGoals, awayGoals);
   for (const id of Object.keys(ratings))
     ratings[id] = Math.round(clamp(ratings[id] ?? 6, 0, 10) * 10) / 10;
   return {
+    substitutions: management.substitutions,
+    minutesPlayed: management.finish(),
     actions,
     scorers,
     statistics,

@@ -128,6 +128,19 @@ export const matchResultSchema = z.strictObject({
       away: lineupSchema.extend({ starters: z.array(entityIdSchema).max(11) }),
     })
     .optional(),
+  substitutions: z
+    .array(
+      z.strictObject({
+        side: z.enum(['home', 'away']),
+        minute: z.number().min(0).max(90),
+        out: entityIdSchema,
+        in: entityIdSchema,
+        reason: z.enum(['planned', 'fatigue', 'performance']),
+      }),
+    )
+    .max(10)
+    .optional(),
+  minutesPlayed: z.record(entityIdSchema, z.number().min(0).max(90)).optional(),
   ratings: z.record(entityIdSchema, z.number().min(0).max(10)).optional(),
   scorers: z.array(
     z.strictObject({

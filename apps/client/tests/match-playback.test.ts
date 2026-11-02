@@ -2,6 +2,38 @@ import { describe, expect, it } from 'vitest';
 import { MATCH_DURATION_MS } from '@football/shared';
 import { buildPlayback, samplePlayback, visibleActionMinute } from '../src/three/match-playback';
 describe('passes na reprodução 3D', () => {
+  it('mapeia as coordenadas do reserva para a vaga do titular substituído', () => {
+    const timeline = buildPlayback(
+      [
+        {
+          minute: 59,
+          type: 'pass',
+          side: 'home',
+          playerId: 'starter',
+          x: 0,
+          z: 0,
+          coordinates: [10, 20, 30, 40],
+        },
+        {
+          minute: 60,
+          type: 'pass',
+          side: 'home',
+          playerId: 'reserve',
+          x: 0,
+          z: 0,
+          coordinates: [50, 60, 70, 80],
+        },
+      ],
+      ['starter'],
+      ['opponent'],
+      [],
+      [{ minute: 60, side: 'home', out: 'starter', in: 'reserve', reason: 'planned' }],
+    );
+    expect(timeline[0]!.to.starter).toEqual({ x: 1, z: 2 });
+    expect(timeline[1]!.to.reserve).toEqual({ x: 5, z: 6 });
+    expect(timeline[1]!.to.starter).toBeUndefined();
+    expect(timeline[1]!.to.opponent).toEqual({ x: 7, z: 8 });
+  });
   const frames = buildPlayback(
     [
       { minute: 0, type: 'kickoff', side: 'home', x: 0, z: 0 },

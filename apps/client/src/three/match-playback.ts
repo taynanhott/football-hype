@@ -21,6 +21,7 @@ export function buildPlayback(
   home: string[],
   away: string[],
   keepers: string[] = [],
+  substitutions: NonNullable<MatchResult['substitutions']> = [],
 ): PlaybackFrame[] {
   const bases: Record<string, Point> = {};
   for (const [ids, direction] of [
@@ -85,11 +86,22 @@ export function buildPlayback(
         ...(action.keeperDive ? { keeperDive: action.keeperDive } : {}),
       };
     } else if (action.type === 'save') action = { ...action, ...lastDive };
+    const activeIds = [...home, ...away];
+    positions = { ...positions };
+    for (const swap of substitutions.filter((s) => s.minute <= minute)) {
+      const slot = activeIds.indexOf(swap.out);
+      if (slot >= 0) activeIds[slot] = swap.in;
+      if (positions[swap.out]) {
+        positions[swap.in] = positions[swap.out]!;
+        delete positions[swap.out];
+      }
+      if (keeperEnds[swap.out] !== undefined) keeperEnds[swap.in] = keeperEnds[swap.out]!;
+    }
     let recorded =
       action.positions ??
       (action.coordinates
         ? Object.fromEntries(
-            [...home, ...away].map((id, index) => [
+            activeIds.map((id, index) => [
               id,
               {
                 x: (action.coordinates?.[index * 2] ?? 0) / 10,

@@ -214,6 +214,26 @@ export function playNextBatch(state: WorldState, processedAt: number): Result<Wo
       undefined,
       matchDemand(state, fixture),
       { home: homePlan.style ?? 'balanced', away: awayPlan.style ?? 'balanced' },
+      Object.fromEntries(
+        (['home', 'away'] as const).map((side) => {
+          const club = side === 'home' ? home : away;
+          const plan = side === 'home' ? homePlan : awayPlan;
+          const lineup = side === 'home' ? homeLineup : awayLineup;
+          return [
+            side,
+            {
+              plan,
+              bench: resolveBench(
+                selectionState,
+                club,
+                scheduledAt,
+                lineup.map((p) => p.id),
+                plan.bench,
+              ).flatMap((id) => (players[id] ? [players[id]!] : [])),
+            },
+          ];
+        }),
+      ),
     );
     result.coachUserIds = Object.fromEntries(
       (['home', 'away'] as const).flatMap((side) => {
@@ -253,7 +273,13 @@ export function playNextBatch(state: WorldState, processedAt: number): Result<Wo
     results.push(result);
     revenue.set(home.id, (revenue.get(home.id) ?? 0) + result.revenue);
     const random = mulberry32(result.seed);
-    for (const player of [...homeLineup, ...awayLineup]) {
+    for (const player of [
+      ...new Set(
+        [...homeLineup, ...awayLineup]
+          .map((p) => p.id)
+          .concat((result.substitutions ?? []).map((s) => s.in)),
+      ),
+    ].flatMap((id) => (players[id] ? [players[id]!] : []))) {
       appeared.add(player.id);
       const load = workload[player.id];
       const consecutive = (load?.consecutiveMatches ?? 0) + 1;
@@ -342,7 +368,8 @@ export function playNextBatch(state: WorldState, processedAt: number): Result<Wo
           player.fitness -
             Math.ceil(
               ((GAMEPLAY.fitnessCost + Math.min(10, Math.max(0, consecutive - 2) * 2)) *
-                ageFatigueFactor(player.age)) /
+                ageFatigueFactor(player.age) *
+                ((result.minutesPlayed?.[player.id] ?? 90) / 90)) /
                 (1 +
                   ((center?.levels.fitness ?? 1) - 1) * GAMEPLAY.fitnessFatigueReductionPerLevel),
             ),
@@ -365,7 +392,8 @@ export function playNextBatch(state: WorldState, processedAt: number): Result<Wo
       };
       if (
         random() <
-        injuryProbability(player.fitness, consecutive, restHours, center?.levels.medical ?? 1)
+        injuryProbability(player.fitness, consecutive, restHours, center?.levels.medical ?? 1) *
+          ((result.minutesPlayed?.[player.id] ?? 90) / 90)
       )
         injuries[player.id] = Math.max(
           1,

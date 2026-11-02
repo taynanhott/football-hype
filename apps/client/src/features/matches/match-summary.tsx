@@ -284,7 +284,14 @@ export const PlayerRatings = memo(
               Object.keys(result.ratings ?? {}).filter(
                 (id) => state.players.byId[id]?.clubId === clubId,
               );
-            const players = ids.flatMap((id) =>
+            const activeIds = [...ids];
+            for (const swap of (result.substitutions ?? []).filter(
+              (s) => s.side === side && s.minute <= minute,
+            )) {
+              const index = activeIds.indexOf(swap.out);
+              if (index >= 0) activeIds[index] = swap.in;
+            }
+            const players = activeIds.flatMap((id) =>
               state.players.byId[id] ? [state.players.byId[id]!] : [],
             );
             const plan = result.tacticalPlans?.[side];
@@ -292,7 +299,7 @@ export const PlayerRatings = memo(
             const groups = slots
               ? [...new Set(slots.map((slot) => slot.y))].map((y) =>
                   slots.flatMap((slot, index) => {
-                    const player = state.players.byId[plan!.starters[index] ?? ''];
+                    const player = state.players.byId[activeIds[index] ?? ''];
                     return slot.y === y && player ? [player] : [];
                   }),
                 )
@@ -319,7 +326,7 @@ export const PlayerRatings = memo(
                   {rows.map((group, index) => (
                     <div key={index} className="ratings-player-row">
                       {group.map((player, transverse) => {
-                        const slotIndex = plan?.starters.indexOf(player.id) ?? -1;
+                        const slotIndex = activeIds.indexOf(player.id);
                         const slot = slots?.[slotIndex];
                         const depth = slot
                           ? 100 - slot.y
@@ -383,6 +390,24 @@ export const PlayerRatings = memo(
         <p className="ratings-key">
           Notas: <span>7–10</span> boa · 5–6,9 regular · abaixo de 5 baixa
         </p>
+        <div className="match-substitution-report">
+          {(result.substitutions ?? [])
+            .filter((s) => s.minute <= minute)
+            .map((s) => (
+              <p key={s.out}>
+                <strong>
+                  {s.minute}′ ⇄ {state.players.byId[s.in]?.name}
+                </strong>{' '}
+                entra · {state.players.byId[s.out]?.name} sai ·{' '}
+                {s.reason === 'planned'
+                  ? 'Planejada'
+                  : s.reason === 'fatigue'
+                    ? 'Cansaço'
+                    : 'Rendimento'}{' '}
+                · Nota de quem saiu: {ratings[s.out]?.toFixed(1) ?? '—'}
+              </p>
+            ))}
+        </div>
       </section>
     );
   },
