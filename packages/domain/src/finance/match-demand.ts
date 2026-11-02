@@ -7,7 +7,8 @@ import {
   type Fixture,
   type WorldState,
 } from '@football/shared';
-import { resolveLineup } from '../game/tactics.js';
+import { resolveLineup, lineupTacticalBonus } from '../game/tactics.js';
+import { tacticalBonus } from '../game/management.js';
 import { balancedStrategy } from '../simulation/match.js';
 import { scheduledFixtures } from '../competitions/fixtures.js';
 
@@ -185,12 +186,28 @@ export function matchProbabilities(state: WorldState, fixture: Fixture) {
   const strength = (clubId: string) => {
     const club = state.clubs.byId[clubId];
     if (!club) return 0;
-    const selection = resolveLineup(state, club, fixture.scheduledAt).flatMap((entry) =>
-      entry.player ? [{ ...entry.player, overall: entry.effectiveOverall }] : [],
+    const entries = resolveLineup(state, club, fixture.scheduledAt);
+    const plan = state.tactics[clubId];
+    const opposing = state.tactics[clubId === fixture.homeId ? fixture.awayId : fixture.homeId];
+    const bonus =
+      lineupTacticalBonus(entries) +
+      tacticalBonus(
+        plan?.style ?? 'balanced',
+        plan?.formation ?? '4-3-3',
+        opposing?.style ?? 'balanced',
+        opposing?.formation ?? '4-3-3',
+        entries.flatMap((e) =>
+          e.player ? [{ ...e.player, position: e.position, overall: e.effectiveOverall }] : [],
+        ),
+      );
+    const selection = entries.flatMap((entry) =>
+      entry.player
+        ? [{ ...entry.player, overall: Math.min(99, entry.effectiveOverall + bonus) }]
+        : [],
     );
     return balancedStrategy.strength(selection);
   };
-  const homeStrength = strength(fixture.homeId),
+  const baseHomeStrength = strength(fixture.homeId),
     awayStrength = strength(fixture.awayId);
   const demand = matchDemand(state, fixture);
   const advantage = fixture.neutral
@@ -199,7 +216,8 @@ export function matchProbabilities(state: WorldState, fixture: Fixture) {
       demand.occupancy *
         GAMEPLAY.cauldronBonus *
         Math.sqrt(demand.attendance / GAMEPLAY.referenceAttendance);
-  const difference = homeStrength - awayStrength + advantage;
+  const homeStrength = baseHomeStrength + advantage;
+  const difference = homeStrength - awayStrength;
   const draw = Math.round(28 * Math.exp(-Math.abs(difference) / 55));
   const home = Math.round((100 - draw) / (1 + Math.exp(-difference / 18)));
   return {
@@ -208,6 +226,7 @@ export function matchProbabilities(state: WorldState, fixture: Fixture) {
     away: 100 - home - draw,
     homeStrength,
     awayStrength,
-    homeCrowdStrength: fixture.neutral ? 0 : demand.occupancy,
+    homeCrowdBonus: advantage,
+    homeOccupancy: fixture.neutral ? 0 : demand.occupancy,
   };
 }

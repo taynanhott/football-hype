@@ -15,7 +15,7 @@ import {
   financialLimits,
   SearchTrie,
 } from '@football/domain';
-import { useEffect, useMemo, useState, useRef } from 'react';
+import { useEffect, useMemo, useState, useRef, useTransition, useCallback } from 'react';
 import type { PlayerSnapshot } from '@football/shared';
 import type { ViewProps } from '../../ui/view-props';
 import { useGameStore } from '../../store/game-store';
@@ -69,6 +69,7 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
     );
   const hasHigherOffer = reviewingOffers.some((offer) => higherOffer(offer) > offer.fee);
   const [searchQuery, setSearchQuery] = useState('');
+  const appliedSearchQuery = useRef('');
   const [searchSeed, setSearchSeed] = useState('');
   const [newsPlayerId, setNewsPlayerId] = useState<string | null>(null);
   const [viewMode, setViewMode] = usePlayerPresentation();
@@ -82,6 +83,18 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
   const [prospects, setProspects] = useState(false);
   const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [visibleCount, setVisibleCount] = useState(48);
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+  const loadArmed = useRef(true);
+  const applySearchQuery = useCallback((query: string) => {
+    if (appliedSearchQuery.current === query) return;
+    appliedSearchQuery.current = query;
+    loadArmed.current = true;
+    setSearchQuery(query);
+    setVisibleCount(48);
+  }, []);
+  const [loadingMore, startLoadMore] = useTransition();
+  const isOwnPlayer = (player: PlayerSnapshot) =>
+    player.clubId === club.id || snapshot.state.management?.loans?.[player.id]?.ownerId === club.id;
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [sortBy, setSortBy] = useState('overall');
   const [interestedPlayers, setInterestedPlayers] = useState(false);
@@ -99,10 +112,11 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
       if (!player) return;
       openedNewsLink.current = location.hash;
       const review = params.get('tab') === 'review';
-      setTab(review ? 'Em análise' : 'Todos');
+      setTab(review ? 'Pendente' : 'Todos');
       setViewMode('cards');
       if (!review) {
         setNewsPlayerId(player.id);
+        appliedSearchQuery.current = player.name;
         setSearchQuery(player.name);
         setSearchSeed(player.name);
         setProspects(false);
@@ -159,6 +173,7 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
     }
   });
   function toggleFavorite(id: string) {
+    if (snapshot.state.players.byId[id] && isOwnPlayer(snapshot.state.players.byId[id]!)) return;
     const next = favorites.includes(id)
       ? favorites.filter((value) => value !== id)
       : [...favorites, id];
@@ -196,8 +211,7 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
   const candidates = searchResults
     .filter(
       (player) =>
-        player.clubId !== club.id &&
-        !snapshot.state.management?.loans?.[player.id] &&
+        (!snapshot.state.management?.loans?.[player.id] || isOwnPlayer(player)) &&
         (exactNewsSearch || !player.academyClubId || !!player.clubId),
     )
     .filter((player) => {
@@ -228,43 +242,82 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
           (!filters.interestedClubs || (!context.blocked && context.clubInterest > 0))
         );
       });
-  const players = filterCandidates({
+  const matchingPlayers = filterCandidates({
     overall,
     age,
     price,
     interestedPlayers,
     interestedClubs,
-  })
-    .sort((a, b) => {
-      let difference = 0;
-      switch (sortBy) {
-        case 'age':
-          difference = a.age - b.age;
-          break;
-        case 'ageDesc':
-          difference = b.age - a.age;
-          break;
-        case 'price':
-          difference = a.marketValue.cents - b.marketValue.cents;
-          break;
-        case 'priceDesc':
-          difference = b.marketValue.cents - a.marketValue.cents;
-          break;
-        case 'salary':
-          difference = a.salary.cents - b.salary.cents;
-          break;
-        case 'salaryDesc':
-          difference = b.salary.cents - a.salary.cents;
-          break;
-        case 'name':
-          difference = a.name.localeCompare(b.name, 'pt-BR');
-          break;
-        default:
-          difference = b.overall - a.overall;
-      }
-      return difference || b.overall - a.overall || a.name.localeCompare(b.name, 'pt-BR');
-    })
-    .slice(0, prospects && searchQuery.length < 2 ? 8 + center.levels.scouting * 8 : visibleCount);
+  }).sort((a, b) => {
+    let difference = 0;
+    switch (sortBy) {
+      case 'age':
+        difference = a.age - b.age;
+        break;
+      case 'ageDesc':
+        difference = b.age - a.age;
+        break;
+      case 'price':
+        difference = a.marketValue.cents - b.marketValue.cents;
+        break;
+      case 'priceDesc':
+        difference = b.marketValue.cents - a.marketValue.cents;
+        break;
+      case 'salary':
+        difference = a.salary.cents - b.salary.cents;
+        break;
+      case 'salaryDesc':
+        difference = b.salary.cents - a.salary.cents;
+        break;
+      case 'name':
+        difference = a.name.localeCompare(b.name, 'pt-BR');
+        break;
+      default:
+        difference = b.overall - a.overall;
+    }
+    return difference || b.overall - a.overall || a.name.localeCompare(b.name, 'pt-BR');
+  });
+  const players = matchingPlayers.slice(
+    0,
+    prospects && searchQuery.length < 2 ? 8 + center.levels.scouting * 8 : visibleCount,
+  );
+  const hasMorePlayers = !prospects && matchingPlayers.length > visibleCount;
+  useEffect(() => {
+    const node = loadMoreRef.current;
+    if (!node || !hasMorePlayers || loadingMore) return;
+    const load = () => {
+      if (!loadArmed.current) return;
+      const rect = node.getBoundingClientRect();
+      if (rect.top > window.innerHeight + 160 || rect.bottom < 0) return;
+      loadArmed.current = false;
+      startLoadMore(() => setVisibleCount((count) => count + 48));
+    };
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) load();
+      },
+      { rootMargin: '160px' },
+    );
+    const arm = () => {
+      loadArmed.current = true;
+      load();
+    };
+    const key = (event: KeyboardEvent) => {
+      if (['ArrowDown', 'PageDown', 'End', ' '].includes(event.key)) arm();
+    };
+    observer.observe(node);
+    window.addEventListener('wheel', arm, { passive: true });
+    window.addEventListener('touchmove', arm, { passive: true });
+    window.addEventListener('pointerdown', arm, { passive: true });
+    window.addEventListener('keydown', key);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('wheel', arm);
+      window.removeEventListener('touchmove', arm);
+      window.removeEventListener('pointerdown', arm);
+      window.removeEventListener('keydown', key);
+    };
+  }, [hasMorePlayers, loadingMore, visibleCount, viewMode, tab]);
   const negotiation = [...snapshot.state.negotiations]
     .reverse()
     .find(
@@ -276,6 +329,7 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
           offer.status === 'completed'),
     );
   function choose(player: PlayerSnapshot) {
+    if (isOwnPlayer(player)) return;
     setSelected(player);
     setMeetingReady(
       snapshot.state.negotiations.some(
@@ -369,42 +423,40 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
       </div>
       <section className="market-controls panel" aria-label="Filtros de transferências">
         <div className="segmented market-tabs" role="group" aria-label="Categorias de jogadores">
-          {['Todos', 'A', 'B', 'C', 'Exterior', 'Livres', 'Propostas', 'Em análise'].map(
-            (value) => (
-              <button
-                key={value}
-                className={tab === value ? 'selected' : ''}
-                aria-pressed={tab === value}
-                onClick={() => {
-                  setTab(value);
-                  setVisibleCount(48);
-                }}
-              >
-                {['A', 'B', 'C'].includes(value) ? 'Série ' + value : value}
-                {value === 'Em análise' && hasHigherOffer && (
-                  <span
-                    className="offer-notification-dot"
-                    aria-label="Há uma oferta concorrente maior"
-                  />
-                )}
-                {value === 'Em análise' && (
-                  <span className="transfer-count">
-                    {
-                      snapshot.state.negotiations.filter(
-                        (n) => n.buyerId === club.id && n.status === 'review',
-                      ).length
-                    }
-                  </span>
-                )}
-                {value === 'Propostas' && proposalCount > 0 && (
-                  <span className="transfer-alert-dot" aria-label="Há propostas recebidas" />
-                )}
-                {value === 'Propostas' && <span className="transfer-count">{proposalCount}</span>}
-              </button>
-            ),
-          )}
+          {['Todos', 'A', 'B', 'C', 'Exterior', 'Livres', 'Propostas', 'Pendente'].map((value) => (
+            <button
+              key={value}
+              className={tab === value ? 'selected' : ''}
+              aria-pressed={tab === value}
+              onClick={() => {
+                setTab(value);
+                setVisibleCount(48);
+              }}
+            >
+              {['A', 'B', 'C'].includes(value) ? 'Série ' + value : value}
+              {value === 'Pendente' && hasHigherOffer && (
+                <span
+                  className="offer-notification-dot"
+                  aria-label="Há uma oferta concorrente maior"
+                />
+              )}
+              {value === 'Pendente' && (
+                <span className="transfer-count">
+                  {
+                    snapshot.state.negotiations.filter(
+                      (n) => n.buyerId === club.id && n.status === 'review',
+                    ).length
+                  }
+                </span>
+              )}
+              {value === 'Propostas' && proposalCount > 0 && (
+                <span className="transfer-alert-dot" aria-label="Há propostas recebidas" />
+              )}
+              {value === 'Propostas' && <span className="transfer-count">{proposalCount}</span>}
+            </button>
+          ))}
         </div>
-        {tab !== 'Propostas' && tab !== 'Em análise' && (
+        {tab !== 'Propostas' && tab !== 'Pendente' && (
           <div className="transfer-searchbar">
             <div
               className="market-view-toggle"
@@ -426,14 +478,7 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
                 Lista
               </button>
             </div>
-            <PlayerSearch
-              key={searchSeed}
-              initialQuery={searchSeed}
-              onSearch={(query) => {
-                setSearchQuery(query);
-                setVisibleCount(48);
-              }}
-            />
+            <PlayerSearch key={searchSeed} initialQuery={searchSeed} onSearch={applySearchQuery} />
             <div className="market-focus" role="group" aria-label="Perfil dos jogadores">
               <span>Refinar observação</span>
               <button
@@ -479,11 +524,11 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
           </div>
         )}
       </section>
-      {tab === 'Em análise' ? (
+      {tab === 'Pendente' ? (
         <section
           className="incoming-offers incoming-offers-review"
           data-presentation="list"
-          aria-label="Propostas enviadas em análise"
+          aria-label="Propostas enviadas pendentes"
         >
           <div className="incoming-offers-grid">
             {snapshot.state.negotiations
@@ -505,7 +550,7 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
                         {higherOffer(offer) > offer.fee && (
                           <span className="offer-notification-dot" aria-label="Oferta superada" />
                         )}
-                        Em análise
+                        Pendente
                       </span>
                       <span className="offer-review-days">
                         {Math.max(
@@ -675,15 +720,19 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
                     <button
                       className="market-list-negotiate"
                       disabled={
-                        context.blocked && !loanTerms(snapshot.state, player, club).available
+                        isOwnPlayer(player) ||
+                        (context.blocked && !loanTerms(snapshot.state, player, club).available)
                       }
                       onClick={(event) => {
                         event.stopPropagation();
                         choose(player);
                       }}
                     >
-                      {context.blocked && !loanTerms(snapshot.state, player, club).available
-                        ? 'Indisponível'
+                      {isOwnPlayer(player) ||
+                      (context.blocked && !loanTerms(snapshot.state, player, club).available)
+                        ? isOwnPlayer(player)
+                          ? 'Seu jogador'
+                          : 'Bloqueado'
                         : 'Negociar ↗'}
                     </button>
                   </div>
@@ -714,7 +763,20 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
                           <strong>Sem clube</strong>
                         )}
                       </div>
-                      <span className="offer-status">{player.overall} OVR</span>
+                      <span
+                        className="offer-status market-overall-badge"
+                        data-tier={
+                          player.overall <= 69
+                            ? 'bronze'
+                            : player.overall <= 77
+                              ? 'silver'
+                              : player.overall <= 85
+                                ? 'gold'
+                                : 'diamond'
+                        }
+                      >
+                        {player.overall} OVR
+                      </span>
                     </header>
                     <div className="offer-body">
                       <div className="offer-list-portrait">
@@ -743,15 +805,21 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
                       <button
                         className="negotiate-button"
                         disabled={
-                          context.blocked && !loanTerms(snapshot.state, player, club).available
+                          isOwnPlayer(player) ||
+                          (context.blocked && !loanTerms(snapshot.state, player, club).available)
                         }
                         onClick={() => choose(player)}
                       >
-                        Iniciar negociação ↗
+                        {isOwnPlayer(player)
+                          ? 'Seu jogador'
+                          : context.blocked && !loanTerms(snapshot.state, player, club).available
+                            ? 'Bloqueado'
+                            : 'Iniciar negociação ↗'}
                       </button>
 
                       <button
                         className="secondary market-favorite-action"
+                        disabled={isOwnPlayer(player)}
                         aria-pressed={favorites.includes(player.id)}
                         onClick={() => toggleFavorite(player.id)}
                       >
@@ -763,10 +831,20 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
               })}
             </div>
           )}
-          {!prospects && players.length === visibleCount && (
-            <button className="secondary full" onClick={() => setVisibleCount(visibleCount + 48)}>
-              Carregar mais jogadores
-            </button>
+          {hasMorePlayers && (
+            <div
+              className="market-infinite-loading"
+              ref={loadMoreRef}
+              role="status"
+              aria-live="polite"
+              aria-busy={loadingMore}
+            >
+              {loadingMore ? (
+                'Carregando jogadores…'
+              ) : (
+                <span aria-hidden="true">Mais jogadores abaixo</span>
+              )}
+            </div>
           )}
           {!players.length && (
             <div className="empty-state">

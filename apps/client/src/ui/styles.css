@@ -28645,3 +28645,1309 @@ dialog[open] .chat-header > button[aria-label^='Fechar'] {
   border-top: 1px solid #8fb765;
   box-sizing: border-box;
 }
+
+/* A bounded news grid gives the feed its own scroll area. */
+.main-content > .transfer-news-page.twitter-news {
+  flex: 0 0 auto;
+  height: calc(100dvh - 120px);
+  min-height: 0;
+  max-height: calc(100dvh - 120px);
+  grid-template-rows: minmax(0, 1fr);
+}
+.twitter-news .transfer-news-panel {
+  min-height: 0;
+  min-width: 0;
+}
+.twitter-news .transfer-news-feed {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: auto;
+  touch-action: pan-y;
+}
+@media (max-width: 900px) {
+  .main-content > .transfer-news-page.twitter-news {
+    height: calc(100dvh - 150px);
+    max-height: calc(100dvh - 150px);
+  }
+  .twitter-news .transfer-news-panel {
+    height: auto;
+    flex: 1 1 0;
+    min-height: 0;
+  }
+}
+/* Match programme fits on a phone without an internal scroll area. */
+@media (max-width: 900px) {
+  dialog[open].game-details-modal.compact-match-preview {
+    width: calc(100vw - 16px);
+    max-width: none;
+    max-height: calc(100dvh - 16px);
+    height: auto;
+    min-height: 0;
+    padding: 10px 26px;
+    gap: 6px;
+    overflow: hidden;
+    box-sizing: border-box;
+  }
+  .game-details-modal.compact-match-preview .match-programme-header {
+    padding: 6px;
+    gap: 4px;
+    flex-wrap: nowrap;
+    align-items: center;
+  }
+  .game-details-modal .match-kickoff-clock {
+    gap: 5px;
+    flex-wrap: nowrap;
+  }
+  .game-details-modal .match-date-stamp > strong {
+    font-size: 23px;
+  }
+  .game-details-modal .match-date-stamp {
+    gap: 4px;
+  }
+  .game-details-modal .match-date-stamp b {
+    font-size: 9px;
+  }
+  .game-details-modal .match-date-stamp small {
+    font-size: 8px;
+  }
+  .game-details-modal .match-start-time {
+    font-size: 20px;
+  }
+  .game-details-modal .match-relative-day {
+    font-size: 10px;
+  }
+  .game-details-modal.compact-match-preview h2 {
+    margin: 0;
+    padding: 5px 7px;
+    font-size: 11px;
+    line-height: 1.3;
+  }
+  .game-details-modal.compact-match-preview .game-details-teams {
+    padding: 0;
+    column-gap: 5px;
+  }
+  .game-details-modal.compact-match-preview .game-details-teams > div {
+    padding: 6px 3px;
+    gap: 3px;
+  }
+  .game-details-modal .game-details-teams .pixel-badge {
+    width: 32px;
+    height: 32px;
+  }
+  .game-details-modal .game-details-club-link {
+    font-size: 11px;
+    line-height: 1.2;
+    gap: 2px;
+  }
+  .game-details-modal .game-details-teams small {
+    font-size: 9px;
+    line-height: 1.2;
+  }
+  .game-details-modal.compact-match-preview .game-details-probabilities {
+    padding: 0;
+  }
+  .game-details-modal .game-details-probabilities > small {
+    font-size: 10px;
+  }
+  .game-details-modal.compact-match-preview .game-details-probabilities h3 {
+    margin: 3px 0 5px;
+    font-size: 11px;
+  }
+  .game-details-modal.compact-match-preview .game-probability-labels {
+    gap: 4px;
+  }
+  .game-details-modal.compact-match-preview .game-probability-labels > span {
+    padding: 5px 2px;
+    gap: 3px;
+    font-size: 9px;
+  }
+  .game-details-modal.compact-match-preview .game-probability-labels b {
+    font-size: 14px;
+  }
+  .game-details-modal.compact-match-preview .game-details-facts {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 5px;
+    margin: 0;
+  }
+  .game-details-modal.compact-match-preview .game-details-facts > div {
+    padding: 6px;
+  }
+  .game-details-modal.compact-match-preview .game-details-facts dt {
+    font-size: 9px;
+    gap: 3px;
+  }
+  .game-details-modal.compact-match-preview .game-details-facts dt svg {
+    width: 12px;
+    height: 12px;
+    flex-shrink: 0;
+  }
+  .game-details-modal.compact-match-preview .game-details-facts dd {
+    font-size: 11px;
+    line-height: 1.25;
+    margin-top: 3px;
+  }
+}
+@media (max-width: 900px) and (max-height: 500px) {
+  dialog[open].game-details-modal.compact-match-preview {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 5px 10px;
+  }
+  .game-details-modal.compact-match-preview .match-programme-header,
+  .game-details-modal.compact-match-preview h2,
+  .game-details-modal.compact-match-preview > .modal-return {
+    grid-column: 1/-1;
+  }
+  .game-details-modal.compact-match-preview .game-details-teams {
+    grid-column: 1;
+    grid-row: 3;
+  }
+  .game-details-modal.compact-match-preview .game-details-probabilities {
+    grid-column: 1;
+    grid-row: 4;
+  }
+  .game-details-modal.compact-match-preview .game-details-facts {
+    grid-column: 2;
+    grid-row: 3 / span 2;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .game-details-modal.compact-match-preview::backdrop {
+    backdrop-filter: none;
+    background: #061b12cc;
+  }
+  .game-details-modal .game-details-teams .official-club-badge {
+    width: 32px !important;
+    height: 32px !important;
+  }
+  .game-details-modal .game-details-club-link {
+    display: block;
+  }
+  .game-details-modal .game-details-club-link > svg {
+    display: none;
+  }
+}
+
+/* Compact squad actions retain a stable frame when switching tabs. */
+.modal-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+@media (min-width: 901px) {
+  dialog[open].squad-action-modal {
+    width: min(800px, calc(100vw - 48px)) !important;
+    max-width: min(800px, calc(100vw - 48px)) !important;
+    height: min(540px, calc(100dvh - 48px)) !important;
+    max-height: min(540px, calc(100dvh - 48px)) !important;
+  }
+  .squad-action-modal .player-management {
+    padding: 14px;
+    min-height: 330px;
+  }
+  .squad-action-modal .renewal-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 12px;
+    align-items: start;
+  }
+  .squad-action-modal .renewal-layout > p,
+  .squad-action-modal .renewal-layout > button {
+    grid-column: 1/-1;
+    margin: 0;
+  }
+  .squad-action-modal .renewal-layout .renewal-years {
+    margin: 0;
+  }
+  .finance-fill-records > .ledger-leather-cover {
+    flex: 1 0 240px;
+    min-height: 240px;
+  }
+}
+.player-management .transfer-availability {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 12px 0;
+  padding: 12px;
+}
+.player-management .market-listing-toggle {
+  width: 100%;
+  min-height: 42px;
+  margin: 0;
+}
+.loan-availability-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  color: #f4f0d0;
+  background: #153e30;
+  border: 1px solid #769c72;
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+.loan-availability-toggle b {
+  margin-left: auto;
+  border: 1px solid #ffffff30;
+  border-radius: 5px;
+  padding: 2px 10px;
+}
+.loan-availability-toggle[aria-pressed='true'] {
+  background: #285e40;
+  border-color: #e4c866;
+  box-shadow: inset 4px 0 #e4c866;
+}
+.loan-availability-toggle[aria-pressed='true'] b {
+  background: #e4c866;
+  color: #153e30;
+}
+.player-management .loan-duration {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.player-management .loan-duration .segmented {
+  display: flex;
+  gap: 8px;
+  background: transparent;
+  padding: 0;
+  flex: 1;
+}
+.player-management .loan-duration button {
+  flex: 1;
+  min-height: 42px;
+  background: #153e30;
+  color: #e9eddb;
+  border: 1px solid #769c72;
+  border-radius: 7px;
+  font-weight: 700;
+}
+.player-management .loan-duration button[aria-pressed='true'] {
+  background: #e4c866;
+  color: #153e30;
+  border-color: #f8e39c;
+  box-shadow: inset 0 -3px #b29746;
+}
+.market-list-negotiate:disabled,
+.negotiate-button:disabled,
+.market-favorite-action:disabled,
+.player-management button:disabled {
+  opacity: 1 !important;
+  cursor: not-allowed;
+  background: repeating-linear-gradient(135deg, #64716d 0 3px, #57625e 3px 6px) !important;
+  color: #d5dcd6 !important;
+  border: 1px solid #8b9690 !important;
+  box-shadow: inset 0 1px #ffffff19 !important;
+  filter: none !important;
+}
+.player-management .player-effect-list {
+  display: grid;
+  gap: 10px;
+}
+.player-management .player-effect-list p {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-left: 4px solid;
+  padding: 12px;
+  margin: 0;
+  border-radius: 7px;
+  line-height: 1.35;
+}
+.player-management .player-effect-list p.positive {
+  color: #81e8a4;
+  background: #1c513a;
+  border-color: #43cd7a;
+}
+.player-management .player-effect-list p.negative {
+  color: #ffb2a1;
+  background: #50312c;
+  border-color: #ec7566;
+}
+.player-effect-list p > b {
+  font-size: 23px;
+  min-width: 36px;
+}
+.player-effect-list span {
+  display: grid;
+  gap: 4px;
+}
+.player-effect-list strong {
+  color: inherit;
+  font-size: 13px;
+}
+.player-effect-list small {
+  color: inherit;
+  opacity: 0.85;
+  font-size: 11px;
+}
+.market-overall-badge[data-tier='bronze'] {
+  background: #c49468 !important;
+  color: #192e2a !important;
+  border-color: #e8bb8d !important;
+}
+.market-overall-badge[data-tier='silver'] {
+  background: #d2dce3 !important;
+  color: #192e2a !important;
+  border-color: #f5f9fc !important;
+}
+.market-overall-badge[data-tier='gold'] {
+  background: #e1c66c !important;
+  color: #192e2a !important;
+  border-color: #f6e3a5 !important;
+}
+.market-overall-badge[data-tier='diamond'] {
+  background: #b8eaf3 !important;
+  color: #192e2a !important;
+  border-color: #e6fbff !important;
+}
+.market-infinite-loading {
+  grid-column: 1/-1;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: #e9d289;
+  font-size: 12px;
+}
+.market-infinite-loading[aria-busy='true']::before {
+  content: '';
+  width: 18px;
+  height: 18px;
+  border: 2px solid #e9d28944;
+  border-top-color: #e9d289;
+  border-radius: 50%;
+  animation: market-loading-turn 0.7s linear infinite;
+}
+.market-infinite-loading > span {
+  opacity: 0.6;
+}
+@keyframes market-loading-turn {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.facility-mobile-tabs {
+  display: none;
+}
+.facility-scene .scene-legend {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: nowrap;
+  padding: 8px 12px;
+}
+.facility-scene .stadium-skin-control {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 0 auto;
+  min-width: 0;
+  flex: 1;
+  max-width: 360px;
+}
+.stadium-skin-control > span {
+  white-space: nowrap;
+  font-size: 11px;
+}
+.facility-scene .stadium-skin-control .game-select {
+  flex: 1;
+  min-width: 0;
+  width: auto;
+}
+.facility-scene .stadium-skin-control button {
+  min-height: 32px;
+  padding: 5px 10px;
+  font-size: 11px;
+}
+.facility-scene .stadium-skin-control small {
+  display: none;
+}
+.tactical-coach-note {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  padding: 14px;
+  border: 1px solid #b9c6a3;
+  background: #e9edda;
+  color: #244b35;
+  border-radius: 12px;
+}
+.tactical-coach-note > svg {
+  width: 52px;
+  height: 60px;
+  flex: 0 0 52px;
+}
+.tactical-coach-note p {
+  color: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0;
+}
+.tactical-result-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 12px 0;
+}
+.tactical-result-metrics > div {
+  padding: 12px 8px;
+  background: #153e30;
+  border: 1px solid #bda45e;
+  border-radius: 9px;
+  display: grid;
+  gap: 6px;
+  text-align: center;
+}
+.tactical-result-metrics small {
+  font-size: 11px;
+  color: #dfdfb7;
+}
+.tactical-result-metrics strong {
+  font-size: 24px;
+  color: #f0d480;
+}
+.tactical-summary-tabs {
+  display: flex;
+  gap: 8px;
+  padding: 5px;
+  background: #102e24;
+  border: 1px solid #789774;
+  border-radius: 10px;
+}
+.tactical-summary-tabs > button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex: 1;
+  min-height: 40px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #d5e4ca;
+  font-weight: 700;
+}
+.tactical-summary-tabs > button[aria-selected='true'] {
+  background: #e3cb80;
+  color: #153e30;
+  box-shadow: inset 0 -3px #b69b47;
+}
+.tactical-coach-points {
+  display: grid;
+  gap: 10px;
+  padding: 14px 14px 14px 30px;
+  margin: 12px 0;
+  background: #e9edda;
+  border-radius: 9px;
+  line-height: 1.5;
+  font-size: 13px;
+}
+.tactical-coach-points.positive {
+  color: #245e3d;
+}
+.tactical-coach-points.negative {
+  color: #834b35;
+}
+.competition-controls .competition-selectors {
+  display: grid;
+  grid-template-columns: minmax(100px, 0.5fr) minmax(0, 1.5fr);
+  gap: 12px;
+}
+.competition-controls .competition-selectors label {
+  display: grid;
+  gap: 6px;
+  color: #e7e8c9;
+  font-size: 11px;
+  min-width: 0;
+}
+.competition-controls .competition-selectors .game-select {
+  width: 100%;
+  min-width: 0;
+}
+.competition-controls .competition-view-tabs {
+  display: flex;
+  gap: 6px;
+  padding: 5px;
+  border: 1px solid #bca45e;
+  background: #153e30;
+  border-radius: 10px;
+}
+.competition-controls .competition-view-tabs > button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+  border-radius: 6px;
+  font-size: 12px;
+}
+.workspace:has(> .main-content > .twitter-news) {
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+.workspace > .main-content:has(> .twitter-news) {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  padding: 0;
+}
+.main-content > .transfer-news-page.twitter-news {
+  height: 100%;
+  max-height: 100%;
+  min-height: 0;
+  flex: 1 1 0;
+}
+@media (max-width: 900px) {
+  .facility-mobile-tabs {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    scrollbar-width: thin;
+    padding: 8px 0 12px;
+  }
+  .facility-mobile-tabs button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    flex: 0 0 auto;
+    white-space: nowrap;
+    min-height: 42px;
+    padding: 8px 12px;
+    border: 1px solid #769c72;
+    border-radius: 8px;
+    background: #153e30;
+    color: #e9edda;
+  }
+  .facility-mobile-tabs button[aria-selected='true'] {
+    background: #e4c866;
+    border-color: #f4e5a5;
+    color: #153e30;
+    box-shadow: inset 0 -3px #ad9142;
+  }
+  .facility-grid > .facility-card[data-mobile-active='false'] {
+    display: none;
+  }
+  .facility-scene .scene-legend {
+    gap: 8px;
+    padding: 8px;
+  }
+  .facility-scene .scene-legend .live-dot {
+    font-size: 7px;
+    white-space: nowrap;
+  }
+  .facility-scene .stadium-skin-control {
+    max-width: none;
+    gap: 5px;
+  }
+  .facility-scene .stadium-skin-control button {
+    font-size: 10px;
+  }
+  .player-management .loan-duration {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  .incoming-offers .offers-empty-state {
+    flex-wrap: wrap;
+  }
+  .incoming-offers .offers-empty-state > a {
+    flex: 1 1 100%;
+    width: 100%;
+    text-align: center;
+    justify-content: center;
+  }
+  .competition-controls .competition-selectors {
+    grid-template-columns: 90px minmax(0, 1fr);
+    gap: 8px;
+  }
+  .competition-controls .competition-view-tabs > button {
+    flex-direction: column;
+    gap: 4px;
+    font-size: 10px;
+    padding: 7px 3px;
+  }
+  .workspace:has(> .main-content > .twitter-news) {
+    padding-bottom: calc(64px + env(safe-area-inset-bottom));
+  }
+  .mobile-bottom-nav {
+    background: linear-gradient(180deg, #164632, #0b2b23);
+    border-top: 2px solid #bca45e;
+    box-shadow: 0 -5px 18px #001c2470;
+  }
+  .mobile-bottom-nav a,
+  .mobile-bottom-nav button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    color: #cbd8bd;
+    position: relative;
+    transition:
+      background 0.15s,
+      color 0.15s;
+  }
+  .mobile-bottom-nav a:not(:last-child),
+  .mobile-bottom-nav button {
+    border-right: 1px solid #bca45e25;
+  }
+  .mobile-bottom-nav span {
+    font-size: 9px;
+    letter-spacing: 0.3px;
+    font-weight: 700;
+  }
+  .mobile-bottom-nav [aria-current='page'],
+  .mobile-bottom-nav [aria-expanded='true'] {
+    background: linear-gradient(180deg, #315d3d, #1e4931);
+    color: #f2d882;
+    box-shadow: inset 0 3px #e1c46f;
+  }
+}
+
+.competition-controls.panel {
+  background: #153e30;
+  border: 1px solid #bda45e;
+  padding: 12px;
+  border-radius: 12px;
+}
+.competition-controls .game-select-trigger {
+  background: #e9edda;
+  color: #163e30;
+  border: 1px solid #bda45e;
+}
+.facility-scene .stadium-skin-control .game-select-value {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (min-width: 901px) {
+  dialog[open].squad-action-modal {
+    height: min(560px, calc(100dvh - 48px)) !important;
+    max-height: min(560px, calc(100dvh - 48px)) !important;
+  }
+  .squad-action-modal > .modal-content {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .squad-action-modal .modal-title {
+    margin: 0;
+  }
+  .squad-action-modal .player-management {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 0;
+    padding: 12px;
+  }
+  .squad-action-modal .player-management > p {
+    margin: 0;
+    padding-bottom: 8px;
+  }
+  .squad-action-modal .management-tabs {
+    margin: 0;
+    padding: 4px;
+  }
+  .squad-action-modal .transfer-availability {
+    margin: 0;
+    padding: 10px;
+    gap: 8px;
+  }
+  .squad-action-modal .market-listing-toggle {
+    min-height: 38px;
+    padding: 8px 12px;
+  }
+  .squad-action-modal .player-policy-offers {
+    margin: 0 !important;
+    min-height: 38px;
+    flex-shrink: 0;
+    padding: 8px 12px;
+  }
+}
+
+@media (min-width: 1100px) {
+  .finance-hub.finance-equal-columns {
+    min-height: calc((100dvh - 20px) / var(--finance-scale, 1));
+  }
+}
+
+/* Baby-blue loan headers need dark text rather than the default gold links. */
+.incoming-offers .loan-offer .offer-buyer > div > span {
+  color: #34536a !important;
+  font-size: 9px;
+  letter-spacing: 0.5px;
+  opacity: 1;
+}
+.incoming-offers .loan-offer .offer-buyer :is(a, strong) {
+  color: #123b54 !important;
+  font-size: 14px;
+  font-weight: 800;
+  text-shadow: none;
+}
+.tactical-matchup-list.tactical-coach-points {
+  padding: 12px;
+  gap: 12px;
+  list-style: none;
+}
+.tactical-matchup-group {
+  padding: 0 0 12px;
+  border-bottom: 1px solid #52754a44;
+}
+.tactical-matchup-group:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+.tactical-matchup-group h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 8px;
+  font-size: 14px;
+  color: inherit;
+}
+.tactical-matchup-group ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.tactical-matchup-group li {
+  padding: 5px 8px;
+  background: #ffffffaa;
+  border: 1px solid #829d7466;
+  border-radius: 6px;
+  font-size: 11px;
+  line-height: 1.3;
+}
+.tactical-matchup-list.negative .tactical-matchup-group li {
+  border-color: #b87b6866;
+}
+
+.tactical-analysis-modal > .modal-content {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow: hidden;
+}
+.tactical-analysis-modal > .modal-content > :not(.tactical-matchup-list) {
+  flex-shrink: 0;
+}
+.tactical-analysis-modal .modal-title {
+  margin: 0;
+}
+.tactical-analysis-modal .tactical-result-metrics {
+  margin: 0;
+}
+.tactical-analysis-modal .tactical-matchup-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  margin: 0;
+  overscroll-behavior: contain;
+}
+
+.game-details-modal .game-details-team-overall {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #10382e;
+  border: 1px solid currentColor;
+  border-radius: 8px;
+  padding: 6px 12px;
+  margin-top: 3px;
+  min-width: 92px;
+}
+.game-details-modal .game-details-team-overall small {
+  color: #e0e9d7;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  background: none;
+  padding: 0;
+  margin: 0;
+}
+.game-details-modal .game-details-team-overall strong {
+  font-size: 25px;
+  font-weight: 900;
+  line-height: 1;
+  color: inherit;
+  text-shadow: 0 1px 1px #001c16;
+}
+.game-details-team-overall[data-tier='bronze'] {
+  color: #f0b989;
+}
+.game-details-team-overall[data-tier='silver'] {
+  color: #e0ebf3;
+}
+.game-details-team-overall[data-tier='gold'] {
+  color: #f8d978;
+}
+.game-details-team-overall[data-tier='diamond'] {
+  color: #b9efff;
+}
+@media (max-width: 900px) {
+  dialog[open].game-details-modal.compact-match-preview {
+    inset: 50% 0 auto !important;
+    margin: 0 auto !important;
+    transform: translateY(-50%) !important;
+    height: fit-content !important;
+  }
+  .game-details-modal .game-details-team-overall {
+    gap: 6px;
+    padding: 6px 8px;
+    min-width: 0;
+  }
+  .game-details-modal .game-details-team-overall strong {
+    font-size: 24px;
+  }
+}
+
+.game-details-modal .game-details-team-overall {
+  min-width: 58px;
+  padding: 6px 14px;
+  color: #133b30;
+  border-color: #567763;
+}
+.game-details-modal .game-details-team-overall strong {
+  color: #133b30;
+  text-shadow: none;
+}
+.game-details-modal .game-details-team-overall[data-tier='bronze'] {
+  background: #d7a476;
+}
+.game-details-modal .game-details-team-overall[data-tier='silver'] {
+  background: #d2dfe9;
+}
+.game-details-modal .game-details-team-overall[data-tier='gold'] {
+  background: #ebcf78;
+}
+.game-details-modal .game-details-team-overall[data-tier='diamond'] {
+  background: #b9ebf6;
+}
+
+@media (max-width: 900px) and (max-height: 500px) {
+  .game-details-modal.compact-match-preview .game-probability-bar {
+    height: 6px;
+    margin: 4px 0;
+  }
+  .game-details-modal.compact-match-preview .game-probability-labels > span {
+    padding: 4px 2px;
+    flex-wrap: nowrap;
+    gap: 3px;
+  }
+  .game-details-modal.compact-match-preview .game-probability-labels b {
+    display: inline;
+    width: auto;
+    font-size: 12px;
+  }
+  .game-details-modal.compact-match-preview .game-probability-labels svg {
+    width: 12px;
+    height: 12px;
+  }
+  .game-details-modal.compact-match-preview .game-details-probabilities h3 {
+    margin: 2px 0;
+    font-size: 10px;
+  }
+}
+
+/* Keep the scroll anchor on existing players, never on the moving loading sentinel. */
+.main-content:has(.market-infinite-loading),
+.market-player-list,
+.market-league-offers,
+.market-infinite-loading {
+  overflow-anchor: none;
+}
+.club-calendar .club-calendar-day {
+  position: relative;
+}
+.club-calendar .calendar-day-hit-area {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  box-shadow: none;
+  cursor: pointer;
+}
+.club-calendar .club-calendar-day > time {
+  position: relative;
+  z-index: 1;
+  pointer-events: none;
+}
+.club-calendar .club-calendar-day > button:not(.calendar-day-hit-area) {
+  position: relative;
+  z-index: 1;
+}
+.game-details-modal .game-details-team-overall[data-tier] {
+  background-image:
+    repeating-linear-gradient(135deg, #ffffff26 0 2px, transparent 2px 5px),
+    radial-gradient(ellipse at top, #ffffff30, transparent 75%);
+  box-shadow:
+    inset 0 1px #fff9,
+    inset 0 -3px #173f3026,
+    0 2px 3px #173f3020;
+}
+.game-details-modal .game-details-team-overall strong {
+  font-family: 'Press Start 2P', monospace;
+  font-weight: 400;
+  font-size: 20px;
+  line-height: 1.4;
+  letter-spacing: -1px;
+}
+/* The ruled sheet fills the dialog, including its unused rows. */
+dialog.modal.ledger-book-modal[open] {
+  padding: 12px !important;
+  gap: 10px;
+}
+.ledger-book-modal > .modal-content {
+  display: flex;
+  min-height: 0;
+  padding: 0;
+  overflow: hidden;
+}
+.ledger-book-modal .finance-agenda {
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  margin: 0;
+  padding: 0 0 0 16px;
+  display: flex;
+}
+.ledger-book-modal .agenda-pages {
+  flex: 1;
+  height: 100%;
+  min-height: 0;
+  position: relative;
+}
+.ledger-book-modal .agenda-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  height: 100%;
+  min-height: 0;
+  padding: 12px !important;
+}
+.ledger-book-modal .agenda-heading {
+  flex: 0 0 auto;
+  margin: 0;
+}
+.ledger-book-modal .agenda-table-wrap {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+.ledger-book-modal .agenda-table {
+  height: 100%;
+}
+.ledger-book-modal .agenda-table thead {
+  height: 30px;
+}
+.ledger-book-modal .agenda-table :is(th, td) {
+  padding: 5px 7px;
+}
+.ledger-book-modal .agenda-footer {
+  flex: 0 0 auto;
+  margin: 0;
+}
+@media (max-width: 900px) {
+  .facility-mobile-tabs.facility-two-row-tabs {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    grid-template-rows: repeat(2, 42px);
+    gap: 6px;
+    width: 100%;
+    overflow: visible;
+    padding: 8px 0 12px;
+  }
+  .facility-two-row-tabs > button {
+    grid-column: span 2;
+    width: 100%;
+    min-width: 0;
+    padding: 6px 4px;
+    gap: 5px;
+    font-size: 10px;
+    white-space: nowrap;
+  }
+  .facility-two-row-tabs[data-count='5'] > button:nth-last-child(-n + 2) {
+    grid-column: span 3;
+  }
+  .facility-two-row-tabs > button svg {
+    width: 15px;
+    height: 15px;
+    flex-shrink: 0;
+  }
+}
+
+.ledger-book-modal {
+  zoom: calc(1 / var(--finance-scale, 1));
+}
+@media (min-width: 901px) {
+  dialog[open].game-details-modal.compact-match-preview {
+    padding: 14px 36px;
+    gap: 8px;
+  }
+  .game-details-modal.compact-match-preview h2 {
+    margin: 0;
+  }
+  .game-details-modal.compact-match-preview .game-details-teams {
+    padding: 0;
+  }
+  .game-details-modal.compact-match-preview .game-details-probabilities {
+    padding: 0;
+  }
+  .game-details-modal.compact-match-preview .game-details-facts {
+    margin: 0;
+  }
+}
+
+/* Keep the complete starting eleven and team ratings in the mobile viewport. */
+@media (max-width: 760px) {
+  .lineup-editor .tactics-panel {
+    padding: 8px;
+    gap: 8px;
+  }
+  .lineup-editor .tactics-field {
+    height: var(--mobile-pitch-height, calc(100dvh - 240px)) !important;
+    min-height: 0;
+    margin: 0;
+  }
+  .lineup-editor .tactics-player {
+    transform: translate(-50%, -50%) scale(var(--mobile-card-scale, 1));
+  }
+}
+
+/* Expand the bench on demand; every reserve stays in the normal page flow. */
+.lineup-editor .reserve-section-heading {
+  cursor: pointer;
+  list-style: none;
+  min-height: 34px;
+  margin: 0;
+  padding: 6px 8px;
+  border: 1px solid #b5a25977;
+  border-radius: 6px;
+  background: linear-gradient(110deg, #173f35, #244f40);
+}
+.lineup-editor .reserve-section-heading::-webkit-details-marker {
+  display: none;
+}
+.lineup-editor .reserve-section-heading h2 {
+  flex: 1;
+  margin: 0;
+}
+.lineup-editor .reserve-toggle {
+  color: #ead384;
+  font-size: 20px;
+  transition: transform 0.15s;
+}
+.lineup-editor .reserve-section[open] .reserve-toggle {
+  transform: rotate(180deg);
+}
+.lineup-editor .reserve-section:not([open]) > .reserve-cards {
+  display: none;
+}
+.lineup-editor .reserve-section .reserve-cards {
+  height: auto;
+  max-height: none;
+  overflow: visible;
+}
+.lineup-editor .reserve-section-heading:focus-visible {
+  outline: 2px solid #ead384;
+  outline-offset: 2px;
+}
+
+@media (max-width: 900px) {
+  .facilities-page {
+    height: var(--facility-page-height, calc(100dvh - 90px));
+    display: grid;
+    grid-template-rows: auto minmax(80px, 1fr) auto auto;
+    gap: 8px;
+    align-content: stretch;
+  }
+  .facilities-page .facility-cash-bar {
+    margin: 0;
+    padding: 5px 10px;
+    gap: 8px;
+  }
+  .facilities-page .facility-cash-icon {
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+  }
+  .facilities-page .facility-cash-bar > div {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex: 1;
+    gap: 8px;
+  }
+  .facilities-page .facility-cash-bar > div > span {
+    font-size: 8px;
+    letter-spacing: 0.4px;
+  }
+  .facilities-page .facility-cash-bar strong {
+    font-size: 16px;
+  }
+  .facilities-page .facility-scene {
+    height: auto;
+    min-height: 0;
+    margin: 0;
+  }
+  .facilities-page .facility-two-row-tabs {
+    margin: 0;
+    grid-template-rows: repeat(2, 34px);
+    gap: 5px;
+  }
+  .facilities-page .facility-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto;
+    gap: 0;
+    margin: 0;
+  }
+  .facilities-page .facility-grid > .facility-card {
+    grid-area: 1 / 1;
+    padding: 10px 12px;
+    margin: 0;
+    min-width: 0;
+  }
+  .facilities-page .facility-grid > .facility-card[data-mobile-active='false'] {
+    display: flex;
+    visibility: hidden;
+    pointer-events: none;
+  }
+  .facilities-page .facility-card .section-header {
+    margin-bottom: 3px;
+  }
+  .facilities-page .facility-card .facility-icon {
+    width: 25px;
+    height: 25px;
+  }
+  .facilities-page .facility-card .facility-icon svg {
+    width: 21px;
+    height: 21px;
+  }
+  .facilities-page .facility-card h2 {
+    font-size: 13px;
+    margin: 3px 0;
+  }
+  .facilities-page .facility-card p {
+    min-height: 0;
+    margin: 3px 0;
+    font-size: 11px;
+    line-height: 1.35;
+  }
+  .facilities-page .facility-card .sector-guide {
+    padding: 5px 7px;
+    margin: 4px 0;
+    gap: 6px;
+  }
+  .facilities-page .facility-card .sector-guide strong {
+    font-size: 11px;
+  }
+  .facilities-page .facility-card .sector-guide p {
+    font-size: 10px;
+  }
+  .facilities-page .facility-card .upgrade-evolution {
+    padding: 5px 7px;
+    margin: 4px 0;
+    font-size: 10px;
+  }
+  .facilities-page .facility-card .facility-card-footer {
+    padding-top: 3px;
+  }
+  .facilities-page .facility-card .level-track {
+    margin: 6px 0;
+  }
+  .facilities-page .facility-card .facility-actions {
+    gap: 5px;
+    margin-top: 4px;
+  }
+  .facilities-page .facility-card .facility-actions > button,
+  .facilities-page .facility-card .sector-manage {
+    min-height: 30px;
+    padding: 5px 6px;
+    font-size: 10px;
+  }
+  .transfer-hub .transfer-hero {
+    margin: 0 0 8px;
+    padding: 0;
+  }
+  .transfer-hub .transfer-wallet {
+    padding: 9px 12px;
+    min-height: 0;
+  }
+  .transfer-hub .transfer-wallet strong {
+    font-size: 20px;
+    margin: 3px 0;
+  }
+}
+@media (max-width: 900px) {
+  .facilities-page .facility-card > .sector-guide {
+    display: none;
+  }
+}
+
+/* A sheet is one grid: recorded and empty lines always share the same height. */
+.ledger-book-modal .agenda-table-wrap {
+  overflow: hidden;
+}
+.ledger-book-modal .agenda-table {
+  display: grid !important;
+  grid-template-rows: 30px minmax(0, 1fr);
+  background: none;
+}
+.ledger-book-modal .agenda-table thead {
+  display: block !important;
+}
+.ledger-book-modal .agenda-table tbody {
+  display: grid !important;
+  grid-template-rows: repeat(var(--agenda-row-count), minmax(0, 1fr));
+  min-height: 0;
+}
+.ledger-book-modal .agenda-table tr {
+  display: grid !important;
+  grid-template-columns: 26% 54% 20%;
+  min-height: 0;
+  height: 100%;
+  background: none;
+}
+.ledger-book-modal .agenda-table :is(th, td):nth-child(n) {
+  display: flex !important;
+  align-items: center;
+  width: auto !important;
+  min-height: 0;
+  padding: 4px 7px !important;
+  font-size: 11px !important;
+  line-height: 14px;
+  background-image: none;
+}
+@media (max-width: 650px) {
+  .ledger-book-modal .agenda-table tr {
+    grid-template-columns: 29% 49% 22%;
+  }
+}
+.ledger-book-modal .agenda-sheet {
+  background-image: radial-gradient(#a1854210 0.5px, transparent 0.5px);
+  background-size: 3px 3px;
+  background-color: #fbf7e9;
+}

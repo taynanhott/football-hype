@@ -34,6 +34,34 @@ import { LineupPresets } from './lineup-presets';
 import { MatchBench } from './match-bench';
 
 export function LineupEditor({ snapshot, club, center }: ViewProps) {
+  const fieldRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const field = fieldRef.current;
+    if (!field) return;
+    const fit = () => {
+      if (!window.matchMedia('(max-width: 760px)').matches) return;
+      const viewport = window.visualViewport;
+      const bottom = Math.min(
+        (viewport?.height ?? window.innerHeight) + (viewport?.offsetTop ?? 0),
+        document.querySelector('.mobile-bottom-nav')?.getBoundingClientRect().top ?? Infinity,
+      );
+      const top = field.getBoundingClientRect().top + window.scrollY;
+      const height = Math.max(220, Math.min(bottom - top - 100, field.clientWidth * 1.6, 560));
+      field.style.setProperty('--mobile-pitch-height', `${height}px`);
+      field.style.setProperty('--mobile-card-scale', String(Math.min(1, height / 640)));
+    };
+    fit();
+    const observer = new ResizeObserver(fit);
+    const header = field.closest('.tactics-panel')?.querySelector('.tactics-header');
+    if (header) observer.observe(header);
+    window.addEventListener('resize', fit);
+    window.visualViewport?.addEventListener('resize', fit);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', fit);
+      window.visualViewport?.removeEventListener('resize', fit);
+    };
+  }, []);
   const state = snapshot.state;
   const [analysisOpen, setAnalysisOpen] = useState(false);
   const [formation, setFormation] = useState<Formation>(
@@ -257,15 +285,6 @@ export function LineupEditor({ snapshot, club, center }: ViewProps) {
   }
   return (
     <div className="lineup-editor">
-      <div className="lineup-effective-average">
-        Overall médio titular{' '}
-        <strong>
-          {(
-            entries.reduce((sum, e) => sum + (e.player ? e.effectiveOverall : 0), 0) / 11
-          ).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
-        </strong>
-        <small>Com bônus, penalidades e adaptação</small>
-      </div>
       {error && pending && (
         <div className="lineup-save-error" role="alert">
           <span>Não foi possível salvar as alterações.</span>
@@ -284,7 +303,7 @@ export function LineupEditor({ snapshot, club, center }: ViewProps) {
         <section className="tactics-panel">
           <div className="tactics-header lineup-club-summary">
             <div className="lineup-summary-metrics">
-              <SquadAverages state={snapshot.state} club={club} />
+              <SquadAverages state={snapshot.state} club={club} lineup={entries} />
               <div className="lineup-summary-stat">
                 <span>Entrosamento</span>
                 <strong>{chemistry}%</strong>
@@ -292,7 +311,7 @@ export function LineupEditor({ snapshot, club, center }: ViewProps) {
             </div>
           </div>
           <div className="tactics-scroll">
-            <div className="tactics-field" style={{ height: fieldHeight }}>
+            <div ref={fieldRef} className="tactics-field" style={{ height: fieldHeight }}>
               <svg
                 className="tactics-lines"
                 viewBox="0 0 100 100"
@@ -401,9 +420,6 @@ export function LineupEditor({ snapshot, club, center }: ViewProps) {
                   >
                     <i style={{ width: `${entry.player?.fitness ?? 0}%` }} />
                   </span>
-                  <small className="tactics-chemistry">
-                    {Math.round(entry.player?.fitness ?? 0)}% COND.
-                  </small>
                 </button>
               ))}
             </div>

@@ -1,9 +1,10 @@
+import { FacilityTabs } from './facility-tabs';
 import { Select, Option } from '../../ui/select';
 import { clubKit } from '@football/shared';
 import { STADIUM_SKINS, linkedStadiumSkin } from '../../three/stadium-catalog';
 import { SECTORS, MARKETING_BENEFITS } from './center-sectors';
 import { CenterManagement, SectorGuide } from './center-management';
-import { lazy, Suspense, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { upgradePrice, maintenanceForLevel } from '@football/domain';
 import type { ViewProps } from '../../ui/view-props';
 import { useGameStore } from '../../store/game-store';
@@ -109,6 +110,28 @@ type Target =
   | 'coaching'
   | 'marketing';
 export function Facilities(props: ViewProps & { training?: boolean }) {
+  const pageRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const page = pageRef.current;
+    if (!page) return;
+    const fit = () => {
+      const bottom = Math.min(
+        window.visualViewport?.height ?? window.innerHeight,
+        document.querySelector('.mobile-bottom-nav')?.getBoundingClientRect().top ?? Infinity,
+      );
+      page.style.setProperty(
+        '--facility-page-height',
+        `${bottom - page.getBoundingClientRect().top - window.scrollY - 8}px`,
+      );
+    };
+    fit();
+    window.addEventListener('resize', fit);
+    window.visualViewport?.addEventListener('resize', fit);
+    return () => {
+      window.removeEventListener('resize', fit);
+      window.visualViewport?.removeEventListener('resize', fit);
+    };
+  }, []);
   const { stadium, center, club, training = false } = props;
   const [confirmation, setConfirmation] = useState<{ message: string; action: () => void } | null>(
     null,
@@ -131,6 +154,7 @@ export function Facilities(props: ViewProps & { training?: boolean }) {
   const [customizationOpen, setCustomizationOpen] = useState(false);
   const send = useGameStore((state) => state.send);
   const busy = useGameStore((state) => state.busy);
+  const [mobileSector, setMobileSector] = useState('');
   const levels: Array<[Target, number]> = training
     ? (Object.entries(center.levels) as Array<[Target, number]>)
     : [
@@ -142,7 +166,7 @@ export function Facilities(props: ViewProps & { training?: boolean }) {
         ['hospitality', stadium.commerce.hospitalityLevel],
       ];
   return (
-    <>
+    <div ref={pageRef} className={`facilities-page ${training ? 'training-page' : 'stadium-page'}`}>
       <div className="facility-cash-bar">
         <span className="facility-cash-icon">
           <Icon name="balance" size={22} />
@@ -172,11 +196,10 @@ export function Facilities(props: ViewProps & { training?: boolean }) {
         </Suspense>
         <div className="scene-legend">
           <span className="live-dot">VISUALIZAÇÃO 3D</span>
-          <span>Arraste para explorar · Role para aproximar</span>
           {!training && (
             <>
               <label className="stadium-skin-control">
-                Skin do Estádio
+                <span>Estádio</span>
                 <Select
                   aria-label="Skin do Estádio"
                   value={
@@ -215,6 +238,44 @@ export function Facilities(props: ViewProps & { training?: boolean }) {
           )}
         </div>
       </section>
+      <FacilityTabs
+        label={training ? 'Estruturas do CT' : 'Estruturas do estádio'}
+        value={(levels.some(([id]) => id === mobileSector) ? mobileSector : levels[0]?.[0]) ?? ''}
+        onChange={setMobileSector}
+        items={levels.map(([target]) => ({
+          id: target,
+          fullLabel: DESCRIPTIONS[target]?.title ?? target,
+          label:
+            (
+              {
+                fitness: 'Físico',
+                medical: 'Médico',
+                scouting: 'Scout',
+                coaching: 'Técnico',
+                marketing: 'Marketing',
+                pitch: 'Gramado',
+                surroundings: 'Entorno',
+                structure: 'Estrutura',
+                food: 'Alimentação',
+                shirts: 'Loja',
+                hospitality: 'Camarotes',
+              } as Record<string, string>
+            )[target] ?? target,
+          icon:
+            SECTORS[target]?.icon ??
+            (
+              {
+                pitch: 'pitch',
+                surroundings: 'entrance',
+                structure: 'stadium',
+                food: 'food',
+                shirts: 'shirt',
+                hospitality: 'hospitality',
+              } as Record<string, string>
+            )[target] ??
+            'stadium',
+        }))}
+      />
       <div className="facility-grid">
         {levels.map(([target, level]) => {
           const info = DESCRIPTIONS[target];
@@ -223,6 +284,10 @@ export function Facilities(props: ViewProps & { training?: boolean }) {
             <section
               className={`panel facility-card ${training ? `sector-card sector-${target}` : `stadium-sector stadium-sector-${target}`}`}
               key={target}
+              data-mobile-active={
+                (levels.some(([id]) => id === mobileSector) ? mobileSector : levels[0]?.[0]) ===
+                target
+              }
             >
               <div className="section-header">
                 <span className="facility-icon">
@@ -426,6 +491,6 @@ export function Facilities(props: ViewProps & { training?: boolean }) {
           <ClubCustomization {...props} />
         </PlayerModal>
       )}
-    </>
+    </div>
   );
 }

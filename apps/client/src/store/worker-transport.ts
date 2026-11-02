@@ -1,3 +1,5 @@
+import { decodeSnapshotMessage } from './snapshot-wire';
+
 export interface GameRoom {
   send(type: string, data?: unknown): void;
   onMessage(type: string, handler: (input: unknown) => void): void;
@@ -7,6 +9,7 @@ export interface GameRoom {
 }
 export async function connectWorker(url: string, options: unknown): Promise<GameRoom> {
   const ws = new WebSocket(url.replace(/\/$/, '') + '/socket');
+  ws.binaryType = 'arraybuffer';
   const handlers = new Map<string, ((input: unknown) => void)[]>();
   const errors: (() => void)[] = [];
   const leaves: (() => void)[] = [];
@@ -17,11 +20,11 @@ export async function connectWorker(url: string, options: unknown): Promise<Game
     },
     onMessage(type, handler) {
       handlers.set(type, [...(handlers.get(type) ?? []), handler]);
-      for (let i = buffered.length - 1; i >= 0; i--)
+      for (let i = 0; i < buffered.length;)
         if (buffered[i]!.type === type) {
           const [message] = buffered.splice(i, 1);
           handler(message!.data);
-        }
+        } else i++;
     },
     onError(handler) {
       errors.push(handler);
@@ -40,28 +43,38 @@ export async function connectWorker(url: string, options: unknown): Promise<Game
       reject(new Error('Tempo de conexão excedido'));
     }, 20000);
     ws.onopen = () => room.send('auth', options);
+    let incoming = Promise.resolve();
     ws.onmessage = (event) => {
-      if (event.data === 'pong') return;
-      try {
-        const message = JSON.parse(String(event.data)) as { type: string; data: unknown };
-        if (message.type === 'ready') {
-          ready = true;
-          clearTimeout(timeout);
-          resolve();
-          return;
+      incoming = incoming.then(async () => {
+        if (event.data === 'pong') return;
+        try {
+          const message = JSON.parse(
+            await decodeSnapshotMessage(event.data as string | ArrayBuffer),
+          ) as { type: string; data: unknown };
+          if (message.type === 'ready') {
+            ready = true;
+            clearTimeout(timeout);
+            resolve();
+            return;
+          }
+          if (!ready && message.type === 'error') {
+            clearTimeout(timeout);
+            reject(new Error((message.data as { message: string }).message));
+            ws.close();
+            return;
+          }
+          const listeners = handlers.get(message.type);
+          if (listeners?.length) for (const handler of listeners) handler(message.data);
+          else if (buffered.length < 10) buffered.push(message);
+        } catch {
+          if (!ready) {
+            clearTimeout(timeout);
+            reject(new Error('Não foi possível receber os dados da carreira'));
+            ws.close();
+          }
+          for (const handler of errors) handler();
         }
-        if (!ready && message.type === 'error') {
-          clearTimeout(timeout);
-          reject(new Error((message.data as { message: string }).message));
-          ws.close();
-          return;
-        }
-        const listeners = handlers.get(message.type);
-        if (listeners?.length) for (const handler of listeners) handler(message.data);
-        else if (buffered.length < 10) buffered.push(message);
-      } catch {
-        for (const handler of errors) handler();
-      }
+      });
     };
     ws.onerror = () => {
       clearTimeout(timeout);

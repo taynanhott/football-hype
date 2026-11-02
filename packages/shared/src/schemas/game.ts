@@ -641,6 +641,7 @@ export const commandSchema = z.discriminatedUnion('type', [
 export const connectOptionsSchema = z.strictObject({
   localTables: z.boolean().optional(),
   deltaProtocol: z.boolean().optional(),
+  compressedSnapshots: z.boolean().optional(),
   cache: snapshotCacheSchema.optional(),
   token: z.string().optional(),
   appCheckToken: z.string().optional(),

@@ -7,7 +7,7 @@ import {
   stableId,
   advanceGameDays,
 } from '../src/index.js';
-import { loanWage, returnLoans, settleMonthly } from '../src/game/management.js';
+import { loanTerms, loanWage, returnLoans, settleMonthly } from '../src/game/management.js';
 import { unwrap } from '../../../tests/fixtures/domain.js';
 
 const now = Date.parse('2026-01-15T15:00:00Z');
@@ -50,6 +50,65 @@ function target() {
   return { buyer, seller, player };
 }
 describe('empréstimos', () => {
+  it('não libera negociação bloqueada por empréstimo sem estar no mercado', () => {
+    const { buyer, seller, player } = target();
+    const weakBuyer = { ...buyer, leagueStrength: 0 };
+    state.clubs = {
+      ...state.clubs,
+      byId: {
+        ...state.clubs.byId,
+        [buyer.id]: weakBuyer,
+        [seller.id]: { ...seller, leagueStrength: 90 },
+      },
+    };
+    for (const id of buyer.playerIds)
+      state.players.byId[id] = { ...state.players.byId[id]!, overall: 30 };
+    expect(loanTerms(state, player, weakBuyer).eligible).toBe(true);
+    expect(loanTerms(state, player, weakBuyer).available).toBe(false);
+    expect(
+      executeCommand(
+        state,
+        {
+          type: 'management',
+          action: 'offer-loan',
+          playerId: player.id,
+          months: 6,
+          salaryPercent: 100,
+        },
+        'host',
+        now,
+        stableId(995, 1),
+      ).ok,
+    ).toBe(false);
+    state.management = {
+      ...state.management,
+      policies: {
+        [player.id]: { available: true, loanAvailable: true, rivals: true, interest: 75 },
+      },
+    };
+    expect(loanTerms(state, player, weakBuyer).available).toBe(true);
+  });
+  it('permite ao usuário emprestar titular, promessa e jogador com sequência', () => {
+    const owner = state.clubs.byId[state.participants[0]!.clubId]!;
+    const player = state.players.byId[owner.playerIds[0]!]!;
+    state.workload[player.id] = { ...state.workload[player.id]!, consecutiveMatches: 10 };
+    state.management = {
+      ...state.management,
+      contracts: { [player.id]: state.lastProcessedAt + 181 * 86400000 },
+    };
+    expect(loanTerms(state, player).eligible).toBe(true);
+    expect(loanTerms(state, player).maxMonths).toBe(6);
+    act({
+      type: 'management',
+      action: 'policy',
+      playerId: player.id,
+      loanAvailable: true,
+      available: false,
+    });
+    expect(state.management?.policies?.[player.id]?.loanAvailable).toBe(true);
+    state.management.contracts![player.id] = state.lastProcessedAt + 180 * 86400000;
+    expect(loanTerms(state, player).eligible).toBe(false);
+  });
   it.each([50, 75, 100] as const)(
     'conserva o salário e devolve o jogador (%i%%)',
     (salaryPercent) => {
@@ -78,11 +137,14 @@ describe('empréstimos', () => {
       expect(worldStateSchema.safeParse(state).success).toBe(true);
     },
   );
-  it('bloqueia um empréstimo que invada o último ano do contrato', () => {
+  it('bloqueia empréstimo com contrato de 6 meses ou menos', () => {
     const { player } = target();
     state = {
       ...state,
-      management: { ...state.management, contracts: { [player.id]: now + 400 * 86400000 } },
+      management: {
+        ...state.management,
+        contracts: { [player.id]: state.lastProcessedAt + 180 * 86400000 },
+      },
     };
     expect(
       executeCommand(
@@ -118,7 +180,7 @@ describe('empréstimos', () => {
         stableId(993, 2),
       ).ok,
     ).toBe(false);
-    state = advanceGameDays(state, now + 180 * 86400000);
+    state = advanceGameDays(state, state.lastProcessedAt + 180 * 86400000);
     expect(state.players.byId[player.id]?.clubId).toBe(seller.id);
     expect(state.management?.loans?.[player.id]).toBeUndefined();
   });

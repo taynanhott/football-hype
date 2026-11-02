@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from 'react';
 import { clubCalendarFixtures } from './club-calendar-fixtures';
 import { clubKit, COMPETITIONS, type Fixture, type WorldState } from '@football/shared';
 import {
-  startingAverage,
   matchDemand,
   matchProbabilities,
   pendingFixtures,
@@ -76,7 +75,8 @@ export function GameDetails({
   const result = state.results.find((item) => item.fixtureId === fixture.id);
   const realAt = result?.startedAt ?? realFixtureTime(state, pendingFixtures(state), fixture);
   const demand = matchDemand(state, fixture);
-  const odds = result ? undefined : matchProbabilities(state, fixture);
+  const prediction = matchProbabilities(state, fixture);
+  const odds = result ? undefined : prediction;
   const isHome = fixture.homeId === clubId;
   const win = odds ? (isHome ? odds.home : odds.away) : 0;
   const loss = odds ? (isHome ? odds.away : odds.home) : 0;
@@ -166,43 +166,56 @@ export function GameDetails({
         {fixture.round}
       </h2>
       <div className="game-details-teams">
-        {[home, away].map((team) => (
-          <div
-            key={team?.id ?? 'pending'}
-            style={{ borderTopColor: clubKit(team ?? { name: '' }).primary }}
-          >
-            <PixelBadge
-              name={team?.name ?? 'A definir'}
-              {...(team?.crestUrl ? { url: team.crestUrl } : {})}
-              size={48}
-            />
-            {team ? (
-              <a
-                className="game-details-club-link"
-                href={'#/trophies?club=' + team.id}
-                onClick={(event) => {
-                  if (!event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey)
-                    onClose();
-                }}
-                aria-label={'Ver dados do ' + team.name}
+        {[home, away].map((team) => {
+          const average = team
+            ? Math.floor(
+                team.id === fixture.homeId ? prediction.homeStrength : prediction.awayStrength,
+              )
+            : 0;
+          return (
+            <div
+              key={team?.id ?? 'pending'}
+              style={{ borderTopColor: clubKit(team ?? { name: '' }).primary }}
+            >
+              <PixelBadge
+                name={team?.name ?? 'A definir'}
+                {...(team?.crestUrl ? { url: team.crestUrl } : {})}
+                size={48}
+              />
+              {team ? (
+                <a
+                  className="game-details-club-link"
+                  href={'#/trophies?club=' + team.id}
+                  onClick={(event) => {
+                    if (!event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey)
+                      onClose();
+                  }}
+                  aria-label={'Ver dados do ' + team.name}
+                >
+                  <strong>{team.name}</strong>
+                  <Icon name="arrow" size={14} />
+                </a>
+              ) : (
+                <strong>A definir</strong>
+              )}
+              <span
+                className="game-details-team-overall"
+                data-tier={
+                  average <= 69
+                    ? 'bronze'
+                    : average <= 77
+                      ? 'silver'
+                      : average <= 85
+                        ? 'gold'
+                        : 'diamond'
+                }
+                aria-label={`Média titular ${average}`}
               >
-                <strong>{team.name}</strong>
-                <Icon name="arrow" size={14} />
-              </a>
-            ) : (
-              <strong>A definir</strong>
-            )}
-            <small>
-              {team
-                ? 'Média titular: ' +
-                  startingAverage(state, team, fixture.scheduledAt).toLocaleString('pt-BR', {
-                    minimumFractionDigits: 1,
-                    maximumFractionDigits: 1,
-                  })
-                : '—'}
-            </small>
-          </div>
-        ))}
+                <strong>{average || '—'}</strong>
+              </span>
+            </div>
+          );
+        })}
         <section className="game-details-scoreboard" aria-label="Placar da partida">
           <strong className="game-details-score">
             {result ? `${result.homeGoals} - ${result.awayGoals}` : '×'}
@@ -219,7 +232,6 @@ export function GameDetails({
       </div>
       {odds && (
         <section className="game-details-probabilities">
-          <small>Força da torcida da casa: {Math.round(odds.homeCrowdStrength * 100)}%</small>
           <h3>Chances do {state.clubs.byId[clubId]?.name ?? 'seu clube'}</h3>
           <div
             className="game-probability-bar"

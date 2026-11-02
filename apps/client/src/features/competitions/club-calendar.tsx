@@ -165,6 +165,12 @@ export function ClubCalendar({ state: rawState, clubId }: { state: WorldState; c
             const cupId =
               matches[0]?.competitionId ??
               pendingGames.find((game) => dayKey(game.scheduledAt) === key)?.competitionId;
+            const pendingOnDay = pendingGames.find((game) => dayKey(game.scheduledAt) === key);
+            const openDay = () => {
+              if (matches[0]) setSelectedGame(matches[0]);
+              else if (drawOnDay[0]) setSelectedDrawId(drawOnDay[0].id);
+              else if (pendingOnDay) setPendingGame(pendingOnDay);
+            };
             const activity = clubDayRoutine(fixtures, clubId, date.getTime());
             const routine = activity === 'match' ? routines.training : routines[activity];
             return (
@@ -202,6 +208,15 @@ export function ClubCalendar({ state: rawState, clubId }: { state: WorldState; c
                   } as CSSProperties
                 }
               >
+                {(matches.length > 0 || drawOnDay.length > 0 || pendingOnDay) && (
+                  <button
+                    type="button"
+                    className="calendar-day-hit-area"
+                    tabIndex={-1}
+                    aria-hidden="true"
+                    onClick={openDay}
+                  />
+                )}
                 <time dateTime={key}>{date.getUTCDate()}</time>
                 {inMonth &&
                   pendingGames

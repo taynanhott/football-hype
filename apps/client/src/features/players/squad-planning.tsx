@@ -1,3 +1,4 @@
+import { PixelBadge } from '../../ui/pixel-badge';
 import { useCollapsedPlayerCategories } from '../../ui/use-collapsed-player-categories';
 import { usePlayerPositionFilter } from '../../ui/use-player-position-filter';
 import { usePlayerPresentation } from '../../ui/use-player-presentation';
@@ -499,6 +500,13 @@ export function SquadPlanning({ snapshot, club }: ViewProps) {
       {selectedPlayerId && preview.state.players.byId[selectedPlayerId] && (
         <PlayerModal
           className="squad-action-modal"
+          titleIcon={
+            <PixelBadge
+              name={club.name}
+              {...(club.crestUrl ? { url: club.crestUrl } : {})}
+              size={32}
+            />
+          }
           title={preview.state.players.byId[selectedPlayerId]!.name}
           onClose={() => setSelectedPlayerId(null)}
         >

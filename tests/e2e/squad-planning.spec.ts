@@ -15,7 +15,7 @@ test('salva disponibilidade imediatamente e ocupa a tela no mobile', async ({ pa
   await expect(page.locator('.squad-notebook')).toHaveCount(0);
   const row = page.locator('.squad-office-player').first();
   await row.getByRole('button', { name: 'Transferências', exact: true }).click();
-  await row.getByRole('radio', { name: 'Pôr no mercado', exact: true }).check();
+  await row.getByRole('checkbox', { name: 'No mercado', exact: true }).check();
   await expect(page.locator('.save-queue-status')).toContainText('sincronizada', {
     timeout: 20000,
   });
@@ -27,7 +27,7 @@ test('salva disponibilidade imediatamente e ocupa a tela no mobile', async ({ pa
     location.hash = '/squad';
   });
   await row.getByRole('button', { name: 'Transferências', exact: true }).click();
-  await expect(row.getByRole('radio', { name: 'Pôr no mercado', exact: true })).toBeChecked();
+  await expect(row.getByRole('checkbox', { name: 'No mercado', exact: true })).toBeChecked();
   await page.setViewportSize({ width: 390, height: 844 });
   await page.locator('.squad-card-category').first().click();
   await page
@@ -60,11 +60,11 @@ test('salva disponibilidade imediatamente e ocupa a tela no mobile', async ({ pa
     location.hash = '/lineup';
   });
   await page.getByRole('button', { name: 'Análise tática', exact: true }).click();
-  await expect(page.locator('.tactical-analysis-group.strong')).toBeVisible();
-  await expect(page.locator('.tactical-analysis-group.weak')).toBeHidden();
+  await expect(page.locator('.tactical-coach-points.positive')).toBeVisible();
+  await expect(page.locator('.tactical-coach-points.negative')).toBeHidden();
   await page.getByRole('tab', { name: 'Contras', exact: true }).click();
-  await expect(page.locator('.tactical-analysis-group.weak')).toBeVisible();
-  await expect(page.locator('.tactical-analysis-group.strong')).toBeHidden();
+  await expect(page.locator('.tactical-coach-points.negative')).toBeVisible();
+  await expect(page.locator('.tactical-coach-points.positive')).toBeHidden();
   await page.getByRole('dialog').getByRole('button', { name: 'Fechar', exact: true }).click();
   await page.evaluate(() => {
     location.hash = '/market';

@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 
 export function PlayerModal({
   title,
+  titleIcon,
   onClose,
   children,
   className = '',
@@ -11,6 +12,7 @@ export function PlayerModal({
   hideClose = false,
 }: {
   title: string;
+  titleIcon?: ReactNode;
   onClose: () => void;
   children: ReactNode;
   className?: string;
@@ -32,7 +34,12 @@ export function PlayerModal({
       }}
     >
       <div className="modal-content">
-        {!hideTitle && <h2>{title}</h2>}
+        {!hideTitle && (
+          <h2 className="modal-title">
+            {titleIcon}
+            {title}
+          </h2>
+        )}
         {children}
       </div>
       {!hideClose && (

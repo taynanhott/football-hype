@@ -14,10 +14,20 @@ import {
   startingAverage,
   matchDemand,
   matchProbabilities,
+  lineupTacticalBonus,
+  resolveLineup,
 } from '../src/index.js';
 import { unwrap } from '../../../tests/fixtures/domain.js';
 const now = Date.parse('2026-01-15T15:00:00Z');
 let state: WorldState;
+it('entrosamento concede de 1 a 3 de bônus ao overall final', () => {
+  const club = state.clubs.byId[state.participants[0]!.clubId]!;
+  const lineup = resolveLineup(state, club, state.lastProcessedAt);
+  expect(lineupTacticalBonus(lineup.map((e) => ({ ...e, chemistry: 0 })))).toBe(1);
+  expect(lineupTacticalBonus(lineup.map((e) => ({ ...e, chemistry: 50 })))).toBe(2);
+  expect(lineupTacticalBonus(lineup.map((e) => ({ ...e, chemistry: 100 })))).toBe(3);
+  expect(lineupTacticalBonus([])).toBe(0);
+});
 beforeEach(() => {
   state = unwrap(
     createWorld({
@@ -96,8 +106,10 @@ it('impede que uma estrela aceite um elenco muito inferior', () => {
   state = { ...state, players: { ...state.players, byId: players } };
   expect(transferContext(state, player, buyer).playerInterest).toBe(0);
 });
-it('não coloca titulares importantes nem promessas em empréstimo', () => {
-  const club = state.clubs.byId[state.participants[0]!.clubId]!;
+it('IA não coloca titulares importantes nem promessas em empréstimo', () => {
+  const club = Object.values(state.clubs.byId).find(
+    (c) => !state.participants.some((p) => p.clubId === c.id),
+  )!;
   const squad = club.playerIds
     .map((id) => state.players.byId[id]!)
     .sort((a, b) => b.overall - a.overall);
@@ -152,9 +164,17 @@ it('usa a bilheteria somente da casa na força da torcida', () => {
   expect(matchProbabilities(other, fixture)).toEqual(full);
   const costly = { ...state, homeTicketPrices: { [club.id]: range.selloutPriceCents + 10000 } };
   const lower = matchProbabilities(costly, fixture);
-  expect(full.homeCrowdStrength).toBe(1);
-  expect(lower.homeCrowdStrength).toBe(0.76);
+  expect(full.homeOccupancy).toBe(1);
+  expect(lower.homeOccupancy).toBe(0.76);
   expect(lower.home).toBeLessThanOrEqual(full.home);
+  expect(full.homeStrength).toBeGreaterThan(lower.homeStrength);
+  expect(full.awayStrength).toBe(lower.awayStrength);
+  const neutral = matchProbabilities(state, { ...fixture, neutral: true });
+  expect(neutral.homeCrowdBonus).toBe(0);
+  expect(neutral.homeStrength).toBeLessThan(full.homeStrength);
+  expect(matchProbabilities(costly, { ...fixture, neutral: true }).homeStrength).toBe(
+    neutral.homeStrength,
+  );
 });
 
 it('deixa o preço da proposta para o técnico humano decidir', () => {

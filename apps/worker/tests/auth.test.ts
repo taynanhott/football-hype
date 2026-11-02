@@ -39,6 +39,7 @@ describe('Tokens Firebase no Worker', () => {
               leagueId: 'd9a47cb5-eed7-4c19-bb75-c3545562dcaf',
               localTables: true,
               deltaProtocol: true,
+              compressedSnapshots: true,
             },
             'test-project',
           )

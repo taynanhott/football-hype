@@ -1,9 +1,30 @@
 import type { ClubSnapshot, WorldState } from '@football/shared';
+import { effectiveOverall, lineupTacticalBonus, resolveLineup } from '@football/domain';
 
-export function SquadAverages({ state, club }: { state: WorldState; club: ClubSnapshot }) {
-  const players = club.playerIds.flatMap((id) =>
-    state.players.byId[id] ? [state.players.byId[id]!] : [],
-  );
+export function SquadAverages({
+  state,
+  club,
+  lineup,
+}: {
+  state: WorldState;
+  club: ClubSnapshot;
+  lineup?: ReturnType<typeof resolveLineup>;
+}) {
+  const players = lineup
+    ? lineup.flatMap((e) =>
+        e.player ? [{ ...e.player, position: e.position, overall: e.effectiveOverall }] : [],
+      )
+    : club.playerIds.flatMap((id) =>
+        state.players.byId[id]
+          ? [
+              {
+                ...state.players.byId[id]!,
+                overall: effectiveOverall(state, state.players.byId[id]!),
+              },
+            ]
+          : [],
+      );
+  const bonus = lineup ? lineupTacticalBonus(lineup) : 0;
   const groups = [
     { label: 'Geral', positions: null },
     { label: 'Ataque', positions: ['LW', 'RW', 'SS', 'ST'] },
@@ -12,13 +33,21 @@ export function SquadAverages({ state, club }: { state: WorldState; club: ClubSn
     { label: 'Goleiros', positions: ['GK'] },
   ];
   return (
-    <div className="squad-averages" aria-label="Médias de overall do elenco completo">
+    <div
+      className="squad-averages"
+      aria-label={lineup ? 'Médias efetivas dos titulares' : 'Médias efetivas do elenco'}
+    >
       {groups.map((group) => {
         const members = players.filter(
           (player) => !group.positions || group.positions.includes(player.position),
         );
         const average = members.length
-          ? Math.round(members.reduce((sum, player) => sum + player.overall, 0) / members.length)
+          ? Math.floor(
+              Math.min(
+                99,
+                members.reduce((sum, player) => sum + player.overall, 0) / members.length + bonus,
+              ),
+            )
           : '—';
         return (
           <div

@@ -23,8 +23,8 @@ test('padroniza os modais e oferece empréstimo ou compra na conversa', async ({
   await page.getByRole('button', { name: 'Filtros', exact: true }).click();
   const filters = page.getByRole('dialog');
   const second = await filters.boundingBox();
-  expect(second!.width).toBe(frame!.width);
-  expect(second!.height).toBe(frame!.height);
+  expect(second!.width).toBeGreaterThan(frame!.width);
+  expect(second!.height).toBeGreaterThan(frame!.height);
   await filters.getByRole('button', { name: 'Voltar', exact: true }).click();
   await expect(filters).toHaveCount(0);
   await page.evaluate(async () => {
@@ -71,8 +71,8 @@ test('padroniza os modais e oferece empréstimo ou compra na conversa', async ({
   const chat = page.locator('dialog.negotiation-chat-dialog');
   await expect(chat.locator('.chat-deal-options')).toBeVisible({ timeout: 10000 });
   const third = await chat.boundingBox();
-  expect(third!.width).toBe(frame!.width);
-  expect(third!.height).toBe(frame!.height);
+  expect(third!.width).toBe(second!.width);
+  expect(third!.height).toBe(second!.height);
   await chat.getByRole('button', { name: 'Empréstimo', exact: true }).click();
   await expect(chat.getByRole('slider', { name: 'Percentual do salário' })).toBeVisible();
   await expect(chat.getByRole('button', { name: '6 meses', exact: true })).toBeVisible();

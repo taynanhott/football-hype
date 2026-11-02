@@ -8,6 +8,7 @@ import { datasetProvider } from './dataset.js';
 import { nextLeagueWake } from './wake-policy.js';
 import type { GameSnapshot } from '@football/shared';
 import { UsageMeter } from './usage-meter.js';
+import { encodeSnapshotMessage } from './snapshot-wire.js';
 import {
   snapshotCacheSchema,
   snapshotManifest,
@@ -32,6 +33,7 @@ type Session = {
   deltaProtocol?: boolean;
   cache?: SnapshotCacheManifest;
   sentSnapshot?: boolean;
+  compressedSnapshots?: boolean;
 };
 const messageSchema = z.object({ type: z.string().max(32), data: z.unknown().optional() });
 function errorText(error: unknown) {
@@ -234,6 +236,17 @@ export class GameHubV2 extends DurableObject<Env> {
     if (type === 'snapshot-update' || type === 'snapshot-delta') this.meter.totals.deltaSnapshots++;
     ws.send(payload);
   }
+  private async sendSnapshot(ws: WebSocket, session: Session, type: string, data: unknown) {
+    const payload = await encodeSnapshotMessage(type, data, session.compressedSnapshots === true);
+    this.meter.totals.sentMessages++;
+    this.meter.totals.sentBytes +=
+      typeof payload === 'string'
+        ? new TextEncoder().encode(payload).byteLength
+        : payload.byteLength;
+    if (type === 'snapshot') this.meter.totals.fullSnapshots++;
+    else this.meter.totals.deltaSnapshots++;
+    ws.send(payload);
+  }
   private async snapshot(ws: WebSocket, session: Session) {
     try {
       const snapshot = await this.service.snapshot(
@@ -267,7 +280,7 @@ export class GameHubV2 extends DurableObject<Env> {
             if (!Object.hasOwn(snapshot.state, key))
               changes.push({ path: [key], value: undefined });
         }
-        this.send(ws, 'snapshot-delta', {
+        await this.sendSnapshot(ws, session, 'snapshot-delta', {
           leagueId: session.leagueId,
           baseRevision: previous?.state.revision ?? session.cache!.revision,
           revision: snapshot.state.revision,
@@ -286,7 +299,7 @@ export class GameHubV2 extends DurableObject<Env> {
               : old !== value;
           }),
         );
-        this.send(ws, 'snapshot-update', {
+        await this.sendSnapshot(ws, session, 'snapshot-update', {
           leagueId: session.leagueId,
           baseRevision: previous.state.revision,
           revision: snapshot.state.revision,
@@ -296,7 +309,7 @@ export class GameHubV2 extends DurableObject<Env> {
           serverTime: snapshot.serverTime,
           roomId: snapshot.roomId,
         });
-      } else this.send(ws, 'snapshot', snapshot);
+      } else await this.sendSnapshot(ws, session, 'snapshot', snapshot);
       delete session.cache;
       session.sentSnapshot = true;
       ws.serializeAttachment(session);
@@ -326,6 +339,7 @@ export class GameHubV2 extends DurableObject<Env> {
               clubId: z.string().optional(),
               localTables: z.boolean().optional(),
               deltaProtocol: z.boolean().optional(),
+              compressedSnapshots: z.boolean().optional(),
               cache: snapshotCacheSchema.optional(),
             })
             .parse(data);
@@ -339,6 +353,7 @@ export class GameHubV2 extends DurableObject<Env> {
             expires: Date.now() + 55 * 60000,
             localTables: options.localTables ?? false,
             deltaProtocol: options.deltaProtocol ?? false,
+            compressedSnapshots: options.compressedSnapshots ?? false,
             ...(options.cache ? { cache: options.cache } : {}),
           };
           ws.serializeAttachment(session);

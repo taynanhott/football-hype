@@ -293,35 +293,6 @@ export function FinancialHistory({ snapshot, club }: Props) {
           receitas e pagamentos.
         </p>
       )}
-      <details className="financial-data-table">
-        <summary>Ver valores por mês</summary>
-        <div className="table-scroll">
-          <table>
-            <thead>
-              <tr>
-                <th>Mês</th>
-                <th>Receitas</th>
-                <th>Despesas pagas</th>
-                <th>Custo fixo</th>
-                <th>Lucro</th>
-              </tr>
-            </thead>
-            <tbody>
-              {report.months.map((row) => (
-                <tr key={row.month}>
-                  <td>{row.month}</td>
-                  <td>{currency(row.income)}</td>
-                  <td>{currency(row.expenses)}</td>
-                  <td>{currency(row.fixedCosts)}</td>
-                  <td className={row.profit < 0 ? 'negative' : 'positive'}>
-                    {currency(row.profit)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </details>
     </section>
   );
 }

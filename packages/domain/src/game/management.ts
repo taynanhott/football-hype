@@ -625,19 +625,16 @@ export function manageClub({
       return fail('Jogador indisponível');
     const seller = state.clubs.byId[player.clubId];
     const terms = loanTerms(state, player, club);
-    if (!terms.eligible)
-      return fail('Jogador importante, promessa ou com sequência: empréstimo indisponível');
+    if (!terms.available)
+      return fail('Jogador indisponível para empréstimo pelas condições do contrato ou do clube');
     const months = command.months ?? 6;
     if (![6, 12].includes(months) || months > terms.maxMonths)
       return fail('Escolha 6 meses ou 1 temporada dentro do prazo autorizado');
     if ((command.salaryPercent ?? 50) < terms.minimumPercent)
       return fail('O técnico exige pelo menos ' + terms.minimumPercent + '% do salário');
     const salaryPercent = command.salaryPercent ?? 50;
-    if (
-      state.lastProcessedAt + months * 30 * 86400000 + 365 * 86400000 >
-      contractEnd(state, player)
-    )
-      return fail('O jogador precisa voltar com pelo menos 1 ano de contrato');
+    if (state.lastProcessedAt + months * 30 * 86400000 > contractEnd(state, player))
+      return fail('O empréstimo não pode ultrapassar o contrato do jogador');
     if (
       state.participants.some((p) => p.clubId === seller?.id) &&
       !management.policies?.[player.id]?.loanAvailable
@@ -677,15 +674,15 @@ export function manageClub({
       return fail('Jogador emprestado não pode ser negociado');
     if (
       command.loanAvailable &&
-      contractEnd(state, player) < state.lastProcessedAt + 395 * 86400000
+      contractEnd(state, player) <= state.lastProcessedAt + 180 * 86400000
     )
-      return fail('É necessário manter 1 ano de contrato após o empréstimo');
+      return fail('Empréstimo exige mais de 6 meses restantes de contrato');
     if (command.loanAvailable && !loanTerms(state, player).eligible)
       return fail('Empréstimos são reservados a reservas sem sequência e sem perfil de promessa');
     management.policies = {
       ...management.policies,
       [player.id]: {
-        available: command.loanAvailable ? false : (command.available ?? false),
+        available: Boolean(command.available || command.loanAvailable),
         loanAvailable: command.loanAvailable ?? false,
         loanMonths: command.loanMonths ?? (loanTerms(state, player).maxMonths >= 12 ? 12 : 6),
         rivals: command.rivals ?? true,
@@ -1020,10 +1017,7 @@ export function generateIncomingOffers(state: WorldState): WorldState {
           if (!loanTerms(state, player, buyer).eligible) continue;
           const maxMonths = Math.min(
             60,
-            Math.floor(
-              (contractEnd(state, player) - state.lastProcessedAt - 365 * 86400000) /
-                (30 * 86400000),
-            ),
+            Math.floor((contractEnd(state, player) - state.lastProcessedAt) / (30 * 86400000)),
           );
           if (maxMonths < 6) continue;
           const salaryPercent = Math.max(
@@ -1116,7 +1110,7 @@ function acceptLoan(state: WorldState, offerId: string): WorldState | undefined 
     (offer.offeredAt ?? state.createdAt) + 14 * 86400000 <= state.lastProcessedAt ||
     state.management?.loans?.[player.id] ||
     borrower.playerIds.length >= MAX_SQUAD_SIZE ||
-    endsAt + 365 * 86400000 > contractEnd(state, player) ||
+    endsAt > contractEnd(state, player) ||
     (!state.management?.policies?.[player.id]?.loanAvailable &&
       state.participants.some((p) => p.clubId === owner.id)) ||
     borrower.balance.cents < offer.salary ||
@@ -1215,16 +1209,21 @@ export function loanTerms(state: WorldState, player: PlayerSnapshot, buyer?: Clu
     ? buyer.playerIds.reduce((sum, id) => sum + (state.players.byId[id]?.overall ?? 0), 0) /
       Math.max(1, buyer.playerIds.length)
     : 100;
-  const eligible =
-    (!buyer || player.overall <= buyerAverage + 12) &&
+  const humanOwner = state.participants.some((p) => p.clubId === seller?.id);
+  const aiEligible =
     !!seller &&
+    (!buyer || player.overall <= buyerAverage + 12) &&
     better >= 11 &&
     roleRank >= rolePlaces &&
     !state.tactics[seller.id]?.starters.includes(player.id) &&
     recentStarts < 3 &&
     player.overall <= average &&
     !prospect &&
-    sequence < 3 &&
+    sequence < 3;
+  const eligible =
+    !!seller &&
+    (humanOwner || aiEligible) &&
+    contractEnd(state, player) - state.lastProcessedAt > 180 * 86400000 &&
     !state.management?.loans?.[player.id];
   const willingness =
     50 +
@@ -1234,16 +1233,17 @@ export function loanTerms(state: WorldState, player: PlayerSnapshot, buyer?: Clu
   const minimumPercent = willingness >= 70 ? 50 : willingness >= 45 ? 75 : 100;
   const maxMonths = Math.min(
     buyer ? (state.management?.policies?.[player.id]?.loanMonths ?? 12) : 12,
-    Math.floor(
-      (contractEnd(state, player) - state.lastProcessedAt - 365 * 86400000) / (30 * 86400000),
-    ),
+    Math.floor((contractEnd(state, player) - state.lastProcessedAt) / (30 * 86400000)),
   );
   return {
     eligible: eligible && maxMonths >= 6,
     available:
       eligible &&
       maxMonths >= 6 &&
-      (!state.participants.some((p) => p.clubId === seller?.id) ||
+      (!humanOwner || !!state.management?.policies?.[player.id]?.loanAvailable) &&
+      (!buyer ||
+        !transferContext(state, player, buyer).blocked ||
+        !!state.management?.policies?.[player.id]?.available ||
         !!state.management?.policies?.[player.id]?.loanAvailable),
     minimumPercent,
     maxMonths,

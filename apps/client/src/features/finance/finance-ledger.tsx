@@ -1,22 +1,57 @@
 import { PlayerModal } from '../players/player-modal';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import type { ViewProps } from '../../ui/view-props';
 import { currency } from '../../ui/format';
 
-const PAGE_SIZE = 10;
-
 export function FinanceLedger({ snapshot, club }: Pick<ViewProps, 'snapshot' | 'club'>) {
-  const entries = snapshot.ledger
-    .filter((entry) => Boolean(entry.balances?.[club.id]))
-    .slice()
-    .reverse();
+  const entries = useMemo(
+    () =>
+      snapshot.ledger
+        .filter((entry) => Boolean(entry.balances?.[club.id]))
+        .slice()
+        .reverse(),
+    [snapshot.ledger, club.id],
+  );
+  const [pageSize, setPageSize] = useState(10);
+  const tableRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
   const [page, setPage] = useState(0);
   const [turn, setTurn] = useState<'next' | 'previous' | null>(null);
   const timers = useRef<number[]>([]);
   useEffect(() => () => timers.current.forEach(window.clearTimeout), []);
-  const pages = Math.max(1, Math.ceil(entries.length / PAGE_SIZE));
+  const pages = Math.max(1, Math.ceil(entries.length / pageSize));
   const current = Math.min(page, pages - 1);
+  useEffect(() => {
+    const table = tableRef.current;
+    if (!open || !table) return;
+    const fit = () => {
+      const probe = document.createElement('div');
+      const descriptionWidth = window.matchMedia('(max-width: 650px)').matches ? 0.49 : 0.54;
+      Object.assign(probe.style, {
+        position: 'fixed',
+        visibility: 'hidden',
+        pointerEvents: 'none',
+        width: `${Math.max(1, table.clientWidth * descriptionWidth - 14)}px`,
+        fontFamily: getComputedStyle(table).fontFamily,
+        fontSize: '11px',
+        lineHeight: '14px',
+        overflowWrap: 'anywhere',
+        whiteSpace: 'normal',
+      });
+      table.append(probe);
+      let rowHeight = 32;
+      for (const entry of entries) {
+        probe.textContent = entry.message;
+        rowHeight = Math.max(rowHeight, probe.offsetHeight + 12);
+      }
+      probe.remove();
+      setPageSize(Math.max(1, Math.floor((table.clientHeight - 30) / rowHeight)));
+    };
+    const observer = new ResizeObserver(fit);
+    observer.observe(table);
+    fit();
+    return () => observer.disconnect();
+  }, [open, entries, current, turn]);
 
   const changePage = (direction: 'next' | 'previous') => {
     if (turn) return;
@@ -58,7 +93,7 @@ export function FinanceLedger({ snapshot, club }: Pick<ViewProps, 'snapshot' | '
                 : [current]
               ).map((sheetPage, layer) => {
                 const overlay = !!turn && layer === 1;
-                const visible = entries.slice(sheetPage * PAGE_SIZE, (sheetPage + 1) * PAGE_SIZE);
+                const visible = entries.slice(sheetPage * pageSize, (sheetPage + 1) * pageSize);
                 return (
                   <div
                     key={sheetPage}
@@ -73,8 +108,11 @@ export function FinanceLedger({ snapshot, club }: Pick<ViewProps, 'snapshot' | '
                       </div>
                       <span>{entries.length} lançamentos</span>
                     </header>
-                    <div className="agenda-table-wrap">
-                      <table className="agenda-table">
+                    <div className="agenda-table-wrap" ref={overlay ? undefined : tableRef}>
+                      <table
+                        className="agenda-table"
+                        style={{ '--agenda-row-count': pageSize } as CSSProperties}
+                      >
                         <thead>
                           <tr>
                             <th>Valor</th>
@@ -105,18 +143,21 @@ export function FinanceLedger({ snapshot, club }: Pick<ViewProps, 'snapshot' | '
                               </tr>
                             );
                           })}
+                          {Array.from({ length: pageSize - visible.length }, (_, index) => (
+                            <tr
+                              className="agenda-blank-row"
+                              key={'blank-' + index}
+                              aria-hidden="true"
+                            >
+                              <td />
+                              <td />
+                              <td />
+                            </tr>
+                          ))}
                         </tbody>
                       </table>
                     </div>
-                    {!entries.length && (
-                      <div className="ledger-empty-state" role="status">
-                        <span aria-hidden="true">✦</span>
-                        <strong>O próximo capítulo ainda vai começar</strong>
-                        <p>As entradas e saídas do clube serão registradas aqui.</p>
-                        <small>Nenhuma movimentação até o momento</small>
-                      </div>
-                    )}
-                    {pages > 1 && (
+                    {
                       <footer className="agenda-footer">
                         <button
                           disabled={current === 0 || !!turn}
@@ -136,7 +177,7 @@ export function FinanceLedger({ snapshot, club }: Pick<ViewProps, 'snapshot' | '
                           Próxima folha →
                         </button>
                       </footer>
-                    )}
+                    }
                   </div>
                 );
               })}

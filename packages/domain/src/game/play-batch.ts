@@ -1,4 +1,4 @@
-import { canLearnPosition } from './tactics.js';
+import { lineupTacticalBonus, canLearnPosition } from './tactics.js';
 import { FORMATIONS } from '@football/shared';
 import { ageFatigueFactor, moraleSensitivity } from './player-contracts.js';
 import { upgradeUnstartedCompetitions } from '../competitions/upgrade-formats.js';
@@ -203,12 +203,12 @@ export function playNextBatch(state: WorldState, processedAt: number): Result<Wo
     const adjusted = (selection: typeof homeSelection, bonus: number) =>
       effective(selection).map((p) => ({
         ...p,
-        overall: Math.max(1, Math.min(99, Math.round(p.overall + bonus))),
+        overall: Math.max(1, Math.min(99, p.overall + bonus)),
       }));
     const result = simulateMatch(
       fixture,
-      adjusted(homeSelection, homeBonus),
-      adjusted(awaySelection, awayBonus),
+      adjusted(homeSelection, homeBonus + lineupTacticalBonus(homeSelection)),
+      adjusted(awaySelection, awayBonus + lineupTacticalBonus(awaySelection)),
       stadium,
       hashSeed(state.seed, String(state.season)),
       undefined,

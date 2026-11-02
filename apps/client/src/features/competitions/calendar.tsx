@@ -180,7 +180,7 @@ export function Calendar({ snapshot, club }: ViewProps) {
               className={activeTab === 'table' ? 'selected' : ''}
               onClick={() => setTab('table')}
             >
-              <Icon name="trophy" size={18} /> Classificação / chaves
+              <Icon name="trophy" size={18} /> Classificação
             </button>
 
             <button
@@ -206,7 +206,6 @@ export function Calendar({ snapshot, club }: ViewProps) {
               <Icon name="matches" size={18} /> Jogos do clube
             </button>
           </div>
-          <span>Horários de Brasília · Partidas entre 08h e 23h30</span>
         </div>
       </div>
       {(preliminary || parentCompetition === 'libertadores') && (

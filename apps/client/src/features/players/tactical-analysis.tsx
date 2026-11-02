@@ -1,15 +1,16 @@
 import { useState } from 'react';
-import { OpponentAdvice } from '../competitions/opponent-advice';
 import {
-  formationSchema,
   FORMATION_LABELS,
+  FORMATIONS,
+  formationSchema,
   playStyleSchema,
   type WorldState,
   type Formation,
   type PlayStyle,
   type PlayerSnapshot,
 } from '@football/shared';
-import { tacticalBonus, STYLE_LABELS } from '@football/domain';
+import { resolveLineup, lineupTacticalBonus, tacticalBonus, STYLE_LABELS } from '@football/domain';
+import { GeneratedPerson } from '../../ui/person-avatar';
 import { PlayerModal } from './player-modal';
 import { Icon } from '../../ui/icons';
 
@@ -28,92 +29,118 @@ export function TacticalAnalysis({
   players: readonly PlayerSnapshot[];
   onClose: () => void;
 }) {
-  const [mobileTab, setMobileTab] = useState('strong');
-  const played = new Set(state.results.map((result) => result.fixtureId));
-  const nextFixture = state.fixtures
-    .filter(
-      (fixture) =>
-        (fixture.homeId === clubId || fixture.awayId === clubId) && !played.has(fixture.id),
-    )
-    .sort((a, b) => a.scheduledAt - b.scheduledAt)[0];
-  const combinations = formationSchema.options.flatMap((opposingFormation) =>
-    playStyleSchema.options.map((opponent) => ({
+  const [tab, setTab] = useState<'strong' | 'weak'>('strong');
+  const lineup = resolveLineup(
+    state,
+    state.clubs.byId[clubId]!,
+    state.nextScheduledAt,
+    state.players.byId,
+    formation,
+    players.map((p) => p.id),
+    style,
+  );
+  const bonus = lineupTacticalBonus(lineup);
+  const average = Math.floor(
+    Math.min(99, lineup.reduce((sum, p) => sum + p.effectiveOverall, 0) / 11 + bonus),
+  );
+  const chemistry = Math.floor(lineup.reduce((sum, p) => sum + p.chemistry, 0) / 11);
+  const formatted = (value: number) => value.toLocaleString('pt-BR', { maximumFractionDigits: 1 });
+  // Compare tactical matchups with equal player quality; team ratings stay in the summary.
+  const referencePlayers = (shape: Formation) =>
+    FORMATIONS[shape].flatMap((slot, index) =>
+      players[index]
+        ? [{ ...players[index]!, position: slot.position, overall: 80, fitness: 100 }]
+        : [],
+    );
+  const ownReference = referencePlayers(formation);
+  const matchups = formationSchema.options.flatMap((opposingFormation) =>
+    playStyleSchema.options.map((opposingStyle) => ({
       formation: opposingFormation,
-      style: opponent,
+      style: opposingStyle,
       advantage:
-        tacticalBonus(style, formation, opponent, opposingFormation, players) -
-        tacticalBonus(opponent, opposingFormation, style, formation, players),
+        tacticalBonus(style, formation, opposingStyle, opposingFormation, ownReference) -
+        tacticalBonus(
+          opposingStyle,
+          opposingFormation,
+          style,
+          formation,
+          referencePlayers(opposingFormation),
+        ),
     })),
   );
-  const strong = combinations
-    .filter((row) => row.advantage > 0.05)
-    .sort((a, b) => b.advantage - a.advantage);
-  const weak = combinations
-    .filter((row) => row.advantage < -0.05)
-    .sort((a, b) => a.advantage - b.advantage);
+  const rows = matchups.filter((row) =>
+    tab === 'strong' ? row.advantage > 0.05 : row.advantage < -0.05,
+  );
   return (
-    <PlayerModal
-      title="Análise tática"
-      hideTitle
-      className="tactical-analysis-modal"
-      onClose={onClose}
-    >
-      <div className="tactical-board-clip" aria-hidden="true">
-        <i />
-        <i />
-      </div>
-      {nextFixture && <OpponentAdvice state={state} fixture={nextFixture} clubId={clubId} />}
+    <PlayerModal title="Análise tática" className="tactical-analysis-modal" onClose={onClose}>
+      <section className="tactical-coach-note">
+        <GeneratedPerson name="Auxiliar técnico" outfit="#174638" />
+        <p>
+          {chemistry === 100
+            ? `O grupo está afinado. Este esquema já nos dá +${formatted(bonus)} de overall.`
+            : `Com este esquema, o grupo rende +${formatted(bonus)} de overall. Vamos manter a base para chegar a +3.`}
+        </p>
+      </section>
       <div className="tactical-analysis-selection">
-        <small className="tactical-current-label">Tática atual</small>
-        <Icon name="pitch" size={28} />
+        <Icon name="pitch" size={24} />
         <strong>{FORMATION_LABELS[formation]}</strong>
         <span>{STYLE_LABELS[style]}</span>
       </div>
-      <div className="tactical-mobile-tabs" role="tablist" aria-label="Vantagens e desvantagens">
-        {['strong', 'weak'].map((tone) => (
-          <button
-            key={tone}
-            role="tab"
-            aria-selected={mobileTab === tone}
-            onClick={() => setMobileTab(tone)}
-          >
-            {tone === 'strong' ? 'Prós' : 'Contras'}
-          </button>
-        ))}
+      <div className="tactical-result-metrics">
+        <div>
+          <small>Bônus tático</small>
+          <strong>+{formatted(bonus)}</strong>
+        </div>
+        <div>
+          <small>Overall final</small>
+          <strong>{average}</strong>
+        </div>
+        <div>
+          <small>Entrosamento</small>
+          <strong>{chemistry}%</strong>
+        </div>
       </div>
-      <div className="tactical-analysis-columns" data-mobile-tab={mobileTab}>
-        {[
-          { title: 'Forte contra', rows: strong, tone: 'strong', icon: 'trophy' },
-          { title: 'Fraco contra', rows: weak, tone: 'weak', icon: 'shield' },
-        ].map((group) => (
-          <section key={group.tone} className={`tactical-analysis-group ${group.tone}`}>
-            <h3>
-              <Icon name={group.icon} />
-              {group.title}
-              <small>{group.rows.length}</small>
-            </h3>
-            <div className="tactical-analysis-list">
-              {formationSchema.options.map((scheme) => {
-                const styles = group.rows.filter((row) => row.formation === scheme);
-                if (!styles.length) return null;
-                return (
-                  <section className="tactical-analysis-scheme" key={scheme} aria-label={scheme}>
-                    <h4>
-                      <Icon name="pitch" size={16} />
-                      {FORMATION_LABELS[scheme]}
-                    </h4>
-                    <ul>
-                      {styles.map((row) => (
-                        <li key={row.style}>{STYLE_LABELS[row.style]}</li>
-                      ))}
-                    </ul>
-                  </section>
-                );
-              })}
-              {!group.rows.length && <p>Nenhuma combinação com vantagem relevante.</p>}
-            </div>
-          </section>
-        ))}
+      <div
+        className="tactical-mobile-tabs tactical-summary-tabs"
+        role="tablist"
+        aria-label="Vantagens e cuidados"
+      >
+        <button role="tab" aria-selected={tab === 'strong'} onClick={() => setTab('strong')}>
+          <Icon name="trophy" size={18} />
+          Prós
+        </button>
+        <button role="tab" aria-selected={tab === 'weak'} onClick={() => setTab('weak')}>
+          <Icon name="shield" size={18} />
+          Contras
+        </button>
+      </div>
+      <div
+        className={
+          'tactical-matchup-list tactical-coach-points ' +
+          (tab === 'strong' ? 'positive' : 'negative')
+        }
+        role="tabpanel"
+        aria-label={tab === 'strong' ? 'Táticas favoráveis' : 'Táticas desfavoráveis'}
+      >
+        {formationSchema.options.map((scheme) => {
+          const styles = rows.filter((row) => row.formation === scheme);
+          return styles.length ? (
+            <section className="tactical-matchup-group" key={scheme}>
+              <h3>
+                <Icon name="pitch" size={18} />
+                {FORMATION_LABELS[scheme]}
+              </h3>
+              <ul>
+                {styles.map((row) => (
+                  <li key={row.style}>{STYLE_LABELS[row.style]}</li>
+                ))}
+              </ul>
+            </section>
+          ) : null;
+        })}
+        {!rows.length && (
+          <p>Nenhuma tática com {tab === 'strong' ? 'vantagem' : 'desvantagem'} relevante.</p>
+        )}
       </div>
     </PlayerModal>
   );

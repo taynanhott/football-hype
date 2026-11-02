@@ -81,18 +81,8 @@ function GameApp() {
       window.removeEventListener('hashchange', navigate);
     };
   }, []);
-  const {
-    snapshot,
-    connected,
-    busy,
-    pendingActions,
-    error,
-    userId,
-    send,
-    disconnect,
-    clearError,
-    connect,
-  } = useGameStore();
+  const { snapshot, connected, busy, pendingActions, error, userId, send, disconnect, clearError } =
+    useGameStore();
   const leagueId = snapshot?.state.id;
   const remoteCoach = snapshot?.state.participants.find((p) => p.userId === userId)?.coach;
   const coachProfile = remoteCoach ?? { ...coach, name: coach.name || user?.name || 'Técnico' };
@@ -284,12 +274,6 @@ function GameApp() {
         </a>
       </aside>
       <div className="workspace">
-        {!connected && (
-          <div className="connection-banner">
-            Você está desconectado.{' '}
-            <button onClick={() => void connect(state.id)}>Reconectar à liga</button>
-          </div>
-        )}
         <main className="main-content" key={route}>
           {view}
         </main>
@@ -358,6 +342,7 @@ function GameApp() {
           onClick={() => setMenuOpen(!menuOpen)}
         >
           <Icon name="menu" />
+          <span>Menu</span>
         </button>
         <a
           href="#/dashboard"
@@ -366,6 +351,7 @@ function GameApp() {
           onClick={() => setMenuOpen(false)}
         >
           <Icon name="home" />
+          <span>Início</span>
         </a>
         <a
           href="#/calendar"
@@ -374,6 +360,7 @@ function GameApp() {
           onClick={() => setMenuOpen(false)}
         >
           <Icon name="calendar" />
+          <span>Calendário</span>
         </a>
       </nav>
       {error && (

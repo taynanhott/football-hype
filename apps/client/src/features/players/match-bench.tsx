@@ -78,7 +78,7 @@ export function MatchBench({
   return (
     <section className="reserve-roster" aria-label="Banco de reservas">
       {[true, false].map((related) => (
-        <div
+        <details
           className={`reserve-section ${related ? 'related' : 'unrelated'}`}
           key={String(related)}
           onDragOver={(event) => event.preventDefault()}
@@ -87,14 +87,17 @@ export function MatchBench({
             moveCard(event.dataTransfer.getData('text/plain'), null, related);
           }}
         >
-          <div className="reserve-section-heading">
+          <summary className="reserve-section-heading">
             <h2>{related ? 'Reservas' : 'Não relacionados'}</h2>
             <span>
               {related
                 ? `${reserves.length}/12 reservas`
                 : `${players.filter((player) => !reserves.includes(player.id)).length} atletas`}
             </span>
-          </div>
+            <span className="reserve-toggle" aria-hidden="true">
+              ⌄
+            </span>
+          </summary>
           <div className="reserve-cards">
             {players
               .filter((player) => reserves.includes(player.id) === related)
@@ -159,7 +162,7 @@ export function MatchBench({
               </p>
             )}
           </div>
-        </div>
+        </details>
       ))}
       {selected && (
         <PlayerModal

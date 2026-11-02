@@ -42,6 +42,70 @@ type GameStore = {
 };
 let pending: ReturnType<typeof setTimeout> | undefined;
 let actions: ActionQueue | undefined;
+let connectionVersion = 0;
+let recovery: { leagueId: string; clubId?: string } | undefined;
+let retry: ReturnType<typeof setTimeout> | undefined;
+let retryDelay = 1000;
+let recoveryAttempts = 0;
+let connecting = false;
+let backgrounded = false;
+function endRecovery() {
+  useGameStore.getState().disconnect();
+  useGameStore.setState({
+    error: 'Não foi possível reconectar após 3 tentativas. Abra sua carreira novamente.',
+  });
+}
+function attemptRecovery() {
+  if (!recovery || connecting) return;
+  if (recoveryAttempts >= 3) {
+    endRecovery();
+    return;
+  }
+  recoveryAttempts++;
+  void useGameStore.getState().connect(recovery.leagueId, recovery.clubId);
+}
+function scheduleRecovery() {
+  if (
+    !recovery ||
+    !useGameStore.getState().snapshot ||
+    retry ||
+    connecting ||
+    document.visibilityState === 'hidden'
+  )
+    return;
+  if (recoveryAttempts >= 3) {
+    endRecovery();
+    return;
+  }
+  retry = setTimeout(() => {
+    retry = undefined;
+    attemptRecovery();
+  }, retryDelay);
+  retryDelay = Math.min(retryDelay * 2, 30000);
+}
+function resumeConnection() {
+  if (document.visibilityState === 'hidden') {
+    backgrounded = true;
+    clearTimeout(retry);
+    retry = undefined;
+    return;
+  }
+  if (!recovery || connecting) return;
+  if (backgrounded || !useGameStore.getState().connected) {
+    backgrounded = false;
+    clearTimeout(retry);
+    retry = undefined;
+    attemptRecovery();
+  }
+}
+document.addEventListener('visibilitychange', resumeConnection);
+window.addEventListener('online', resumeConnection);
+window.addEventListener('pageshow', (event) => {
+  if (event.persisted) {
+    backgrounded = true;
+    resumeConnection();
+  }
+});
 export const useGameStore = create<GameStore>((set, get) => ({
   snapshot: null,
   clockOffset: 0,
@@ -54,6 +118,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
   error: null,
   clearError: () => set({ error: null }),
   connect: async (leagueId, clubId) => {
+    const resuming = recovery?.leagueId === leagueId;
+    if (!resuming) recoveryAttempts = 0;
+    recovery = { leagueId, ...(clubId ? { clubId } : {}) };
+    const version = ++connectionVersion;
+    connecting = true;
+    clearTimeout(retry);
+    retry = undefined;
     const previous = get().room;
     actions?.stop();
     actions = undefined;
@@ -61,7 +132,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     set({
       busy: true,
       error: null,
-      snapshot: null,
+      snapshot: resuming ? get().snapshot : null,
       room: null,
       connected: false,
       pendingActions: 0,
@@ -76,6 +147,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
           ? await loadSnapshotCache(cacheKey)
           : null;
       if (cached?.snapshot.state.id !== leagueId) cached = null;
+      if (version !== connectionVersion) return;
       const options = {
         ...authOptions,
         leagueId,
@@ -83,6 +155,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
           ? {
               localTables: true,
               deltaProtocol: true,
+              compressedSnapshots: typeof DecompressionStream !== 'undefined',
               ...(cached ? { cache: cached.manifest } : {}),
             }
           : {}),
@@ -92,8 +165,31 @@ export const useGameStore = create<GameStore>((set, get) => ({
         import.meta.env.VITE_GAME_TRANSPORT === 'cloudflare'
           ? await connectWorker(serverUrl, options)
           : await new Client(serverUrl).joinOrCreate('league', options);
+      if (version !== connectionVersion) {
+        void room.leave();
+        return;
+      }
       set({ room, userId, connected: true });
       let confirmed: GameSnapshot | null = null;
+      // An open socket is not proof that the career was loaded. Retry the initial
+      // snapshot once without relying on the local checkpoint, then release the UI.
+      let initialSnapshotTimer: ReturnType<typeof setTimeout> | undefined;
+      const loadingFailed = (message: string) => {
+        clearTimeout(initialSnapshotTimer);
+        if (get().room !== room || confirmed) return;
+        set({ busy: false, connected: false, error: recoveryAttempts > 0 ? null : message });
+        void room.leave();
+      };
+      initialSnapshotTimer = setTimeout(() => {
+        if (get().room !== room || confirmed) return;
+        cached = null;
+        room.send('sync');
+        initialSnapshotTimer = setTimeout(() => {
+          loadingFailed(
+            'Não foi possível carregar a carreira. Tente abri-la novamente. Seus dados salvos foram preservados.',
+          );
+        }, 15000);
+      }, 10000);
       let activeId = '';
       const queueKey = `football.queue.${userId}.${leagueId}`;
       let restored: PendingAction[] = [];
@@ -122,6 +218,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
                 'A sincronização não foi confirmada. Reconecte para conferir as ações salvas.',
               );
               set({ connected: false });
+              scheduleRecovery();
             },
             command.type === 'advance' || command.type === 'new-season' ? 120000 : 20000,
           );
@@ -152,11 +249,18 @@ export const useGameStore = create<GameStore>((set, get) => ({
           return;
         if (import.meta.env.VITE_GAME_TRANSPORT === 'cloudflare')
           snapshot = { ...snapshot, tables: localTables(snapshot.state) };
+        const recovered = queue.accept(snapshot);
         confirmed = snapshot;
+        clearTimeout(initialSnapshotTimer);
+        clearTimeout(retry);
+        retry = undefined;
+        retryDelay = 1000;
+        recoveryAttempts = 0;
+        set({ connected: true });
         if (import.meta.env.VITE_GAME_TRANSPORT === 'cloudflare')
           saveSnapshotCache(cacheKey, snapshot);
         set({ clockOffset: (snapshot.serverTime ?? Date.now()) - Date.now() });
-        if (queue.accept(snapshot)) set({ error: null, connected: true });
+        if (recovered) set({ error: null, connected: true });
       };
       room.onMessage('snapshot-delta', (input: unknown) => {
         if (get().room !== room) return;
@@ -238,9 +342,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
         const parsed = gameSnapshotSchema.safeParse(input);
         if (!parsed.success) {
           queue.stop('O servidor enviou dados incompatíveis');
+          loadingFailed('Não foi possível ler a carreira. Atualize a página e tente novamente.');
           return;
         }
-        accept(parsed.data);
+        try {
+          accept(parsed.data);
+        } catch {
+          loadingFailed('Não foi possível preparar a carreira. Tente abri-la novamente.');
+        }
       });
       room.onMessage('error', (input: unknown) => {
         if (get().room !== room) return;
@@ -253,6 +362,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
         } else {
           clearTimeout(pending);
           queue.stop(parsed.success ? parsed.data.message : 'Não foi possível concluir a operação');
+          loadingFailed(
+            parsed.success ? parsed.data.message : 'Não foi possível carregar a carreira.',
+          );
         }
       });
       room.onMessage('ack', (input: unknown) => {
@@ -276,7 +388,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
       room.onError(() => {
         if (get().room === room) {
           clearTimeout(pending);
-          queue.stop('A conexão foi interrompida. Reconecte à liga.');
+          queue.stop();
+          set({ connected: false });
+          loadingFailed('A conexão foi interrompida ao carregar a carreira. Tente novamente.');
+          scheduleRecovery();
         }
       });
       const heartbeat =
@@ -288,26 +403,50 @@ export const useGameStore = create<GameStore>((set, get) => ({
       };
       document.addEventListener('visibilitychange', flushDrafts);
       room.onLeave(() => {
+        clearTimeout(initialSnapshotTimer);
         clearInterval(heartbeat);
         document.removeEventListener('visibilitychange', flushDrafts);
         if (get().room === room) {
           clearTimeout(pending);
           queue.stop();
           actions = undefined;
-          set({ connected: false, busy: false, snapshot: null, room: null, pendingActions: 0 });
+          set({ connected: false, busy: false, room: null });
+          if (!confirmed && !get().error)
+            set({
+              error: 'A conexão foi encerrada antes de carregar a carreira. Tente novamente.',
+            });
+          scheduleRecovery();
         }
       });
       if (import.meta.env.VITE_GAME_TRANSPORT !== 'cloudflare') room.send('sync');
-      location.hash = '/dashboard';
+      if (!resuming) location.hash = '/dashboard';
       localStorage.setItem('football.lastLeague', leagueId);
     } catch (error) {
+      if (version !== connectionVersion) return;
       set({
-        error: error instanceof Error ? error.message : 'Não foi possível conectar ao servidor',
+        error:
+          recoveryAttempts > 0
+            ? null
+            : error instanceof Error
+              ? error.message
+              : 'Não foi possível conectar ao servidor',
         busy: false,
       });
+    } finally {
+      if (version === connectionVersion) {
+        connecting = false;
+        if (!get().connected) scheduleRecovery();
+      }
     }
   },
   disconnect: () => {
+    recovery = undefined;
+    connectionVersion++;
+    connecting = false;
+    retryDelay = 1000;
+    recoveryAttempts = 0;
+    clearTimeout(retry);
+    retry = undefined;
     clearTimeout(pending);
     actions?.stop();
     actions = undefined;

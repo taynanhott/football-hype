@@ -29,14 +29,26 @@ export function Finance({ snapshot, club }: ViewProps) {
     const fit = () => {
       if (fitting) return;
       fitting = true;
-      panel.style.zoom = '1';
+      const applyScale = (value: number) => {
+        panel.style.zoom = String(value);
+        panel.style.setProperty('--finance-scale', String(value));
+      };
+      applyScale(1);
       if (window.innerWidth >= 1100) {
-        for (let attempt = 0; attempt < 5; attempt++) {
-          const rect = panel.getBoundingClientRect();
-          const available = Math.max(100, window.innerHeight - rect.top - 10);
-          if (rect.height <= available + 1) break;
-          const current = Number(panel.style.zoom) || 1;
-          panel.style.zoom = String((current * available) / rect.height);
+        const available = Math.max(
+          100,
+          window.innerHeight - panel.getBoundingClientRect().top - 10,
+        );
+        if (panel.getBoundingClientRect().height > available + 1) {
+          let low = 0.3,
+            high = 1;
+          for (let attempt = 0; attempt < 8; attempt++) {
+            const mid = (low + high) / 2;
+            applyScale(mid);
+            if (panel.getBoundingClientRect().height > available + 1) high = mid;
+            else low = mid;
+          }
+          applyScale(low);
         }
       }
       fitting = false;

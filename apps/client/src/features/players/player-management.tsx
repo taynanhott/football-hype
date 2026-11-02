@@ -61,7 +61,7 @@ export function PlayerManagement({
       ? Math.max(salaryMinimum, Math.min(salaryMaximum, salaryDraft.value))
       : player.salary.cents;
   return (
-    <section className="player-management transfer-policy-panel">
+    <section className="player-management transfer-policy-panel" data-section={section}>
       <p className={days <= 180 ? 'negative' : ''}>
         Contrato: {days <= 0 ? 'Encerrado' : days + ' dias restantes'} ·{' '}
         {new Date(end).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })}
@@ -100,10 +100,7 @@ export function PlayerManagement({
               key={item.id}
               className={section === item.id ? 'selected' : ''}
               aria-pressed={section === item.id}
-              disabled={
-                (item.id === 'effects' && !effects.length) ||
-                (item.id === 'renew' && Boolean(terms.reason))
-              }
+              disabled={busy}
               onClick={() => setSection(item.id)}
             >
               {item.label}
@@ -121,12 +118,18 @@ export function PlayerManagement({
         </div>
       )}
       {section === 'effects' && (
-        <div>
+        <div className="player-effect-list">
           {effects.length ? (
             effects.map((e) => (
               <p key={e.label} className={e.value > 0 ? 'positive' : 'negative'}>
-                {e.value > 0 ? '+' : ''}
-                {e.value} {e.label} · {e.until}
+                <b>
+                  {e.value > 0 ? '+' : ''}
+                  {e.value}
+                </b>
+                <span>
+                  <strong>{e.label}</strong>
+                  <small>{e.until}</small>
+                </span>
               </p>
             ))
           ) : (
@@ -137,44 +140,47 @@ export function PlayerManagement({
       {section === 'policy' && (
         <fieldset className="transfer-availability">
           <legend>Disponibilidade</legend>
-          {(
-            [
-              { id: 'none', label: 'Fora do mercado' },
-              { id: 'sale', label: 'Pôr no mercado' },
-              { id: 'loan', label: 'Empréstimo' },
-            ] as const
-          ).map((option) => (
-            <label className="switch-row" key={option.id}>
-              <input
-                type="radio"
-                name={'availability:' + player.id}
-                checked={
-                  option.id === (policy.loanAvailable ? 'loan' : policy.available ? 'sale' : 'none')
-                }
-                disabled={
-                  busy ||
-                  Boolean(state.management?.loans?.[player.id]) ||
-                  (option.id === 'loan' && !loan.eligible)
-                }
-                onChange={() =>
-                  send({
-                    type: 'management',
-                    action: 'policy',
-                    playerId: player.id,
-                    available: option.id === 'sale',
-                    loanAvailable: option.id === 'loan',
-                  })
-                }
-              />
-              {option.label}
-            </label>
-          ))}
-          {!loan.eligible && (
-            <small>
-              Empréstimo exige reserva sem sequência, fora do perfil de promessa, e 1 ano de
-              contrato na volta.
-            </small>
+          <label className="switch-row market-listing-toggle">
+            <input
+              type="checkbox"
+              checked={!!(policy.available || policy.loanAvailable)}
+              disabled={busy || Boolean(state.management?.loans?.[player.id])}
+              onChange={(event) =>
+                send({
+                  type: 'management',
+                  action: 'policy',
+                  playerId: player.id,
+                  available: event.target.checked,
+                  loanAvailable: event.target.checked && !!policy.loanAvailable,
+                  loanMonths: policy.loanMonths ?? 6,
+                })
+              }
+            />
+            No mercado
+          </label>
+          {(policy.available || policy.loanAvailable) && (
+            <button
+              type="button"
+              className="loan-availability-toggle"
+              aria-pressed={!!policy.loanAvailable}
+              disabled={busy || !loan.eligible || Boolean(state.management?.loans?.[player.id])}
+              onClick={() =>
+                send({
+                  type: 'management',
+                  action: 'policy',
+                  playerId: player.id,
+                  available: true,
+                  loanAvailable: !policy.loanAvailable,
+                  loanMonths: policy.loanMonths ?? 6,
+                })
+              }
+            >
+              <Icon name="calendar" size={18} />
+              <span>Disponível para empréstimo</span>
+              <b>{policy.loanAvailable ? 'Sim' : 'Não'}</b>
+            </button>
           )}
+          {!loan.eligible && <small>Empréstimo exige mais de 6 meses restantes de contrato.</small>}
           {policy.loanAvailable && (
             <div className="loan-duration">
               <span>Prazo autorizado</span>
@@ -182,6 +188,11 @@ export function PlayerManagement({
                 {([6, 12] as const).map((months) => (
                   <button
                     key={months}
+                    className={
+                      (Math.min(policy.loanMonths ?? 12, loan.maxMonths) >= 12 ? 12 : 6) === months
+                        ? 'selected'
+                        : ''
+                    }
                     disabled={busy || months > loan.maxMonths}
                     aria-pressed={
                       (Math.min(policy.loanMonths ?? 12, loan.maxMonths) >= 12 ? 12 : 6) === months
@@ -210,7 +221,7 @@ export function PlayerManagement({
         </div>
       )}
       {section === 'renew' && !terms.reason && (
-        <div>
+        <div className="renewal-layout">
           <p>
             {terms.reason ||
               'Moral: ' +
@@ -400,7 +411,7 @@ export function IncomingOffers({ snapshot, club, playerId }: ViewProps & { playe
                     {buyer?.name ?? 'Clube interessado'} ↗
                   </a>
                 </div>
-                <span className="offer-status">Em análise</span>
+                <span className="offer-status">Pendente</span>
               </header>
               <div className="offer-body">
                 {player &&

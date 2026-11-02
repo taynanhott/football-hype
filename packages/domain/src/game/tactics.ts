@@ -51,7 +51,19 @@ export function learnedPositionFactor(
 }
 export function startingAverage(state: WorldState, club: ClubSnapshot, at = state.lastProcessedAt) {
   const entries = resolveLineup(state, club, at);
-  return entries.reduce((sum, entry) => sum + (entry.player ? entry.effectiveOverall : 0), 0) / 11;
+  return Math.min(
+    99,
+    entries.reduce((sum, entry) => sum + (entry.player ? entry.effectiveOverall : 0), 0) / 11 +
+      lineupTacticalBonus(entries),
+  );
+}
+export function lineupTacticalBonus(
+  entries: readonly { player?: PlayerSnapshot | undefined; chemistry: number }[],
+) {
+  const selected = entries.filter((e) => e.player);
+  if (!selected.length) return 0;
+  const chemistry = selected.reduce((sum, e) => sum + e.chemistry, 0) / 11;
+  return 1 + (2 * Math.min(100, Math.max(0, chemistry))) / 100;
 }
 export function chemistryPercent(matches: number): number {
   return Math.min(100, (Math.max(0, matches) / TACTICS.chemistryMatches) * 100);

@@ -23,6 +23,7 @@ import { GroundMist } from './ground-mist';
 import { Pitch } from './pitch';
 import { RealStadium } from './real-stadiums';
 import { stadiumSkin } from './stadium-catalog';
+import { realStadiumSeats } from './stadium-seating';
 import { ModernArena, TraditionalDetails } from './stadium-architecture';
 
 type Position = [number, number, number];
@@ -103,6 +104,7 @@ function Stand({ entity }: { entity: SectorEntity }) {
   );
 }
 function Crowd({
+  skin,
   occupancy,
   level,
   homeKit = { primary: '#315d55', secondary: '#ffffff' },
@@ -110,13 +112,17 @@ function Crowd({
 }: {
   homeKit?: { primary: string; secondary: string };
   awayKit?: { primary: string; secondary: string };
+  skin?: string | undefined;
   occupancy: number;
   level: number;
 }) {
   const mesh = useRef<InstancedMesh>(null);
   const heads = useRef<InstancedMesh>(null);
   const shirts = useRef<InstancedMesh>(null);
-  const count = level >= 4 ? (level === 5 ? 3 * 13 : 2 * 10) * 384 : 4 * (5 + level * 2) * 100;
+  const mappedSeats = useMemo(() => (skin ? realStadiumSeats(skin) : null), [skin]);
+  const count =
+    mappedSeats?.length ??
+    (level >= 4 ? (level === 5 ? 3 * 13 : 2 * 10) * 384 : 4 * (5 + level * 2) * 100);
   const dummy = useMemo(() => new Object3D(), []);
   useLayoutEffect(() => {
     if (!mesh.current || !heads.current || !shirts.current) return;
@@ -152,10 +158,22 @@ function Crowd({
           0,
         );
       }
+      const mapped = mappedSeats?.[index];
+      if (mapped) {
+        dummy.position.set(mapped.x, mapped.y, mapped.z);
+        dummy.rotation.set(0, mapped.rotation, 0);
+      }
       const occupied = ((index * 7919) % count) / count < Math.min(1, Math.max(0, occupancy));
-      const visitor = level >= 4 ? index % 384 < 115 : seat < 30;
-      const kit = visitor ? awayKit : homeKit;
-      if (level < 4) dummy.rotation.set(0, side < 2 ? 0 : Math.PI / 2, 0);
+      const visitor = mapped
+        ? (Math.atan2(mapped.z, mapped.x) + Math.PI) / (2 * Math.PI) < 0.3
+        : level >= 4
+          ? index % 384 < 115
+          : seat < 30;
+      const kit = {
+        primary: visitor ? awayKit.primary : homeKit.primary,
+        secondary: visitor ? awayKit.secondary : homeKit.secondary,
+      };
+      if (!mapped && level < 4) dummy.rotation.set(0, side < 2 ? 0 : Math.PI / 2, 0);
       dummy.scale.set(occupied ? 0.65 : 0, occupied ? 0.85 : 0, occupied ? 0.45 : 0);
       dummy.updateMatrix();
       mesh.current.setMatrixAt(index, dummy.matrix);
@@ -176,14 +194,24 @@ function Crowd({
     shirts.current.instanceMatrix.needsUpdate = true;
     if (shirts.current.instanceColor) shirts.current.instanceColor.needsUpdate = true;
     if (heads.current.instanceColor) heads.current.instanceColor.needsUpdate = true;
-  }, [count, dummy, occupancy, level, homeKit, awayKit]);
+  }, [
+    count,
+    dummy,
+    occupancy,
+    level,
+    homeKit.primary,
+    homeKit.secondary,
+    awayKit.primary,
+    awayKit.secondary,
+    mappedSeats,
+  ]);
   useFrame(({ clock }) => {
     const bounce = Math.sin(clock.elapsedTime * 5) * occupancy * 0.09;
     for (const part of [mesh.current, heads.current, shirts.current])
       if (part) part.position.y = bounce;
   });
   return (
-    <group>
+    <group name={skin ? `Torcida: ${skin}` : 'Torcida: arquibancada padrão'}>
       <instancedMesh ref={mesh} args={[undefined, undefined, count]}>
         <boxGeometry />
         <meshStandardMaterial roughness={0.9} />
@@ -332,6 +360,7 @@ function StadiumWorld({
       )}
       {matchView && (
         <Crowd
+          skin={stadiumSkin(stadium)}
           level={level}
           occupancy={occupancy}
           {...(homeKit ? { homeKit } : {})}
