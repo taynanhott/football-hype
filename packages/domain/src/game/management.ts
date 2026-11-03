@@ -419,6 +419,8 @@ export function manageClub({
   club,
   command,
   eventId,
+  userId,
+  now,
 }: CommandContext): Result<CommandOutcome> {
   if (command.type !== 'management')
     return failure(domainError('VALIDATION_ERROR', 'Comando inválido'));
@@ -427,6 +429,75 @@ export function manageClub({
   const player = state.players.byId[command.playerId ?? ''];
   const done = (next: WorldState, message: string, amount = 0) =>
     success({ next, type: 'club.customized' as const, message, amount });
+  if (command.action === 'counter-offer') {
+    const fee = command.fee;
+    if (!fee || !Number.isSafeInteger(fee)) return fail('Informe um valor válido');
+    const human = state.negotiations.find(
+      (n) => n.id === command.offerId && n.sellerId === club.id && n.status === 'review',
+    );
+    if (human) {
+      if ((human.expiresAt ?? 0) <= state.lastProcessedAt || fee <= human.fee)
+        return fail('A contraoferta deve superar a proposta vigente');
+      return done(
+        {
+          ...state,
+          negotiations: state.negotiations.map((n) =>
+            n.id === human.id
+              ? {
+                  ...n,
+                  fee,
+                  status: 'salary' as const,
+                  reply:
+                    'O vendedor pede ' +
+                    fee +
+                    ' centavos. Confirme o valor para negociar com o atleta.',
+                }
+              : n,
+          ),
+        },
+        'Contraoferta enviada ao comprador',
+      );
+    }
+    const offer = management.offers?.find(
+      (o) => o.id === command.offerId && o.sellerId === club.id && o.status === 'pending',
+    );
+    if (
+      !offer ||
+      offer.kind === 'loan' ||
+      (offer.offeredAt ?? state.createdAt) + 14 * 86400000 <= state.lastProcessedAt ||
+      fee <= offer.fee
+    )
+      return fail('Contraoferta indisponível');
+    const buyer = state.clubs.byId[offer.buyerId];
+    if (!buyer || state.players.byId[offer.playerId]?.clubId !== club.id)
+      return fail('Proposta indisponível');
+    const limits = financialLimits(state, buyer, fee);
+    const accepted =
+      fee <= offer.fee * 1.15 &&
+      fee <= limits.transfer &&
+      buyer.balance.cents >= fee + offer.salary &&
+      offer.salary <= limits.salary;
+    const next = {
+      ...state,
+      management: {
+        ...management,
+        offers: management.offers?.map((o) =>
+          o.id === offer.id
+            ? { ...o, fee, status: accepted ? ('pending' as const) : ('rejected' as const) }
+            : o,
+        ),
+      },
+    };
+    if (!accepted) return done(next, 'O clube considerou o aumento alto e retirou a proposta');
+    return manageClub({
+      state: next,
+      club,
+      command: { ...command, action: 'accept' },
+      eventId,
+      userId,
+      now,
+    });
+  }
   if (command.action === 'accept-transfer' || command.action === 'reject-transfer') {
     const offer = state.negotiations.find(
       (n) => n.id === command.offerId && n.sellerId === club.id && n.status === 'review',

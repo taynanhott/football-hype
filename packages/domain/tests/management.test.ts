@@ -353,3 +353,76 @@ it('dispensas compartilham as três reposições e encerram a negociação salar
   state = act({ type: 'management', action: 'scout-academy' });
   expect(list()).toHaveLength(4);
 });
+
+describe('contraofertas recebidas', () => {
+  it('retira a oferta do bot quando o aumento ultrapassa sua tolerância', () => {
+    const club = own();
+    const player = state.players.byId[club.playerIds[0]!]!;
+    const buyer = state.clubs.ids.find((id) => id !== club.id)!;
+    state = {
+      ...state,
+      management: {
+        ...state.management,
+        offers: [
+          {
+            id: 'counter-test',
+            playerId: player.id,
+            sellerId: club.id,
+            buyerId: buyer,
+            fee: 100000,
+            salary: player.salary.cents,
+            offeredAt: now,
+            status: 'pending',
+          },
+        ],
+      },
+    };
+    const next = act({
+      type: 'management',
+      action: 'counter-offer',
+      offerId: 'counter-test',
+      fee: 200000,
+    });
+    expect(next.management?.offers?.[0]?.status).toBe('rejected');
+    expect(next.players.byId[player.id]?.clubId).toBe(club.id);
+    expect(next.clubs.byId[club.id]?.balance).toEqual(club.balance);
+  });
+});
+
+describe('trocas de jogadores', () => {
+  it('transfere os atletas e movimenta somente a parcela em dinheiro', () => {
+    const buyer = own();
+    const seller = state.clubs.byId[state.clubs.ids.find((id) => id !== buyer.id)!]!;
+    const target = state.players.byId[seller.playerIds[0]!]!;
+    const exchange = state.players.byId[buyer.playerIds[0]!]!;
+    state = {
+      ...state,
+      negotiations: [
+        {
+          id: stableId(99, 1),
+          buyerId: buyer.id,
+          sellerId: seller.id,
+          playerId: target.id,
+          fee: 100000,
+          exchangePlayerIds: [exchange.id],
+          exchangeValue: 10000,
+          offeredSalary: null,
+          minimumSalary: target.salary.cents,
+          interest: 100,
+          status: 'salary',
+        },
+      ],
+    };
+    const next = act({
+      type: 'salary',
+      negotiationId: stableId(99, 1),
+      salary: target.salary.cents,
+    });
+    expect(next.players.byId[exchange.id]?.clubId).toBe(seller.id);
+    expect(next.players.byId[target.id]?.clubId).toBe(buyer.id);
+    expect(next.clubs.byId[buyer.id]?.playerIds).not.toContain(exchange.id);
+    expect(next.clubs.byId[seller.id]?.playerIds).toContain(exchange.id);
+    expect(next.clubs.byId[seller.id]?.balance.cents).toBe(seller.balance.cents + 100000);
+    expect(worldStateSchema.safeParse(next).success).toBe(true);
+  });
+});

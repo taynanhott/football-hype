@@ -48,7 +48,7 @@ let retry: ReturnType<typeof setTimeout> | undefined;
 let retryDelay = 1000;
 let recoveryAttempts = 0;
 let connecting = false;
-let backgrounded = false;
+
 function endRecovery() {
   useGameStore.getState().disconnect();
   useGameStore.setState({
@@ -85,14 +85,12 @@ function scheduleRecovery() {
 }
 function resumeConnection() {
   if (document.visibilityState === 'hidden') {
-    backgrounded = true;
     clearTimeout(retry);
     retry = undefined;
     return;
   }
   if (!recovery || connecting) return;
-  if (backgrounded || !useGameStore.getState().connected) {
-    backgrounded = false;
+  if (!useGameStore.getState().connected) {
     clearTimeout(retry);
     retry = undefined;
     attemptRecovery();
@@ -102,7 +100,6 @@ document.addEventListener('visibilitychange', resumeConnection);
 window.addEventListener('online', resumeConnection);
 window.addEventListener('pageshow', (event) => {
   if (event.persisted) {
-    backgrounded = true;
     resumeConnection();
   }
 });

@@ -1,254 +1,111 @@
-import { MoneyRange } from '../../ui/money-range';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { GAMEPLAY, MONEY_STEPS, roundMoney, type Fixture, type WorldState } from '@football/shared';
+import { useMemo } from 'react';
+import { GAMEPLAY, formatMoneyFull, type WorldState } from '@football/shared';
 import {
+  TICKET_TIERS,
   matchDemand,
   projectTicketDemand,
   scheduledFixtures,
   stadiumCapacity,
 } from '@football/domain';
 import { useGameStore } from '../../store/game-store';
-import { currency, dateTime, ticketPrice } from '../../ui/format';
-
 export function TicketPricing({ state, clubId }: { state: WorldState; clubId: string }) {
-  const fixtures = useMemo(() => {
-    const completed = new Set(state.results.map((result) => result.fixtureId));
-    const stadiumId = state.clubs.byId[clubId]?.stadiumId;
-    return scheduledFixtures(state).filter(
-      (fixture) =>
-        fixture.homeId === clubId &&
-        !fixture.neutral &&
-        (!fixture.stadiumId || fixture.stadiumId === stadiumId) &&
-        !completed.has(fixture.id) &&
-        fixture.scheduledAt > state.lastProcessedAt,
+  const { send, busy, connected } = useGameStore();
+  const next = useMemo(() => {
+    const played = new Set(state.results.map((r) => r.fixtureId));
+    return scheduledFixtures(state).find(
+      (f) =>
+        f.homeId === clubId &&
+        !f.neutral &&
+        !played.has(f.id) &&
+        f.scheduledAt > state.lastProcessedAt,
     );
   }, [state, clubId]);
-  const saved = roundMoney(
-    state.homeTicketPrices?.[clubId] ?? GAMEPLAY.baseTicketCents,
-    MONEY_STEPS.ticket,
+  const stadium = state.stadiums.byId[state.clubs.byId[clubId]?.stadiumId ?? ''];
+  const capacity = stadium ? stadiumCapacity(stadium) : 0;
+  const current = state.homeTicketPrices?.[clubId] ?? GAMEPLAY.baseTicketCents;
+  const demand = next
+    ? matchDemand(state, next)
+    : { capacity, commerce: 0, selloutPriceCents: 5000000, minimumCrowdPriceCents: 20000000 };
+  const tiers = TICKET_TIERS.map((t) => ({
+    ...t,
+    priceCents:
+      Math.ceil(
+        (t.priceCents *
+          ('fairPriceCents' in demand ? demand.fairPriceCents : GAMEPLAY.baseTicketCents)) /
+          GAMEPLAY.baseTicketCents /
+          5000000,
+      ) * 5000000,
+  }));
+  const selected = tiers.reduce(
+    (best, t) =>
+      Math.abs(t.priceCents - current) < Math.abs(best.priceCents - current) ? t : best,
+    tiers[0]!,
   );
+  const selectedForecast = projectTicketDemand(demand, selected.priceCents);
+  const occupancy = Math.round(selectedForecast.occupancy * 100);
   return (
     <section className="panel ticket-pricing">
       <div className="section-header">
+        <h2>Ingressos</h2>
+        <span>{capacity.toLocaleString('pt-BR')} lugares</span>
+      </div>
+      <p>
+        {stadium?.name} ·{' '}
+        {next
+          ? 'Próximo adversário: ' + state.clubs.byId[next.awayId]?.name
+          : 'Projeção por jogo em casa'}
+      </p>
+      <div className="ticket-demand-summary">
         <div>
-          <h2>Bilheteria</h2>
+          <strong>♨ Procura estimada</strong>
+          <b>{occupancy}% da capacidade</b>
         </div>
-      </div>
-      <HomeTicketSlider
-        key={clubId}
-        clubId={clubId}
-        state={state}
-        fixtures={fixtures}
-        saved={saved}
-      />
-    </section>
-  );
-}
-
-function HomeTicketSlider({
-  clubId,
-  state,
-  fixtures,
-  saved,
-}: {
-  clubId: string;
-  state: WorldState;
-  fixtures: Fixture[];
-  saved: number;
-}) {
-  const [price, setPrice] = useState(saved);
-  const [requestedPrice, setRequestedPrice] = useState<number | null>(null);
-  const draft = useRef(saved);
-  const dirty = useRef(false);
-  const dragging = useRef(false);
-  const { send, busy, connected, error, clearError } = useGameStore();
-  const submitted = useRef<number | null>(null);
-  const ranges = useMemo(
-    () => fixtures.map((fixture) => matchDemand(state, fixture)),
-    [state, fixtures],
-  );
-  const minPrice = ranges.length
-    ? Math.min(...ranges.map((item) => item.selloutPriceCents))
-    : MONEY_STEPS.ticket;
-  const maxPrice = ranges.length
-    ? Math.max(...ranges.map((item) => item.minimumCrowdPriceCents))
-    : 50000;
-  // Existing prices can remain outside a newly recalculated range until the user adjusts them.
-  const sliderValue = Math.max(minPrice, Math.min(maxPrice, price));
-  const finishAdjustment = () => {
-    dragging.current = false;
-    setRequestedPrice(draft.current);
-  };
-  useEffect(() => {
-    if (submitted.current === saved) {
-      submitted.current = null;
-      setRequestedPrice((requested) => (requested === saved ? null : requested));
-    }
-    if (
-      !dragging.current &&
-      (!dirty.current || (draft.current === saved && submitted.current === null))
-    ) {
-      draft.current = saved;
-      dirty.current = false;
-      setPrice(saved);
-    }
-  }, [saved]);
-  useEffect(() => {
-    if (
-      requestedPrice === null ||
-      dragging.current ||
-      requestedPrice === saved ||
-      busy ||
-      !connected ||
-      error ||
-      submitted.current === requestedPrice
-    )
-      return;
-    submitted.current = requestedPrice;
-    send({ type: 'home-ticket-price', priceCents: requestedPrice });
-  }, [requestedPrice, saved, busy, connected, error, send]);
-  const next = fixtures[0];
-
-  const forecasts = ranges.map((range) => ({ ...range, ...projectTicketDemand(range, price) }));
-  const forecast = forecasts[0];
-  const totalAttendance = forecasts.reduce((sum, item) => sum + item.attendance, 0);
-  const totalCapacity = forecasts.reduce((sum, item) => sum + item.capacity, 0);
-  const playedMatches = state.results.filter((match) => match.homeId === clubId);
-  const averageAttendance = playedMatches.length
-    ? Math.round(
-        playedMatches.reduce((sum, match) => sum + match.attendance, 0) / playedMatches.length,
-      )
-    : 0;
-  const stadium = state.stadiums.byId[state.clubs.byId[clubId]?.stadiumId ?? ''];
-  const capacity = stadium ? stadiumCapacity(stadium) : 0;
-  const averageOccupancy = capacity ? Math.round((averageAttendance / capacity) * 100) : 0;
-  const averageTicketRevenue = playedMatches.length
-    ? Math.round(
-        playedMatches.reduce(
-          (sum, match) =>
-            sum + match.attendance * (match.ticketPriceCents ?? GAMEPLAY.baseTicketCents),
-          0,
-        ) / playedMatches.length,
-      )
-    : 0;
-
-  return (
-    <div className="home-ticket-slider">
-      <label htmlFor="home-ticket-price">
-        Preço do ingresso <strong>{ticketPrice(price)}</strong>
-      </label>
-      <MoneyRange
-        id="home-ticket-price"
-        type="range"
-        min={minPrice}
-        max={maxPrice}
-        step={MONEY_STEPS.ticket}
-        value={sliderValue}
-        disabled={!connected}
-        onPointerDown={() => {
-          dragging.current = true;
-          setRequestedPrice(null);
-        }}
-        onKeyDown={(event) => {
-          if (
-            [
-              'ArrowLeft',
-              'ArrowRight',
-              'ArrowUp',
-              'ArrowDown',
-              'Home',
-              'End',
-              'PageUp',
-              'PageDown',
-            ].includes(event.key)
-          ) {
-            dragging.current = true;
-            setRequestedPrice(null);
-          }
-        }}
-        onPointerUp={finishAdjustment}
-        onPointerCancel={finishAdjustment}
-        onKeyUp={(event) => {
-          if (
-            [
-              'ArrowLeft',
-              'ArrowRight',
-              'ArrowUp',
-              'ArrowDown',
-              'Home',
-              'End',
-              'PageUp',
-              'PageDown',
-            ].includes(event.key)
-          )
-            finishAdjustment();
-        }}
-        onBlur={finishAdjustment}
-        aria-valuetext={`${ticketPrice(price)}, ${totalCapacity ? Math.round((totalAttendance / totalCapacity) * 100) : 0}% de ocupação prevista`}
-        onChange={(event) => {
-          if (error) {
-            clearError();
-            submitted.current = null;
-            setRequestedPrice(null);
-          }
-          const value = roundMoney(Number(event.target.value), MONEY_STEPS.ticket);
-          draft.current = value;
-          dirty.current = true;
-          setPrice(value);
-        }}
-      />
-      <div className="ticket-slider-limits">
-        <span>Menor preço</span>
-        <span>Maior preço</span>
-      </div>
-      {(error || !connected) && (
-        <p className="ticket-price-status" role="alert">
-          {error
-            ? `Não foi possível salvar: ${error}`
-            : 'Sem conexão. Reconecte para ajustar o preço.'}
+        <div
+          className="ticket-demand-track"
+          role="progressbar"
+          aria-label="Procura estimada"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={occupancy}
+        >
+          <span style={{ width: occupancy + '%' }} />
+        </div>
+        <p>
+          {occupancy >= 80
+            ? 'Casa cheia: a torcida fortalece o time em casa.'
+            : occupancy >= 50
+              ? 'Boa procura: equilíbrio entre público e renda.'
+              : 'Procura baixa: o preço afasta a torcida e reduz a força em casa.'}
         </p>
-      )}
-      {forecast && next ? (
-        <>
-          <p>
-            Próximo jogo em casa: <b>{state.clubs.byId[next.awayId]?.name ?? 'Adversário'}</b> ·{' '}
-            {dateTime(next.scheduledAt)}.
-          </p>
-          <div className="ticket-forecast">
-            <div>
-              <span>Público previsto</span>
-              <strong>{forecast.attendance.toLocaleString('pt-BR')}</strong>
-              <small>{Math.round(forecast.occupancy * 100)}% da capacidade</small>
-              <div
-                className="ticket-occupancy-bar"
-                role="progressbar"
-                aria-valuemin={0}
-                aria-valuemax={100}
-                aria-valuenow={Math.round(forecast.occupancy * 100)}
-                aria-label="Ocupação prevista"
-              >
-                <span
-                  style={{
-                    width: Math.max(0, Math.min(100, Math.round(forecast.occupancy * 100))) + '%',
-                  }}
-                />
-              </div>
-            </div>
-            <div>
-              <span>Receita prevista</span>
-              <strong>{currency(forecast.ticketRevenue)}</strong>
-              <small>Média por jogo: {currency(averageTicketRevenue)}</small>
-            </div>
-            <div>
-              <span>Média de público</span>
-              <strong>{averageAttendance.toLocaleString('pt-BR')}</strong>
-              <small>{averageOccupancy}% de ocupação média</small>
-            </div>
-          </div>
-        </>
-      ) : (
-        <p>Nenhum jogo em casa agendado.</p>
-      )}
-    </div>
+      </div>
+      <div className="ticket-tier-options">
+        {tiers.map((tier) => {
+          const forecast = projectTicketDemand(demand, tier.priceCents);
+          return (
+            <button
+              key={tier.label}
+              type="button"
+              className="ticket-tier-option"
+              aria-pressed={selected.label === tier.label}
+              disabled={!connected || busy}
+              onClick={() => send({ type: 'home-ticket-price', priceCents: tier.priceCents })}
+            >
+              <span>
+                <b>
+                  {tier.label} · {formatMoneyFull(tier.priceCents)}
+                </b>
+                <small>{tier.description}</small>
+              </span>
+              <span>
+                <strong>{forecast.attendance.toLocaleString('pt-BR')} torcedores</strong>
+                <small>
+                  {Math.round(forecast.occupancy * 100)}% · {formatMoneyFull(forecast.revenue)}/jogo
+                </small>
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </section>
   );
 }

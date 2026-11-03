@@ -1,8 +1,9 @@
+import { Portrait } from '../players/player-card';
 import { openModalPreservingScroll } from '../../ui/modal-scroll';
 import { GeneratedPerson } from '../../ui/person-avatar';
 import { useEffect, useRef, useState } from 'react';
 import type { ViewProps } from '../../ui/view-props';
-import { transferContext, interestLabel, loanTerms } from '@football/domain';
+import { transferContext, interestLabel, loanTerms, exchangeCandidates } from '@football/domain';
 import type { PlayerSnapshot } from '@football/shared';
 import { MONEY_STEPS, ceilMoney } from '@football/shared';
 import { currency } from '../../ui/format';
@@ -30,6 +31,8 @@ export function NegotiationChat({
   onClose: () => void;
   onContinue: () => void;
 }) {
+  const offerDisplay =
+    'HC$ ' + (value / 100000).toLocaleString('pt-BR', { maximumFractionDigits: 1 });
   const dialogRef = useRef<HTMLDialogElement>(null);
   const loanCloseTimer = useRef<number | undefined>(undefined);
   useEffect(() => () => window.clearTimeout(loanCloseTimer.current), []);
@@ -41,9 +44,17 @@ export function NegotiationChat({
   }, []);
   const seller = snapshot.state.clubs.byId[player.clubId ?? ''];
   const loan = loanTerms(snapshot.state, player, club);
-  const [dealType, setDealType] = useState<'buy' | 'loan' | null>(loan.available ? null : 'buy');
+  const [dealType, setDealType] = useState<'buy' | 'loan' | null>(
+    maximum <= 0 && loan.available ? 'loan' : 'buy',
+  );
   const [loanPercent, setLoanPercent] = useState(100);
   const [loanMonths, setLoanMonths] = useState(6);
+  const [exchangeIds, setExchangeIds] = useState<string[]>([]);
+  const [exchangeExpanded, setExchangeExpanded] = useState(false);
+  const candidates = exchangeCandidates(snapshot.state, club.id, player.clubId ?? '');
+  const exchangeValue = candidates
+    .filter((c) => exchangeIds.includes(c.player.id))
+    .reduce((sum, c) => sum + c.value, 0);
   const context = transferContext(snapshot.state, player, club);
   const history = snapshot.state.negotiations.filter(
     (n) => n.playerId === player.id && n.buyerId === club.id,
@@ -187,6 +198,16 @@ export function NegotiationChat({
                         ' pela transferência de ' +
                         player.name +
                         '.'}
+                  {Boolean(n.exchangePlayerIds?.length) && (
+                    <p>
+                      Inclui{' '}
+                      {n.exchangePlayerIds
+                        ?.map((id) => snapshot.state.players.byId[id]?.name)
+                        .join(', ')}{' '}
+                      · Crédito {currency(n.exchangeValue ?? 0)} · Total{' '}
+                      {currency(n.fee + (n.exchangeValue ?? 0))}
+                    </p>
+                  )}
                   <small>Enviada ✓✓</small>
                 </div>
                 {index < replyCount && (
@@ -215,19 +236,34 @@ export function NegotiationChat({
                 {error}
               </div>
             )}
-            {typing && (
-              <div className="chat-bubble incoming chat-typing" aria-label="Digitando">
-                •••
+            {(typing || (budgetVisible && last?.status !== 'salary')) && (
+              <div
+                className={`chat-bubble ${typing ? 'incoming' : 'outgoing'} chat-typing`}
+                aria-label={typing ? 'Técnico digitando' : 'Preparando proposta'}
+              >
+                <span aria-hidden="true">•</span>
+                <span aria-hidden="true">•</span>
+                <span aria-hidden="true">•</span>
               </div>
             )}
             <div ref={bottom} />
           </div>
-          {loan.available && budgetVisible && (
+          {budgetVisible && (
             <div className="chat-deal-options" role="group" aria-label="Tipo de negociação">
-              <button aria-pressed={dealType === 'loan'} onClick={() => setDealType('loan')}>
+              <button
+                disabled={!loan.available}
+                title={!loan.available ? 'Empréstimo indisponível para este atleta' : undefined}
+                aria-pressed={dealType === 'loan'}
+                onClick={() => setDealType('loan')}
+              >
                 Empréstimo
               </button>
-              <button aria-pressed={dealType === 'buy'} onClick={() => setDealType('buy')}>
+              <button
+                disabled={maximum <= 0}
+                title={maximum <= 0 ? 'Defina um orçamento para transferências' : undefined}
+                aria-pressed={dealType === 'buy'}
+                onClick={() => setDealType('buy')}
+              >
                 Compra
               </button>
             </div>
@@ -298,28 +334,121 @@ export function NegotiationChat({
             </div>
           ) : (
             <form
-              className="chat-composer"
+              className={`chat-composer transfer-proposal-composer ${exchangeExpanded ? 'exchange-expanded' : ''}`}
               onSubmit={(e) => {
                 e.preventDefault();
                 useGameStore.getState().clearError();
                 setAwaitingReply(true);
-                useGameStore.getState().send({ type: 'offer', playerId: player.id, fee: value });
+                setExchangeExpanded(false);
+                useGameStore.getState().send({
+                  type: 'offer',
+                  playerId: player.id,
+                  fee: value,
+                  exchangePlayerIds: exchangeIds,
+                });
               }}
             >
-              <label>
-                <span>
-                  Oferecer <strong>{currency(value)}</strong>
-                </span>
+              <div className="transfer-cash-control">
+                <span>Valor em dinheiro</span>
+                <div className="transfer-value-stepper">
+                  <button
+                    type="button"
+                    aria-label="Diminuir oferta"
+                    disabled={typing || blocked}
+                    onClick={() =>
+                      onValue(Math.max(minimumOffer, value - MONEY_STEPS.transferSlider / 2))
+                    }
+                  >
+                    −
+                  </button>
+                  <strong>{offerDisplay}</strong>
+                  <button
+                    type="button"
+                    aria-label="Aumentar oferta"
+                    disabled={typing || blocked}
+                    onClick={() =>
+                      onValue(Math.min(maximumOffer, value + MONEY_STEPS.transferSlider / 2))
+                    }
+                  >
+                    +
+                  </button>
+                </div>
+                <small>
+                  {Math.round(
+                    ((value + exchangeValue) / Math.max(1, player.marketValue.cents)) * 100,
+                  )}
+                  % do valor de mercado · Caixa {currency(maximum)}
+                </small>
                 <MoneyRange
                   aria-label="Valor da proposta"
                   min={minimumOffer}
                   max={maximumOffer}
-                  step={MONEY_STEPS.general}
+                  step={MONEY_STEPS.transferSlider / 2}
                   value={value}
-                  onChange={(e) => onValue(Number(e.target.value))}
+                  onChange={(e) =>
+                    onValue(
+                      Math.min(
+                        maximumOffer,
+                        Math.max(
+                          minimumOffer,
+                          Math.round(Number(e.target.value) / MONEY_STEPS.transferSlider) *
+                            MONEY_STEPS.transferSlider,
+                        ),
+                      ),
+                    )
+                  }
                   disabled={typing || !budgetVisible || blocked || context.blocked}
                 />
-              </label>
+              </div>
+              {seller && (
+                <details
+                  className="exchange-picker"
+                  open={exchangeExpanded}
+                  onToggle={(event) => setExchangeExpanded(event.currentTarget.open)}
+                >
+                  <summary>
+                    ⇄ Incluir jogadores na troca <strong>{exchangeIds.length}/3</strong>
+                  </summary>
+                  <div className="exchange-options">
+                    {candidates.length ? (
+                      candidates.map(({ player: candidate, value: credit }) => (
+                        <label key={candidate.id}>
+                          <input
+                            type="checkbox"
+                            checked={exchangeIds.includes(candidate.id)}
+                            disabled={
+                              typing ||
+                              (exchangeIds.length >= 3 && !exchangeIds.includes(candidate.id))
+                            }
+                            onChange={(event) =>
+                              setExchangeIds((ids) =>
+                                event.target.checked
+                                  ? [...ids, candidate.id]
+                                  : ids.filter((id) => id !== candidate.id),
+                              )
+                            }
+                          />
+                          <Portrait player={candidate} clubName={club.name} />
+                          <span>
+                            <b>{candidate.name}</b>
+                            <small>
+                              {candidate.position} · {candidate.age} anos · OVR {candidate.overall}
+                            </small>
+                          </span>
+                          <strong>{currency(credit)}</strong>
+                        </label>
+                      ))
+                    ) : (
+                      <p>O clube não tem interesse nos atletas disponíveis.</p>
+                    )}
+                  </div>
+                  <p>
+                    Dinheiro: {currency(value)} · Troca: {currency(exchangeValue)}
+                    <br />
+                    <strong>Proposta total: {currency(value + exchangeValue)}</strong>
+                  </p>
+                </details>
+              )}
               <button
                 type="submit"
                 aria-label="Enviar proposta"
@@ -328,11 +457,13 @@ export function NegotiationChat({
                   !budgetVisible ||
                   blocked ||
                   context.blocked ||
+                  maximum <= 0 ||
                   value > maximum ||
-                  (last?.status === 'review' && value <= last.fee)
+                  (last?.status === 'review' &&
+                    value + exchangeValue <= last.fee + (last.exchangeValue ?? 0))
                 }
               >
-                ➤
+                Enviar proposta
               </button>
             </form>
           )}

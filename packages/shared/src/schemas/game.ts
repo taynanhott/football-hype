@@ -192,6 +192,8 @@ export const negotiationSchema = z.strictObject({
   buyerId: entityIdSchema,
   playerId: entityIdSchema,
   fee: gameAmountSchema,
+  exchangePlayerIds: z.array(entityIdSchema).max(3).optional(),
+  exchangeValue: gameAmountSchema.optional(),
   offeredSalary: salaryAmountSchema.nullable(),
   interest: z.number().min(0).max(100),
   status: z.enum(['review', 'salary', 'completed', 'rejected']),
@@ -536,8 +538,8 @@ const individualCommandSchema = z.discriminatedUnion('type', [
   }),
   z.strictObject({
     type: z.literal('financial-plan'),
-    transfer: gameAmountSchema,
-    salaries: salaryAmountSchema,
+    transfer: gameAmountSchema.transform((value) => Math.floor(value / 50000000) * 50000000),
+    salaries: salaryAmountSchema.transform((value) => Math.floor(value / 50000000) * 50000000),
   }),
   z.strictObject({ type: z.literal('ready'), ready: z.boolean() }),
   z.strictObject({ type: z.literal('advance') }),
@@ -547,7 +549,7 @@ const individualCommandSchema = z.discriminatedUnion('type', [
       .number()
       .int()
       .min(2500)
-      .max(50000)
+      .max(50000000)
       .transform((value) => Math.round(value / 2500) * 2500),
   }),
   z.strictObject({
@@ -557,7 +559,7 @@ const individualCommandSchema = z.discriminatedUnion('type', [
       .number()
       .int()
       .min(2500)
-      .max(50000)
+      .max(50000000)
       .transform((value) => Math.round(value / 2500) * 2500),
   }),
   lineupSchema.extend({ type: z.literal('lineup') }),
@@ -586,6 +588,11 @@ const individualCommandSchema = z.discriminatedUnion('type', [
   }),
   z.strictObject({
     type: z.literal('offer'),
+    exchangePlayerIds: z
+      .array(entityIdSchema)
+      .max(3)
+      .refine((ids) => new Set(ids).size === ids.length)
+      .optional(),
     playerId: entityIdSchema,
     fee: gameAmountSchema,
     withdraw: z.boolean().optional(),
@@ -605,6 +612,7 @@ const individualCommandSchema = z.discriminatedUnion('type', [
     action: z.enum([
       'policy',
       'offer-loan',
+      'counter-offer',
       'accept-transfer',
       'reject-transfer',
       'renew',
@@ -620,6 +628,7 @@ const individualCommandSchema = z.discriminatedUnion('type', [
     ]),
     playerId: entityIdSchema.optional(),
     offerId: z.string().optional(),
+    fee: gameAmountSchema.optional(),
     target: z.string().optional(),
     playerLoads: z.record(entityIdSchema, z.enum(['light', 'moderate', 'intense'])).optional(),
     available: z.boolean().optional(),

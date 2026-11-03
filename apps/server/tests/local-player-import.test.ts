@@ -40,6 +40,7 @@ describe('base local fornecida', () => {
     const neymar = players.find((p) => p.name === 'Neymar')!;
     expect(dataset.clubs.byId[neymar.clubId!]?.name).toBe('Santos');
     expect(neymar.overall).toBe(81);
+    expect(neymar.salary.cents).toBe(Math.ceil((81 * 81 * 100 * 30 * 2) / 5000000) * 5000000);
     const academyOnly = source.base26.find(
       (row: unknown[]) => !source.bra.some((senior: unknown[]) => senior[0] === row[0]),
     );

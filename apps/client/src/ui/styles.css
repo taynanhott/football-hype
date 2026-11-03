@@ -32269,3 +32269,936 @@ dialog[open].calendar-fifa-modal > .modal-content {
   flex-shrink: 0;
   color: #efcf88;
 }
+
+/* Club office: navy surfaces, ivory paperwork and trophy-gold active actions. */
+.squad-office-actions > .player-management {
+  background: linear-gradient(125deg, #20374b, #122535);
+  border-color: #748899;
+  box-shadow: inset 0 1px 0 #ffffff14;
+}
+.squad-office-actions .player-management > p:first-child {
+  color: #e5edf4;
+  border-bottom-color: #ffffff24;
+}
+.squad-office-actions .player-management .management-tabs button {
+  background: #30495e;
+  border-color: #71879a;
+  color: #f3f6fa;
+}
+.squad-office-actions .player-management .management-tabs button.selected {
+  background: linear-gradient(135deg, #f1d58b, #d5ae52);
+  border-color: #ffe6a5;
+  color: #263342;
+  box-shadow: inset 0 1px 0 #fff6d9;
+}
+.squad-office-actions
+  .player-management
+  .management-tabs
+  button:hover:not(:disabled):not(.selected) {
+  background: #405e77;
+  border-color: #b3c8d9;
+}
+.squad-office-actions .player-management .transfer-availability {
+  background: #f1eddf;
+  border-color: #c9bd98;
+  color: #243c48;
+}
+.squad-office-actions .player-management .transfer-availability legend {
+  background: #f1eddf;
+  color: #243c48;
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-weight: 700;
+}
+.squad-office-actions .player-management .market-listing-toggle {
+  background: #e0e6df;
+  border-color: #abbcaf;
+  color: #203e32;
+}
+.squad-office-actions .player-management .market-listing-toggle:has(input:checked) {
+  background: #d2e8d6;
+  border-color: #4d8960;
+}
+.squad-office-actions .player-management > .player-policy-offers:not(:disabled) {
+  background: linear-gradient(135deg, #337a9a, #225975);
+  border-color: #7cbcd4;
+  color: #fff;
+}
+.squad-office-actions .player-management > .player-policy-offers:disabled {
+  background: #283b4b;
+  border-color: #526575;
+  color: #aebbc6;
+  opacity: 1;
+  box-shadow: none;
+}
+.squad-office-actions .player-management button:focus-visible {
+  outline: 3px solid #91d8f6;
+  outline-offset: 2px;
+}
+
+/* Textured club-office panels with consistent space across management tabs. */
+.squad-office-actions > .player-management {
+  background:
+    repeating-linear-gradient(120deg, #ffffff04 0 1px, transparent 1px 5px),
+    linear-gradient(135deg, #393b32, #232c27);
+  border-color: #95835b;
+}
+.squad-office-actions .player-management .management-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.squad-office-actions .player-management .management-tabs button {
+  background: linear-gradient(#585647, #3d4035);
+  border-color: #93866a;
+  color: #f4edd9;
+  min-width: 0;
+}
+.squad-office-actions .player-management .management-tabs button.selected {
+  background: linear-gradient(#d2c29a, #ad9869);
+  border-color: #eddeb7;
+  color: #272d25;
+}
+.squad-office-actions .player-management .transfer-availability {
+  background: repeating-linear-gradient(0deg, #ffffff03 0 1px, transparent 1px 4px), #343e32;
+  color: #eee6ce;
+  border-color: #897c59;
+}
+.squad-office-actions .player-management .transfer-availability legend {
+  background: #343e32;
+  color: #eee6ce;
+}
+.squad-office-actions .player-management .market-listing-toggle {
+  background: #46513f;
+  color: #f4edd9;
+}
+@media (min-width: 761px) {
+  .squad-office-actions > .player-management {
+    min-height: 340px;
+  }
+  .squad-office-card .player-card {
+    height: 308px;
+  }
+}
+@media (max-width: 760px) {
+  .squad-office-card .card-front {
+    display: flex;
+    flex-direction: column;
+  }
+  .squad-office-card .card-front > .portrait {
+    position: relative;
+    inset: auto;
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+  }
+  .squad-office-card .card-label {
+    position: relative;
+    inset: auto;
+    flex: 0 0 auto;
+    background: var(--card-band);
+    padding: 6px 5px 9px;
+  }
+}
+@media (max-width: 760px) {
+  .squad-office-card .card-label::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 100%;
+    height: 16px;
+    background: linear-gradient(transparent, var(--card-band));
+    pointer-events: none;
+  }
+}
+
+.squad-office-card .card-contract-months {
+  font-size: 9px;
+  line-height: 1.2;
+  padding: 3px 6px;
+  margin: 4px auto;
+  border-radius: 4px;
+}
+@media (max-width: 760px) {
+  .squad-office-card .card-front > .portrait {
+    box-sizing: border-box;
+    padding-top: 16px;
+  }
+}
+
+/* Let attribute labels reserve their natural width on compact player cards. */
+.player-card .card-back dl > div {
+  grid-template-columns: max-content minmax(0, 1fr);
+}
+.player-card .card-back dt {
+  white-space: nowrap;
+  overflow-wrap: normal;
+}
+
+.squad-contract-top {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-bottom: 1px solid #ccb87540;
+  color: #eee8d2;
+  font-size: 11px;
+}
+.squad-contract-top span {
+  color: #aebbaa;
+}
+.squad-contract-top small {
+  background: #174f3a;
+  color: #8ee0b9;
+  padding: 3px 7px;
+  border-radius: 12px;
+}
+.counter-offer-button {
+  background: linear-gradient(#eea536, #c57516) !important;
+  color: #241a08 !important;
+  border-color: #ffc56b !important;
+}
+.counter-offer-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: #03140ddd;
+}
+.counter-offer-dialog {
+  width: min(440px, 100%);
+  padding: 22px;
+  border: 1px solid #cbb46e;
+  border-radius: 16px;
+  background: repeating-linear-gradient(125deg, #ffffff04 0 1px, transparent 1px 5px), #123b2b;
+  color: #f4edda;
+  display: grid;
+  gap: 14px;
+}
+.counter-offer-dialog label {
+  display: grid;
+  gap: 8px;
+}
+.counter-offer-dialog input {
+  width: 100%;
+}
+.counter-offer-dialog p {
+  font-size: 12px;
+}
+.squad-inline-offers .offers-empty-state {
+  padding: 12px;
+  min-height: 0;
+}
+.squad-inline-offers .offers-empty-state a {
+  display: none;
+}
+@media (min-width: 761px) {
+  .squad-office-player {
+    display: grid;
+    grid-template-columns: 236px minmax(0, 1fr);
+    align-items: start;
+  }
+  .squad-office-actions > .player-management {
+    background:
+      repeating-linear-gradient(120deg, #ffffff03 0 1px, transparent 1px 5px),
+      linear-gradient(135deg, #123c2c, #09271d);
+    border-color: #42634b;
+  }
+  .squad-office-actions .player-management > p:first-child {
+    display: none;
+  }
+  .squad-office-actions .player-management .management-tabs button {
+    background: transparent;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    border-radius: 8px 8px 0 0;
+    color: #a9bbaa;
+  }
+  .squad-office-actions .player-management .management-tabs button.selected {
+    background: linear-gradient(#73651e70, #51471c30);
+    border-bottom-color: #e9bc39;
+    color: #fff1b4;
+    box-shadow: none;
+  }
+  .squad-office-actions .player-management .transfer-availability {
+    background: #123c2b;
+    border-color: #345942;
+  }
+  .squad-office-actions .player-management .transfer-availability legend {
+    background: #123c2b;
+  }
+  .squad-office-actions .player-management .market-listing-toggle {
+    background: #08291d;
+    border-color: #234b35;
+  }
+  .squad-inline-offers .incoming-offers-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .squad-inline-offers .incoming-offer {
+    padding: 12px;
+    background: #08271c;
+    border: 1px solid #345942;
+  }
+  .squad-inline-offers .offer-body {
+    display: block;
+  }
+  .squad-inline-offers .offer-list-portrait,
+  .squad-inline-offers .offer-comparison,
+  .squad-inline-offers .offer-amount small,
+  .squad-inline-offers .offer-actions > span {
+    display: none;
+  }
+  .squad-inline-offers .incoming-offer-details {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 20px;
+  }
+  .squad-inline-offers .incoming-offer-details > p {
+    display: none;
+  }
+  .squad-inline-offers .offer-actions {
+    justify-content: flex-end;
+  }
+  .squad-office-actions .player-management > .player-policy-offers {
+    display: none;
+  }
+}
+@media (max-width: 760px) {
+  .squad-office-player {
+    flex-wrap: wrap;
+  }
+  .squad-contract-top {
+    flex: 0 0 100%;
+    justify-content: center;
+    gap: 6px;
+    padding: 5px 0;
+    font-size: 9px;
+  }
+  .squad-contract-top span {
+    display: none;
+  }
+}
+
+.exchange-picker {
+  grid-column: 1 / -1;
+  width: 100%;
+  border: 1px solid #b8a365;
+  border-radius: 10px;
+  padding: 10px;
+  background: #102e24;
+  color: #f3ecd8;
+}
+.exchange-picker summary {
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+.exchange-picker p {
+  font-size: 11px;
+  margin: 8px 0;
+}
+.exchange-options {
+  max-height: 190px;
+  overflow-y: auto;
+  display: grid;
+  gap: 6px;
+}
+.exchange-options label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  background: #ffffff08;
+  border-radius: 7px;
+}
+.exchange-options label span {
+  flex: 1;
+  min-width: 0;
+}
+.exchange-options small {
+  display: block;
+  font-size: 10px;
+  color: #b5c5b8;
+}
+.exchange-options strong {
+  font-size: 11px;
+  color: #e6cb7b;
+}
+.exchange-options input {
+  width: 16px;
+  height: 16px;
+  accent-color: #e1c267;
+}
+
+@media (max-width: 760px) {
+  .incoming-offers .incoming-offer .offer-actions:has(.counter-offer-button) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 5px;
+    height: auto;
+    min-height: 50px;
+  }
+  .incoming-offers .incoming-offer .offer-actions:has(.counter-offer-button) > span {
+    display: none;
+  }
+  .incoming-offers .incoming-offer .offer-actions:has(.counter-offer-button) > button {
+    font-size: 10px;
+    padding: 7px 3px;
+    white-space: nowrap;
+  }
+}
+
+@media (min-width: 761px) {
+  .incoming-offers .incoming-offer .offer-actions:has(.counter-offer-button) {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    height: auto;
+    min-height: 50px;
+  }
+  .incoming-offers .incoming-offer .offer-actions:has(.counter-offer-button) > span {
+    display: none;
+  }
+  .incoming-offers .incoming-offer .offer-actions:has(.counter-offer-button) > button {
+    min-width: 0;
+    width: 100%;
+  }
+}
+
+/* Portrait phone with a conversation above a structured proposal panel. */
+dialog.negotiation-chat-dialog[open] {
+  width: min(460px, calc(100vw - 24px)) !important;
+  max-width: min(460px, calc(100vw - 24px)) !important;
+  height: min(900px, calc(100dvh - 24px)) !important;
+  max-height: calc(100dvh - 24px) !important;
+  padding: 0 !important;
+  gap: 6px;
+}
+.negotiation-chat-dialog .chat-phone-shell {
+  width: 100%;
+  border-radius: 30px;
+  border: 2px solid #a99457;
+  background: #101b19;
+}
+.negotiation-chat-dialog .chat-history {
+  flex: 1 1 210px;
+  min-height: 100px;
+  padding: 12px;
+}
+.negotiation-chat-dialog .chat-deal-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  padding: 8px 12px;
+  background: #182f28;
+}
+.negotiation-chat-dialog .chat-deal-options button {
+  border-radius: 8px;
+  padding: 9px;
+  background: #253e34;
+  color: #c7d6cb;
+  border: 1px solid #48624f;
+}
+.negotiation-chat-dialog .chat-deal-options button[aria-pressed='true'] {
+  background: #dac580;
+  color: #172e22;
+  border-color: #f4df9a;
+}
+.negotiation-chat-dialog .transfer-proposal-composer {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  padding: 12px;
+  background: #17251f;
+  color: #eee8d8;
+  max-height: 52dvh;
+  overflow-y: auto;
+}
+.negotiation-chat-dialog .transfer-proposal-composer .transfer-cash-control {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+  color: #eee8d8;
+}
+.negotiation-chat-dialog .transfer-value-stepper {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) 36px;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+}
+.negotiation-chat-dialog .transfer-value-stepper strong {
+  font-size: 24px;
+  color: #f3da8a;
+}
+.negotiation-chat-dialog .transfer-value-stepper button {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  background: #2f4337;
+  color: #fff3ce;
+  padding: 0;
+}
+.negotiation-chat-dialog .transfer-cash-control small {
+  text-align: center;
+  font-size: 10px;
+  color: #b1c3b6;
+}
+.negotiation-chat-dialog .transfer-proposal-composer > button[type='submit'] {
+  width: 100%;
+  height: 42px;
+  border-radius: 9px;
+  background: linear-gradient(#e3cf88, #b9a05d);
+  color: #17271d;
+  font-weight: 800;
+}
+.negotiation-chat-dialog .exchange-picker {
+  box-sizing: border-box;
+  padding: 9px;
+}
+.negotiation-chat-dialog .exchange-options {
+  max-height: 140px;
+}
+.negotiation-chat-dialog .proposal-preview {
+  border: 1px dashed #799368;
+}
+.negotiation-chat-dialog .proposal-preview > small {
+  display: block;
+  margin-bottom: 5px;
+}
+.negotiation-chat-dialog .modal-return {
+  min-height: 34px;
+  padding: 6px;
+}
+@media (max-height: 650px) {
+  .negotiation-chat-dialog .transfer-proposal-composer {
+    max-height: 45dvh;
+  }
+  .negotiation-chat-dialog .chat-history {
+    min-height: 70px;
+  }
+}
+.negotiation-chat-dialog .transfer-proposal-composer input.money-range {
+  display: block;
+  width: 100%;
+  height: 18px;
+  margin: 0;
+  accent-color: #dbc47a;
+}
+.negotiation-chat-dialog .transfer-proposal-composer > button[type='submit'] {
+  font-size: 13px;
+}
+.negotiation-chat-dialog .exchange-options label input {
+  flex: 0 0 16px;
+}
+
+/* Compact exchange roster rows inside the phone proposal panel. */
+.negotiation-chat-dialog .transfer-proposal-composer .exchange-options > label {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  box-sizing: border-box;
+  flex: none;
+  min-height: 58px;
+  margin: 0;
+  padding: 10px;
+  text-align: left;
+  border: 1px solid #78917a40;
+  border-radius: 9px;
+  background: #ffffff06;
+  cursor: pointer;
+}
+.negotiation-chat-dialog .transfer-proposal-composer .exchange-options > label:has(input:checked) {
+  background: #396044;
+  border-color: #d4bf76;
+}
+.negotiation-chat-dialog .transfer-proposal-composer .exchange-options > label > input {
+  display: block;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  padding: 0;
+}
+.negotiation-chat-dialog .transfer-proposal-composer .exchange-options > label > span {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 4px;
+  min-width: 0;
+  margin: 0;
+  text-align: left;
+}
+.negotiation-chat-dialog .exchange-options > label > span b {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  line-height: 1.3;
+  color: #f1eedf;
+}
+.negotiation-chat-dialog .exchange-options > label > span small {
+  display: block;
+  font-size: 10px;
+  line-height: 1.4;
+  color: #b6c9ba;
+}
+.negotiation-chat-dialog .exchange-options > label > strong {
+  font-size: 11px;
+  white-space: nowrap;
+  color: #ead38b;
+  text-align: right;
+}
+.negotiation-chat-dialog .exchange-options {
+  gap: 6px;
+  padding-right: 5px;
+  scrollbar-width: thin;
+  scrollbar-color: #6d946c #102e24;
+}
+
+/* Keep the proposal action visible; only messages and roster rows scroll. */
+.negotiation-chat-dialog .transfer-proposal-composer {
+  flex: 0 0 auto;
+  max-height: none;
+  overflow: visible;
+  gap: 8px;
+  padding: 10px 12px 14px;
+}
+.negotiation-chat-dialog .transfer-proposal-composer .transfer-cash-control {
+  gap: 5px;
+}
+.negotiation-chat-dialog .transfer-proposal-composer .transfer-cash-control > span {
+  margin-bottom: 0;
+}
+.negotiation-chat-dialog .transfer-proposal-composer .exchange-picker {
+  padding: 8px;
+}
+.negotiation-chat-dialog .transfer-proposal-composer .exchange-picker p {
+  margin: 5px 0;
+  font-size: 10px;
+  line-height: 1.35;
+}
+.negotiation-chat-dialog .transfer-proposal-composer .exchange-options {
+  max-height: clamp(64px, 15dvh, 120px);
+  overflow-y: auto;
+}
+.negotiation-chat-dialog .transfer-proposal-composer .exchange-options > label {
+  min-height: 48px;
+  padding: 7px 9px;
+}
+.negotiation-chat-dialog .transfer-proposal-composer > button[type='submit'] {
+  flex: 0 0 40px;
+  min-height: 40px;
+  margin: 0;
+  align-self: stretch;
+}
+@media (max-height: 650px) {
+  .negotiation-chat-dialog .transfer-proposal-composer {
+    max-height: none;
+    gap: 5px;
+    padding: 7px 10px 10px;
+  }
+  .negotiation-chat-dialog .transfer-proposal-composer .exchange-options {
+    max-height: 58px;
+  }
+  .negotiation-chat-dialog .chat-history {
+    min-height: 48px;
+  }
+}
+
+.negotiation-chat-dialog .transfer-proposal-composer.exchange-expanded .exchange-options {
+  max-height: clamp(100px, 29dvh, 260px);
+}
+.negotiation-chat-dialog .negotiation-chat:has(.exchange-expanded) .chat-history {
+  flex-basis: 100px;
+  min-height: 60px;
+}
+@media (max-height: 650px) {
+  .negotiation-chat-dialog .transfer-proposal-composer.exchange-expanded .exchange-options {
+    max-height: 20dvh;
+  }
+  .negotiation-chat-dialog .negotiation-chat:has(.exchange-expanded) .chat-history {
+    min-height: 40px;
+  }
+}
+
+.negotiation-chat-dialog .transfer-proposal-composer .exchange-options > label {
+  grid-template-columns: 16px 34px minmax(0, 1fr) auto;
+  gap: 7px;
+}
+.negotiation-chat-dialog .transfer-proposal-composer .exchange-options > label > .portrait {
+  position: static;
+  display: block;
+  width: 34px;
+  height: 40px;
+  min-width: 34px;
+  margin: 0;
+  padding: 0;
+  transform: none;
+  object-fit: contain;
+  border-radius: 5px;
+  background: #ffffff08;
+}
+
+.negotiation-chat-dialog .transfer-proposal-composer .exchange-picker[open] > .exchange-options {
+  margin-top: 12px;
+}
+
+.negotiation-chat-dialog .transfer-proposal-composer {
+  gap: 13px;
+}
+.negotiation-chat-dialog .transfer-proposal-composer .transfer-cash-control {
+  gap: 8px;
+}
+@media (max-height: 650px) {
+  .negotiation-chat-dialog .transfer-proposal-composer {
+    gap: 9px;
+  }
+}
+
+.negotiation-chat-dialog .chat-typing {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: fit-content;
+  min-height: 32px;
+}
+.negotiation-chat-dialog .chat-typing > span {
+  display: inline-block;
+  animation: negotiation-typing-dot 1.2s ease-in-out infinite;
+}
+.negotiation-chat-dialog .chat-typing > span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.negotiation-chat-dialog .chat-typing > span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+@keyframes negotiation-typing-dot {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.4;
+  }
+  30% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .negotiation-chat-dialog .chat-typing > span {
+    animation: none;
+    opacity: 1;
+  }
+}
+
+.ticket-tier-options {
+  display: grid;
+  gap: 9px;
+}
+.ticket-tier-option {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  width: 100%;
+  padding: 12px;
+  text-align: left;
+  border: 1px solid #687d614f;
+  border-radius: 10px;
+  background: #163d2e;
+  color: #f4edd9;
+}
+.ticket-tier-option[aria-pressed='true'] {
+  border-color: #dfc478;
+  background: #455333;
+  box-shadow: inset 3px 0 #dfc478;
+}
+.ticket-tier-option span {
+  display: grid;
+  gap: 5px;
+}
+.ticket-tier-option span:last-child {
+  text-align: right;
+}
+.ticket-tier-option small {
+  font-size: 11px;
+  color: #bdcbb7;
+}
+@media (max-width: 420px) {
+  .ticket-tier-option {
+    gap: 8px;
+    padding: 10px;
+    font-size: 11px;
+  }
+  .ticket-tier-option small {
+    font-size: 10px;
+  }
+}
+
+.panel.ticket-pricing .ticket-tier-option {
+  color: #f8f3e4;
+  background: #143c2d;
+}
+.panel.ticket-pricing .ticket-tier-option b,
+.panel.ticket-pricing .ticket-tier-option strong {
+  color: #fff3cf;
+  font-size: 13px;
+  line-height: 1.4;
+}
+.panel.ticket-pricing .ticket-tier-option small {
+  color: #d2dfd0;
+  line-height: 1.45;
+}
+.panel.ticket-pricing .ticket-tier-option[aria-pressed='true'] {
+  background: #364e2d;
+  border-color: #b5963f;
+}
+.ticket-demand-summary {
+  padding: 12px;
+  margin: 12px 0;
+  border: 1px solid #afba9d;
+  border-radius: 10px;
+  background: #e5e8d9;
+  color: #213c2c;
+}
+.ticket-demand-summary > div:first-child {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 12px;
+}
+.ticket-demand-track {
+  height: 7px;
+  margin: 10px 0;
+  background: #b7c2ac;
+  border-radius: 5px;
+  position: relative;
+}
+.ticket-demand-track > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #3f7452;
+}
+.ticket-demand-track::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: -3px;
+  height: 13px;
+  width: 2px;
+  background: #6c795e;
+}
+.ticket-demand-summary p {
+  margin: 0;
+  font-size: 11px;
+  color: #3c513d;
+}
+
+@media (min-width: 1100px) {
+  .main-content:has(.finance-equal-columns) {
+    padding-bottom: 8px !important;
+  }
+  .finance-hub.finance-equal-columns {
+    min-height: 0 !important;
+    margin-bottom: 0;
+  }
+  .finance-hub .ticket-tier-options {
+    gap: 6px;
+  }
+  .finance-hub .ticket-tier-option {
+    padding: 9px 10px;
+  }
+  .finance-hub .ticket-demand-summary {
+    padding: 9px 10px;
+    margin: 8px 0;
+  }
+}
+
+/* Confirmation dialogs follow their short content instead of workspace dimensions. */
+dialog.modal.career-confirm-dialog[open] {
+  width: min(480px, calc(100vw - 32px)) !important;
+  max-width: min(480px, calc(100vw - 32px)) !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: calc(100dvh - 32px) !important;
+  margin: auto !important;
+  padding: 24px !important;
+  display: block !important;
+  overflow-y: auto;
+  border: 1px solid #c7ad66;
+  border-radius: 18px;
+  background:
+    repeating-linear-gradient(125deg, #ffffff04 0 1px, transparent 1px 5px),
+    linear-gradient(145deg, #1c4433, #102c23);
+  color: #f4edd9;
+  box-shadow:
+    0 24px 80px #0008,
+    inset 0 1px #ffffff18;
+}
+dialog.modal.career-confirm-dialog[open] > .modal-content {
+  display: block;
+  flex: none;
+  height: auto;
+  min-height: 0;
+  max-height: none;
+  overflow: visible;
+  padding: 0;
+}
+dialog.career-confirm-dialog h2 {
+  color: #f5e2a6;
+  font-size: 21px;
+  line-height: 1.3;
+  margin: 12px 0;
+}
+dialog.career-confirm-dialog p {
+  color: #d7e2d5;
+  font-size: 13px;
+  line-height: 1.6;
+}
+dialog.career-confirm-dialog .modal-content > svg,
+dialog.career-confirm-dialog > svg {
+  color: #e0be68;
+  width: 32px;
+  height: 32px;
+  margin: 0 0 8px;
+}
+dialog.career-confirm-dialog .career-confirm-actions {
+  margin-top: 22px;
+  gap: 10px;
+}
+dialog.career-confirm-dialog.round-confirm-dialog .career-confirm-danger {
+  background: linear-gradient(#dfc780, #b99c50);
+  color: #193326;
+  border-color: #ead696;
+}
+dialog.career-confirm-dialog::backdrop {
+  background: #041910b8;
+  backdrop-filter: blur(4px);
+}
+
+/* Intrinsic height requires clearing the shared top-and-bottom viewport anchors. */
+dialog[open].modal.career-confirm-dialog {
+  position: fixed !important;
+  inset: 50% auto auto 50% !important;
+  transform: translate(-50%, -50%) !important;
+  margin: 0 !important;
+  height: fit-content !important;
+  block-size: fit-content !important;
+  min-height: 0 !important;
+  min-block-size: 0 !important;
+  max-height: calc(100dvh - 32px) !important;
+  box-sizing: border-box;
+}

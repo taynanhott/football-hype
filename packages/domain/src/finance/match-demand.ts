@@ -12,6 +12,32 @@ import { tacticalBonus } from '../game/management.js';
 import { balancedStrategy } from '../simulation/match.js';
 import { scheduledFixtures } from '../competitions/fixtures.js';
 
+export const TICKET_TIERS = [
+  {
+    label: 'Barato',
+    priceCents: 5000000,
+    occupancy: 0.95,
+    description: 'Mais torcida e força em casa.',
+  },
+  {
+    label: 'Normal',
+    priceCents: 10000000,
+    occupancy: 0.72,
+    description: 'Equilíbrio entre público e renda.',
+  },
+  {
+    label: 'Caro',
+    priceCents: 15000000,
+    occupancy: 0.43,
+    description: 'Ingresso maior, arquibancadas mais vazias.',
+  },
+  {
+    label: 'Abusivo',
+    priceCents: 20000000,
+    occupancy: 0.18,
+    description: 'Preço alto afasta a torcida e reduz a renda.',
+  },
+] as const;
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
 
 export function matchDemand(state: WorldState, fixture: Fixture, priceOverride?: number) {
@@ -91,53 +117,45 @@ export function matchDemand(state: WorldState, fixture: Fixture, priceOverride?:
     ((Array.from(fixture.id).reduce((sum, char) => sum + char.charCodeAt(0), 0) % 21) - 10) / 100;
   const appeal = clamp(0.85 + ((opponent?.leagueStrength ?? 80) - 50) / 200 + variation, 0.7, 1.4);
   const marketing = state.centers.byId[home?.trainingCenterId ?? '']?.levels.marketing ?? 1;
-  const fairPriceCents = roundMoney(
-    GAMEPLAY.baseTicketCents *
-      1.2 *
-      appeal *
-      (marketing >= 5 ? 1.3 : 1) *
-      (1 + (importance - 1) * 1.5 + benefits.ticketPremium),
-    MONEY_STEPS.ticket,
-  );
-  const priceCents = Math.max(
-    MONEY_STEPS.ticket,
-    roundMoney(
-      fixture.neutral
-        ? GAMEPLAY.baseTicketCents
-        : (priceOverride ??
-            state.homeTicketPrices?.[fixture.homeId] ??
-            state.ticketPrices?.[fixture.id] ??
-            GAMEPLAY.baseTicketCents),
+  const fairPriceCents = clamp(
+    ceilMoney(
+      GAMEPLAY.baseTicketCents *
+        clamp((home?.leagueStrength ?? 60) / 65, 0.6, 1.5) *
+        (1 + benefits.ticketPremium) *
+        (0.9 + form * 0.2) *
+        (0.9 + morale / 500) *
+        appeal *
+        importance *
+        (1 + marketing * 0.02),
       MONEY_STEPS.ticket,
     ),
+    10000000,
+    25000000,
   );
-  const interest =
-    (GAMEPLAY.attendanceBase +
-      (morale / 100) * GAMEPLAY.attendanceMoraleWeight +
-      benefits.interest) *
-    (marketing >= 5 ? 1.3 : 0.7 + form * 0.6) *
-    (1 + (importance - 1) * 0.3) *
-    appeal;
-  const selloutPriceCents =
-    Math.ceil(
-      clamp(
-        fairPriceCents * (1 + Math.log(Math.max(0.01, interest)) / 0.85),
-        MONEY_STEPS.ticket,
-        20000,
-      ) / MONEY_STEPS.ticket,
-    ) * MONEY_STEPS.ticket;
-  const minimumCrowdPriceCents = Math.min(
-    50000,
-    ceilMoney(selloutPriceCents + 3 * MONEY_STEPS.ticket, MONEY_STEPS.ticket),
+  const priceCents = fixture.neutral
+    ? GAMEPLAY.baseTicketCents
+    : (priceOverride ??
+      state.homeTicketPrices?.[fixture.homeId] ??
+      state.ticketPrices?.[fixture.id] ??
+      GAMEPLAY.baseTicketCents);
+  const selloutPriceCents = TICKET_TIERS[0].priceCents;
+  const minimumCrowdPriceCents = TICKET_TIERS[3].priceCents;
+  const demandFactor = clamp(
+    (0.85 + (morale / 100) * 0.1 + form * 0.1 + benefits.interest * 0.1) *
+      (1 + (importance - 1) * 0.1) *
+      (0.95 + (appeal - 1) * 0.1),
+    0.85,
+    1.08,
   );
   const commerce = benefits.commerce;
   const projection = projectTicketDemand(
-    { capacity, selloutPriceCents, minimumCrowdPriceCents, commerce },
+    { capacity, selloutPriceCents, minimumCrowdPriceCents, commerce, demandFactor, fairPriceCents },
     priceCents,
   );
   return {
     capacity,
     commerce,
+    demandFactor,
     ...projection,
     revenue:
       projection.ticketRevenue +
@@ -158,19 +176,45 @@ export function projectTicketDemand(
     selloutPriceCents: number;
     minimumCrowdPriceCents: number;
     commerce: number;
+    demandFactor?: number;
+    fairPriceCents?: number;
   },
   rawPriceCents: number,
 ) {
-  const { capacity, selloutPriceCents, commerce } = parameters;
-  const priceCents = Math.max(MONEY_STEPS.ticket, roundMoney(rawPriceCents, MONEY_STEPS.ticket));
-  // One price step sacrifices crowd strength for the highest gate revenue.
-  const level = Math.max(0, (priceCents - selloutPriceCents) / MONEY_STEPS.ticket);
-  const occupancy =
-    level <= 1 ? 1 - level * 0.24 : level >= 3 ? 0.01 : 0.76 * Math.exp(-1.5 * (level - 1));
+  const { capacity, commerce } = parameters;
+  const tiers = TICKET_TIERS.map((t) => ({
+    ...t,
+    priceCents: ceilMoney(
+      (t.priceCents * (parameters.fairPriceCents ?? GAMEPLAY.baseTicketCents)) /
+        GAMEPLAY.baseTicketCents,
+      MONEY_STEPS.ticket,
+    ),
+  }));
+  const tier = tiers.reduce(
+    (best, item) =>
+      Math.abs(item.priceCents - rawPriceCents) < Math.abs(best.priceCents - rawPriceCents)
+        ? item
+        : best,
+    tiers[0]!,
+  );
+  const priceCents = tier.priceCents;
+  const occupancy = clamp(tier.occupancy * (parameters.demandFactor ?? 1), 0.01, 1);
   const attendance = Math.floor(capacity * occupancy);
-  const ticketRevenue = roundMoney(attendance * priceCents);
-  const consumptionRevenue = roundMoney(
-    (attendance * GAMEPLAY.baseTicketCents * commerce) / GAMEPLAY.commerceRateDivisor,
+  // Larger stadiums retain an advantage with diminishing financial returns.
+  const capacityYield = Math.min(1, Math.pow(7200 / Math.max(1, capacity), 0.8));
+  const priceYield = Math.sqrt(
+    GAMEPLAY.baseTicketCents /
+      Math.max(GAMEPLAY.baseTicketCents, parameters.fairPriceCents ?? GAMEPLAY.baseTicketCents),
+  );
+  const ticketRevenue = ceilMoney(
+    (attendance * priceCents * capacityYield * priceYield) / 118,
+    5000000,
+  );
+  const consumptionRevenue = ceilMoney(
+    (attendance * GAMEPLAY.baseTicketCents * commerce * capacityYield) /
+      GAMEPLAY.commerceRateDivisor /
+      1000,
+    5000000,
   );
   return {
     priceCents,

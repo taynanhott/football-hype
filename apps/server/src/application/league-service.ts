@@ -168,6 +168,7 @@ export class LeagueService {
     });
   }
   async list(userId: string) {
+    if (this.repository.summariesForUser) return this.repository.summariesForUser(userId);
     for (const state of await this.repository.forUser(userId)) await this.expire(state.id);
     return (await this.repository.forUser(userId)).map((state) => ({
       id: state.id,

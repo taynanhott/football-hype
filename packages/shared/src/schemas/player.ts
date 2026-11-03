@@ -6,7 +6,7 @@ import {
   countSchema,
   entityIdSchema,
   fitnessSchema,
-  gameMoneySchema,
+  marketMoneySchema,
   salaryMoneySchema,
   moraleSchema,
   nameSchema,
@@ -61,7 +61,7 @@ export const playerSchema = z
     fitness: fitnessSchema,
     appearances: countSchema,
     salary: salaryMoneySchema,
-    marketValue: gameMoneySchema,
+    marketValue: marketMoneySchema,
     appearance: appearanceSchema,
   })
   .superRefine((player, context) => {

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { DOMAIN_LIMITS } from '../config/domain-limits.js';
-import { MONEY_STEPS, roundMoney } from '../config/money-precision.js';
+import { MONEY_STEPS, roundMoney, ceilMoney } from '../config/money-precision.js';
 
 const integerRange = (range: Readonly<{ min: number; max: number }>) =>
   z.number().int().min(range.min).max(range.max);
@@ -27,11 +27,17 @@ export const salaryAmountSchema = countSchema.transform((value) =>
 export const ticketAmountSchema = z
   .number()
   .int()
-  .min(500)
-  .max(50000)
+  .min(5000000)
+  .max(50000000)
   .transform((value) => Math.max(MONEY_STEPS.ticket, roundMoney(value, MONEY_STEPS.ticket)));
 export const gameMoneySchema = z
   .strictObject({ cents: gameAmountSchema, currency: currencySchema })
+  .readonly();
+export const marketMoneySchema = z
+  .strictObject({
+    cents: countSchema.transform((value) => ceilMoney(value)),
+    currency: currencySchema,
+  })
   .readonly();
 export const salaryMoneySchema = z
   .strictObject({ cents: salaryAmountSchema, currency: currencySchema })

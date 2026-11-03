@@ -1,4 +1,4 @@
-import { roundMoney, type ClubSnapshot, type WorldState } from '@football/shared';
+import { ceilMoney, type ClubSnapshot, type WorldState } from '@football/shared';
 export const FACILITY_ECONOMY: Record<
   string,
   { name: string; upgrade: number; maintenance: number; growth: number }
@@ -22,16 +22,17 @@ export const FACILITY_ECONOMY: Record<
 };
 export function upgradePrice(level: number, target = 'structure') {
   const item = FACILITY_ECONOMY[target] ?? FACILITY_ECONOMY.structure!;
-  return roundMoney(item.upgrade * item.growth ** Math.max(0, level - 1));
+  return ceilMoney(item.upgrade * item.growth ** Math.max(0, level - 1), 5000000);
 }
 export function maintenanceForLevel(level: number, target = 'structure') {
   const item = FACILITY_ECONOMY[target] ?? FACILITY_ECONOMY.structure!;
-  return roundMoney(
+  return ceilMoney(
     item.maintenance *
       (['pitch', 'surroundings', 'structure', 'food', 'shirts', 'hospitality'].includes(target)
         ? 1.35
         : 1.65) **
         Math.max(0, level - 1),
+    5000000,
   );
 }
 export function facilityCosts(state: WorldState, club: ClubSnapshot) {

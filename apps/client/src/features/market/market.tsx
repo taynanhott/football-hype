@@ -27,7 +27,7 @@ import { Icon } from '../../ui/icons';
 
 import { Portrait } from '../players/pixel-portrait';
 import { PlayerDetails } from '../players/player-details';
-import { clubKit, roundMoney, MONEY_STEPS } from '@football/shared';
+import { clubKit, roundMoney, ceilMoney, formatMoneyFull, MONEY_STEPS } from '@football/shared';
 
 const SORT_OPTIONS: Record<string, string> = {
   overall: 'Maior overall',
@@ -330,6 +330,16 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
     );
   function choose(player: PlayerSnapshot) {
     if (isOwnPlayer(player)) return;
+    if (
+      player.clubId &&
+      financialLimits(snapshot.state, club).transfer <= 0 &&
+      !loanTerms(snapshot.state, player, club).available
+    ) {
+      useGameStore.setState({
+        error: 'Defina um orçamento para transferências antes de iniciar uma compra.',
+      });
+      return;
+    }
     setSelected(player);
     setMeetingReady(
       snapshot.state.negotiations.some(
@@ -374,11 +384,17 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
     0,
     Math.min(salaryMaximum, roundMoney(Number(salary) * 100, MONEY_STEPS.salary)),
   );
-  const transferMinimum = selected?.clubId ? Math.ceil(selected.marketValue.cents * 0.15) : 0;
-  const transferMaximum = selected?.clubId ? Math.floor(selected.marketValue.cents * 2) : 0;
+  const transferMinimum = 0;
+  const transferMaximum = selected?.clubId
+    ? Math.min(feeMaximum, ceilMoney(selected.marketValue.cents * 2.5, MONEY_STEPS.transferSlider))
+    : 0;
   const feeCents = Math.max(
     transferMinimum,
-    Math.min(transferMaximum, roundMoney(Number(fee) * 100)),
+    Math.min(
+      transferMaximum,
+      Math.floor((Number(fee) * 100) / (MONEY_STEPS.transferSlider / 2)) *
+        (MONEY_STEPS.transferSlider / 2),
+    ),
   );
   return (
     <div className="transfer-hub">
@@ -1066,7 +1082,7 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
                         >
                           <span>Enviar minha proposta</span>
                           <strong>
-                            {currency(salaryCents)}
+                            {formatMoneyFull(salaryCents)}
                             <small>/mês</small>
                           </strong>
                         </button>
@@ -1105,7 +1121,7 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
                           <>
                             <span>Aceitar exigência</span>
                             <strong>
-                              {currency(demandedSalary)}
+                              {formatMoneyFull(demandedSalary)}
                               <small>/mês</small>
                             </strong>
                           </>

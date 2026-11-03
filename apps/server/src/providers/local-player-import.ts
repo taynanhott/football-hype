@@ -210,7 +210,12 @@ export function convertLocalPlayers(
     unknownCountries.add(code);
     return 'ZZ';
   };
-  const player = (row: Row, owner: string | null, index: number): PlayerSnapshot => ({
+  const player = (
+    row: Row,
+    owner: string | null,
+    index: number,
+    salaryScale = 1,
+  ): PlayerSnapshot => ({
     ...templatePlayer,
     appearance: importedAppearance(stableId(32, row.id)),
     id: stableId(32, row.id),
@@ -231,8 +236,15 @@ export function convertLocalPlayers(
         Number((raw.nums as Record<string, unknown> | undefined)?.[row.id]) || (index % 99) + 1,
       ),
     ),
-    salary: { cents: row.overall * row.overall * 100, currency: 'BRL' },
-    marketValue: { cents: Math.round(row.value * 1000 * 100 * 6), currency: 'BRL' },
+    // The source wage is daily; game contracts store a fixed 30-day monthly wage.
+    salary: {
+      cents: Math.ceil((row.overall * row.overall * 100 * 30 * salaryScale) / 5000000) * 5000000,
+      currency: 'BRL',
+    },
+    marketValue: {
+      cents: Math.ceil(row.value > 0 ? row.value : row.overall * row.overall) * 100,
+      currency: 'BRL',
+    },
     appearances: 0,
     morale: 80,
     fitness: 100,
@@ -302,7 +314,9 @@ export function convertLocalPlayers(
           : m?.pattern === 'band'
             ? 'hoops'
             : kit.pattern;
-    const squad = roster.map((p, i) => player(p, id, i));
+    const squad = roster.map((p, i) =>
+      player(p, id, i, division === 'A' ? 2 : division === 'B' ? 1.5 : division === 'C' ? 1.15 : 1),
+    );
     players.push(...squad);
     clubs.push({
       ...templateClub,

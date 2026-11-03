@@ -1,3 +1,4 @@
+import { roundSponsorship } from '../finance/sponsorship.js';
 import { lineupTacticalBonus, canLearnPosition } from './tactics.js';
 import { FORMATIONS } from '@football/shared';
 import { ageFatigueFactor, moraleSensitivity } from './player-contracts.js';
@@ -438,10 +439,7 @@ export function playNextBatch(state: WorldState, processedAt: number): Result<Wo
   for (const club of Object.values(clubs)) {
     const center = state.centers.byId[club.trainingCenterId];
     if (leagueBatch) {
-      const sponsor =
-        ((center?.levels.marketing ?? 1) >= 3 ? GAMEPLAY.marketingSponsorCents : 0) +
-        GAMEPLAY.startingSponsorCents +
-        (center?.levels.marketing ?? 1) * GAMEPLAY.marketingSponsorCents;
+      const sponsor = roundSponsorship(club, center?.levels.marketing ?? 1);
       clubs[club.id] = {
         ...club,
         balance: {

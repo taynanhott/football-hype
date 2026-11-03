@@ -287,7 +287,9 @@ function finishIndividualCycles(state: WorldState, at: number): WorldState {
     const offers = state.negotiations.filter(
       (n) => n.playerId === playerId && n.status === 'review',
     );
-    const winner = [...offers].sort((a, b) => b.fee - a.fee)[0]!;
+    const winner = [...offers].sort(
+      (a, b) => b.fee + (b.exchangeValue ?? 0) - (a.fee + (a.exchangeValue ?? 0)),
+    )[0]!;
     state = {
       ...state,
       negotiations: state.negotiations.map((n) =>

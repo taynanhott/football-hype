@@ -7,7 +7,12 @@ import {
   monthlyStructureCost,
   seasonFinancialReport,
 } from '@football/domain';
-import { MONEY_STEPS, type ClubSnapshot, type GameSnapshot } from '@football/shared';
+import {
+  MONEY_STEPS,
+  formatMoneyFull,
+  type ClubSnapshot,
+  type GameSnapshot,
+} from '@football/shared';
 import { useGameStore } from '../../store/game-store';
 import { currency } from '../../ui/format';
 import { TicketPricing } from './ticket-pricing';
@@ -40,23 +45,25 @@ export function BudgetEditor({ snapshot, club }: Props) {
   const state = snapshot.state;
   const cash = Math.max(0, club.balance.cents);
   const operations = monthlyStructureCost(state, club);
-  const total = cash;
+  const budgetStep = MONEY_STEPS.transferSlider / 2;
+  const total = Math.floor(cash / budgetStep) * budgetStep;
   const plan = state.management?.financialPlans?.[club.id];
   const payroll = clubPayroll(state, club);
   const monthlyExpenses = payroll + operations;
   const [salaries, setSalaries] = useState(
-    Math.min(total, plan?.salaries ?? defaultFinancialPlan(state, club).salaries),
+    Math.floor(
+      Math.min(total, plan?.salaries ?? defaultFinancialPlan(state, club).salaries) / budgetStep,
+    ) * budgetStep,
   );
-  const transfer =
-    Math.floor(Math.max(0, total - salaries) / MONEY_STEPS.general) * MONEY_STEPS.general;
+  const transfer = Math.floor(Math.max(0, total - salaries) / budgetStep) * budgetStep;
   const busy = useGameStore((s) => s.busy);
   const send = useGameStore((s) => s.send);
   const submitted = useRef('');
   const share = total ? (salaries / total) * 100 : 0;
   const costShare = total ? Math.min(100, (monthlyExpenses / total) * 100) : 0;
   function commit(value: number) {
-    const purchases =
-      Math.floor(Math.max(0, total - value) / MONEY_STEPS.general) * MONEY_STEPS.general;
+    value = Math.floor(Math.max(0, Math.min(total, value)) / budgetStep) * budgetStep;
+    const purchases = Math.floor(Math.max(0, total - value) / budgetStep) * budgetStep;
     const signature = `${value}:${purchases}`;
     if (
       busy ||
@@ -72,7 +79,7 @@ export function BudgetEditor({ snapshot, club }: Props) {
       <header className="section-header">
         <div>
           <span className="eyebrow">ORÇAMENTO DO TIME</span>
-          <h2>{currency(total)}</h2>
+          <h2>{formatMoneyFull(total)}</h2>
         </div>
         <span className="split-budget-hint">{busy ? 'Salvando…' : 'Arraste para dividir'}</span>
       </header>
@@ -82,17 +89,17 @@ export function BudgetEditor({ snapshot, club }: Props) {
         <span
           className="split-budget-marker"
           style={{ left: `${costShare}%` }}
-          title={`Despesa mensal total: ${currency(monthlyExpenses)}`}
+          title={`Despesa mensal total: ${formatMoneyFull(monthlyExpenses)}`}
         />
         <input
           type="range"
           min={0}
           max={total}
-          step={1}
+          step={budgetStep}
           value={salaries}
           disabled={busy || total === 0}
           aria-label="Dividir orçamento entre salários e compras"
-          aria-valuetext={`${currency(salaries)} para salários por mês e ${currency(transfer)} para compras`}
+          aria-valuetext={`${formatMoneyFull(salaries)} para salários por mês e ${formatMoneyFull(transfer)} para compras`}
           onChange={(e) => {
             submitted.current = '';
             setSalaries(Number(e.target.value));
@@ -117,17 +124,17 @@ export function BudgetEditor({ snapshot, club }: Props) {
         />
       </div>
       <div className="split-budget-labels">
-        <strong>Salários {currency(salaries)}/mês</strong>
-        <strong>Compras {currency(transfer)}</strong>
+        <strong>Salários {formatMoneyFull(salaries)}/mês</strong>
+        <strong>Compras {formatMoneyFull(transfer)}</strong>
       </div>
       <div className="split-budget-summary">
         <span>
-          Despesa mensal total <strong>{currency(monthlyExpenses)}</strong>
+          Despesa mensal total <strong>{formatMoneyFull(monthlyExpenses)}</strong>
         </span>
         <span className={salaries < monthlyExpenses ? 'negative' : ''}>
           {salaries < monthlyExpenses
-            ? `Faltam ${currency(monthlyExpenses - salaries)} para as despesas`
-            : `Folga ${currency(salaries - monthlyExpenses)}/mês`}
+            ? `Faltam ${formatMoneyFull(monthlyExpenses - salaries)} para as despesas`
+            : `Folga ${formatMoneyFull(salaries - monthlyExpenses)}/mês`}
         </span>
       </div>
       <p className="financial-budget-note">
@@ -135,8 +142,9 @@ export function BudgetEditor({ snapshot, club }: Props) {
         salários deixa menos dinheiro para contratações.
       </p>
       <p className="financial-budget-note">
-        Caixa total: {currency(cash)} · Estruturas e dívidas previstas: {currency(operations)} (sem
-        reserva automática). A divisão é salva ao soltar a barra e aplicada às negociações.
+        Caixa total: {formatMoneyFull(cash)} · Estruturas e dívidas previstas:{' '}
+        {formatMoneyFull(operations)} (sem reserva automática). A divisão é salva ao soltar a barra
+        e aplicada às negociações.
       </p>
     </section>
   );

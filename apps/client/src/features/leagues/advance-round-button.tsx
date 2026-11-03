@@ -49,13 +49,10 @@ function RoundConfirmation({
   return (
     <dialog
       ref={dialog}
-      className="modal career-confirm-dialog"
+      className="modal career-confirm-dialog round-confirm-dialog"
       onCancel={onClose}
       aria-labelledby="advance-round-title"
     >
-      <button className="close-modal" onClick={onClose} aria-label="Fechar">
-        Voltar
-      </button>
       <Icon name="calendar" size={30} />
       <h2 id="advance-round-title">
         {newSeason ? 'Iniciar nova temporada?' : 'Avançar a rodada?'}
@@ -73,9 +70,6 @@ function RoundConfirmation({
           Cancelar
         </button>
       </div>
-      <button type="button" className="modal-return" aria-label="Voltar" onClick={onClose}>
-        ← Voltar
-      </button>
     </dialog>
   );
 }

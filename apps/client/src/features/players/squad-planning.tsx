@@ -374,19 +374,31 @@ export function SquadPlanning({ snapshot, club }: ViewProps) {
                         key={player.id}
                         hidden={!expanded.includes(playerPositionCategory(player.position).title)}
                       >
+                        <div className="squad-contract-top">
+                          <span>Vencimento do contrato</span>
+                          <strong>
+                            {new Date(contractEnd(preview.state, player)).toLocaleDateString(
+                              'pt-BR',
+                              { timeZone: 'America/Sao_Paulo' },
+                            )}
+                          </strong>
+                          <small>
+                            {Math.max(
+                              0,
+                              Math.ceil(
+                                (contractEnd(preview.state, player) -
+                                  preview.state.lastProcessedAt) /
+                                  86400000,
+                              ),
+                            )}{' '}
+                            dias restantes
+                          </small>
+                        </div>
                         <div className="squad-office-card">
                           <PlayerCard
                             player={player}
                             clubName={club.name}
                             kit={clubKit(club)}
-                            contractMonths={Math.max(
-                              0,
-                              Math.ceil(
-                                (contractEnd(preview.state, player) -
-                                  preview.state.lastProcessedAt) /
-                                  (30 * 86400000),
-                              ),
-                            )}
                             contractExpiring={
                               Math.max(
                                 0,

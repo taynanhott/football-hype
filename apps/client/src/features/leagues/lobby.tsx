@@ -707,6 +707,7 @@ function AuthenticatedLobby({ user }: { user: { uid: string; name: string } }) {
       {confirmation && (
         <PlayerModal
           title="Confirmar alteração da carreira"
+          hideClose
           hideTitle
           className="panel invite-dialog career-confirm-dialog"
           onClose={() => {

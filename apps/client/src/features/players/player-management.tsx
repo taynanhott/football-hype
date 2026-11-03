@@ -291,7 +291,16 @@ export function PlayerManagement({
           </button>
         </div>
       )}
-      {section === 'policy' && (
+      {section === 'policy' && !hideTabs && state.clubs.byId[player.clubId ?? ''] && (
+        <div className="squad-inline-offers">
+          <IncomingOffers
+            snapshot={snapshot}
+            club={state.clubs.byId[player.clubId!]!}
+            playerId={player.id}
+          />
+        </div>
+      )}
+      {section === 'policy' && !hideTabs && (
         <button
           type="button"
           className="player-policy-offers"
@@ -306,7 +315,13 @@ export function PlayerManagement({
     </section>
   );
 }
-export function IncomingOffers({ snapshot, club, playerId }: ViewProps & { playerId?: string }) {
+export function IncomingOffers({
+  snapshot,
+  club,
+  playerId,
+}: Pick<ViewProps, 'snapshot' | 'club'> &
+  Partial<Pick<ViewProps, 'center' | 'stadium'>> & { playerId?: string }) {
+  const [counter, setCounter] = useState<{ id: string; fee: number } | null>(null);
   const presentation = 'list' as const;
   const send = useGameStore((s) => s.send),
     busy = useGameStore((s) => s.busy);
@@ -318,10 +333,11 @@ export function IncomingOffers({ snapshot, club, playerId }: ViewProps & { playe
   const humanOffers = snapshot.state.negotiations.filter(
     (n) =>
       n.sellerId === club.id &&
+      (!playerId || n.playerId === playerId) &&
       n.status === 'review' &&
       (n.expiresAt ?? Infinity) > snapshot.state.lastProcessedAt,
   );
-  const renewals = club.playerIds.flatMap((id) => {
+  const renewals = (playerId ? [] : club.playerIds).flatMap((id) => {
     const player = snapshot.state.players.byId[id];
     return player &&
       !snapshot.state.management?.loans?.[id] &&
@@ -331,6 +347,49 @@ export function IncomingOffers({ snapshot, club, playerId }: ViewProps & { playe
   });
   return (
     <section className="incoming-offers" data-presentation={presentation}>
+      {counter && (
+        <div className="counter-offer-backdrop">
+          <section
+            className="counter-offer-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Contra oferta"
+          >
+            <h3>Negociar transferência</h3>
+            <label>
+              Valor pedido (R$)
+              <input
+                type="number"
+                min="1"
+                step="1000"
+                value={counter.fee / 100}
+                onChange={(event) =>
+                  setCounter({ ...counter, fee: Math.round(Number(event.target.value) * 100) })
+                }
+              />
+            </label>
+            <p>
+              O clube receberá o valor pedido. Clubes automáticos podem fechar a compra ou retirar a
+              proposta.
+            </p>
+            <button
+              disabled={busy || counter.fee <= 0}
+              onClick={() => {
+                send({
+                  type: 'management',
+                  action: 'counter-offer',
+                  offerId: counter.id,
+                  fee: counter.fee,
+                });
+                setCounter(null);
+              }}
+            >
+              Enviar contraoferta
+            </button>
+            <button onClick={() => setCounter(null)}>Voltar</button>
+          </section>
+        </div>
+      )}
       {offers.length > 0 && (
         <div className="incoming-offers-heading">
           <div>
@@ -359,6 +418,16 @@ export function IncomingOffers({ snapshot, club, playerId }: ViewProps & { playe
             <h3>
               {snapshot.state.players.byId[n.playerId]?.name} · {currency(n.fee)}
             </h3>
+            {Boolean(n.exchangePlayerIds?.length) && (
+              <p>
+                Mais jogadores:{' '}
+                {n.exchangePlayerIds
+                  ?.map((id) => snapshot.state.players.byId[id]?.name ?? 'Indisponível')
+                  .join(', ')}{' '}
+                · Crédito {currency(n.exchangeValue ?? 0)} · Total{' '}
+                {currency(n.fee + (n.exchangeValue ?? 0))}
+              </p>
+            )}
             <p>
               {snapshot.state.clubs.byId[n.buyerId]?.name} aguarda sua decisão. Validade: 2 semanas.
             </p>
@@ -370,6 +439,13 @@ export function IncomingOffers({ snapshot, club, playerId }: ViewProps & { playe
                 }
               >
                 Aceitar e liberar conversa com o atleta
+              </button>
+              <button
+                className="counter-offer-button"
+                disabled={busy}
+                onClick={() => setCounter({ id: n.id, fee: Math.ceil(n.fee * 1.1) })}
+              >
+                Contra oferta
               </button>
               <button
                 disabled={busy}
@@ -489,6 +565,15 @@ export function IncomingOffers({ snapshot, club, playerId }: ViewProps & { playe
                 >
                   {o.kind === 'loan' ? 'Aceitar empréstimo' : 'Aceitar venda'}
                 </button>
+                {o.kind !== 'loan' && (
+                  <button
+                    className="counter-offer-button"
+                    disabled={busy}
+                    onClick={() => setCounter({ id: o.id, fee: Math.ceil(o.fee * 1.1) })}
+                  >
+                    Contra oferta
+                  </button>
+                )}
                 <button
                   disabled={busy}
                   className="secondary"

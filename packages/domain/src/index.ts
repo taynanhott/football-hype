@@ -65,3 +65,7 @@ export { renewalTerms, maxContractYears, ageFatigueFactor } from './game/player-
 export { annualDecline } from './game/training-progression.js';
 
 export { expectedTrainingGain } from './game/training-progression.js';
+
+export { exchangeCandidates } from './game/player-exchange.js';
+
+export { TICKET_TIERS } from './finance/match-demand.js';

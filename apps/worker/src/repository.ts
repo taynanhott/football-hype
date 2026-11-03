@@ -116,7 +116,23 @@ export class DurableLeagueRepository implements LeagueRepository {
       mode,
       state.deletedAt ? 'deleted' : state.status,
       state.nextScheduledAt,
-      JSON.stringify({ id, name, mode, season, round, administratorId }),
+      JSON.stringify({
+        id,
+        name,
+        mode,
+        season,
+        round,
+        administratorId,
+        clubsByUser: Object.fromEntries(
+          state.participants.map((member) => {
+            const club = state.clubs.byId[member.clubId];
+            return [
+              member.userId,
+              club ? { id: club.id, name: club.name, crestUrl: club.crestUrl } : undefined,
+            ];
+          }),
+        ),
+      }),
     );
     const members = state.deletedAt ? [] : state.participants.map((m) => m.userId);
     const existing = [
@@ -295,7 +311,12 @@ export class DurableLeagueRepository implements LeagueRepository {
         'SELECT summary FROM leagues JOIN members ON leagues.id=members.league_id WHERE members.user_id=?',
         user,
       ),
-    ].map((r) => JSON.parse(r.summary) as LeagueSummary);
+    ].map((r) => {
+      const { clubsByUser, ...summary } = JSON.parse(r.summary) as LeagueSummary & {
+        clubsByUser?: Record<string, unknown>;
+      };
+      return { ...summary, ...(clubsByUser?.[user] ? { club: clubsByUser[user] } : {}) };
+    });
   }
   async forUser(user: string): Promise<readonly WorldState[]> {
     const rows = await this.summariesForUser(user);

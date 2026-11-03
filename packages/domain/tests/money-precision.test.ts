@@ -19,20 +19,20 @@ import {
 import { IDS, unwrap, playerInput, clubInput } from '../../../tests/fixtures/domain.js';
 
 describe('precisão monetária do jogo', () => {
-  it('formata milhares e exibe a casa decimal apenas quando necessária', () => {
-    expect(formatMoney(123456000)).toBe('1.234,6 K');
-    expect(formatMoney(0)).toBe('0');
-    expect(formatMoney(12300000)).toBe('123 K');
-    expect(formatMoney(12340000)).toBe('123,4 K');
-    expect(formatMoney(-12300000)).toBe('-123 K');
+  it('formata moeda compacta sem casas decimais e arredonda para cima', () => {
+    expect(formatMoney(123456000)).toBe('HC$ 2K');
+    expect(formatMoney(0)).toBe('HC$ 0');
+    expect(formatMoney(12300000)).toBe('HC$ 123');
+    expect(formatMoney(12340000)).toBe('HC$ 124');
+    expect(formatMoney(-12300000)).toBe('HC$ -123');
   });
   it('exibe valores abaixo de mil sem o sufixo K', () => {
-    expect(formatMoney(50000)).toBe('500');
-    expect(formatMoney(10000)).toBe('100');
-    expect(formatMoney(99999)).toBe('999,99');
-    expect(formatMoney(-50000)).toBe('-500');
-    expect(formatMoney(100000)).toBe('1 K');
-    expect(formatMoney(-100000)).toBe('-1 K');
+    expect(formatMoney(50000)).toBe('HC$ 1');
+    expect(formatMoney(10000)).toBe('HC$ 1');
+    expect(formatMoney(99999)).toBe('HC$ 1');
+    expect(formatMoney(-50000)).toBe('HC$ 0');
+    expect(formatMoney(100000)).toBe('HC$ 1');
+    expect(formatMoney(-100000)).toBe('HC$ -1');
   });
   it('normaliza cadastros existentes por categoria sem manter centavos', () => {
     const player = playerSchema.parse(
@@ -41,7 +41,7 @@ describe('precisão monetária do jogo', () => {
         marketValue: { cents: 12345678, currency: 'BRL' },
       }),
     );
-    expect(player.salary.cents).toBe(120000);
+    expect(player.salary.cents).toBe(125000);
     expect(player.marketValue.cents).toBe(12350000);
     expect(
       clubSchema.parse(clubInput({ balance: { cents: 123456789, currency: 'BRL' } })).balance.cents,
@@ -55,13 +55,13 @@ describe('precisão monetária do jogo', () => {
     ).toMatchObject({ fee: 12350000 });
     expect(
       commandSchema.parse({ type: 'salary', negotiationId: IDS.player, salary: 123456 }),
-    ).toMatchObject({ salary: 120000 });
-    expect(commandSchema.parse({ type: 'home-ticket-price', priceCents: 10000 })).toMatchObject({
-      priceCents: 10000,
+    ).toMatchObject({ salary: 125000 });
+    expect(commandSchema.parse({ type: 'home-ticket-price', priceCents: 10000000 })).toMatchObject({
+      priceCents: 10000000,
     });
     expect(GAMEPLAY.baseTicketCents % MONEY_STEPS.ticket).toBe(0);
   });
-  it('gera toda a economia em passos de 0,1 K', () => {
+  it('respeita a precisão monetária de cada categoria', () => {
     const now = Date.parse('2026-10-26T15:00:00Z');
     const state = unwrap(
       createWorld({ id: IDS.league, userId: IDS.user, name: 'Precisão', mode: 'offline', now }),
@@ -76,17 +76,17 @@ describe('precisão monetária do jogo', () => {
     const event = unwrap(
       executeCommand(
         state,
-        { type: 'home-ticket-price', priceCents: 10000 },
+        { type: 'home-ticket-price', priceCents: 10000000 },
         IDS.user,
         now,
         stableId(18, 1),
       ),
     );
     const next = unwrap(applyEvent(state, event));
-    expect(next.homeTicketPrices?.[ownId]).toBe(10000);
+    expect(next.homeTicketPrices?.[ownId]).toBe(10000000);
     const fixture = scheduledFixtures(next).find((item) => item.homeId === ownId)!;
     const demand = matchDemand(next, fixture);
-    expect(demand.priceCents).toBe(10000);
+    expect(demand.priceCents).toBe(10000000);
     expect(demand.ticketRevenue % MONEY_STEPS.general).toBe(0);
     expect(demand.consumptionRevenue % MONEY_STEPS.general).toBe(0);
     expect(demand.selloutPriceCents % MONEY_STEPS.ticket).toBe(0);

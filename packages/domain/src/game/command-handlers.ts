@@ -1,3 +1,4 @@
+import { exchangeCandidates } from './player-exchange.js';
 import { formatMoney } from '@football/shared';
 import { maxContractYears, moraleSensitivity } from './player-contracts.js';
 import { seasonStart } from '../competitions/season-calendar.js';
@@ -55,16 +56,17 @@ export function handleCommand(input: CommandContext): Result<CommandOutcome> {
     (action.type === 'home-ticket-price' || action.type === 'ticket-price') &&
     (!Number.isSafeInteger(action.priceCents) ||
       action.priceCents < MONEY_STEPS.ticket ||
-      action.priceCents > 50000)
+      action.priceCents > 50000000 ||
+      action.priceCents % MONEY_STEPS.ticket !== 0)
   )
-    return failure(domainError('VALIDATION_ERROR', 'O ingresso deve custar entre 0,1 K e 0,5 K'));
+    return failure(domainError('VALIDATION_ERROR', 'Escolha Barato, Normal, Caro ou Abusivo'));
   const context: CommandContext = {
     ...input,
     command:
       action.type === 'home-ticket-price' || action.type === 'ticket-price'
         ? { ...action, priceCents: roundMoney(action.priceCents, MONEY_STEPS.ticket) }
         : action.type === 'offer'
-          ? { ...action, fee: roundMoney(action.fee) }
+          ? { ...action, fee: roundMoney(action.fee, MONEY_STEPS.transfer) }
           : action.type === 'salary' || action.type === 'sign-free'
             ? { ...action, salary: roundMoney(action.salary, MONEY_STEPS.salary) }
             : action,
@@ -103,7 +105,7 @@ export function handleCommand(input: CommandContext): Result<CommandOutcome> {
       if (
         !Number.isInteger(command.priceCents) ||
         command.priceCents < MONEY_STEPS.ticket ||
-        command.priceCents > 50000
+        command.priceCents > 50000000
       )
         return failure(
           domainError('VALIDATION_ERROR', 'O ingresso deve custar entre R$ 25 e R$ 500'),
@@ -133,7 +135,7 @@ export function handleCommand(input: CommandContext): Result<CommandOutcome> {
       if (
         !Number.isInteger(command.priceCents) ||
         command.priceCents < MONEY_STEPS.ticket ||
-        command.priceCents > 50000
+        command.priceCents > 50000000
       )
         return failure(
           domainError('VALIDATION_ERROR', 'O ingresso deve custar entre R$ 25 e R$ 500'),
@@ -441,7 +443,7 @@ function handleOffer({
   let type: GameEvent['type'] = 'ready.changed';
   let message = '';
   const amount = 0;
-  if (club.playerIds.length >= MAX_SQUAD_SIZE)
+  if (club.playerIds.length - (command.exchangePlayerIds?.length ?? 0) >= MAX_SQUAD_SIZE)
     return failure(domainError('VALIDATION_ERROR', 'O elenco atingiu o limite de 45 jogadores'));
   const player = state.players.byId[command.playerId];
   if (state.management?.loans?.[command.playerId])
@@ -463,6 +465,28 @@ function handleOffer({
     )
   )
     return failure(domainError('VALIDATION_ERROR', 'Jogador indisponível para negociação'));
+  const exchangeIds = command.exchangePlayerIds ?? [];
+  const candidates = exchangeCandidates(state, club.id, player.clubId ?? '');
+  if (
+    new Set(exchangeIds).size !== exchangeIds.length ||
+    exchangeIds.length > 3 ||
+    exchangeIds.some((id) => !candidates.some((c) => c.player.id === id))
+  )
+    return failure(
+      domainError('VALIDATION_ERROR', 'Jogadores de troca indisponíveis ou sem interesse do clube'),
+    );
+  const exchangeValue = exchangeIds.reduce(
+    (sum, id) => sum + candidates.find((c) => c.player.id === id)!.value,
+    0,
+  );
+  const totalOffer = command.fee + exchangeValue;
+  if (!command.withdraw && player.clubId && financialLimits(state, club).transfer <= 0)
+    return failure(
+      domainError(
+        'INSUFFICIENT_FUNDS',
+        'Defina um orçamento para transferências antes de iniciar uma compra.',
+      ),
+    );
   const context = transferContext(state, player, club);
   const interest = context.playerInterest;
   const minimum = context.minimumFee;
@@ -508,6 +532,8 @@ function handleOffer({
       buyerId: club.id,
       sellerId: player.clubId,
       fee: command.fee,
+      exchangePlayerIds: exchangeIds,
+      exchangeValue,
       offeredSalary: null,
       offeredAt: clock,
       expiresAt: clock + 14 * 86400000,
@@ -542,15 +568,15 @@ function handleOffer({
     0,
     ...state.negotiations
       .filter((n) => n.playerId === player.id && n.buyerId !== club.id && n.status === 'review')
-      .map((n) => n.fee),
+      .map((n) => n.fee + (n.exchangeValue ?? 0)),
   );
   const requiredFee = Math.max(
     minimum,
     previous?.minimumFee ?? 0,
-    activeReview?.fee ?? 0,
+    activeReview ? activeReview.fee + (activeReview.exchangeValue ?? 0) : 0,
     competing,
   );
-  if (command.withdraw || ((activeReview || previous?.minimumFee) && command.fee < requiredFee)) {
+  if (command.withdraw || ((activeReview || previous?.minimumFee) && totalOffer < requiredFee)) {
     if (command.withdraw && !activeReview)
       return failure(domainError('VALIDATION_ERROR', 'Não há proposta em análise para retirar.'));
     const reply = command.withdraw
@@ -564,6 +590,8 @@ function handleOffer({
       playerId: player.id,
       ...(player.clubId ? { sellerId: player.clubId } : {}),
       fee: command.fee,
+      exchangePlayerIds: exchangeIds,
+      exchangeValue,
       offeredSalary: null,
       offeredAt: clock,
       interest,
@@ -605,18 +633,18 @@ function handleOffer({
       domainError('VALIDATION_ERROR', `Interesse de ${interest}%: jogador recusou o projeto`),
     );
   const reset = Boolean(previous?.blockedUntil && previous.blockedUntil <= clock);
-  const low = command.fee < minimum * 0.6;
+  const low = totalOffer < minimum * 0.6;
   const lowAttempts = (reset ? 0 : (previous?.lowAttempts ?? 0)) + (low ? 1 : 0);
   const closeAttempts =
     (reset ? 0 : (previous?.closeAttempts ?? 0)) +
-    (!low && command.fee < minimum && previous?.revealed ? 1 : 0);
+    (!low && totalOffer < minimum && previous?.revealed ? 1 : 0);
   const roll = Array.from(eventId).reduce((n, c) => (n * 31 + c.charCodeAt(0)) >>> 0, 17) % 100;
   const accepted =
-    command.fee >= minimum ||
+    totalOffer >= minimum ||
     (!low &&
       previous?.revealed &&
       closeAttempts <= 3 &&
-      roll < Math.max(0, (command.fee / minimum - 0.6) * 150));
+      roll < Math.max(0, (totalOffer / minimum - 0.6) * 150));
   const blockedUntil =
     !accepted && (lowAttempts >= 3 || closeAttempts >= 3) ? clock + 7 * 86400000 : undefined;
   if (!accepted) {
@@ -633,6 +661,8 @@ function handleOffer({
       playerId: player.id,
       ...(player.clubId ? { sellerId: player.clubId } : {}),
       fee: command.fee,
+      exchangePlayerIds: exchangeIds,
+      exchangeValue,
       offeredSalary: null,
       offeredAt: clock,
       interest,
@@ -656,6 +686,8 @@ function handleOffer({
     buyerId: club.id,
     playerId: player.id,
     fee: command.fee,
+    exchangePlayerIds: exchangeIds,
+    exchangeValue,
     offeredSalary: null,
     offeredAt: clock,
     interest,
@@ -750,6 +782,17 @@ function handleSalary({
     });
   }
   const seller = player.clubId ? state.clubs.byId[player.clubId] : undefined;
+  const exchangeIds = negotiation.exchangePlayerIds ?? [];
+  const offered = exchangeIds.map((id) => state.players.byId[id]);
+  if (
+    offered.some((p) => !p || p.clubId !== club.id || state.management?.loans?.[p.id]) ||
+    (exchangeIds.length && (!seller || player.clubId !== negotiation.sellerId)) ||
+    (seller && seller.playerIds.length - 1 + exchangeIds.length > MAX_SQUAD_SIZE)
+  )
+    return failure(
+      domainError('VALIDATION_ERROR', 'A troca não está mais disponível. Renegocie a proposta.'),
+    );
+
   const clubs = {
     ...state.clubs.byId,
     [club.id]: {
@@ -758,14 +801,14 @@ function handleSalary({
         ...club.balance,
         cents: Math.max(0, roundMoney(club.balance.cents - negotiation.fee - command.salary)),
       },
-      playerIds: [...club.playerIds, player.id],
+      playerIds: [...club.playerIds.filter((id) => !exchangeIds.includes(id)), player.id],
     },
   };
   if (seller)
     clubs[seller.id] = {
       ...seller,
       balance: { ...seller.balance, cents: seller.balance.cents + negotiation.fee },
-      playerIds: seller.playerIds.filter((id) => id !== player.id),
+      playerIds: [...seller.playerIds.filter((id) => id !== player.id), ...exchangeIds],
     };
   next = {
     ...state,
@@ -801,6 +844,9 @@ function handleSalary({
       ...state.players,
       byId: {
         ...state.players.byId,
+        ...Object.fromEntries(
+          offered.flatMap((p) => (p && seller ? [[p.id, { ...p, clubId: seller.id }]] : [])),
+        ),
         [player.id]: {
           ...player,
           clubId: club.id,

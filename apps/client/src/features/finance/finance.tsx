@@ -8,7 +8,7 @@ import {
   monthlyFinancialReport,
   scheduledFixtures,
 } from '@football/domain';
-import { GAMEPLAY, roundMoney, clubKit } from '@football/shared';
+import { GAMEPLAY, roundMoney, clubKit, formatMoneyFull } from '@football/shared';
 import { useGameStore } from '../../store/game-store';
 import type { ViewProps } from '../../ui/view-props';
 import { currency } from '../../ui/format';
@@ -37,7 +37,15 @@ export function Finance({ snapshot, club }: ViewProps) {
       if (window.innerWidth >= 1100) {
         const available = Math.max(
           100,
-          window.innerHeight - panel.getBoundingClientRect().top - 10,
+          window.innerHeight -
+            panel.getBoundingClientRect().top -
+            Math.max(
+              24,
+              parseFloat(
+                getComputedStyle(panel.closest('.main-content') ?? panel.parentElement!)
+                  .paddingBottom,
+              ) + 8,
+            ),
         );
         if (panel.getBoundingClientRect().height > available + 1) {
           let low = 0.3,
@@ -184,9 +192,9 @@ export function Finance({ snapshot, club }: ViewProps) {
           </div>
           <div className="finance-hero-balance">
             <span>CAIXA DO CLUBE</span>
-            <strong className={net < 0 ? 'negative' : ''}>{currency(cash)}</strong>
+            <strong className={net < 0 ? 'negative' : ''}>{formatMoneyFull(cash)}</strong>
             <small className={projected < 0 ? 'negative' : ''}>
-              Após as próximas contas: {currency(projected)}
+              Após as próximas contas: {formatMoneyFull(projected)}
             </small>
           </div>
         </header>
