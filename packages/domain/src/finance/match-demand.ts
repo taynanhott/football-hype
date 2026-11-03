@@ -15,25 +15,25 @@ import { scheduledFixtures } from '../competitions/fixtures.js';
 export const TICKET_TIERS = [
   {
     label: 'Barato',
-    priceCents: 5000000,
+    priceCents: 5000,
     occupancy: 0.95,
     description: 'Mais torcida e força em casa.',
   },
   {
     label: 'Normal',
-    priceCents: 10000000,
+    priceCents: 10000,
     occupancy: 0.72,
     description: 'Equilíbrio entre público e renda.',
   },
   {
     label: 'Caro',
-    priceCents: 15000000,
+    priceCents: 20000,
     occupancy: 0.43,
     description: 'Ingresso maior, arquibancadas mais vazias.',
   },
   {
     label: 'Abusivo',
-    priceCents: 20000000,
+    priceCents: 40000,
     occupancy: 0.18,
     description: 'Preço alto afasta a torcida e reduz a renda.',
   },
@@ -129,8 +129,8 @@ export function matchDemand(state: WorldState, fixture: Fixture, priceOverride?:
         (1 + marketing * 0.02),
       MONEY_STEPS.ticket,
     ),
-    10000000,
-    25000000,
+    10000,
+    25000,
   );
   const priceCents = fixture.neutral
     ? GAMEPLAY.baseTicketCents
@@ -182,14 +182,7 @@ export function projectTicketDemand(
   rawPriceCents: number,
 ) {
   const { capacity, commerce } = parameters;
-  const tiers = TICKET_TIERS.map((t) => ({
-    ...t,
-    priceCents: ceilMoney(
-      (t.priceCents * (parameters.fairPriceCents ?? GAMEPLAY.baseTicketCents)) /
-        GAMEPLAY.baseTicketCents,
-      MONEY_STEPS.ticket,
-    ),
-  }));
+  const tiers = TICKET_TIERS;
   const tier = tiers.reduce(
     (best, item) =>
       Math.abs(item.priceCents - rawPriceCents) < Math.abs(best.priceCents - rawPriceCents)
@@ -202,19 +195,13 @@ export function projectTicketDemand(
   const attendance = Math.floor(capacity * occupancy);
   // Larger stadiums retain an advantage with diminishing financial returns.
   const capacityYield = Math.min(1, Math.pow(7200 / Math.max(1, capacity), 0.8));
-  const priceYield = Math.sqrt(
-    GAMEPLAY.baseTicketCents /
-      Math.max(GAMEPLAY.baseTicketCents, parameters.fairPriceCents ?? GAMEPLAY.baseTicketCents),
-  );
-  const ticketRevenue = ceilMoney(
-    (attendance * priceCents * capacityYield * priceYield) / 118,
-    5000000,
-  );
+  // Ticket income is the paid admission price multiplied by attendance.
+  const ticketRevenue = roundMoney(attendance * priceCents);
   const consumptionRevenue = ceilMoney(
     (attendance * GAMEPLAY.baseTicketCents * commerce * capacityYield) /
       GAMEPLAY.commerceRateDivisor /
       1000,
-    5000000,
+    5000,
   );
   return {
     priceCents,

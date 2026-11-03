@@ -1,7 +1,7 @@
-import { currency } from '../../ui/format';
+import { shortMoney } from '../../ui/format';
 import { openModalPreservingScroll } from '../../ui/modal-scroll';
-import { MoneyRange } from '../../ui/money-range';
-import { useEffect, useRef, useState } from 'react';
+import { Select, Option } from '../../ui/select';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import {
   UNLIMITED_MARKET_PRICE,
   defaultMarketFilters,
@@ -11,61 +11,63 @@ import {
 type FilterProps = {
   value: MarketFilterValues;
   priceCeiling: number;
+  salaryCeiling?: number;
   countResults: (filters: MarketFilterValues) => number;
   onApply: (filters: MarketFilterValues) => void;
   onClose: () => void;
 };
-const money = (value: number) =>
-  value === UNLIMITED_MARKET_PRICE ? 'Sem limite' : currency(value * 100);
-
 export function MarketFiltersDialog(props: FilterProps) {
   const dialog = useRef<HTMLDialogElement>(null);
   const [draft, setDraft] = useState<MarketFilterValues>(() => ({
+    ...defaultMarketFilters(),
     ...props.value,
-    overall: [...props.value.overall],
-    age: [...props.value.age],
-    price: [...props.value.price],
   }));
-  const resultCount = props.countResults(draft);
-  useEffect(() => {
-    return openModalPreservingScroll(dialog.current);
-  }, []);
+  useEffect(() => openModalPreservingScroll(dialog.current), []);
+  const count = props.countResults(draft);
+  const money = (value: number) =>
+    value === UNLIMITED_MARKET_PRICE ? 'Sem limite' : shortMoney(value * 100);
   const ranges = [
     {
       id: 'overall',
       label: 'Overall',
       values: draft.overall,
-      set: (values: number[]) => setDraft((previous) => ({ ...previous, overall: values })),
       min: 1,
       max: 99,
       step: 1,
-      format: (value: number) => String(value),
+      format: (v: number) => String(v),
     },
     {
       id: 'age',
       label: 'Idade',
       values: draft.age,
-      set: (values: number[]) => setDraft((previous) => ({ ...previous, age: values })),
       min: 16,
       max: 45,
       step: 1,
-      format: (value: number) => value + ' anos',
+      format: (v: number) => v + ' anos',
     },
     {
       id: 'price',
       label: 'Valor de mercado',
       values: draft.price,
-      set: (values: number[]) => setDraft((previous) => ({ ...previous, price: values })),
       min: 0,
       max: props.priceCeiling,
-      step: 100000,
+      step: 50000,
       format: money,
     },
-  ];
+    {
+      id: 'salary',
+      label: 'Salário por dia',
+      values: draft.salary ?? [0, UNLIMITED_MARKET_PRICE],
+      min: 0,
+      max: props.salaryCeiling ?? 10000,
+      step: 1,
+      format: money,
+    },
+  ] as const;
   return (
     <dialog
       ref={dialog}
-      className="market-filter-dialog"
+      className="market-filter-dialog market-filter-redesign"
       aria-labelledby="filter-title"
       onCancel={props.onClose}
       onClick={(event) => {
@@ -74,90 +76,120 @@ export function MarketFiltersDialog(props: FilterProps) {
     >
       <div className="market-filter-surface">
         <header className="market-filter-heading">
-          <div>
-            <h2 id="filter-title">Filtrar jogadores</h2>
-            <p>Encontre a próxima peça do seu time.</p>
-          </div>
-          <button
-            type="button"
-            className="market-filter-close"
-            aria-label="Fechar filtros"
-            onClick={props.onClose}
-          >
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              aria-hidden="true"
-            >
-              <path d="m6 6 12 12M18 6 6 18" />
-            </svg>
-          </button>
+          <h2 id="filter-title">⚽ Filtros</h2>
         </header>
-        <div className="market-filter-ranges">
-          {ranges.map((range) => (
-            <fieldset key={range.id} className="market-filter-range">
-              <legend>{range.label}</legend>
-              <div className="market-filter-boundaries">
-                {[0, 1].map((index) => (
-                  <label key={index}>
-                    <span className="market-filter-value">
-                      <span>{index === 0 ? 'Mínimo' : 'Máximo'}</span>
-                      <output>{range.format(range.values[index]!)}</output>
-                    </span>
-                    <MoneyRange
-                      className="money-range"
+        <div className="market-filter-selects">
+          <label className="filter-situation">
+            Situação
+            <Select
+              value={draft.situation ?? 'all'}
+              onValueChange={(value) => setDraft((previous) => ({ ...previous, situation: value }))}
+              aria-label="Situação"
+            >
+              <Option value="all">Todos</Option>
+              <Option value="sale">À venda</Option>
+              <Option value="loan">Disponível para empréstimo</Option>
+              <Option value="free">Sem clube</Option>
+              <Option value="expiring">Contrato acabando</Option>
+            </Select>
+          </label>
+          <label>
+            Posição
+            <Select
+              value={draft.position ?? 'ALL'}
+              onValueChange={(value) => setDraft((previous) => ({ ...previous, position: value }))}
+              aria-label="Posição"
+            >
+              <Option value="ALL">Todas</Option>
+              {[
+                ['GK', 'GOL'],
+                ['CB', 'ZAG'],
+                ['RB', 'LD'],
+                ['LB', 'LE'],
+                ['RWB', 'ALA D'],
+                ['LWB', 'ALA E'],
+                ['DM', 'VOL'],
+                ['CM', 'MC'],
+                ['AM', 'MEI'],
+                ['LM', 'ME'],
+                ['RM', 'MD'],
+                ['LW', 'PE'],
+                ['RW', 'PD'],
+                ['SS', 'SA'],
+                ['ST', 'CA'],
+              ].map(([value, label]) => (
+                <Option key={value} value={value!}>
+                  {label}
+                </Option>
+              ))}
+            </Select>
+          </label>
+          <label>
+            Continente
+            <Select
+              value={draft.continent ?? 'all'}
+              onValueChange={(value) => setDraft((previous) => ({ ...previous, continent: value }))}
+              aria-label="Continente"
+            >
+              {[
+                ['all', 'Todos'],
+                ['south', 'América do Sul'],
+                ['north', 'América do Norte e Central'],
+                ['europe', 'Europa'],
+                ['africa', 'África'],
+                ['asia', 'Ásia'],
+                ['oceania', 'Oceania'],
+              ].map(([value, label]) => (
+                <Option key={value} value={value!}>
+                  {label}
+                </Option>
+              ))}
+            </Select>
+          </label>
+        </div>
+        <div className="market-filter-dual-ranges">
+          {ranges.map((range) => {
+            const low = Math.min(range.max, range.values[0]!);
+            const high = Math.min(range.max, range.values[1]!);
+            const style = {
+              '--range-start': ((low - range.min) / (range.max - range.min)) * 100 + '%',
+              '--range-end': ((high - range.min) / (range.max - range.min)) * 100 + '%',
+            } as CSSProperties;
+            return (
+              <fieldset key={range.id} className="market-dual-range">
+                <legend>{range.label}</legend>
+                <output>
+                  {range.format(range.values[0]!)} – {range.format(range.values[1]!)}
+                </output>
+                <div className="market-dual-track" style={style}>
+                  {[0, 1].map((index) => (
+                    <input
+                      key={index}
                       type="range"
-                      aria-label={`${range.label} ${index === 0 ? 'mínimo' : 'máximo'}`}
                       min={range.min}
                       max={range.max}
                       step={range.step}
-                      value={Math.min(range.max, range.values[index]!)}
+                      value={index === 0 ? low : high}
+                      aria-label={`${range.label} ${index === 0 ? 'mínimo' : 'máximo'}`}
                       onChange={(event) => {
                         const next = [...range.values];
-                        const value = Number(event.target.value);
+                        let value = Number(event.target.value);
+                        if (index === 0) value = Math.min(value, high);
+                        else value = Math.max(value, low);
                         next[index] =
-                          range.id === 'price' && index === 1 && value === range.max
+                          (range.id === 'price' || range.id === 'salary') &&
+                          index === 1 &&
+                          value === range.max
                             ? UNLIMITED_MARKET_PRICE
                             : value;
-                        if (next[0]! <= next[1]!) range.set(next);
+                        setDraft((previous) => ({ ...previous, [range.id]: next }));
                       }}
                     />
-                  </label>
-                ))}
-              </div>
-            </fieldset>
-          ))}
-        </div>
-        <div className="market-filter-toggles">
-          {[
-            {
-              label: 'Jogadores interessados no clube',
-              checked: draft.interestedPlayers,
-              set: (value: boolean) =>
-                setDraft((previous) => ({ ...previous, interestedPlayers: value })),
-            },
-            {
-              label: 'Clubes abertos a negociar',
-              checked: draft.interestedClubs,
-              set: (value: boolean) =>
-                setDraft((previous) => ({ ...previous, interestedClubs: value })),
-            },
-          ].map((toggle) => (
-            <label className="market-filter-toggle" key={toggle.label}>
-              <span>{toggle.label}</span>
-              <input
-                type="checkbox"
-                role="switch"
-                checked={toggle.checked}
-                onChange={(event) => toggle.set(event.target.checked)}
-              />
-            </label>
-          ))}
+                  ))}
+                </div>
+              </fieldset>
+            );
+          })}
         </div>
         <footer className="market-filter-actions">
           <button
@@ -165,20 +197,20 @@ export function MarketFiltersDialog(props: FilterProps) {
             className="market-filter-reset"
             onClick={() => setDraft(defaultMarketFilters())}
           >
-            Limpar filtros
+            Limpar
           </button>
           <button
             type="button"
             className="market-filter-apply"
             onClick={() => props.onApply(draft)}
           >
-            <span aria-live="polite">({resultCount.toLocaleString('pt-BR')})</span> Ver resultados
+            Ver {count.toLocaleString('pt-BR')} jogadores
           </button>
         </footer>
+        <button type="button" className="market-filter-back" onClick={props.onClose}>
+          ← Voltar
+        </button>
       </div>
-      <button type="button" className="modal-return" aria-label="Voltar" onClick={props.onClose}>
-        ← Voltar
-      </button>
     </dialog>
   );
 }

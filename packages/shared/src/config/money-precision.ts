@@ -1,7 +1,7 @@
 /** Amounts are stored in cents; each control has an explicit precision. */
 export const MONEY_STEPS = Object.freeze({
   general: 10000,
-  ticket: 5000000,
+  ticket: 5000,
   salary: 5000,
   transfer: 50000,
   transferSlider: 100000000,

@@ -22,14 +22,18 @@ const metadata = JSON.parse(
 );
 afterEach(() => vi.unstubAllGlobals());
 describe('base local fornecida', () => {
-  it('uses exported source economics and converts daily salary to monthly without copying career progress', () => {
+  it('preserves exported mv and multiplies exported sal by 30 without using mvE or career progress', () => {
     const { dataset, report } = convertLocalPlayers(source, metadata, [], {
       registrosJogadores: {
         '352324': {
+          cadastro: { mvE: 10000000 },
           padraoCalculado: { ovr: 81, pot: 81, mv: 45000, sal: 225 },
           atual: { ovr: 90, pot: 95, mv: 99000, sal: 999 },
         },
-        '418560': { padraoCalculado: { ovr: 91, pot: 92, mv: 900000, sal: 8100 } },
+        '418560': {
+          cadastro: { mvE: 200000000 },
+          padraoCalculado: { ovr: 91, pot: 92, mv: 900000, sal: 8100 },
+        },
       },
     });
     const rossi = dataset.players.byId[stableId(32, 352324)]!;

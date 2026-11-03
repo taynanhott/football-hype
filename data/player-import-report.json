@@ -1,7 +1,7 @@
 {
   "players": 14012,
   "sourceEconomics": 14012,
-  "salaryPeriod": "Source daily salary converted to a fixed 30-day month",
+  "salaryPeriod": "Exported daily salary multiplied by 30, without market-value rescaling",
   "clubs": 697,
   "freeAgents": 124,
   "duplicates": 0,

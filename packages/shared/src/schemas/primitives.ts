@@ -27,9 +27,12 @@ export const salaryAmountSchema = countSchema.transform((value) =>
 export const ticketAmountSchema = z
   .number()
   .int()
-  .min(5000000)
+  .min(5000)
   .max(50000000)
-  .transform((value) => Math.max(MONEY_STEPS.ticket, roundMoney(value, MONEY_STEPS.ticket)));
+  .transform((value) => (value > 50000 ? value / 1000 : value))
+  .transform((value) =>
+    Math.max(MONEY_STEPS.ticket, Math.min(50000, roundMoney(value, MONEY_STEPS.ticket))),
+  );
 export const gameMoneySchema = z
   .strictObject({ cents: gameAmountSchema, currency: currencySchema })
   .readonly();

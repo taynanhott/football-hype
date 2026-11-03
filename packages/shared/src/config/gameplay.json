@@ -9,7 +9,7 @@
   "seed": 20261026,
   "rosterSize": 16,
   "startingBalance": 800000000,
-  "baseTicketCents": 10000000,
+  "baseTicketCents": 10000,
   "baseUpgradeCost": 100000000,
   "upgradeGrowth": 2.15,
   "upgradeCapacity": 1500,

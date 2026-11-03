@@ -550,7 +550,7 @@ const individualCommandSchema = z.discriminatedUnion('type', [
       .number()
       .int()
       .min(2500)
-      .max(50000000)
+      .max(50000)
       .transform((value) => Math.round(value / 2500) * 2500),
   }),
   z.strictObject({
@@ -560,7 +560,7 @@ const individualCommandSchema = z.discriminatedUnion('type', [
       .number()
       .int()
       .min(2500)
-      .max(50000000)
+      .max(50000)
       .transform((value) => Math.round(value / 2500) * 2500),
   }),
   lineupSchema.extend({ type: z.literal('lineup') }),

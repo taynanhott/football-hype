@@ -1,3 +1,4 @@
+import { countryContinent } from './market-filters';
 import { CountryFlag } from '../../ui/country-flag';
 import { marketValue, transferMoney } from '../../ui/format';
 import { PixelBadge } from '../../ui/pixel-badge';
@@ -9,6 +10,7 @@ import { NegotiationChat } from './negotiation-chat';
 import { MoneyRange } from '../../ui/money-range';
 import { IncomingOffers } from '../players/player-management';
 import {
+  contractEnd,
   renewalTerms,
   loanTerms,
   transferContext,
@@ -33,6 +35,7 @@ import { clubKit, roundMoney, ceilMoney, formatMoneyFull, MONEY_STEPS } from '@f
 
 const SORT_OPTIONS: Record<string, string> = {
   overall: 'Maior overall',
+  interest: 'Mais interessado',
   age: 'Mais jovens',
   ageDesc: 'Mais experientes',
   price: 'Menor valor de mercado',
@@ -83,7 +86,17 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
       : 'Todos',
   );
   const [prospects, setProspects] = useState(false);
+  const [sector, setSector] = useState('ALL');
+  const [affordable, setAffordable] = useState(false);
+  const [bargains, setBargains] = useState(false);
   const [favoritesOnly, setFavoritesOnly] = useState(false);
+  function selectQuickFilter(filter: 'affordable' | 'bargains' | 'prospects' | 'favorites') {
+    setAffordable(filter === 'affordable' && !affordable);
+    setBargains(filter === 'bargains' && !bargains);
+    setProspects(filter === 'prospects' && !prospects);
+    setFavoritesOnly(filter === 'favorites' && !favoritesOnly);
+    setVisibleCount(48);
+  }
   const [visibleCount, setVisibleCount] = useState(48);
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const loadArmed = useRef(true);
@@ -99,6 +112,13 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
     player.clubId === club.id || snapshot.state.management?.loans?.[player.id]?.ownerId === club.id;
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [sortBy, setSortBy] = useState('overall');
+  const [advancedFilters, setAdvancedFilters] = useState<MarketFilterValues>({
+    overall: [1, 99],
+    age: [16, 45],
+    price: [0, UNLIMITED_MARKET_PRICE],
+    interestedPlayers: false,
+    interestedClubs: false,
+  });
   const [interestedPlayers, setInterestedPlayers] = useState(false);
   const [interestedClubs, setInterestedClubs] = useState(false);
   const [overall, setOverall] = useState([1, 99]);
@@ -155,8 +175,16 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
     price[0] !== 0 ||
     price[1] !== UNLIMITED_MARKET_PRICE ||
     interestedPlayers ||
-    interestedClubs;
+    interestedClubs ||
+    Boolean(advancedFilters.situation && advancedFilters.situation !== 'all') ||
+    Boolean(advancedFilters.position && advancedFilters.position !== 'ALL') ||
+    Boolean(advancedFilters.continent && advancedFilters.continent !== 'all') ||
+    Boolean(
+      advancedFilters.salary &&
+      (advancedFilters.salary[0] !== 0 || advancedFilters.salary[1] !== UNLIMITED_MARKET_PRICE),
+    );
   function applyFilters(filters: MarketFilterValues) {
+    setAdvancedFilters(filters);
     setOverall(filters.overall);
     setAge(filters.age);
     setPrice(filters.price);
@@ -210,6 +238,31 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
   const linkedPlayer = newsPlayerId ? snapshot.state.players.byId[newsPlayerId] : undefined;
   const exactNewsSearch = linkedPlayer && searchQuery === linkedPlayer.name;
   const searchResults = exactNewsSearch ? [linkedPlayer] : found;
+  const transferBudget = financialLimits(snapshot.state, club).transfer;
+  const contexts = useMemo(() => {
+    if (
+      sortBy !== 'interest' &&
+      !bargains &&
+      !interestedPlayers &&
+      !interestedClubs &&
+      !filtersOpen
+    )
+      return new Map<string, ReturnType<typeof transferContext>>();
+    return new Map(
+      allPlayers.map((player) => [player.id, transferContext(snapshot.state, player, club)]),
+    );
+  }, [
+    allPlayers,
+    snapshot.state,
+    club,
+    sortBy,
+    bargains,
+    interestedPlayers,
+    interestedClubs,
+    filtersOpen,
+  ]);
+  const contextFor = (player: PlayerSnapshot) =>
+    contexts.get(player.id) ?? transferContext(snapshot.state, player, club);
   const candidates = searchResults
     .filter(
       (player) =>
@@ -218,6 +271,21 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
     )
     .filter((player) => {
       const seller = snapshot.state.clubs.byId[player.clubId ?? ''];
+      const positions =
+        sector === 'GK'
+          ? ['GK']
+          : sector === 'DEF'
+            ? ['CB', 'RB', 'LB', 'LWB', 'RWB']
+            : sector === 'MEI'
+              ? ['DM', 'CM', 'AM', 'LM', 'RM']
+              : ['ST', 'SS', 'LW', 'RW'];
+      if (sector !== 'ALL' && !positions.includes(player.position)) return false;
+      if (affordable && player.marketValue.cents > transferBudget) return false;
+      if (
+        bargains &&
+        (contextFor(player).blocked || contextFor(player).minimumFee >= player.marketValue.cents)
+      )
+        return false;
       if (favoritesOnly && !favorites.includes(player.id)) return false;
       if (prospects) {
         const reach = player.id.split('').reduce((sum, c) => sum + c.charCodeAt(0), 0) % 5;
@@ -237,14 +305,46 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
     candidates
       .filter((player) => matchesMarketRanges(player, filters.overall, filters.age, filters.price))
       .filter((player) => {
+        if (filters.position && filters.position !== 'ALL' && player.position !== filters.position)
+          return false;
+        if (
+          filters.continent &&
+          filters.continent !== 'all' &&
+          countryContinent(player.nationality) !== filters.continent
+        )
+          return false;
+        const dailySalary = player.salary.cents / 100 / 30;
+        if (
+          filters.salary &&
+          (dailySalary < filters.salary[0]! || dailySalary > filters.salary[1]!)
+        )
+          return false;
+        if (filters.situation === 'free' && player.clubId) return false;
+        if (
+          filters.situation === 'sale' &&
+          !snapshot.state.management?.policies?.[player.id]?.available
+        )
+          return false;
+        if (
+          filters.situation === 'loan' &&
+          !snapshot.state.management?.policies?.[player.id]?.loanAvailable
+        )
+          return false;
+        if (
+          filters.situation === 'expiring' &&
+          (!player.clubId ||
+            contractEnd(snapshot.state, player) - snapshot.state.lastProcessedAt > 180 * 86400000)
+        )
+          return false;
         if (!filters.interestedPlayers && !filters.interestedClubs) return true;
-        const context = transferContext(snapshot.state, player, club);
+        const context = contextFor(player);
         return (
           (!filters.interestedPlayers || context.playerInterest > 0) &&
           (!filters.interestedClubs || (!context.blocked && context.clubInterest > 0))
         );
       });
   const matchingPlayers = filterCandidates({
+    ...advancedFilters,
     overall,
     age,
     price,
@@ -253,6 +353,9 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
   }).sort((a, b) => {
     let difference = 0;
     switch (sortBy) {
+      case 'interest':
+        difference = contextFor(b).playerInterest - contextFor(a).playerInterest;
+        break;
       case 'age':
         difference = a.age - b.age;
         break;
@@ -476,74 +579,126 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
           ))}
         </div>
         {tab !== 'Propostas' && tab !== 'Pendente' && (
-          <div className="transfer-searchbar">
-            <div
-              className="market-view-toggle"
-              role="group"
-              aria-label="Visualização dos jogadores"
-            >
-              <button
-                className="secondary"
-                aria-pressed={viewMode === 'cards'}
-                onClick={() => setViewMode('cards')}
-              >
-                Cartas
-              </button>
-              <button
-                className="secondary"
-                aria-pressed={viewMode === 'list'}
-                onClick={() => setViewMode('list')}
-              >
-                Lista
-              </button>
+          <div className="market-reference-controls">
+            <div className="market-position-tabs" role="group" aria-label="Posições">
+              {[
+                ['ALL', 'Todas'],
+                ['GK', 'GOL'],
+                ['DEF', 'DEF'],
+                ['MEI', 'MEI'],
+                ['ATA', 'ATA'],
+              ].map(([value, label]) => (
+                <button
+                  type="button"
+                  key={value}
+                  aria-pressed={sector === value}
+                  className={sector === value ? 'selected' : ''}
+                  onClick={() => {
+                    setSector(value!);
+                    setVisibleCount(48);
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
             </div>
-            <PlayerSearch key={searchSeed} initialQuery={searchSeed} onSearch={applySearchQuery} />
-            <div className="market-focus" role="group" aria-label="Perfil dos jogadores">
-              <span>Refinar observação</span>
+            <div className="market-quick-filters" role="group" aria-label="Atalhos de busca">
               <button
+                type="button"
+                className={affordable ? 'selected' : ''}
+                aria-pressed={affordable}
+                onClick={() => {
+                  selectQuickFilter('affordable');
+                }}
+              >
+                Cabem no bolso
+              </button>
+              <button
+                type="button"
+                className={bargains ? 'selected' : ''}
+                aria-pressed={bargains}
+                title="Negociação abaixo do valor de mercado"
+                onClick={() => {
+                  selectQuickFilter('bargains');
+                }}
+              >
+                Barganhas
+              </button>
+              <button
+                type="button"
                 className={prospects ? 'selected' : ''}
                 aria-pressed={prospects}
                 onClick={() => {
-                  setProspects(!prospects);
-                  setVisibleCount(48);
+                  selectQuickFilter('prospects');
                 }}
               >
-                ★ Promessas
+                Jovens promessas
               </button>
               <button
+                type="button"
                 className={favoritesOnly ? 'selected' : ''}
                 aria-pressed={favoritesOnly}
                 onClick={() => {
-                  setFavoritesOnly(!favoritesOnly);
-                  setVisibleCount(48);
+                  selectQuickFilter('favorites');
                 }}
               >
                 ☆ Favoritos
               </button>
             </div>
-            <button
-              className={`secondary market-filter-button${hasFilters ? ' active' : ''}`}
-              aria-label={hasFilters ? 'Filtro: filtros ativos' : 'Filtro'}
-              onClick={() => setFiltersOpen(true)}
-            >
-              <Icon name="filter" /> Filtro
-            </button>
-            <label className="market-sort-label">
-              Ordenar por
-              <Select
-                value={sortBy}
-                onValueChange={(value) => {
-                  setSortBy(value);
-                  setVisibleCount(48);
-                }}
+            <div className="transfer-searchbar">
+              <PlayerSearch
+                key={searchSeed}
+                initialQuery={searchSeed}
+                onSearch={applySearchQuery}
+              />
+
+              <button
+                className={`secondary market-filter-button${hasFilters ? ' active' : ''}`}
+                aria-label="Filtro"
+                onClick={() => setFiltersOpen(true)}
               >
-                {Object.entries(SORT_OPTIONS).map(([value, label]) => (
-                  <Option key={value} value={value}>
-                    {label}
-                  </Option>
-                ))}
-              </Select>
-            </label>
+                <Icon name="filter" /> Filtro
+              </button>
+            </div>
+            <div className="market-result-toolbar">
+              <div
+                className="market-view-toggle"
+                role="group"
+                aria-label="Visualização dos jogadores"
+              >
+                <button
+                  className="secondary"
+                  aria-pressed={viewMode === 'cards'}
+                  onClick={() => setViewMode('cards')}
+                >
+                  Cartas
+                </button>
+                <button
+                  className="secondary"
+                  aria-pressed={viewMode === 'list'}
+                  onClick={() => setViewMode('list')}
+                >
+                  Lista
+                </button>
+              </div>
+              <label className="market-sort-label">
+                <Select
+                  aria-label="Ordenar jogadores"
+                  menuMinWidth={200}
+                  value={sortBy}
+                  onValueChange={(value) => {
+                    setSortBy(value);
+                    setVisibleCount(48);
+                  }}
+                >
+                  {Object.entries(SORT_OPTIONS).map(([value, label]) => (
+                    <Option key={value} value={value}>
+                      {label}
+                    </Option>
+                  ))}
+                </Select>
+              </label>
+            </div>
           </div>
         )}
       </section>
@@ -689,7 +844,11 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
       ) : (
         <>
           {viewMode === 'list' ? (
-            <div className="market-player-list" role="list" aria-label="Jogadores no mercado">
+            <div
+              className="market-player-list market-reference-list"
+              role="list"
+              aria-label="Jogadores no mercado"
+            >
               {players.map((player) => {
                 const playerClub = snapshot.state.clubs.byId[player.clubId ?? ''];
                 const context = transferContext(snapshot.state, player, club);
@@ -708,6 +867,7 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
                     key={player.id}
                     onClick={() => setDetailPlayer(player)}
                   >
+                    <span className="market-list-position">{positionLabel(player.position)}</span>
                     <strong
                       className="market-list-overall"
                       data-tier={tier}
@@ -721,10 +881,14 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
                       kit={clubKit(playerClub)}
                     />
                     <div className="market-list-identity">
-                      <button onClick={() => setDetailPlayer(player)}>{player.name}</button>
+                      <button onClick={() => setDetailPlayer(player)}>
+                        <CountryFlag country={player.nationality} /> {player.name}
+                      </button>
                       <span>
-                        {positionLabel(player.position)} · {player.age} anos ·{' '}
-                        {playerClub?.name ?? 'Sem clube'}
+                        {positionLabel(player.position)} · {playerClub?.name ?? 'Sem clube'}
+                      </span>
+                      <span className="market-list-summary">
+                        {player.age} anos · <b>interesse {interestLabel(context.playerInterest)}</b>
                       </span>
                     </div>
                     <strong className="market-list-price">
@@ -919,7 +1083,11 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
       )}
       {filtersOpen && (
         <MarketFiltersDialog
-          value={{ overall, age, price, interestedPlayers, interestedClubs }}
+          value={{ ...advancedFilters, overall, age, price, interestedPlayers, interestedClubs }}
+          salaryCeiling={Math.max(
+            100,
+            Math.ceil(Math.max(...allPlayers.map((p) => p.salary.cents / 3000)) / 100) * 100,
+          )}
           priceCeiling={priceCeiling}
           countResults={(filters) => {
             const count = filterCandidates(filters).length;
@@ -1200,8 +1368,8 @@ function PlayerSearch({
   }, [query, onSearch]);
   return (
     <label className="search-label">
-      Buscar atleta
       <input
+        aria-label="Buscar atleta por nome ou sobrenome"
         placeholder="Nome ou sobrenome…"
         value={query}
         onChange={(event) => setQuery(event.target.value)}

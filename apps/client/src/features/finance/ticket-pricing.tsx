@@ -25,17 +25,8 @@ export function TicketPricing({ state, clubId }: { state: WorldState; clubId: st
   const current = state.homeTicketPrices?.[clubId] ?? GAMEPLAY.baseTicketCents;
   const demand = next
     ? matchDemand(state, next)
-    : { capacity, commerce: 0, selloutPriceCents: 5000000, minimumCrowdPriceCents: 20000000 };
-  const tiers = TICKET_TIERS.map((t) => ({
-    ...t,
-    priceCents:
-      Math.ceil(
-        (t.priceCents *
-          ('fairPriceCents' in demand ? demand.fairPriceCents : GAMEPLAY.baseTicketCents)) /
-          GAMEPLAY.baseTicketCents /
-          5000000,
-      ) * 5000000,
-  }));
+    : { capacity, commerce: 0, selloutPriceCents: 5000, minimumCrowdPriceCents: 20000 };
+  const tiers = TICKET_TIERS;
   const selected = tiers.reduce(
     (best, t) =>
       Math.abs(t.priceCents - current) < Math.abs(best.priceCents - current) ? t : best,
@@ -75,7 +66,7 @@ export function TicketPricing({ state, clubId }: { state: WorldState; clubId: st
             ? 'Casa cheia: a torcida fortalece o time em casa.'
             : occupancy >= 50
               ? 'Boa procura: equilíbrio entre público e renda.'
-              : 'Procura baixa: o preço afasta a torcida e reduz a força em casa.'}
+              : 'Ingresso caro, menos torcida.'}
         </p>
       </div>
       <div className="ticket-tier-options">

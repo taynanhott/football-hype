@@ -105,6 +105,7 @@ export function convertLocalPlayers(
         .record(
           z.string(),
           z.object({
+            cadastro: z.object({ mvE: z.number().finite().nonnegative().optional() }).optional(),
             padraoCalculado: z
               .object({
                 ovr: z.number().int().min(1).max(99),
@@ -121,7 +122,7 @@ export function convertLocalPlayers(
   const economicsById = new Map(
     Object.entries(exported.registrosJogadores)
       .filter(([id]) => /^\d+$/.test(id))
-      .map(([id, record]) => [stableId(32, Number(id)), record.padraoCalculado]),
+      .map(([id, record]) => [stableId(32, Number(id)), record]),
   );
   let sourceEconomics = 0;
   const inactive: { id: number; reason: string }[] = [];
@@ -413,14 +414,19 @@ export function convertLocalPlayers(
   }
   for (let index = 0; index < players.length; index++) {
     const current = players[index]!;
-    const details = economicsById.get(current.id);
+    const record = economicsById.get(current.id);
+    const details = record?.padraoCalculado;
     if (!details) continue;
+    // Preserve the exported market value and daily wage; only convert days to months.
     sourceEconomics++;
     players[index] = {
       ...current,
       overall: details.ovr,
       potential: Math.max(details.ovr, details.pot),
-      marketValue: { ...current.marketValue, cents: Math.round(details.mv * 100) },
+      marketValue: {
+        ...current.marketValue,
+        cents: Math.round(details.mv * 100),
+      },
       salary: { ...current.salary, cents: Math.round(details.sal * 30 * 100) },
     };
   }
@@ -431,14 +437,14 @@ export function convertLocalPlayers(
     centers: normalized(centers),
     source: 'Base local do arquivo fornecido · Treineiros · 2026',
     license:
-      'Dados fornecidos pelo usuário para uso local. Identidades, vínculos, idades, posições e avaliações vêm do arquivo, incluindo suas correções. Potenciais não informados, salários, finanças e estruturas são parâmetros de jogo; valores usam conversão fixa de simulação, não cotação financeira. Não há atualização por API.',
+      'Dados fornecidos pelo usuário para uso local. Identidades, vínculos, idades, posições e avaliações vêm do arquivo, incluindo suas correções. Potenciais não informados, salários, finanças e estruturas são parâmetros de jogo; valores de mercado preservam mv da fonte; salários preservam sal diário da fonte multiplicado por 30 dias. Não há atualização por API.',
   });
   return {
     dataset,
     report: {
       players: players.length,
       sourceEconomics,
-      salaryPeriod: 'Source daily salary converted to a fixed 30-day month',
+      salaryPeriod: 'Exported daily salary multiplied by 30, without market-value rescaling',
       clubs: clubs.length,
       freeAgents: free.length,
       duplicates: duplicates.length,
