@@ -33202,3 +33202,825 @@ dialog[open].modal.career-confirm-dialog {
   max-height: calc(100dvh - 32px) !important;
   box-sizing: border-box;
 }
+
+/* Compact proposals in the player management menu. */
+.squad-inline-offers .incoming-offers {
+  padding: 14px;
+  border: 1px solid #294b3b;
+  border-radius: 10px;
+  background: #0c291e;
+}
+.squad-inline-offers .incoming-offers .incoming-offers-heading {
+  min-height: 0;
+  padding: 0;
+  margin: 0 0 12px;
+  border: 0;
+  background: none;
+}
+.squad-inline-offers .incoming-offers .incoming-offers-heading h2 {
+  font: 700 12px/1.3 sans-serif;
+  text-transform: uppercase;
+  color: #bdced2;
+}
+.squad-inline-offers .incoming-offers .incoming-offers-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+.squad-inline-offers .squad-proposal {
+  display: grid;
+  grid-template-columns: minmax(160px, 1fr) minmax(170px, 0.7fr) auto;
+  align-items: center;
+  gap: 16px;
+  padding: 12px;
+  border: 1px solid #254333;
+  border-radius: 9px;
+  background: #071e16;
+  font-family: sans-serif;
+}
+.squad-proposal-club {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex: 1;
+  min-width: 0;
+}
+.squad-proposal-club strong {
+  font-size: 14px;
+  color: #ecf4ef;
+}
+.squad-proposal small {
+  display: block;
+  margin-top: 3px;
+  font-size: 12px;
+  color: #91a7af;
+}
+.squad-proposal-value {
+  text-align: left;
+  padding-inline: 16px;
+  border-left: 1px solid #294b3b;
+}
+.squad-proposal-value strong {
+  font-size: 18px;
+  color: #28d8a2;
+}
+.squad-proposal-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.squad-proposal-actions button {
+  padding: 9px 14px;
+  min-height: 36px;
+  border: 0;
+  border-radius: 6px;
+  background: #009c73;
+  color: white;
+  font: 700 12px sans-serif;
+  cursor: pointer;
+}
+.squad-proposal-actions button:focus-visible {
+  outline: 2px solid #ead696;
+  outline-offset: 3px;
+}
+.squad-proposal-actions button:hover:not(:disabled) {
+  filter: brightness(1.15);
+}
+.squad-proposal-actions button:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+.squad-proposal-actions .squad-proposal-counter {
+  background: #df9400;
+  color: #10271d;
+}
+.squad-proposal-actions .squad-proposal-reject {
+  background: #54262b;
+  color: #ffd5d5;
+  border: 1px solid #884047;
+}
+@media (max-width: 900px) {
+  .squad-inline-offers .squad-proposal {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+  }
+  .squad-proposal-actions {
+    grid-column: 1 / -1;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+}
+@media (max-width: 480px) {
+  .squad-inline-offers .incoming-offers {
+    padding: 10px;
+    min-width: 0;
+  }
+  .squad-inline-offers .squad-proposal {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .squad-proposal-value {
+    padding: 8px 0;
+    border-left: 0;
+    border-top: 1px solid #294b3b;
+  }
+  .squad-proposal-actions {
+    justify-content: stretch;
+  }
+  .squad-proposal-actions button {
+    flex: 1;
+  }
+}
+
+/* Keep availability controls readable and sized to their content. */
+.player-management.transfer-policy-panel .transfer-availability {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 18px;
+  padding: 14px;
+  font:
+    13px/1.45 Arial,
+    sans-serif;
+}
+.player-management.transfer-policy-panel .transfer-availability legend {
+  font:
+    700 14px/1.4 Arial,
+    sans-serif;
+  color: #f0e4b8;
+}
+.player-management.transfer-policy-panel .transfer-availability .market-listing-toggle {
+  width: auto;
+  flex: 0 1 auto;
+  min-height: 36px;
+  margin: 0;
+  padding: 8px 12px;
+  background: #183e2f;
+  color: #f0f5ee;
+  border: 1px solid #557a5d;
+  border-radius: 7px;
+  font:
+    600 13px/1.4 Arial,
+    sans-serif;
+}
+.player-management.transfer-policy-panel .loan-availability-toggle {
+  width: auto;
+  flex: 0 1 auto;
+  min-height: 36px;
+  padding: 8px 12px;
+  font:
+    500 13px/1.4 Arial,
+    sans-serif;
+}
+.player-management.transfer-policy-panel .loan-duration {
+  flex: 0 1 auto;
+  gap: 10px;
+  margin: 0;
+}
+.player-management.transfer-policy-panel .loan-duration .segmented {
+  flex: 0 1 auto;
+  width: auto;
+  gap: 5px;
+}
+.player-management.transfer-policy-panel .loan-duration button {
+  flex: 0 0 auto;
+  width: auto;
+  min-height: 36px;
+  padding: 7px 14px;
+  font:
+    600 13px/1.4 Arial,
+    sans-serif;
+}
+.player-management.transfer-policy-panel .loan-duration button:disabled {
+  background: #263e35;
+  color: #b0bcb4;
+  opacity: 1;
+  box-shadow: none;
+}
+@media (max-width: 480px) {
+  .player-management.transfer-policy-panel .loan-duration {
+    flex-wrap: wrap;
+  }
+  .player-management.transfer-policy-panel .transfer-availability {
+    gap: 10px;
+  }
+}
+
+@media (min-width: 761px) {
+  .squad-office-player {
+    grid-template-columns: clamp(280px, 25vw, 360px) minmax(0, 1fr);
+    gap: 20px;
+  }
+  .squad-office-card {
+    width: 100%;
+    min-width: 0;
+  }
+  .squad-office-card .player-card {
+    width: 100%;
+    max-width: none;
+    height: auto;
+    aspect-ratio: 236 / 308;
+  }
+  .squad-office-actions {
+    min-width: 0;
+  }
+}
+
+.player-management.transfer-policy-panel .transfer-availability {
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  text-align: left;
+}
+.player-management.transfer-policy-panel .transfer-availability > .market-listing-toggle,
+.player-management.transfer-policy-panel .transfer-availability > .loan-availability-toggle,
+.player-management.transfer-policy-panel .transfer-availability > .loan-duration {
+  align-self: flex-start;
+  margin-left: 0;
+  margin-right: 0;
+}
+
+.squad-office-card .player-card .card-label h3 {
+  font-size: 20px;
+  line-height: 1.25;
+  margin-bottom: 6px;
+}
+.squad-office-card .player-card .card-label p {
+  font-size: 13px;
+  line-height: 1.45;
+}
+.squad-office-card .player-card .card-label > span {
+  font-size: 10px;
+  line-height: 1.4;
+  letter-spacing: 1px;
+}
+.squad-office-card .player-card .card-contract-months {
+  font-size: 12px;
+  line-height: 1.4;
+}
+@media (max-width: 760px) {
+  .squad-office-card .player-card .card-label h3 {
+    font-size: 16px;
+  }
+  .squad-office-card .player-card .card-label p {
+    font-size: 11px;
+  }
+}
+
+.squad-office-actions
+  .player-management.transfer-policy-panel
+  .transfer-availability
+  .market-listing-toggle:has(input:checked),
+.player-management.transfer-policy-panel
+  .transfer-availability
+  .market-listing-toggle:has(input:checked) {
+  background: #d2e8d5;
+  color: #143d29;
+  border-color: #7ba987;
+}
+.player-management.transfer-policy-panel .transfer-availability .market-listing-toggle input {
+  accent-color: #a88327;
+}
+
+.player-management.transfer-policy-panel .transfer-availability {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px 16px;
+}
+.player-management.transfer-policy-panel .transfer-availability > .market-listing-toggle,
+.player-management.transfer-policy-panel .transfer-availability > .loan-availability-toggle,
+.player-management.transfer-policy-panel .transfer-availability > .loan-duration {
+  align-self: center;
+}
+.player-management.transfer-policy-panel .loan-duration {
+  flex-wrap: nowrap;
+}
+.player-management.transfer-policy-panel .loan-duration > span {
+  white-space: nowrap;
+}
+.squad-inline-offers .incoming-offers .incoming-offers-grid {
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #bfa759 #102d21;
+  overscroll-behavior-y: contain;
+}
+@media (max-width: 480px) {
+  .player-management.transfer-policy-panel .loan-duration {
+    flex-wrap: wrap;
+  }
+}
+
+.player-management.transfer-policy-panel .transfer-availability {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+}
+.player-management.transfer-policy-panel .transfer-availability .loan-duration {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+}
+.player-management.transfer-policy-panel .loan-duration > span {
+  white-space: normal;
+  font-size: 12px;
+}
+@media (max-width: 480px) {
+  .player-management.transfer-policy-panel .transfer-availability {
+    padding: 10px;
+    gap: 8px;
+  }
+  .player-management.transfer-policy-panel .transfer-availability .market-listing-toggle {
+    padding: 7px;
+    font-size: 12px;
+    gap: 5px;
+  }
+  .player-management.transfer-policy-panel .loan-duration button {
+    padding: 7px 9px;
+    font-size: 12px;
+  }
+}
+
+.player-management.transfer-policy-panel .transfer-availability > .market-listing-toggle {
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.player-management.transfer-policy-panel .transfer-availability > .market-listing-toggle {
+  grid-column: 1;
+  grid-row: 1;
+  min-width: 0;
+  white-space: nowrap;
+}
+.player-management.transfer-policy-panel .transfer-availability > .loan-duration {
+  grid-column: 2;
+  grid-row: 1;
+  min-width: 0;
+  width: auto;
+  margin: 0;
+}
+.player-management.transfer-policy-panel .transfer-availability .loan-duration .segmented {
+  flex-wrap: nowrap;
+  min-width: 0;
+}
+
+.player-management.transfer-policy-panel .transfer-availability {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+.player-management.transfer-policy-panel .transfer-availability > .market-listing-toggle,
+.player-management.transfer-policy-panel .transfer-availability > .loan-duration {
+  width: 100%;
+  box-sizing: border-box;
+}
+.player-management.transfer-policy-panel .transfer-availability .loan-duration .segmented {
+  width: 100%;
+}
+.player-management.transfer-policy-panel .transfer-availability .loan-duration button {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.player-management.transfer-policy-panel .transfer-availability > button.market-listing-toggle {
+  background: #153e30;
+  color: #e9eddb;
+  border: 1px solid #769c72;
+  border-radius: 7px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.player-management.transfer-policy-panel
+  .transfer-availability
+  > button.market-listing-toggle[aria-pressed='true'] {
+  background: #e4c866;
+  color: #153e30;
+  border-color: #f8e39c;
+  box-shadow: inset 0 -3px #b29746;
+}
+
+.market-player-card-trigger,
+.market-player-name-trigger {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: inherit;
+  cursor: pointer;
+}
+.market-player-name-trigger:hover {
+  text-decoration: underline;
+}
+.market-player-card-trigger:focus-visible,
+.market-player-name-trigger:focus-visible {
+  outline: 2px solid #e4c866;
+  outline-offset: 3px;
+}
+
+dialog.modal.player-detail-modal.player-card-overlay[open] {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  width: fit-content;
+  height: fit-content;
+  min-height: 0;
+  max-width: calc(100vw - 24px);
+  max-height: calc(100dvh - 24px);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  overflow: visible;
+}
+.player-card-overlay::backdrop {
+  background: #020c08cc;
+  backdrop-filter: blur(3px);
+}
+.player-card-overlay .player-detail-card {
+  margin: 0;
+  padding: 0;
+}
+.player-card-overlay .player-detail-card .player-card {
+  width: min(340px, calc(100vw - 40px), calc((100dvh - 60px) * 0.66));
+  height: auto;
+  aspect-ratio: 2 / 3;
+  margin: 0;
+}
+.player-card-overlay .close-modal {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 5;
+}
+
+.player-card-overlay .player-card .card-label p {
+  font:
+    500 13px/1.5 Arial,
+    sans-serif;
+  color: #f2f5f7;
+  margin: 6px 0;
+}
+.player-card-overlay .player-card .card-label p a {
+  color: #fff0b5;
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.player-card-overlay .player-card .card-label h3 {
+  font-size: 20px;
+  line-height: 1.3;
+}
+.player-card-overlay .player-card .card-label > span {
+  font-size: 10px;
+  color: #e1ebf1;
+}
+
+dialog.player-card-overlay[open] {
+  position: fixed !important;
+  inset: 0 !important;
+  margin: auto !important;
+  padding: 0 !important;
+  width: fit-content !important;
+  height: fit-content !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  max-width: calc(100vw - 24px) !important;
+  max-height: calc(100dvh - 24px) !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  overflow: visible;
+  transform: none !important;
+}
+dialog.player-card-overlay::before,
+dialog.player-card-overlay::after {
+  content: none !important;
+}
+dialog.player-card-overlay .player-detail-card {
+  display: block;
+  width: fit-content;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  border: 0;
+}
+
+.counter-offer-dialog .counter-conversation-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #d8bf6540;
+  color: #ead58b;
+}
+.counter-conversation-header h3 {
+  margin: 4px 0 0;
+  font-size: 18px;
+}
+.counter-conversation-header small {
+  font-size: 10px;
+  letter-spacing: 1px;
+}
+.counter-offer-dialog .counter-coach-message {
+  margin: 16px 0;
+  padding: 14px;
+  background: #092b20;
+  border: 1px solid #45644c;
+  border-radius: 4px 14px 14px;
+  color: #eef3e8;
+}
+.counter-offer-dialog .counter-coach-message strong {
+  font-size: 12px;
+  color: #e7cf80;
+}
+.counter-offer-dialog .counter-coach-message p {
+  color: #edf1e6;
+  line-height: 1.6;
+  margin: 8px 0 0;
+  font-size: 14px;
+}
+.counter-offer-dialog .counter-price-label {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 14px;
+  color: #edf1e6;
+}
+.counter-price-label output {
+  color: #e9d584;
+  font-weight: 800;
+}
+.counter-price-label .money-range {
+  width: 100%;
+}
+.counter-offer-dialog > button {
+  border: 1px solid #bda45f;
+  border-radius: 7px;
+  padding: 10px 14px;
+  background: #153f30;
+  color: #f8edca;
+  cursor: pointer;
+  font-weight: 700;
+}
+.counter-offer-dialog > .counter-send {
+  background: #07885d;
+  border-color: #21b984;
+  color: white;
+}
+
+.counter-offer-dialog {
+  width: min(460px, 100%);
+  height: min(780px, calc(100dvh - 32px));
+  max-height: calc(100dvh - 32px);
+  display: flex;
+  flex-direction: column;
+  padding: 0 0 12px;
+  gap: 0;
+  overflow: hidden;
+  border: 3px double #cbb46e;
+  border-radius: 36px;
+  background: #142b23;
+  box-shadow: 0 20px 65px #0008;
+}
+.counter-phone-status {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 24px;
+  background: #064e49;
+  color: white;
+  font:
+    11px Arial,
+    sans-serif;
+}
+.counter-offer-dialog .counter-conversation-header {
+  padding: 14px;
+  background: #07645c;
+  color: white;
+  flex-shrink: 0;
+}
+.counter-conversation-header h3 {
+  font:
+    700 15px/1.4 Arial,
+    sans-serif;
+}
+.counter-chat-history {
+  flex: 1;
+  min-height: 100px;
+  overflow-y: auto;
+  padding: 14px;
+  background:
+    radial-gradient(#b6b5a633 1px, transparent 1px) 0 0 / 18px 18px,
+    #e9e6de;
+}
+.counter-offer-dialog .counter-coach-message {
+  margin: 0 0 12px;
+  padding: 12px;
+  border: 0;
+  border-radius: 0 13px 13px;
+  background: #fffef7;
+  color: #243d32;
+  box-shadow: 0 1px 2px #0001;
+}
+.counter-offer-dialog .counter-coach-message strong {
+  color: #126358;
+}
+.counter-offer-dialog .counter-coach-message p {
+  color: #243d32;
+  font:
+    13px/1.5 Arial,
+    sans-serif;
+}
+.counter-own-message {
+  margin: 12px 0 12px 24px;
+  padding: 12px;
+  border-radius: 12px 0 12px 12px;
+  background: #ccebd0;
+  color: #193b2c;
+  font:
+    13px/1.5 Arial,
+    sans-serif;
+}
+.counter-offer-dialog .counter-price-label {
+  margin: 14px;
+  flex-shrink: 0;
+}
+.counter-price-label output {
+  font-size: 23px;
+}
+.counter-offer-dialog > button {
+  margin: 5px 14px;
+  flex-shrink: 0;
+}
+
+/* Shared current management presentation for roster list dialogs. */
+dialog[open].squad-roster-management-modal {
+  width: min(1000px, calc(100vw - 24px));
+  height: fit-content !important;
+  min-height: 0 !important;
+  max-height: calc(100dvh - 24px);
+  padding: 18px;
+  gap: 12px;
+}
+.squad-roster-management-modal > .modal-content {
+  flex: 0 1 auto;
+  min-height: 0;
+  padding: 0;
+}
+.squad-roster-management-modal .modal-title {
+  margin: 0 0 12px;
+  font-size: 20px;
+}
+.squad-roster-management-modal .player-management.transfer-policy-panel {
+  min-height: 0;
+  padding: 14px;
+  gap: 12px;
+  background: linear-gradient(135deg, #123c2c, #09271d);
+  border: 1px solid #42634b;
+  border-radius: 12px;
+}
+.squad-roster-management-modal .player-management .management-tabs {
+  margin: 0;
+  padding: 0;
+  gap: 6px;
+  background: transparent;
+  border: 0;
+}
+.squad-roster-management-modal .player-management .management-tabs button {
+  background: transparent;
+  color: #bdcdbf;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 7px 7px 0 0;
+  min-height: 38px;
+}
+.squad-roster-management-modal .player-management .management-tabs button.selected {
+  background: linear-gradient(#73651e70, #51471c30);
+  border-bottom-color: #e9bc39;
+  color: #fff1b4;
+  box-shadow: none;
+}
+.squad-roster-management-modal .player-management > .player-policy-offers {
+  display: none;
+}
+.squad-roster-management-modal .modal-return {
+  margin-top: 12px;
+  flex: 0 0 auto;
+}
+@media (max-width: 760px) {
+  dialog[open].squad-roster-management-modal {
+    inset: 0;
+    margin: auto;
+    padding: 12px;
+    width: calc(100vw - 24px);
+  }
+  .squad-roster-management-modal .player-management.transfer-policy-panel {
+    padding: 10px;
+  }
+  .squad-roster-management-modal .player-management .management-tabs button {
+    font-size: 11px;
+    padding: 8px 5px;
+  }
+}
+
+.player-management.transfer-policy-panel .management-tabs {
+  gap: 4px;
+  margin-block: 0;
+  padding: 0;
+}
+.player-management.transfer-policy-panel .management-tabs button {
+  white-space: nowrap;
+  min-height: 34px;
+  padding: 7px 9px;
+  line-height: 1.2;
+}
+.squad-roster-management-modal .player-management.transfer-policy-panel {
+  gap: 8px;
+}
+.squad-roster-management-modal .player-management.transfer-policy-panel > p:first-child {
+  margin: 0;
+  padding-bottom: 8px;
+}
+.squad-roster-management-modal .player-management.transfer-policy-panel .transfer-availability {
+  margin-top: 0;
+  margin-bottom: 0;
+  padding-block: 8px;
+}
+@media (max-width: 760px) {
+  .squad-roster-management-modal .player-management.transfer-policy-panel .management-tabs button {
+    min-height: 32px;
+    padding: 7px 4px;
+    font-size: 11px;
+    white-space: nowrap;
+  }
+}
+
+.exchange-options label {
+  position: relative;
+  cursor: pointer;
+}
+.exchange-options label > input[type='checkbox'] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+.exchange-options label:has(input:checked) {
+  background: #315a3e;
+  border-color: #e4c866;
+  box-shadow: inset 3px 0 #e4c866;
+}
+.exchange-options label:has(input:focus-visible) {
+  outline: 2px solid #e4c866;
+  outline-offset: 2px;
+}
+.exchange-options label:has(input:disabled):not(:has(input:checked)) {
+  opacity: 0.55;
+  cursor: default;
+}
+.incoming-offers-review .incoming-offer-details .review-exchange-players {
+  display: block;
+  color: #173d2b;
+  line-height: 1.5;
+  font-size: 12px;
+}
+
+.negotiation-chat-dialog .transfer-proposal-composer .exchange-options > label {
+  grid-template-columns: 38px minmax(0, 1fr) max-content;
+  gap: 9px;
+  min-height: 64px;
+  height: auto;
+}
+.negotiation-chat-dialog
+  .transfer-proposal-composer
+  .exchange-options
+  > label
+  > input[type='checkbox'] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  clip-path: inset(50%);
+  overflow: hidden;
+}
+.negotiation-chat-dialog .transfer-proposal-composer .exchange-options > label > .portrait {
+  grid-column: 1;
+  grid-row: 1;
+  width: 38px;
+  height: 42px;
+  position: relative;
+  inset: auto;
+}
+.negotiation-chat-dialog .transfer-proposal-composer .exchange-options > label > span {
+  grid-column: 2;
+  grid-row: 1;
+}
+.negotiation-chat-dialog .transfer-proposal-composer .exchange-options > label > strong {
+  grid-column: 3;
+  grid-row: 1;
+  align-self: center;
+}

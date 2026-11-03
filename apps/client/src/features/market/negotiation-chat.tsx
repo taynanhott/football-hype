@@ -1,3 +1,4 @@
+import { marketValue, transferMoney } from '../../ui/format';
 import { Portrait } from '../players/player-card';
 import { openModalPreservingScroll } from '../../ui/modal-scroll';
 import { GeneratedPerson } from '../../ui/person-avatar';
@@ -49,9 +50,16 @@ export function NegotiationChat({
   );
   const [loanPercent, setLoanPercent] = useState(100);
   const [loanMonths, setLoanMonths] = useState(6);
-  const [exchangeIds, setExchangeIds] = useState<string[]>([]);
+  const [exchangeIds, setExchangeIds] = useState<string[]>(
+    () =>
+      snapshot.state.negotiations
+        .filter((n) => n.playerId === player.id && n.buyerId === club.id && n.status === 'review')
+        .at(-1)?.exchangePlayerIds ?? [],
+  );
   const [exchangeExpanded, setExchangeExpanded] = useState(false);
-  const candidates = exchangeCandidates(snapshot.state, club.id, player.clubId ?? '');
+  const candidates = exchangeCandidates(snapshot.state, club.id, player.clubId ?? '').sort(
+    (a, b) => b.value - a.value || a.player.name.localeCompare(b.player.name, 'pt-BR'),
+  );
   const exchangeValue = candidates
     .filter((c) => exchangeIds.includes(c.player.id))
     .reduce((sum, c) => sum + c.value, 0);
@@ -91,6 +99,18 @@ export function NegotiationChat({
       return () => window.clearTimeout(timer);
     }
   }, [introCount, replyCount, history.length]);
+  const responseKey = JSON.stringify(
+    history.map((n) => [n.id, n.status, n.reply, n.fee, n.exchangePlayerIds, n.exchangeValue]),
+  );
+  const sentResponseKey = useRef(responseKey);
+  useEffect(() => {
+    if (!awaitingReply || responseKey === sentResponseKey.current) return;
+    const timer = window.setTimeout(() => {
+      setReplyCount(history.length);
+      setAwaitingReply(false);
+    }, 1000);
+    return () => window.clearTimeout(timer);
+  }, [responseKey, awaitingReply, history.length]);
   useEffect(() => {
     if (!error) return;
     const timer = window.setTimeout(() => setAwaitingReply(false), 1000);
@@ -164,7 +184,7 @@ export function NegotiationChat({
             )}
             {introCount >= 2 && (
               <div className="chat-bubble incoming">
-                Hoje, o valor de mercado do {player.name} é {currency(player.marketValue.cents)},
+                Hoje, o valor de mercado do {player.name} é {marketValue(player.marketValue.cents)},
                 mas queremos negociar um valor melhor por ele. Vamos ouvir sua proposta.
               </div>
             )}
@@ -312,6 +332,7 @@ export function NegotiationChat({
                     salaryPercent: loanPercent as 50 | 75 | 100,
                   });
                   if (id) {
+                    sentResponseKey.current = responseKey;
                     setAwaitingReply(true);
                     loanCloseTimer.current = window.setTimeout(onClose, 1000);
                   }
@@ -340,12 +361,13 @@ export function NegotiationChat({
                 useGameStore.getState().clearError();
                 setAwaitingReply(true);
                 setExchangeExpanded(false);
-                useGameStore.getState().send({
+                const request = useGameStore.getState().send({
                   type: 'offer',
                   playerId: player.id,
                   fee: value,
                   exchangePlayerIds: exchangeIds,
                 });
+                if (!request) setAwaitingReply(false);
               }}
             >
               <div className="transfer-cash-control">
@@ -435,7 +457,9 @@ export function NegotiationChat({
                               {candidate.position} · {candidate.age} anos · OVR {candidate.overall}
                             </small>
                           </span>
-                          <strong>{currency(credit)}</strong>
+                          <strong>
+                            {'HC$ ' + Math.ceil(credit / 100).toLocaleString('pt-BR')}
+                          </strong>
                         </label>
                       ))
                     ) : (
@@ -443,9 +467,9 @@ export function NegotiationChat({
                     )}
                   </div>
                   <p>
-                    Dinheiro: {currency(value)} · Troca: {currency(exchangeValue)}
+                    Dinheiro: {transferMoney(value)} · Troca: {transferMoney(exchangeValue)}
                     <br />
-                    <strong>Proposta total: {currency(value + exchangeValue)}</strong>
+                    <strong>Proposta total: {transferMoney(value + exchangeValue)}</strong>
                   </p>
                 </details>
               )}

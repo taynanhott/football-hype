@@ -1,3 +1,4 @@
+import { marketValue, transferMoney } from '../../ui/format';
 import { PixelBadge } from '../../ui/pixel-badge';
 import { PlayerModal } from '../players/player-modal';
 import { usePlayerPresentation } from '../../ui/use-player-presentation';
@@ -379,10 +380,11 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
     (selected?.salary.cents ?? 0) * 3,
     negotiation?.minimumSalary ?? selectedContext?.minimumSalary ?? 0,
   );
-  const salaryMaximum = (selected?.salary.cents ?? 0) * 3;
+  const salaryStep = MONEY_STEPS.salary * 1000;
+  const salaryMaximum = Math.floor(((selected?.salary.cents ?? 0) * 3) / salaryStep) * salaryStep;
   const salaryCents = Math.max(
     0,
-    Math.min(salaryMaximum, roundMoney(Number(salary) * 100, MONEY_STEPS.salary)),
+    Math.min(salaryMaximum, roundMoney(Number(salary) * 100, salaryStep)),
   );
   const transferMinimum = 0;
   const transferMaximum = selected?.clubId
@@ -586,22 +588,49 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
                     </header>
                     <div className="offer-body">
                       {player && (
-                        <div className="offer-list-portrait">
+                        <button
+                          type="button"
+                          className="offer-list-portrait market-player-card-trigger"
+                          aria-label={`Abrir carta de ${player?.name}`}
+                          onClick={() => player && setDetailPlayer(player)}
+                        >
                           <Portrait
                             player={player}
                             clubName={seller?.name ?? ''}
                             kit={clubKit(seller)}
                           />
-                        </div>
+                        </button>
                       )}
                       <div className="incoming-offer-details">
-                        <h3>{player?.name ?? 'Jogador'}</h3>
+                        <h3>
+                          <button
+                            type="button"
+                            className="market-player-name-trigger"
+                            onClick={() => player && setDetailPlayer(player)}
+                          >
+                            {player?.name ?? 'Jogador'}
+                          </button>
+                        </h3>
                         <div className="offer-amount">
                           <span>Sua oferta</span>
-                          <strong>{currency(offer.fee)}</strong>
+                          <strong>{transferMoney(offer.fee)}</strong>
+                          {!!offer.exchangePlayerIds?.length && (
+                            <p className="review-exchange-players">
+                              Jogadores oferecidos:{' '}
+                              {offer.exchangePlayerIds
+                                .map(
+                                  (id) =>
+                                    snapshot.state.players.byId[id]?.name ?? 'Jogador indisponível',
+                                )
+                                .join(', ')}
+                              <br />
+                              Crédito na troca: {transferMoney(offer.exchangeValue ?? 0)} · Total:{' '}
+                              {transferMoney(offer.fee + (offer.exchangeValue ?? 0))}
+                            </p>
+                          )}
                           {higherOffer(offer) > offer.fee && (
                             <p className="negative">
-                              Oferta concorrente: <b>{currency(higherOffer(offer))}</b>
+                              Oferta concorrente: <b>{transferMoney(higherOffer(offer))}</b>
                             </p>
                           )}
                         </div>
@@ -698,7 +727,7 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
                       </span>
                     </div>
                     <strong className="market-list-price">
-                      {currency(player.marketValue.cents)}
+                      {'HC$ ' + Math.ceil(player.marketValue.cents / 100).toLocaleString('pt-BR')}
                     </strong>
                     <div className="market-list-interest">
                       <div>
@@ -791,23 +820,36 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
                       </span>
                     </header>
                     <div className="offer-body">
-                      <div className="offer-list-portrait">
+                      <button
+                        type="button"
+                        className="offer-list-portrait market-player-card-trigger"
+                        aria-label={`Abrir carta de ${player.name}`}
+                        onClick={() => setDetailPlayer(player)}
+                      >
                         <Portrait
                           player={player}
                           clubName={seller?.name ?? 'Sem clube'}
                           kit={clubKit(seller)}
                         />
-                      </div>
+                      </button>
                       <div className="incoming-offer-details">
                         <span className="eyebrow">JOGADOR NO MERCADO</span>
-                        <h3>{player.name}</h3>
+                        <h3>
+                          <button
+                            type="button"
+                            className="market-player-name-trigger"
+                            onClick={() => setDetailPlayer(player)}
+                          >
+                            {player.name}
+                          </button>
+                        </h3>
                         <p>
                           {positionLabel(player.position)} · {player.nationality} · {player.age}{' '}
                           anos
                         </p>
                         <div className="offer-amount">
                           <span>Valor de mercado</span>
-                          <strong>{currency(player.marketValue.cents)}</strong>
+                          <strong>{marketValue(player.marketValue.cents)}</strong>
                           <small>Salário atual no clube: {currency(player.salary.cents)}/mês</small>
                         </div>
                         <InterestBars context={context} />
@@ -1037,7 +1079,7 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
                         aria-label={salaryStage ? 'Oferta salarial' : 'Oferta de transferência'}
                         min={0}
                         max={salaryStage ? salaryMaximum : feeMaximum}
-                        step={salaryStage ? MONEY_STEPS.salary : MONEY_STEPS.general}
+                        step={salaryStage ? salaryStep : MONEY_STEPS.general}
                         value={salaryStage ? salaryCents : feeCents}
                         disabled={busy}
                         onChange={(e) =>

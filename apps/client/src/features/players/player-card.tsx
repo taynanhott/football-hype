@@ -1,3 +1,4 @@
+import { marketValue } from '../../ui/format';
 import { positionLabel } from '../../ui/position-label';
 import { Overall } from './overall';
 import { potentialStars } from '@football/domain';
@@ -5,7 +6,6 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import type { PlayerSnapshot, ClubKit } from '@football/shared';
 import { Portrait } from './pixel-portrait';
-import { currency } from '../../ui/format';
 
 export { Portrait } from './pixel-portrait';
 export function PlayerCard({
@@ -181,7 +181,7 @@ export function PlayerCard({
               ['Time', clubName],
               ['Idade', `${player.age} anos`],
               ['Nacionalidade', player.nationality],
-              ['Valor de mercado', currency(player.marketValue.cents)],
+              ['Valor de mercado', marketValue(player.marketValue.cents)],
             ].map(([label, value]) => (
               <div key={String(label)}>
                 <dt>{label}</dt>

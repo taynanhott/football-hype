@@ -1,3 +1,4 @@
+import { marketValue } from '../../ui/format';
 import { useCollapsedPlayerCategories } from '../../ui/use-collapsed-player-categories';
 import { usePlayerPositionFilter } from '../../ui/use-player-position-filter';
 import { Fragment } from 'react';
@@ -323,7 +324,7 @@ export function ClubInspection({
                     <div className="squad-list-player-facts">
                       <div className="squad-list-facts-line">
                         <span>
-                          Preço <b>{currency(player.marketValue.cents)}</b>
+                          Preço <b>{marketValue(player.marketValue.cents)}</b>
                         </span>
                         <span>
                           Salário <b>{currency(player.salary.cents)}</b> · Contrato{' '}

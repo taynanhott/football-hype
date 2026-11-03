@@ -419,8 +419,6 @@ export function manageClub({
   club,
   command,
   eventId,
-  userId,
-  now,
 }: CommandContext): Result<CommandOutcome> {
   if (command.type !== 'management')
     return failure(domainError('VALIDATION_ERROR', 'Comando inválido'));
@@ -489,14 +487,7 @@ export function manageClub({
       },
     };
     if (!accepted) return done(next, 'O clube considerou o aumento alto e retirou a proposta');
-    return manageClub({
-      state: next,
-      club,
-      command: { ...command, action: 'accept' },
-      eventId,
-      userId,
-      now,
-    });
+    return done(next, 'O clube aceitou a contraoferta e atualizou o valor da proposta');
   }
   if (command.action === 'accept-transfer' || command.action === 'reject-transfer') {
     const offer = state.negotiations.find(
@@ -954,7 +945,22 @@ export function manageClub({
       ...management.financialPlans,
       [buyer.id]: { ...buyerPlan, transfer: Math.max(0, buyerPlan.transfer - offer.fee) },
     };
-  const context = transferContext(state, sold, buyer, offer.fee);
+  // Accepting an unsolicited bid is explicit permission to sell this player.
+  const context = transferContext(
+    {
+      ...state,
+      management: {
+        ...management,
+        policies: {
+          ...management.policies,
+          [sold.id]: { ...management.policies?.[sold.id], available: true },
+        },
+      },
+    },
+    sold,
+    buyer,
+    offer.fee,
+  );
   if (context.blocked) return fail('A política atual impede esta transferência');
   management.offers = management.offers?.map((o) =>
     o.id === offer.id ? { ...o, status: 'accepted' } : o,
@@ -1058,6 +1064,17 @@ export function settleMonthly(state: WorldState, at: number): WorldState {
   };
 }
 export function generateIncomingOffers(state: WorldState): WorldState {
+  // Stable per round so retries cannot reroll interest or create extra offers.
+  const interest = (key: string) => {
+    let hash = 2166136261;
+    for (const char of `${state.createdAt}:${state.round}:${key}`) {
+      hash = Math.imul(hash ^ char.charCodeAt(0), 16777619);
+    }
+    hash ^= hash >>> 16;
+    hash = Math.imul(hash, 0x45d9f3b);
+    hash ^= hash >>> 16;
+    return (hash >>> 0) / 4294967296;
+  };
   const offers = [...(state.management?.offers ?? [])];
   const humanClubIds = new Set(state.participants.map((p) => p.clubId));
   const buyers = Object.values(state.clubs.byId)
@@ -1066,16 +1083,33 @@ export function generateIncomingOffers(state: WorldState): WorldState {
   for (const member of state.participants) {
     const seller = state.clubs.byId[member.clubId];
     if (!seller) continue;
-    for (const id of seller.playerIds) {
+    const activity = interest(`activity:${seller.id}`);
+    const limit = activity < 0.55 ? 0 : activity < 0.85 ? 1 : activity < 0.97 ? 2 : 3;
+    let generated = offers.filter(
+      (o) =>
+        o.sellerId === seller.id &&
+        (o.id.startsWith(`offer:${state.round}:`) || o.id.startsWith(`loan:${state.round}:`)),
+    ).length;
+    const candidates = [...seller.playerIds].sort(
+      (a, b) => interest(`order:${a}`) - interest(`order:${b}`),
+    );
+    for (const id of candidates) {
+      if (generated >= limit) break;
       const player = state.players.byId[id];
       const policy = state.management?.policies?.[id];
+      if (!player || state.management?.loans?.[id]) continue;
+      const unsolicited = !policy?.available && !policy?.loanAvailable;
+      // One rare club-level opportunity avoids multiplying the chance by squad size.
+      if (unsolicited && interest(`unsolicited:${seller.id}`) >= 0.08) continue;
+      if (offers.some((o) => o.playerId === id && o.status === 'pending')) continue;
+      if (interest(`player:${id}`) > (unsolicited ? 0.06 : 0.4)) continue;
+      // Let interest cool after a proposal, including rejected or expired offers.
       if (
-        !player ||
-        state.management?.loans?.[id] ||
-        (!policy?.available && !policy?.loanAvailable)
+        offers.some(
+          (o) => o.playerId === id && (o.offeredAt ?? 0) > state.lastProcessedAt - 7 * 86400000,
+        )
       )
         continue;
-      if (offers.some((o) => o.playerId === id && o.status === 'pending')) continue;
       for (const buyer of buyers) {
         const positionPlayers = buyer.playerIds.flatMap((pid) => {
           const p = state.players.byId[pid];
@@ -1110,11 +1144,32 @@ export function generateIncomingOffers(state: WorldState): WorldState {
             status: 'pending',
             offeredAt: state.lastProcessedAt,
           });
+          generated++;
           break;
         }
-        const context = transferContext(state, player, buyer);
+        const context = transferContext(
+          unsolicited
+            ? {
+                ...state,
+                management: {
+                  ...state.management,
+                  policies: { ...state.management?.policies, [id]: { ...policy, available: true } },
+                },
+              }
+            : state,
+          player,
+          buyer,
+        );
         if (context.blocked) continue;
-        const fee = context.minimumFee,
+        const fee = unsolicited
+            ? ceilMoney(
+                Math.max(
+                  context.minimumFee,
+                  player.marketValue.cents * (1.25 + interest(`premium:${id}`) * 0.25),
+                ),
+                MONEY_STEPS.transfer,
+              )
+            : context.minimumFee,
           salary = context.minimumSalary;
         const payroll = buyer.playerIds.reduce(
           (sum, pid) => sum + (state.players.byId[pid]?.salary.cents ?? 0),
@@ -1139,6 +1194,7 @@ export function generateIncomingOffers(state: WorldState): WorldState {
           status: 'pending',
           offeredAt: state.lastProcessedAt,
         });
+        generated++;
         break;
       }
     }

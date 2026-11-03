@@ -1,3 +1,4 @@
+import { marketValue } from '../../ui/format';
 import { PixelBadge } from '../../ui/pixel-badge';
 import { useCollapsedPlayerCategories } from '../../ui/use-collapsed-player-categories';
 import { usePlayerPositionFilter } from '../../ui/use-player-position-filter';
@@ -30,7 +31,7 @@ const subscribeMobile = (change: () => void) => {
 };
 const mobileActions = [
   { id: 'policy', label: 'Transferências' },
-  { id: 'effects', label: 'Bônus e penalidades' },
+  { id: 'effects', label: 'Efeitos' },
   { id: 'renew', label: 'Renegociação' },
 ] as const;
 
@@ -281,7 +282,7 @@ export function SquadPlanning({ snapshot, club }: ViewProps) {
                           <div className="squad-list-player-facts">
                             <div className="squad-list-facts-line">
                               <span>
-                                Preço <b>{currency(player.marketValue.cents)}</b>
+                                Preço <b>{marketValue(player.marketValue.cents)}</b>
                               </span>
                               <span>
                                 Salário <b>{currency(player.salary.cents)}</b> · Contrato{' '}
@@ -511,7 +512,7 @@ export function SquadPlanning({ snapshot, club }: ViewProps) {
       </section>
       {selectedPlayerId && preview.state.players.byId[selectedPlayerId] && (
         <PlayerModal
-          className="squad-action-modal"
+          className="squad-action-modal squad-roster-management-modal"
           titleIcon={
             <PixelBadge
               name={club.name}

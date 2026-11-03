@@ -1,7 +1,9 @@
+import { CounterOfferChat } from './counter-offer-chat';
+import { marketValue, transferMoney } from '../../ui/format';
 import { positionLabel } from '../../ui/position-label';
 import { MoneyRange } from '../../ui/money-range';
-import { useState } from 'react';
-import { ceilMoney, clubKit, MONEY_STEPS, type PlayerSnapshot } from '@football/shared';
+import { useLayoutEffect, useRef, useState } from 'react';
+import { ceilMoney, roundMoney, clubKit, MONEY_STEPS, type PlayerSnapshot } from '@football/shared';
 import {
   contractEnd,
   effectiveOverall,
@@ -13,6 +15,7 @@ import type { ViewProps } from '../../ui/view-props';
 import { useGameStore } from '../../store/game-store';
 import { currency } from '../../ui/format';
 import { PlayerCard, Portrait } from './player-card';
+import { PlayerDetails } from './player-details';
 import { ClubBadge, Icon } from '../../ui/icons';
 
 export function PlayerManagement({
@@ -54,12 +57,19 @@ export function PlayerManagement({
         offer.sellerId === player.clubId &&
         offer.status === 'pending',
     ) ?? false;
-  const salaryMinimum = ceilMoney(player.salary.cents * 0.5, MONEY_STEPS.salary);
-  const salaryMaximum = player.salary.cents * 2;
+  const salaryStep = MONEY_STEPS.salary * 1000;
+  const salaryMinimum = ceilMoney(player.salary.cents * 0.5, salaryStep);
+  const salaryMaximum = Math.max(
+    salaryMinimum,
+    Math.floor((player.salary.cents * 2) / salaryStep) * salaryStep,
+  );
   const salaryCents =
     salaryDraft.base === player.salary.cents
-      ? Math.max(salaryMinimum, Math.min(salaryMaximum, salaryDraft.value))
-      : player.salary.cents;
+      ? Math.max(salaryMinimum, Math.min(salaryMaximum, roundMoney(salaryDraft.value, salaryStep)))
+      : Math.max(
+          salaryMinimum,
+          Math.min(salaryMaximum, roundMoney(player.salary.cents, salaryStep)),
+        );
   return (
     <section className="player-management transfer-policy-panel" data-section={section}>
       <p className={days <= 180 ? 'negative' : ''}>
@@ -92,7 +102,7 @@ export function PlayerManagement({
           {(
             [
               { id: 'policy', label: 'Transferências' },
-              { id: 'effects', label: 'Bônus e penalidades' },
+              { id: 'effects', label: 'Efeitos' },
               { id: 'renew', label: 'Renegociação' },
             ] as const
           ).map((item) => (
@@ -140,61 +150,46 @@ export function PlayerManagement({
       {section === 'policy' && (
         <fieldset className="transfer-availability">
           <legend>Disponibilidade</legend>
-          <label className="switch-row market-listing-toggle">
-            <input
-              type="checkbox"
-              checked={!!(policy.available || policy.loanAvailable)}
-              disabled={busy || Boolean(state.management?.loans?.[player.id])}
-              onChange={(event) =>
-                send({
-                  type: 'management',
-                  action: 'policy',
-                  playerId: player.id,
-                  available: event.target.checked,
-                  loanAvailable: event.target.checked && !!policy.loanAvailable,
-                  loanMonths: policy.loanMonths ?? 6,
-                })
-              }
-            />
+          <button
+            type="button"
+            className="market-listing-toggle"
+            aria-pressed={!!(policy.available || policy.loanAvailable)}
+            disabled={busy || Boolean(state.management?.loans?.[player.id])}
+            onClick={() =>
+              send({
+                type: 'management',
+                action: 'policy',
+                playerId: player.id,
+                available: !(policy.available || policy.loanAvailable),
+                loanAvailable: false,
+                loanMonths: policy.loanMonths ?? 6,
+              })
+            }
+          >
             No mercado
-          </label>
-          {(policy.available || policy.loanAvailable) && (
-            <button
-              type="button"
-              className="loan-availability-toggle"
-              aria-pressed={!!policy.loanAvailable}
-              disabled={busy || !loan.eligible || Boolean(state.management?.loans?.[player.id])}
-              onClick={() =>
-                send({
-                  type: 'management',
-                  action: 'policy',
-                  playerId: player.id,
-                  available: true,
-                  loanAvailable: !policy.loanAvailable,
-                  loanMonths: policy.loanMonths ?? 6,
-                })
-              }
-            >
-              <Icon name="calendar" size={18} />
-              <span>Disponível para empréstimo</span>
-              <b>{policy.loanAvailable ? 'Sim' : 'Não'}</b>
-            </button>
-          )}
-          {!loan.eligible && <small>Empréstimo exige mais de 6 meses restantes de contrato.</small>}
-          {policy.loanAvailable && (
+          </button>
+          {
             <div className="loan-duration">
-              <span>Prazo autorizado</span>
+              <span>Disponível pra Empréstimo</span>
               <div className="segmented">
                 {([6, 12] as const).map((months) => (
                   <button
                     key={months}
                     className={
+                      !!policy.loanAvailable &&
                       (Math.min(policy.loanMonths ?? 12, loan.maxMonths) >= 12 ? 12 : 6) === months
                         ? 'selected'
                         : ''
                     }
-                    disabled={busy || months > loan.maxMonths}
+                    disabled={
+                      busy ||
+                      !(policy.available || policy.loanAvailable) ||
+                      !loan.eligible ||
+                      months > loan.maxMonths ||
+                      Boolean(state.management?.loans?.[player.id])
+                    }
                     aria-pressed={
+                      !!policy.loanAvailable &&
                       (Math.min(policy.loanMonths ?? 12, loan.maxMonths) >= 12 ? 12 : 6) === months
                     }
                     onClick={() =>
@@ -203,16 +198,22 @@ export function PlayerManagement({
                         action: 'policy',
                         playerId: player.id,
                         ...policy,
+                        available: true,
+                        loanAvailable: !(
+                          policy.loanAvailable &&
+                          (Math.min(policy.loanMonths ?? 12, loan.maxMonths) >= 12 ? 12 : 6) ===
+                            months
+                        ),
                         loanMonths: months,
                       })
                     }
                   >
-                    {months === 6 ? '6 meses' : '1 temporada'}
+                    {months === 6 ? '6 meses' : '1 ano'}
                   </button>
                 ))}
               </div>
             </div>
-          )}
+          }
         </fieldset>
       )}
       {section === 'renew' && terms.reason && (
@@ -239,7 +240,7 @@ export function PlayerManagement({
             <MoneyRange
               min={salaryMinimum}
               max={salaryMaximum}
-              step={MONEY_STEPS.salary}
+              step={salaryStep}
               value={salaryCents}
               disabled={busy || salaryMaximum === 0}
               onChange={(e) =>
@@ -291,7 +292,7 @@ export function PlayerManagement({
           </button>
         </div>
       )}
-      {section === 'policy' && !hideTabs && state.clubs.byId[player.clubId ?? ''] && (
+      {section === 'policy' && state.clubs.byId[player.clubId ?? ''] && (
         <div className="squad-inline-offers">
           <IncomingOffers
             snapshot={snapshot}
@@ -321,8 +322,36 @@ export function IncomingOffers({
   playerId,
 }: Pick<ViewProps, 'snapshot' | 'club'> &
   Partial<Pick<ViewProps, 'center' | 'stadium'>> & { playerId?: string }) {
-  const [counter, setCounter] = useState<{ id: string; fee: number } | null>(null);
+  const [counter, setCounter] = useState<{ id: string; fee: number; submitted?: boolean } | null>(
+    null,
+  );
   const presentation = 'list' as const;
+  const [detailPlayer, setDetailPlayer] = useState<PlayerSnapshot | null>(null);
+  const offersList = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const list = offersList.current;
+    if (!playerId || !list) return;
+    const mobile = window.matchMedia('(max-width: 760px)');
+    const measure = () => {
+      const items = Array.from(list.children) as HTMLElement[];
+      const visibleCount = mobile.matches ? 2 : 3;
+      if (items.length <= visibleCount) {
+        list.style.maxHeight = '';
+        return;
+      }
+      const gap = parseFloat(getComputedStyle(list).rowGap) || 0;
+      list.style.maxHeight = `${items.slice(0, visibleCount).reduce((sum, item) => sum + item.getBoundingClientRect().height, 0) + gap * (visibleCount - 1)}px`;
+    };
+    const observer = new ResizeObserver(measure);
+    observer.observe(list);
+    Array.from(list.children).forEach((item) => observer.observe(item));
+    mobile.addEventListener('change', measure);
+    measure();
+    return () => {
+      observer.disconnect();
+      mobile.removeEventListener('change', measure);
+    };
+  });
   const send = useGameStore((s) => s.send),
     busy = useGameStore((s) => s.busy);
   const offers =
@@ -345,50 +374,56 @@ export function IncomingOffers({
       ? [player]
       : [];
   });
+  const counterSource = counter
+    ? (snapshot.state.management?.offers?.find((o) => o.id === counter.id) ??
+      snapshot.state.negotiations.find((n) => n.id === counter.id))
+    : undefined;
+  const counterBuyer = counterSource ? snapshot.state.clubs.byId[counterSource.buyerId] : undefined;
+  const counterHuman =
+    !!counterBuyer && snapshot.state.participants.some((p) => p.clubId === counterBuyer.id);
+  const counterResult = !counter?.submitted
+    ? ''
+    : counterHuman
+      ? 'Vou analisar sua contraoferta e retorno com uma decisão.'
+      : counterSource?.status === 'rejected'
+        ? 'Não conseguimos chegar a esse valor. Retiramos nossa proposta. Obrigado pela atenção!'
+        : counterSource?.fee === counter.fee
+          ? 'Combinado! Aceitamos o valor pedido e atualizamos nossa proposta. Aguardo sua confirmação.'
+          : 'Aguardando resposta do técnico…';
   return (
     <section className="incoming-offers" data-presentation={presentation}>
+      {detailPlayer && (
+        <PlayerDetails
+          player={detailPlayer}
+          club={snapshot.state.clubs.byId[detailPlayer.clubId ?? '']}
+          onClose={() => setDetailPlayer(null)}
+        />
+      )}
       {counter && (
-        <div className="counter-offer-backdrop">
-          <section
-            className="counter-offer-dialog"
-            role="dialog"
-            aria-modal="true"
-            aria-label="Contra oferta"
-          >
-            <h3>Negociar transferência</h3>
-            <label>
-              Valor pedido (R$)
-              <input
-                type="number"
-                min="1"
-                step="1000"
-                value={counter.fee / 100}
-                onChange={(event) =>
-                  setCounter({ ...counter, fee: Math.round(Number(event.target.value) * 100) })
-                }
-              />
-            </label>
-            <p>
-              O clube receberá o valor pedido. Clubes automáticos podem fechar a compra ou retirar a
-              proposta.
-            </p>
-            <button
-              disabled={busy || counter.fee <= 0}
-              onClick={() => {
-                send({
-                  type: 'management',
-                  action: 'counter-offer',
-                  offerId: counter.id,
-                  fee: counter.fee,
-                });
-                setCounter(null);
-              }}
-            >
-              Enviar contraoferta
-            </button>
-            <button onClick={() => setCounter(null)}>Voltar</button>
-          </section>
-        </div>
+        <CounterOfferChat
+          buyer={counterBuyer}
+          playerName={
+            counterSource
+              ? (snapshot.state.players.byId[counterSource.playerId]?.name ?? 'seu jogador')
+              : 'seu jogador'
+          }
+          originalFee={counterSource?.fee ?? 0}
+          fee={counter.fee}
+          submitted={!!counter.submitted}
+          result={counterResult}
+          busy={busy}
+          onValue={(fee) => setCounter({ ...counter, fee })}
+          onClose={() => setCounter(null)}
+          onSend={() => {
+            const request = send({
+              type: 'management',
+              action: 'counter-offer',
+              offerId: counter.id,
+              fee: counter.fee,
+            });
+            if (request) setCounter({ ...counter, submitted: true });
+          }}
+        />
       )}
       {offers.length > 0 && (
         <div className="incoming-offers-heading">
@@ -412,11 +447,11 @@ export function IncomingOffers({
           </a>
         </div>
       )}
-      <div className="incoming-offers-grid">
+      <div className="incoming-offers-grid" ref={offersList}>
         {humanOffers.map((n) => (
           <article className="incoming-offer human-transfer-offer" key={n.id}>
             <h3>
-              {snapshot.state.players.byId[n.playerId]?.name} · {currency(n.fee)}
+              {snapshot.state.players.byId[n.playerId]?.name} · {transferMoney(n.fee)}
             </h3>
             {Boolean(n.exchangePlayerIds?.length) && (
               <p>
@@ -424,8 +459,8 @@ export function IncomingOffers({
                 {n.exchangePlayerIds
                   ?.map((id) => snapshot.state.players.byId[id]?.name ?? 'Indisponível')
                   .join(', ')}{' '}
-                · Crédito {currency(n.exchangeValue ?? 0)} · Total{' '}
-                {currency(n.fee + (n.exchangeValue ?? 0))}
+                · Crédito {transferMoney(n.exchangeValue ?? 0)} · Total{' '}
+                {transferMoney(n.fee + (n.exchangeValue ?? 0))}
               </p>
             )}
             <p>
@@ -470,6 +505,62 @@ export function IncomingOffers({
           const player = snapshot.state.players.byId[o.playerId];
           const buyer = snapshot.state.clubs.byId[o.buyerId];
           const difference = player ? o.fee - player.marketValue.cents : 0;
+          if (playerId)
+            return (
+              <article className="squad-proposal" key={o.id}>
+                <div className="squad-proposal-club">
+                  <ClubBadge
+                    name={buyer?.name ?? 'Clube interessado'}
+                    kit={clubKit(buyer)}
+                    size={30}
+                  />
+                  <div>
+                    <strong>{buyer?.name ?? 'Clube interessado'}</strong>
+                    <small>
+                      {o.kind === 'loan'
+                        ? 'Proposta de empréstimo'
+                        : 'Proposta de compra definitiva'}
+                    </small>
+                  </div>
+                </div>
+                <div className="squad-proposal-value">
+                  <small>
+                    {o.kind === 'loan' ? 'Salário pago pelo clube / mês' : 'Valor da compra'}
+                  </small>
+                  <strong>{o.kind === 'loan' ? currency(o.salary) : transferMoney(o.fee)}</strong>
+                  <small>
+                    {o.kind === 'loan'
+                      ? `${o.months} meses · ${o.salaryPercent}% do salário`
+                      : 'Pagamento à vista'}
+                  </small>
+                </div>
+                <div className="squad-proposal-actions">
+                  <button
+                    disabled={busy}
+                    onClick={() => send({ type: 'management', action: 'accept', offerId: o.id })}
+                  >
+                    Aceitar
+                  </button>
+                  {o.kind !== 'loan' && (
+                    <button
+                      className="squad-proposal-counter"
+                      disabled={busy}
+                      onClick={() => setCounter({ id: o.id, fee: Math.ceil(o.fee * 1.1) })}
+                    >
+                      Contraoferta
+                    </button>
+                  )}
+                  <button
+                    className="squad-proposal-reject"
+                    aria-label={`Recusar proposta de ${buyer?.name ?? 'clube interessado'}`}
+                    disabled={busy}
+                    onClick={() => send({ type: 'management', action: 'reject', offerId: o.id })}
+                  >
+                    Recusar
+                  </button>
+                </div>
+              </article>
+            );
           return (
             <article
               className={`incoming-offer ${o.kind === 'loan' ? 'loan-offer' : ''}`}
@@ -508,9 +599,14 @@ export function IncomingOffers({
               <div className="offer-body">
                 {player &&
                   (presentation === 'list' ? (
-                    <div className="offer-list-portrait">
+                    <button
+                      type="button"
+                      className="offer-list-portrait market-player-card-trigger"
+                      aria-label={`Abrir carta de ${player.name}`}
+                      onClick={() => setDetailPlayer(player)}
+                    >
                       <Portrait player={player} clubName={club.name} kit={clubKit(club)} />
-                    </div>
+                    </button>
                   ) : (
                     <PlayerCard
                       player={player}
@@ -528,7 +624,16 @@ export function IncomingOffers({
                       {o.months} meses · {o.salaryPercent}% do salário ({currency(o.salary)}/mês)
                     </p>
                   )}
-                  <h3>{player?.name ?? 'Jogador indisponível'}</h3>
+                  <h3>
+                    <button
+                      type="button"
+                      className="market-player-name-trigger"
+                      disabled={!player}
+                      onClick={() => player && setDetailPlayer(player)}
+                    >
+                      {player?.name ?? 'Jogador indisponível'}
+                    </button>
+                  </h3>
                   {player && (
                     <p>
                       {positionLabel(player.position)} · {player.age} anos · {club.name}
@@ -538,10 +643,10 @@ export function IncomingOffers({
                     <span>
                       {o.kind === 'loan' ? 'Salário pago pelo tomador' : 'Valor oferecido'}
                     </span>
-                    <strong>{currency(o.kind === 'loan' ? o.salary : o.fee)}</strong>
+                    <strong>{o.kind === 'loan' ? currency(o.salary) : transferMoney(o.fee)}</strong>
                     {player && (
                       <small>
-                        Valor de mercado: {currency(player.marketValue.cents)}
+                        Valor de mercado: {marketValue(player.marketValue.cents)}
                         <br />
                         Salário atual no clube: {currency(player.salary.cents)}/mês
                       </small>

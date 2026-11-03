@@ -3,6 +3,7 @@ import {
   clubSchema,
   domainLimitsSchema,
   leagueSchema,
+  matchResultSchema,
   normalizedSchema,
   playerSchema,
   stadiumSchema,
@@ -18,6 +19,25 @@ import {
 } from '../../../tests/fixtures/domain.js';
 
 describe('contratos de fronteira', () => {
+  it.each([0, 4500, 20000, 5000000, 55000000])(
+    'preserva o preço histórico de ingresso %i sem aplicar os limites atuais',
+    (ticketPriceCents) => {
+      const result = {
+        fixtureId: 'historical-match',
+        homeGoals: 1,
+        awayGoals: 0,
+        attendance: 100,
+        ticketPriceCents,
+        revenue: 0,
+        seed: 1,
+        scorers: [],
+      };
+      expect(matchResultSchema.parse(result).ticketPriceCents).toBe(ticketPriceCents);
+      expect(matchResultSchema.safeParse({ ...result, ticketPriceCents: -1 }).success).toBe(false);
+      expect(matchResultSchema.safeParse({ ...result, ticketPriceCents: 1.5 }).success).toBe(false);
+    },
+  );
+
   it.each([
     { schema: playerSchema, input: playerInput() },
     { schema: clubSchema, input: clubInput() },

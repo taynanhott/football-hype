@@ -206,7 +206,16 @@ describe('contratos e negociação', () => {
         },
       },
     };
-    state = generateIncomingOffers(state);
+    const quantities: number[] = [];
+    const baseState = state;
+    for (let round = 0; round < 100; round++) {
+      const generated = generateIncomingOffers({ ...baseState, round });
+      quantities.push(generated.management?.offers?.length ?? 0);
+      if (generated.management?.offers?.some((o) => o.playerId === player.id)) state = generated;
+    }
+    expect(quantities).toContain(0);
+    expect(quantities.some((count) => count > 0)).toBe(true);
+    expect(generateIncomingOffers(state).management?.offers).toEqual(state.management?.offers);
     const offer = state.management?.offers?.find((o) => o.playerId === player.id);
     if (!offer) throw new Error('Proposta esperada ausente');
     expect(offer).toBeTruthy();

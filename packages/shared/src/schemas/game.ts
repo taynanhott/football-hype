@@ -87,7 +87,8 @@ export const matchResultSchema = z.strictObject({
   awayGoals: countSchema,
   penalties: z.object({ home: countSchema, away: countSchema }).optional(),
   attendance: countSchema,
-  ticketPriceCents: ticketAmountSchema.optional(),
+  // Historical prices must retain their original value, even after pricing rules change.
+  ticketPriceCents: countSchema.optional(),
   revenue: gameAmountSchema,
   seed: z.number().int(),
   startedAt: countSchema.optional(),
