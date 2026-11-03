@@ -953,7 +953,12 @@ export function manageClub({
         ...management,
         policies: {
           ...management.policies,
-          [sold.id]: { ...management.policies?.[sold.id], available: true },
+          [sold.id]: {
+            rivals: true,
+            interest: 75,
+            ...management.policies?.[sold.id],
+            available: true,
+          },
         },
       },
     },
@@ -1153,7 +1158,10 @@ export function generateIncomingOffers(state: WorldState): WorldState {
                 ...state,
                 management: {
                   ...state.management,
-                  policies: { ...state.management?.policies, [id]: { ...policy, available: true } },
+                  policies: {
+                    ...state.management?.policies,
+                    [id]: { rivals: true, interest: 75, ...policy, available: true },
+                  },
                 },
               }
             : state,
