@@ -1,3 +1,4 @@
+import { CountryFlag } from '../../ui/country-flag';
 import { marketValue, transferMoney } from '../../ui/format';
 import { PixelBadge } from '../../ui/pixel-badge';
 import { PlayerModal } from '../players/player-modal';
@@ -844,8 +845,8 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
                           </button>
                         </h3>
                         <p>
-                          {positionLabel(player.position)} · {player.nationality} · {player.age}{' '}
-                          anos
+                          {positionLabel(player.position)} ·{' '}
+                          {<CountryFlag country={player.nationality} />} · {player.age} anos
                         </p>
                         <div className="offer-amount">
                           <span>Valor de mercado</span>

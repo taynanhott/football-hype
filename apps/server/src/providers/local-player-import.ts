@@ -97,7 +97,33 @@ export function convertLocalPlayers(
   input: unknown,
   metadata: unknown,
   excludedIds: readonly number[] = [],
+  extras?: unknown,
 ): { dataset: WorldDataset; report: Record<string, unknown> } {
+  const exported = z
+    .object({
+      registrosJogadores: z
+        .record(
+          z.string(),
+          z.object({
+            padraoCalculado: z
+              .object({
+                ovr: z.number().int().min(1).max(99),
+                pot: z.number().int().min(1).max(99),
+                mv: z.number().finite().nonnegative(),
+                sal: z.number().finite().nonnegative(),
+              })
+              .optional(),
+          }),
+        )
+        .default({}),
+    })
+    .parse(extras ?? {});
+  const economicsById = new Map(
+    Object.entries(exported.registrosJogadores)
+      .filter(([id]) => /^\d+$/.test(id))
+      .map(([id, record]) => [stableId(32, Number(id)), record.padraoCalculado]),
+  );
+  let sourceEconomics = 0;
   const inactive: { id: number; reason: string }[] = [];
   const raw = z.record(z.string(), z.unknown()).parse(input),
     meta = metaSchema.parse(metadata),
@@ -236,7 +262,7 @@ export function convertLocalPlayers(
         Number((raw.nums as Record<string, unknown> | undefined)?.[row.id]) || (index % 99) + 1,
       ),
     ),
-    // The source wage is daily; game contracts store a fixed 30-day monthly wage.
+    // Legacy fallback only; complete exports below supply the source daily wage.
     salary: {
       cents: Math.ceil((row.overall * row.overall * 100 * 30 * salaryScale) / 5000000) * 5000000,
       currency: 'BRL',
@@ -385,6 +411,19 @@ export function convertLocalPlayers(
     const owner = clubs.find((club) => normal(club.name) === normal(parsed.data.club));
     if (owner) players.push({ ...player(parsed.data, null, 0), academyClubId: owner.id });
   }
+  for (let index = 0; index < players.length; index++) {
+    const current = players[index]!;
+    const details = economicsById.get(current.id);
+    if (!details) continue;
+    sourceEconomics++;
+    players[index] = {
+      ...current,
+      overall: details.ovr,
+      potential: Math.max(details.ovr, details.pot),
+      marketValue: { ...current.marketValue, cents: Math.round(details.mv * 100) },
+      salary: { ...current.salary, cents: Math.round(details.sal * 30 * 100) },
+    };
+  }
   const dataset = worldDatasetSchema.parse({
     clubs: normalized(clubs),
     players: normalized(players),
@@ -398,6 +437,8 @@ export function convertLocalPlayers(
     dataset,
     report: {
       players: players.length,
+      sourceEconomics,
+      salaryPeriod: 'Source daily salary converted to a fixed 30-day month',
       clubs: clubs.length,
       freeAgents: free.length,
       duplicates: duplicates.length,

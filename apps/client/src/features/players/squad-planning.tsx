@@ -1,17 +1,15 @@
-import { marketValue } from '../../ui/format';
+import { CountryFlag } from '../../ui/country-flag';
+import { shortMoney } from '../../ui/format';
 import { PixelBadge } from '../../ui/pixel-badge';
 import { useCollapsedPlayerCategories } from '../../ui/use-collapsed-player-categories';
-import { usePlayerPositionFilter } from '../../ui/use-player-position-filter';
-import { usePlayerPresentation } from '../../ui/use-player-presentation';
 import {
   compareFieldPosition,
   playerCategoryHeading,
   playerPositionCategory,
 } from './field-position-order';
-import { currency } from '../../ui/format';
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import { clubKit } from '@football/shared';
-import { temporaryModifiers, renewalTerms, contractEnd } from '@football/domain';
+import { renewalTerms, contractEnd } from '@football/domain';
 import type { ViewProps } from '../../ui/view-props';
 import { useGameStore } from '../../store/game-store';
 
@@ -36,59 +34,12 @@ const mobileActions = [
 ] as const;
 
 export function SquadPlanning({ snapshot, club }: ViewProps) {
-  const [view, setView] = usePlayerPresentation();
-  const [position, setPosition] = usePlayerPositionFilter('squad');
+  const view = 'list';
+  const [position, setPosition] = useState('ALL');
+  const [order, setOrder] = useState('position');
+  const [rosterTab, setRosterTab] = useState('players');
   const [collapsedList, toggleListCategory] = useCollapsedPlayerCategories('squad');
   const mobile = useSyncExternalStore(subscribeMobile, mobileSnapshot, () => false);
-  const [mobileExpanded, setExpanded] = useState<string[]>([]);
-  const [desktopCollapsed, setDesktopCollapsed] = useState<string[]>([]);
-  const expanded = mobile
-    ? mobileExpanded
-    : [
-        'Goleiros',
-        'Zagueiros',
-        'Laterais',
-        'Volantes',
-        'Meias',
-        'Pontas',
-        'Atacantes',
-        'Outros',
-      ].filter((category) => !desktopCollapsed.includes(category));
-  function toggleCategory(category: string) {
-    if (!mobile) {
-      setDesktopCollapsed((previous) =>
-        previous.includes(category)
-          ? previous.filter((item) => item !== category)
-          : [...previous, category],
-      );
-      return;
-    }
-    const opening = !expanded.includes(category);
-    setExpanded(opening ? [category] : []);
-    if (opening)
-      requestAnimationFrame(() => {
-        const roster = document.querySelector('.squad-office-roster');
-        const container = roster?.querySelector<HTMLElement>(
-          '.squad-office-players, .squad-planning-list',
-        );
-        const heading = container?.querySelector<HTMLElement>(
-          'button.squad-list-category[aria-expanded="true"]',
-        );
-        if (container && heading) {
-          const group = heading.parentElement!;
-          const content = group.querySelector<HTMLElement>('.squad-category-players');
-          if (content) {
-            content.scrollTop = 0;
-            content.style.setProperty('--category-clip-top', '12px');
-          }
-          const offset =
-            group.getBoundingClientRect().top -
-            container.getBoundingClientRect().top +
-            container.scrollTop;
-          container.scrollTo({ top: offset, behavior: 'instant' });
-        }
-      });
-  }
   useEffect(() => {
     if (!mobile) return;
     const roster = document.querySelector('.squad-office-roster');
@@ -123,7 +74,7 @@ export function SquadPlanning({ snapshot, club }: ViewProps) {
       observer.disconnect();
       container.removeEventListener('scroll', schedule);
     };
-  }, [expanded, view, position, mobile]);
+  }, [collapsedList, view, position, mobile]);
   function playerAlert(player: (typeof players)[number]) {
     return (
       snapshot.state.management?.offers?.some(
@@ -151,65 +102,176 @@ export function SquadPlanning({ snapshot, club }: ViewProps) {
   const preview = snapshot;
   const players = club.playerIds
     .flatMap((id) => (snapshot.state.players.byId[id] ? [snapshot.state.players.byId[id]!] : []))
-    .filter((p) => position === 'ALL' || p.position === position);
-  players.sort(compareFieldPosition);
-  const groups = [
-    ...new Set(players.map((player) => playerPositionCategory(player.position).title)),
-  ].map((title) =>
-    players.filter((player) => playerPositionCategory(player.position).title === title),
-  );
+    .filter(
+      (p) =>
+        position === 'ALL' ||
+        (position === 'GK'
+          ? p.position === 'GK'
+          : position === 'DEF'
+            ? ['CB', 'LB', 'RB', 'LWB', 'RWB'].includes(p.position)
+            : position === 'MEI'
+              ? ['DM', 'CM', 'AM', 'LM', 'RM'].includes(p.position)
+              : ['LW', 'RW', 'SS', 'ST'].includes(p.position)),
+    );
+  players.sort((a, b) => {
+    const difference =
+      order === 'overall'
+        ? b.overall - a.overall
+        : order === 'fitness'
+          ? b.fitness - a.fitness
+          : order === 'morale'
+            ? b.morale - a.morale
+            : order === 'age'
+              ? a.age - b.age
+              : order === 'salary'
+                ? b.salary.cents - a.salary.cents
+                : order === 'contract'
+                  ? contractEnd(snapshot.state, a) - contractEnd(snapshot.state, b)
+                  : 0;
+    return difference || compareFieldPosition(a, b);
+  });
+  const groups =
+    order !== 'position'
+      ? players.length
+        ? [players]
+        : []
+      : [...new Set(players.map((player) => playerPositionCategory(player.position).title))].map(
+          (title) =>
+            players.filter((player) => playerPositionCategory(player.position).title === title),
+        );
   return (
     <div className="squad-office">
       <section className="squad-office-roster" aria-label="Jogadores do elenco">
         <div className="squad-office-controls">
-          <div className="squad-view-field">
-            <span id="squad-view-label">Visualização</span>
-            <div className="segmented" role="group" aria-labelledby="squad-view-label">
+          <div className="squad-roster-tabs" role="group" aria-label="Visão do elenco">
+            <button
+              type="button"
+              className={rosterTab === 'players' ? 'selected' : ''}
+              aria-pressed={rosterTab === 'players'}
+              onClick={() => setRosterTab('players')}
+            >
+              Jogadores
+            </button>
+            <button
+              type="button"
+              className={rosterTab === 'numbers' ? 'selected' : ''}
+              aria-pressed={rosterTab === 'numbers'}
+              onClick={() => setRosterTab('numbers')}
+            >
+              ⚽ Números
+            </button>
+          </div>
+          <div className="squad-sector-filters" role="group" aria-label="Setor do jogador">
+            {[
+              ['ALL', 'Todos'],
+              ['GK', 'GOL'],
+              ['DEF', 'DEF'],
+              ['MEI', 'MEI'],
+              ['ATA', 'ATA'],
+            ].map(([value, label]) => (
               <button
                 type="button"
-                aria-pressed={view === 'cards'}
-                onClick={() => setView('cards')}
+                key={value}
+                aria-pressed={position === value}
+                className={position === value ? 'selected' : ''}
+                onClick={() => setPosition(value!)}
               >
-                Cartas
+                {label}
               </button>
-              <button type="button" aria-pressed={view === 'list'} onClick={() => setView('list')}>
-                Lista
-              </button>
-            </div>
+            ))}
           </div>
-          <label>
-            Posição
-            <Select value={position} onValueChange={setPosition} aria-label="Posição">
-              <Option value="ALL">Todas</Option>
-              {[
-                'GK',
-                'CB',
-                'RB',
-                'LB',
-                'RWB',
-                'LWB',
-                'DM',
-                'CM',
-                'RM',
-                'LM',
-                'AM',
-                'RW',
-                'LW',
-                'SS',
-                'ST',
-              ]
-                .filter((p) =>
-                  club.playerIds.some((id) => snapshot.state.players.byId[id]?.position === p),
-                )
-                .map((p) => (
-                  <Option key={p} value={p}>
-                    {positionLabel(p)}
-                  </Option>
-                ))}
-            </Select>
-          </label>
+          <Select
+            value={order}
+            onValueChange={setOrder}
+            menuMinWidth={180}
+            aria-label="Ordenar elenco"
+          >
+            {[
+              ['position', 'Posição'],
+              ['overall', 'Overall'],
+              ['fitness', 'Condição'],
+              ['morale', 'Moral'],
+              ['age', 'Idade'],
+              ['salary', 'Salário'],
+              ['contract', 'Contrato'],
+            ].map(([value, label]) => (
+              <Option key={value} value={value!}>
+                {label}
+              </Option>
+            ))}
+          </Select>
         </div>
-        {view === 'list' ? (
+        {rosterTab === 'numbers' ? (
+          <div className="squad-numbers-wrap">
+            <table className="squad-numbers">
+              <thead>
+                <tr>
+                  <th>Jogador</th>
+                  <th title="Jogos">J</th>
+                  <th title="Gols">G</th>
+                  <th title="Assistências">A</th>
+                  <th title="Cartões amarelos">🟨</th>
+                  <th title="Cartões vermelhos">🟥</th>
+                  <th>Nota</th>
+                </tr>
+              </thead>
+              <tbody>
+                {players.map((player) => {
+                  const history = snapshot.state.ratingHistory.filter(
+                    (row) => row.playerId === player.id && row.season === snapshot.state.season,
+                  );
+                  let goals = 0,
+                    assists = 0,
+                    yellow = 0,
+                    red = 0;
+                  for (const result of snapshot.state.results) {
+                    goals += result.scorers.filter((goal) => goal.playerId === player.id).length;
+                    assists += result.scorers.filter((goal) => goal.assistId === player.id).length;
+                    yellow += (result.actions ?? []).filter(
+                      (action) => action.playerId === player.id && action.type === 'yellow',
+                    ).length;
+                    red += (result.actions ?? []).filter(
+                      (action) => action.playerId === player.id && action.type === 'red',
+                    ).length;
+                  }
+                  const average = history.length
+                    ? history.reduce((sum, row) => sum + row.rating, 0) / history.length
+                    : null;
+                  return (
+                    <tr key={player.id} onClick={() => setSelectedPlayerId(player.id)}>
+                      <td>
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            setSelectedPlayerId(player.id);
+                          }}
+                        >
+                          <strong>{player.name}</strong>
+                          <small>{positionLabel(player.position)}</small>
+                        </button>
+                      </td>
+                      <td>{history.length}</td>
+                      <td>{goals}</td>
+                      <td>{assists}</td>
+                      <td>{yellow}</td>
+                      <td>{red}</td>
+                      <td>
+                        <span
+                          className={
+                            'squad-rating ' + (average !== null && average >= 7 ? 'is-high' : '')
+                          }
+                        >
+                          {average === null ? '—' : average.toFixed(1)}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        ) : (
           <div className="squad-planning-list">
             {groups.map((group) => {
               const player = group[0]!;
@@ -219,7 +281,7 @@ export function SquadPlanning({ snapshot, club }: ViewProps) {
                   className="squad-category-group"
                   key={playerPositionCategory(player.position).title}
                 >
-                  {playerCategoryHeading(players, index) && (
+                  {order === 'position' && playerCategoryHeading(players, index) && (
                     <button
                       type="button"
                       className="squad-list-category"
@@ -241,7 +303,10 @@ export function SquadPlanning({ snapshot, club }: ViewProps) {
                   )}
                   <div
                     className="squad-category-players"
-                    hidden={collapsedList.includes(playerPositionCategory(player.position).title)}
+                    hidden={
+                      order === 'position' &&
+                      collapsedList.includes(playerPositionCategory(player.position).title)
+                    }
                   >
                     {group.map((player) => (
                       <button
@@ -269,23 +334,34 @@ export function SquadPlanning({ snapshot, club }: ViewProps) {
                           <Portrait player={player} clubName={club.name} kit={clubKit(club)} />
                         </span>
                         <div className="squad-list-player-info">
-                          <strong>
-                            {player.name} - {positionLabel(player.position)}
-                            {playerAlert(player) && (
-                              <span
-                                className="squad-notification-dot squad-player-alert"
-                                role="img"
-                                aria-label="Jogador com proposta, pedido de renegociação ou contrato no fim"
-                              />
-                            )}
-                          </strong>
+                          <div className="squad-player-identity">
+                            <strong>
+                              {player.name}
+                              <span className="squad-player-country">
+                                <CountryFlag country={player.nationality} />
+                              </span>
+                              {playerAlert(player) && (
+                                <span
+                                  className="squad-notification-dot squad-player-alert"
+                                  role="img"
+                                  aria-label="Jogador com proposta, pedido de renegociação ou contrato no fim"
+                                />
+                              )}
+                            </strong>
+                            <span className="squad-player-positions">
+                              {positionLabel(player.position)}
+                            </span>
+                          </div>
                           <div className="squad-list-player-facts">
                             <div className="squad-list-facts-line">
                               <span>
-                                Preço <b>{marketValue(player.marketValue.cents)}</b>
+                                Preço <b>{shortMoney(player.marketValue.cents)}</b>
                               </span>
                               <span>
-                                Salário <b>{currency(player.salary.cents)}</b> · Contrato{' '}
+                                Salário <b>{shortMoney(player.salary.cents)}</b>
+                              </span>
+                              <span>
+                                Contrato{' '}
                                 <b
                                   className={
                                     contractEnd(preview.state, player) -
@@ -309,7 +385,7 @@ export function SquadPlanning({ snapshot, club }: ViewProps) {
                             </div>
                             <div className="squad-list-facts-line">
                               <span>
-                                Potencial <b>{player.potential}</b>
+                                Idade <b>{player.age} anos</b>
                               </span>
                               <span>
                                 À venda{' '}
@@ -319,186 +395,21 @@ export function SquadPlanning({ snapshot, club }: ViewProps) {
                                     : 'Não'}
                                 </b>
                               </span>
+                              <span className="squad-desktop-loan">
+                                Empréstimo{' '}
+                                <b>
+                                  {preview.state.management?.policies?.[player.id]?.loanAvailable
+                                    ? 'Sim'
+                                    : 'Não'}
+                                </b>
+                              </span>
                               <span>
-                                Idade <b>{player.age} anos</b>
+                                Potencial <b>{player.potential}</b>
                               </span>
                             </div>
                           </div>
                         </div>
                       </button>
-                    ))}
-                  </div>
-                </section>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="squad-office-players">
-            {groups.map((group) => {
-              const player = group[0]!;
-              const index = players.indexOf(player);
-              return (
-                <section
-                  className="squad-category-group"
-                  key={playerPositionCategory(player.position).title}
-                >
-                  {playerCategoryHeading(players, index) && (
-                    <button
-                      type="button"
-                      className="squad-list-category squad-card-category"
-                      aria-expanded={expanded.includes(
-                        playerPositionCategory(player.position).title,
-                      )}
-                      onClick={() => toggleCategory(playerPositionCategory(player.position).title)}
-                    >
-                      <span>
-                        {expanded.includes(playerPositionCategory(player.position).title)
-                          ? '▾'
-                          : '▸'}{' '}
-                        {playerCategoryHeading(players, index)}
-                      </span>
-                      {categoryAlert(player.position) && (
-                        <span
-                          className="squad-notification-dot"
-                          aria-label="Jogador com pendência"
-                        />
-                      )}
-                    </button>
-                  )}
-                  <div
-                    className="squad-category-players"
-                    hidden={!expanded.includes(playerPositionCategory(player.position).title)}
-                  >
-                    {group.map((player) => (
-                      <article
-                        className="squad-office-player"
-                        key={player.id}
-                        hidden={!expanded.includes(playerPositionCategory(player.position).title)}
-                      >
-                        <div className="squad-contract-top">
-                          <span>Vencimento do contrato</span>
-                          <strong>
-                            {new Date(contractEnd(preview.state, player)).toLocaleDateString(
-                              'pt-BR',
-                              { timeZone: 'America/Sao_Paulo' },
-                            )}
-                          </strong>
-                          <small>
-                            {Math.max(
-                              0,
-                              Math.ceil(
-                                (contractEnd(preview.state, player) -
-                                  preview.state.lastProcessedAt) /
-                                  86400000,
-                              ),
-                            )}{' '}
-                            dias restantes
-                          </small>
-                        </div>
-                        <div className="squad-office-card">
-                          <PlayerCard
-                            player={player}
-                            clubName={club.name}
-                            kit={clubKit(club)}
-                            contractExpiring={
-                              Math.max(
-                                0,
-                                Math.ceil(
-                                  (contractEnd(preview.state, player) -
-                                    preview.state.lastProcessedAt) /
-                                    (30 * 86400000),
-                                ),
-                              ) <= 6
-                            }
-                            negotiable={
-                              preview.state.management?.policies?.[player.id]?.available ?? false
-                            }
-                            rivalNegotiationBlocked={Boolean(
-                              preview.state.management?.policies?.[player.id]?.available &&
-                              !preview.state.management?.policies?.[player.id]?.rivals,
-                            )}
-                          />
-                        </div>
-                        <div className="squad-office-actions">
-                          {mobile ? (
-                            <div
-                              className="squad-mobile-action-buttons"
-                              aria-label={`Ações de ${player.name}`}
-                            >
-                              {mobileActions.map((action) => (
-                                <button
-                                  type="button"
-                                  key={action.id}
-                                  disabled={
-                                    locked ||
-                                    (action.id === 'effects' &&
-                                      !temporaryModifiers(preview.state, player).length) ||
-                                    (action.id === 'renew' &&
-                                      Boolean(renewalTerms(preview.state, player).reason))
-                                  }
-                                  aria-haspopup="dialog"
-                                  onClick={() =>
-                                    setMobileAction({ playerId: player.id, section: action.id })
-                                  }
-                                >
-                                  {action.label}
-                                  {action.id === 'renew' &&
-                                    (renewalTerms(preview.state, player).demand ||
-                                      contractEnd(preview.state, player) -
-                                        preview.state.lastProcessedAt <=
-                                        180 * 86400000) && (
-                                      <span
-                                        className="squad-notification-dot"
-                                        aria-label="Renovação pendente"
-                                      />
-                                    )}
-                                  {action.id === 'policy' &&
-                                    snapshot.state.management?.offers?.some(
-                                      (offer) =>
-                                        offer.playerId === player.id &&
-                                        offer.sellerId === club.id &&
-                                        offer.status === 'pending',
-                                    ) && (
-                                      <span
-                                        className="transfer-alert-dot"
-                                        aria-label="Proposta recebida para este jogador"
-                                      />
-                                    )}
-                                  <svg
-                                    viewBox="0 0 24 24"
-                                    width="26"
-                                    height="26"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="1.8"
-                                    aria-hidden="true"
-                                  >
-                                    {action.id === 'effects' ? (
-                                      <>
-                                        <path d="M12 3 4 6v6c0 5 8 9 8 9s8-4 8-9V6Z" />
-                                        <path d="m8 12 3 3 5-6" />
-                                      </>
-                                    ) : action.id === 'policy' ? (
-                                      <path d="M4 8h15m-4-4 4 4-4 4M20 16H5m4-4-4 4 4 4" />
-                                    ) : (
-                                      <>
-                                        <path d="M5 3h10l4 4v14H5ZM14 3v5h5M8 12h8M8 16h6" />
-                                      </>
-                                    )}
-                                  </svg>
-                                </button>
-                              ))}
-                            </div>
-                          ) : (
-                            <PlayerManagement
-                              player={player}
-                              snapshot={preview}
-
-                              planningBusy={locked}
-                            />
-                          )}
-                        </div>
-                      </article>
                     ))}
                   </div>
                 </section>
@@ -523,6 +434,16 @@ export function SquadPlanning({ snapshot, club }: ViewProps) {
           title={preview.state.players.byId[selectedPlayerId]!.name}
           onClose={() => setSelectedPlayerId(null)}
         >
+          <div className="squad-modal-player-card">
+            <PlayerCard
+              player={preview.state.players.byId[selectedPlayerId]!}
+              clubName={club.name}
+              kit={clubKit(club)}
+              negotiable={
+                preview.state.management?.policies?.[selectedPlayerId]?.available ?? false
+              }
+            />
+          </div>
           <PlayerManagement
             player={preview.state.players.byId[selectedPlayerId]!}
             snapshot={preview}

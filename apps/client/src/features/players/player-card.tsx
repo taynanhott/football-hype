@@ -1,3 +1,5 @@
+import { CountryFlag } from '../../ui/country-flag';
+import { useGameStore } from '../../store/game-store';
 import { marketValue } from '../../ui/format';
 import { positionLabel } from '../../ui/position-label';
 import { Overall } from './overall';
@@ -34,6 +36,10 @@ export function PlayerCard({
   onActivate?: () => void;
 }) {
   const [flipped, setFlipped] = useState(initiallyFlipped);
+  const loanAvailable = useGameStore(
+    (state) => state.snapshot?.state.management?.policies?.[player.id]?.loanAvailable ?? false,
+  );
+  const injuryDays = useGameStore((state) => state.snapshot?.state.injuries[player.id] ?? 0);
   const tier =
     player.overall <= 69
       ? 'bronze'
@@ -115,6 +121,26 @@ export function PlayerCard({
           $
         </span>
       )}
+      {loanAvailable && (
+        <span
+          className={`card-negotiable card-loan-available${negotiable ? ' with-transfer' : ''}`}
+          title="Disponível para empréstimo"
+          aria-label="Disponível para empréstimo"
+        >
+          $
+        </span>
+      )}
+      {injuryDays > 0 && (
+        <span
+          className="card-injury"
+          title={`Lesionado · ${injuryDays} dias`}
+          aria-label={`Lesionado · ${injuryDays} dias`}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M9 3h6v6h6v6h-6v6H9v-6H3V9h6Z" />
+          </svg>
+        </span>
+      )}
       <motion.div
         className="card-inner"
         animate={{ rotateY: flipped ? 180 : 0 }}
@@ -127,7 +153,7 @@ export function PlayerCard({
             </strong>
             <span>{positionLabel(player.position)}</span>
           </div>
-          <span className="card-country">{player.nationality}</span>
+          <span className="card-country">{<CountryFlag country={player.nationality} />}</span>
           <Portrait player={player} clubName={clubName} kit={kit} />
           <div className="card-label">
             <h3>{player.name}</h3>
@@ -156,50 +182,66 @@ export function PlayerCard({
         </div>
         <div className="card-back">
           <h3>{player.name}</h3>
-          <dl>
+          <div className="reverse-identity">
+            <b>{positionLabel(player.position)}</b> {player.age} ANOS
+          </div>
+          <div className="reverse-metrics">
             {[
-              ['Moral', `${player.morale}%`],
-              ['Forma física', `${player.fitness}%`],
-              ['Overall', <Overall base={player.overall} modifier={modifier} />],
+              ['Moral', player.morale],
+              ['Condição', player.fitness],
+              ['Forma', '—'],
               [
                 'Potencial',
-                hidePotential ? (
-                  <span
-                    className="potential-stars"
-                    role="img"
-                    aria-label={`Potencial: ${potentialStars(player.potential)} de 5 estrelas`}
-                  >
-                    {'★'.repeat(potentialStars(player.potential))}
-                    <span className="potential-stars-empty">
-                      {'☆'.repeat(5 - potentialStars(player.potential))}
-                    </span>
-                  </span>
-                ) : (
-                  player.potential
-                ),
+                hidePotential ? '★'.repeat(potentialStars(player.potential)) : player.potential,
               ],
-              ['Time', clubName],
-              ['Idade', `${player.age} anos`],
-              ['Nacionalidade', player.nationality],
-              ['Valor de mercado', marketValue(player.marketValue.cents)],
             ].map(([label, value]) => (
               <div key={String(label)}>
-                <dt>{label}</dt>
-                <dd>
-                  {label === 'Time' && player.clubId ? (
-                    <a
-                      href={'#/trophies?club=' + player.clubId}
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      {value}
-                    </a>
-                  ) : (
-                    value
-                  )}
-                </dd>
+                <strong>{value}</strong>
+                <small>{label}</small>
+                <i />
               </div>
             ))}
-          </dl>
+          </div>
+          <div className="reverse-stats">
+            {[
+              ['Jogos', player.appearances, 'ᵛˢ'],
+              ['Gols', '—', '⚽'],
+              ['Assist.', '—', '➜'],
+              ['Nota', '—', '★'],
+              ['Min.', '—', '◷'],
+              ['Amar.', '—', '▮'],
+            ].map(([label, value, icon]) => (
+              <div key={String(label)}>
+                <span>{icon}</span>
+                <strong>{value}</strong>
+                <small>{label}</small>
+              </div>
+            ))}
+          </div>
+          <div className="reverse-facts">
+            {[
+              [
+                'Clube',
+                player.clubId ? (
+                  <a href={'#/trophies?club=' + player.clubId} onClick={(e) => e.stopPropagation()}>
+                    {clubName}
+                  </a>
+                ) : (
+                  clubName
+                ),
+              ],
+              ['País', <CountryFlag country={player.nationality} />],
+              ['Contrato', contractMonths === undefined ? '—' : contractMonths + ' meses'],
+              ['Valor', marketValue(player.marketValue.cents)],
+              ['Salário', marketValue(player.salary.cents)],
+              ['Perfil', '—'],
+            ].map(([label, value]) => (
+              <div key={String(label)}>
+                <small>{label}</small>
+                <strong>{value}</strong>
+              </div>
+            ))}
+          </div>
         </div>
       </motion.div>
     </div>

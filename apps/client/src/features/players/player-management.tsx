@@ -170,7 +170,7 @@ export function PlayerManagement({
           </button>
           {
             <div className="loan-duration">
-              <span>Disponível pra Empréstimo</span>
+              <span>Emprestimo?</span>
               <div className="segmented">
                 {([6, 12] as const).map((months) => (
                   <button

@@ -36,16 +36,34 @@ const schema = z.strictObject({
   version: z.literal(1),
   exportedAt: z.iso.datetime(),
   jogadores: z.record(z.string(), z.unknown()),
+  dadosExtras: z.record(z.string(), z.unknown()).optional(),
   clubes: z.record(z.string(), z.unknown()),
-  aparencia: appearance,
+  aparencia: z.unknown(),
   excluidos: z.array(z.number().int().positive()),
 });
 const bundle = schema.parse(
   JSON.parse(await readFile(join(root, 'data/source-update.json'), 'utf8')),
 );
-if (!Object.keys(bundle.clubes).length || !Object.keys(bundle.aparencia.players).length)
-  throw Error('A exportação deve conter clubes e aparência.');
-const { dataset, report } = convertLocalPlayers(bundle.jogadores, bundle.clubes, bundle.excluidos);
+const incomingAppearance = appearance.safeParse(bundle.aparencia);
+const looks =
+  incomingAppearance.success && Object.keys(incomingAppearance.data.players).length
+    ? incomingAppearance.data
+    : appearance.parse(
+        JSON.parse(
+          await readFile(join(root, 'packages/shared/src/config/player-looks.json'), 'utf8'),
+        ),
+      );
+const clubs = {
+  ...JSON.parse(await readFile(join(root, 'data/clubs-source.json'), 'utf8')),
+  ...bundle.clubes,
+};
+if (!Object.keys(clubs).length) throw Error('A exportação deve conter clubes.');
+const { dataset, report } = convertLocalPlayers(
+  bundle.jogadores,
+  clubs,
+  bundle.excluidos,
+  bundle.dadosExtras,
+);
 if (!dataset.players.ids.length || !dataset.clubs.ids.length)
   throw Error('A exportação não produziu jogadores e clubes válidos.');
 if (process.argv.includes('--check')) {
@@ -53,16 +71,17 @@ if (process.argv.includes('--check')) {
     JSON.stringify({
       players: report.players,
       clubs: report.clubs,
-      appearances: Object.keys(bundle.aparencia.players).length,
+      appearances: Object.keys(looks.players).length,
     }),
   );
   process.exit(0);
 }
 const files = [
   ['data/player-source.json', bundle.jogadores],
-  ['data/clubs-source.json', bundle.clubes],
+  ...(bundle.dadosExtras ? [['data/source-extras.json', bundle.dadosExtras] as const] : []),
+  ['data/clubs-source.json', clubs],
   ['data/player-exclusions.json', bundle.excluidos],
-  ['packages/shared/src/config/player-looks.json', bundle.aparencia],
+  ['packages/shared/src/config/player-looks.json', looks],
 ] as const;
 const backup = join(root, 'data/.backups', new Date().toISOString().replace(/[:.]/g, '-'));
 await mkdir(backup, { recursive: true });
@@ -71,7 +90,11 @@ for (const [index, file] of [
   'data/player-database.json',
   'data/player-import-report.json',
 ].entries()) {
-  await copyFile(join(root, file), join(backup, `${index}-${file.split('/').at(-1)}`));
+  try {
+    await copyFile(join(root, file), join(backup, `${index}-${file.split('/').at(-1)}`));
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+  }
 }
 for (const [file, value] of files)
   await writeFile(join(root, file), JSON.stringify(value, null, 2) + '\n');
@@ -81,7 +104,7 @@ console.log(
       message: 'JSON validado. Fontes atualizadas; a base será reconstruída a seguir.',
       players: report.players,
       clubs: report.clubs,
-      appearances: Object.keys(bundle.aparencia.players).length,
+      appearances: Object.keys(looks.players).length,
       backup,
     },
     null,

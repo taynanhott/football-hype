@@ -26,6 +26,7 @@ export function Finance({ snapshot, club }: ViewProps) {
     if (!panel) return;
     let frame = 0;
     let fitting = false;
+    let disposed = false;
     const fit = () => {
       if (fitting) return;
       fitting = true;
@@ -75,9 +76,20 @@ export function Finance({ snapshot, club }: ViewProps) {
     });
     window.addEventListener('resize', schedule);
     panel.addEventListener('load', schedule, true);
-    fit();
-    document.fonts.ready.then(schedule);
+    // Font metrics must be settled before revealing the fitted desktop panel.
+    if (window.innerWidth >= 1100 && document.fonts.status !== 'loaded') {
+      panel.style.visibility = 'hidden';
+      document.fonts.ready.then(() => {
+        if (disposed) return;
+        fit();
+        panel.style.visibility = '';
+      });
+    } else {
+      fit();
+    }
     return () => {
+      disposed = true;
+      panel.style.visibility = '';
       cancelAnimationFrame(frame);
       observer.disconnect();
       window.removeEventListener('resize', schedule);

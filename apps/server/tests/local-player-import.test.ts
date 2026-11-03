@@ -22,6 +22,26 @@ const metadata = JSON.parse(
 );
 afterEach(() => vi.unstubAllGlobals());
 describe('base local fornecida', () => {
+  it('uses exported source economics and converts daily salary to monthly without copying career progress', () => {
+    const { dataset, report } = convertLocalPlayers(source, metadata, [], {
+      registrosJogadores: {
+        '352324': {
+          padraoCalculado: { ovr: 81, pot: 81, mv: 45000, sal: 225 },
+          atual: { ovr: 90, pot: 95, mv: 99000, sal: 999 },
+        },
+        '418560': { padraoCalculado: { ovr: 91, pot: 92, mv: 900000, sal: 8100 } },
+      },
+    });
+    const rossi = dataset.players.byId[stableId(32, 352324)]!;
+    const haaland = dataset.players.byId[stableId(32, 418560)]!;
+    expect(rossi.marketValue.cents).toBe(45000 * 100);
+    expect(rossi.salary.cents).toBe(225 * 30 * 100);
+    expect(rossi.overall).toBe(81);
+    expect(haaland.marketValue.cents).toBe(900000 * 100);
+    expect(haaland.salary.cents).toBe(8100 * 30 * 100);
+    expect(report.sourceEconomics).toBe(2);
+  });
+
   it('preserva jogadores, transferências, avaliações e jovens sem gerar atletas substitutos', () => {
     const { dataset, report } = convertLocalPlayers(source, metadata, [340950]);
     expect(report.skipped).toEqual([]);

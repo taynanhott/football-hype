@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ceilMoney, MONEY_STEPS, type ClubSnapshot } from '@football/shared';
 import { GeneratedPerson } from '../../ui/person-avatar';
 import { MoneyRange } from '../../ui/money-range';
-import { transferMoney as offerMoney } from '../../ui/format';
+import { currency as offerMoney } from '../../ui/format';
 import { openModalPreservingScroll } from '../../ui/modal-scroll';
 
 export function CounterOfferChat({

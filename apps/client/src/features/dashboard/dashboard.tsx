@@ -1,3 +1,4 @@
+import { CountryFlag } from '../../ui/country-flag';
 import {
   clubPayroll,
   maintenanceBreakdown,
@@ -92,8 +93,7 @@ export function Dashboard({ snapshot, club, stadium, center }: ViewProps) {
             <div className="dashboard-journey-club">
               <a href={'#/trophies?club=' + club.id}>{club.name}</a>
               <span>
-                {new Intl.DisplayNames(['pt-BR'], { type: 'region' }).of(club.country)} · Série{' '}
-                {club.division}
+                {<CountryFlag country={club.country} />} · Série {club.division}
               </span>
             </div>
             <div className="dashboard-season-progress">

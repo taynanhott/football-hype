@@ -1,5 +1,20 @@
 import { formatMoney, formatMoneyFull } from '@football/shared';
 export const currency = formatMoney;
+export const shortMoney = (cents: number) => {
+  const amount = Math.ceil(cents / 100);
+  const absolute = Math.abs(amount);
+  const unit =
+    absolute >= 1_000_000_000
+      ? 1_000_000_000
+      : absolute >= 1_000_000
+        ? 1_000_000
+        : absolute > 1_000
+          ? 1_000
+          : 1;
+  const suffix =
+    unit === 1_000_000_000 ? ' B' : unit === 1_000_000 ? ' M' : unit === 1_000 ? ' K' : '';
+  return 'HC$ ' + (amount / unit).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + suffix;
+};
 export const compactMoney = formatMoney;
 export const ticketPrice = formatMoney;
 export const dateTime = (time: number) =>
@@ -11,14 +26,6 @@ export const dateTime = (time: number) =>
     timeZone: 'America/Sao_Paulo',
   }).format(time);
 
-export const marketValue = (cents: number) => {
-  const amount = Math.ceil(cents / 100);
-  const unit = Math.abs(amount) >= 1000000 ? 1000000 : Math.abs(amount) >= 1000 ? 1000 : 1;
-  return (
-    'HC$ ' +
-    (amount / unit).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) +
-    (unit === 1000000 ? 'M' : unit === 1000 ? 'K' : '')
-  );
-};
+export const marketValue = formatMoney;
 
 export const transferMoney = formatMoneyFull;

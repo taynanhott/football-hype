@@ -32,8 +32,7 @@ export function NegotiationChat({
   onClose: () => void;
   onContinue: () => void;
 }) {
-  const offerDisplay =
-    'HC$ ' + (value / 100000).toLocaleString('pt-BR', { maximumFractionDigits: 1 });
+  const offerDisplay = currency(value);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const loanCloseTimer = useRef<number | undefined>(undefined);
   useEffect(() => () => window.clearTimeout(loanCloseTimer.current), []);
