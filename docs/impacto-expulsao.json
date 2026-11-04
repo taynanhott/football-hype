@@ -1,0 +1,65 @@
+{
+  "conditions": "Equal 70-overall teams; neutral; 500 mirrored seeds per scenario; controlled dismissal of a midfielder; natural cards still possible; one match per run without season effects",
+  "rows": [
+    {
+      "minute": null,
+      "matches": 1000,
+      "wins": 349,
+      "draws": 302,
+      "losses": 349,
+      "winRate": 34.9,
+      "drawRate": 30.2,
+      "lossRate": 34.9,
+      "goalsFor": 1.321,
+      "goalsAgainst": 1.321
+    },
+    {
+      "minute": 0,
+      "matches": 1000,
+      "wins": 132,
+      "draws": 221,
+      "losses": 647,
+      "winRate": 13.200000000000001,
+      "drawRate": 22.1,
+      "lossRate": 64.7,
+      "goalsFor": 0.993,
+      "goalsAgainst": 2.106
+    },
+    {
+      "minute": 30,
+      "matches": 1000,
+      "wins": 175,
+      "draws": 259,
+      "losses": 566,
+      "winRate": 17.5,
+      "drawRate": 25.900000000000002,
+      "lossRate": 56.599999999999994,
+      "goalsFor": 1.097,
+      "goalsAgainst": 1.82
+    },
+    {
+      "minute": 60,
+      "matches": 1000,
+      "wins": 269,
+      "draws": 277,
+      "losses": 454,
+      "winRate": 26.900000000000002,
+      "drawRate": 27.700000000000003,
+      "lossRate": 45.4,
+      "goalsFor": 1.212,
+      "goalsAgainst": 1.539
+    },
+    {
+      "minute": 80,
+      "matches": 1000,
+      "wins": 311,
+      "draws": 303,
+      "losses": 386,
+      "winRate": 31.1,
+      "drawRate": 30.3,
+      "lossRate": 38.6,
+      "goalsFor": 1.285,
+      "goalsAgainst": 1.414
+    }
+  ]
+}

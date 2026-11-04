@@ -8,11 +8,16 @@ import {
 } from '@football/shared';
 import { matchManagement, type MatchOptions } from './match-management.js';
 import { actionChance, actionQuality } from './action-quality.js';
+import { redCardEffects, redCardFatigueFactor } from './red-card-effects.js';
 export type { MatchOptions } from './match-management.js';
 type Side = 'home' | 'away';
 type Point = { x: number; z: number };
 type Action = NonNullable<MatchResult['actions']>[number];
 const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n));
+const evenNumbers = {
+  home: { attack: 1, exposure: 1, movement: 1 },
+  away: { attack: 1, exposure: 1, movement: 1 },
+};
 const distance = (a: Point, b: Point) => Math.hypot(a.x - b.x, a.z - b.z);
 const round = (p: Point): Point => ({ x: Math.round(p.x * 10) / 10, z: Math.round(p.z * 10) / 10 });
 const move = (p: Point, q: Point, speed: number): Point => {
@@ -37,6 +42,7 @@ export function spatialMatch(
   const poses: Record<string, Point> = {};
   const bases: Record<string, Point> = {};
   const dismissed = new Set<string>();
+  const dismissalTimes = new Map<string, number>();
   const yellows = new Set<string>();
   const ratings = Object.fromEntries(players.map((p) => [p.id, 6]));
   const direction = (side: Side) => (side === 'home' ? 1 : -1);
@@ -54,6 +60,7 @@ export function spatialMatch(
   });
   const statistics = { home: stats(), away: stats() };
   const actions: Action[] = [];
+  const redCards: Action[] = [];
   const scorers: MatchResult['scorers'] = [];
   let homeGoals = 0,
     awayGoals = 0;
@@ -223,6 +230,7 @@ export function spatialMatch(
     };
     rateAction(action);
     actions.push(action);
+    if (action.type === 'red') redCards.push(action);
   };
   const management = matchManagement(
     options,
@@ -246,10 +254,64 @@ export function spatialMatch(
         bases[p.id] = { x: (slot.x - 50) * 0.62, z: (50 - slot.y) * direction(team) };
       });
     },
+    (team, entered, played, id) => redCardFatigueFactor(id, team, entered, played, redCards),
   );
   // Movement and the ball share the same pitch coordinates on the server and in 3D.
+  const dismiss = (player: PlayerSnapshot, minute: number) => {
+    if (dismissed.has(player.id)) return;
+    dismissed.add(player.id);
+    dismissalTimes.set(player.id, minute);
+    management.dismiss(player.id, minute);
+  };
   for (let step = 0; step < 180; step++) {
     const minute = (step * 90) / 180;
+    for (const event of options.scenarioDismissals ?? []) {
+      const player = teams[event.side].find((p) => p.id === event.playerId);
+      if (player && !dismissed.has(player.id) && minute >= event.minute) {
+        emit(minute, 'red', player, poses[player.id]!, poses[player.id]!, { side: event.side });
+        ratings[player.id] = (ratings[player.id] ?? 6) - 2;
+        dismiss(player, minute);
+        if (carrier?.id === player.id) {
+          carrier = undefined;
+          phase = 'free-kick';
+          setup = false;
+          side = event.side === 'home' ? 'away' : 'home';
+        }
+      }
+    }
+    const shortMinutes = (team: Side) =>
+      teams[team].reduce((sum, p) => {
+        const at = dismissalTimes.get(p.id);
+        return sum + (at === undefined ? 0 : Math.max(0, minute - at));
+      }, 0);
+    const effects = dismissed.size
+      ? {
+          home: redCardEffects(
+            eligible('home').length,
+            eligible('away').length,
+            shortMinutes('home'),
+          ),
+          away: redCardEffects(
+            eligible('away').length,
+            eligible('home').length,
+            shortMinutes('away'),
+          ),
+        }
+      : evenNumbers;
+    const removedStrength = (team: Side) =>
+      teams[team]
+        .filter((p) => dismissed.has(p.id))
+        .reduce(
+          (sum, p) =>
+            sum +
+            p.overall *
+              (GAMEPLAY.fitnessBaseWeight + p.fitness / GAMEPLAY.fitnessScale) *
+              (GAMEPLAY.moraleBaseWeight + p.morale / GAMEPLAY.moraleScale),
+          0,
+        ) / GAMEPLAY.lineupSize;
+    const liveStrength = dismissed.size
+      ? strength - removedStrength('home') + removedStrength('away')
+      : strength;
     management.update(minute, homeGoals, awayGoals);
     const opposite: Side = side === 'home' ? 'away' : 'home';
     const dir = direction(side);
@@ -453,7 +515,8 @@ export function spatialMatch(
         poses[p.id] = move(
           poses[p.id]!,
           desired,
-          styles[team] === 'all-out-press' ? 3.9 : styles[team] === 'gegenpress' ? 3.7 : 3.5,
+          (styles[team] === 'all-out-press' ? 3.9 : styles[team] === 'gegenpress' ? 3.7 : 3.5) *
+            effects[team].movement,
         );
       }
     separate(carrier.id);
@@ -485,9 +548,11 @@ export function spatialMatch(
         phase = 'free-kick';
         setup = false;
         if (random() < 0.25) {
-          const red = yellows.has(presser.id) || random() < 0.02;
+          const red =
+            !options.scenarioOnlyScheduledDismissals &&
+            (yellows.has(presser.id) || random() < 0.02);
           emit(minute, red ? 'red' : 'yellow', presser, ball, ball, { side: offenderSide });
-          if (red) dismissed.add(presser.id);
+          if (red) dismiss(presser, minute);
           else yellows.add(presser.id);
           ratings[presser.id] = (ratings[presser.id] ?? 6) - (red ? 2 : 0.4);
         }
@@ -520,7 +585,7 @@ export function spatialMatch(
               (0.43 - goalDistance * 0.012 - Math.abs(ball.x) * 0.004 - (pressure < 3 ? 0.07 : 0)) *
                 GAMEPLAY.shotChanceScale +
                 (side === 'home' ? 1 : -1) *
-                  (strength / GAMEPLAY.shotStrengthDivisor +
+                  (liveStrength / GAMEPLAY.shotStrengthDivisor +
                     venueAdvantage * GAMEPLAY.shotVenueWeight),
               0.025,
               0.58,
@@ -530,7 +595,10 @@ export function spatialMatch(
       // Chasing teams commit more players; leading teams protect their advantage.
       const gameStateFactor = scoreDifference === 0 ? 1 : scoreDifference < 0 ? 1.4 : 0.6;
       const goalChance = actionChance(
-        xg * (setPiece === 'penalty' ? 1 : gameStateFactor),
+        xg *
+          (setPiece === 'penalty'
+            ? 1
+            : gameStateFactor * effects[side].attack * effects[opposite].exposure),
         actionQuality(carrier, 'finishing'),
         goalkeeper ? actionQuality(goalkeeper, 'keeping') : 35,
       );

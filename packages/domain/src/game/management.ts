@@ -303,7 +303,7 @@ export function temporaryModifiers(state: WorldState, player: PlayerSnapshot) {
   const averageRating = ratings.length
     ? ratings.reduce((sum, entry) => sum + entry.rating, 0) / ratings.length
     : null;
-  if (averageRating !== null && averageRating < 6)
+  if (ratings.length >= 3 && averageRating !== null && averageRating < 6)
     effects.push({
       label: 'Má fase do jogador',
       value: -1,

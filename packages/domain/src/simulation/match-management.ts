@@ -8,7 +8,12 @@ import {
 } from '@football/shared';
 import { positionFactor } from '../game/tactics.js';
 type Side = 'home' | 'away';
-export type MatchOptions = Partial<Record<Side, { bench: PlayerSnapshot[]; plan: Lineup }>>;
+export type MatchOptions = Partial<Record<Side, { bench: PlayerSnapshot[]; plan: Lineup }>> & {
+  /** Controlled referee events for simulations; never populated by player commands. */
+  scenarioDismissals?: readonly { side: Side; playerId: string; minute: number }[];
+  /** Audit isolation only: keep the number of dismissals exactly as scheduled. */
+  scenarioOnlyScheduledDismissals?: boolean;
+};
 export function matchManagement(
   options: MatchOptions,
   teams: Record<Side, PlayerSnapshot[]>,
@@ -17,6 +22,7 @@ export function matchManagement(
   dismissed: Set<string>,
   replace: (out: PlayerSnapshot, incoming: PlayerSnapshot) => void,
   reshape: (side: Side, formation: Lineup['formation']) => void,
+  fatigueFactor: (side: Side, entered: number, played: number, id: string) => number = () => 1,
 ) {
   const substitutions: NonNullable<MatchResult['substitutions']> = [];
   const entered = Object.fromEntries([...teams.home, ...teams.away].map((p) => [p.id, 0]));
@@ -31,7 +37,8 @@ export function matchManagement(
       0,
       p.fitness -
         ((GAMEPLAY.fitnessCost * (minute - (entered[p.id] ?? 0))) / 90) *
-          (styles[side] === 'all-out-press' ? 1.5 : styles[side] === 'gegenpress' ? 1.25 : 1),
+          (styles[side] === 'all-out-press' ? 1.5 : styles[side] === 'gegenpress' ? 1.25 : 1) *
+          fatigueFactor(side, entered[p.id] ?? 0, minute - (entered[p.id] ?? 0), p.id),
     );
   const update = (minute: number, homeGoals: number, awayGoals: number) => {
     for (const side of ['home', 'away'] as const) {
@@ -143,6 +150,10 @@ export function matchManagement(
   };
   return {
     update,
+    dismiss: (id: string, minute: number) => {
+      if (entered[id] !== undefined && minutesPlayed[id] === undefined)
+        minutesPlayed[id] = Math.max(0, minute - entered[id]!);
+    },
     substitutions,
     finish: () => {
       for (const id of Object.keys(entered))

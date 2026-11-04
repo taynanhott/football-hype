@@ -26,6 +26,7 @@ import { standings } from '../competitions/standings.js';
 import { simulateMatch } from '../simulation/match.js';
 import { matchDemand } from '../finance/match-demand.js';
 import { shareMatchRevenue } from '../finance/gate-sharing.js';
+import { redCardFatigueFactor } from '../simulation/red-card-effects.js';
 import { hashSeed, mulberry32 } from '../simulation/random.js';
 import {
   officialMatchDevelopment,
@@ -277,6 +278,7 @@ export function playNextBatch(state: WorldState, processedAt: number): Result<Wo
     };
     result.startedAt = processedAt;
     results.push(result);
+    const redCardActions = result.actions?.filter((action) => action.type === 'red');
     const gate = shareMatchRevenue(demand.ticketRevenue, result.revenue);
     revenue.set(home.id, (revenue.get(home.id) ?? 0) + gate.home);
     revenue.set(away.id, (revenue.get(away.id) ?? 0) + gate.away);
@@ -401,6 +403,13 @@ export function playNextBatch(state: WorldState, processedAt: number): Result<Wo
                     ? 1.25
                     : 1) *
                 ageFatigueFactor(player.age) *
+                redCardFatigueFactor(
+                  player.id,
+                  player.clubId === home.id ? 'home' : 'away',
+                  result.substitutions?.find((sub) => sub.in === player.id)?.minute ?? 0,
+                  result.minutesPlayed?.[player.id] ?? 90,
+                  redCardActions,
+                ) *
                 ((result.minutesPlayed?.[player.id] ?? 90) / 90)) /
                 (1 +
                   ((center?.levels.fitness ?? 1) - 1) * GAMEPLAY.fitnessFatigueReductionPerLevel),

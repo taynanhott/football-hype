@@ -4,7 +4,8 @@ import { useGameStore } from '../../store/game-store';
 import { marketValue } from '../../ui/format';
 import { positionLabel } from '../../ui/position-label';
 import { Overall } from './overall';
-import { potentialStars, renewalTerms } from '@football/domain';
+import { contractEnd, potentialStars, renewalTerms } from '@football/domain';
+import { playerCardStats } from './player-card-stats';
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import type { PlayerSnapshot, ClubKit } from '@football/shared';
@@ -36,6 +37,20 @@ export function PlayerCard({
   hidePotential?: boolean;
   onActivate?: () => void;
 }) {
+  const world = useGameStore((store) => store.snapshot?.state);
+  const stats = world ? playerCardStats(world, player.id) : null;
+  const remainingMonths =
+    contractMonths ??
+    (world && player.clubId
+      ? Math.max(
+          0,
+          Math.ceil((contractEnd(world, player) - world.lastProcessedAt) / (30 * 86400000)),
+        )
+      : undefined);
+  const score = (value: number | null | undefined) =>
+    value == null
+      ? '—'
+      : value.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
   const renewalRequested = useGameStore((store) => {
     const world = store.snapshot?.state;
     return world && player.clubId && world.participants.some((p) => p.clubId === player.clubId)
@@ -205,7 +220,7 @@ export function PlayerCard({
             {[
               ['Moral', player.morale],
               ['Condição', player.fitness],
-              ['Forma', '—'],
+              ['Forma (5 jogos)', score(stats?.form)],
               [
                 'Potencial',
                 hidePotential ? '★'.repeat(potentialStars(player.potential)) : player.potential,
@@ -220,12 +235,12 @@ export function PlayerCard({
           </div>
           <div className="reverse-stats">
             {[
-              ['Jogos', player.appearances, 'ᵛˢ'],
-              ['Gols', '—', '⚽'],
-              ['Assist.', '—', '➜'],
-              ['Nota', '—', '★'],
-              ['Min.', '—', '◷'],
-              ['Amar.', '—', '▮'],
+              ['Jogos', stats?.games ?? player.appearances, 'ᵛˢ'],
+              ['Gols', stats?.goals ?? 0, '⚽'],
+              ['Assist.', stats?.assists ?? 0, '➜'],
+              ['Nota', score(stats?.average), '★'],
+              ['Min.', stats?.minutes ?? 0, '◷'],
+              ['Amar.', stats?.yellow ?? 0, '▮'],
             ].map(([label, value, icon]) => (
               <div key={String(label)}>
                 <span>{icon}</span>
@@ -252,10 +267,20 @@ export function PlayerCard({
                 ),
               ],
               ['País', <CountryFlag country={player.nationality} />],
-              ['Contrato', contractMonths === undefined ? '—' : contractMonths + ' meses'],
+              [
+                'Contrato',
+                !player.clubId
+                  ? 'Sem vínculo'
+                  : remainingMonths === undefined
+                    ? '—'
+                    : remainingMonths + ' meses',
+              ],
               ['Valor', marketValue(player.marketValue.cents)],
               ['Salário', marketValue(player.salary.cents)],
-              ['Perfil', '—'],
+              [
+                'Faixa etária',
+                player.age <= 23 ? 'Jovem' : player.age >= 30 ? 'Veterano' : 'Adulto',
+              ],
             ].map(([label, value]) => (
               <div key={String(label)}>
                 <small>{label}</small>
