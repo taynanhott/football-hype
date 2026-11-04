@@ -14,9 +14,16 @@ import { dateTime } from '../../ui/format';
 
 export function Calendar({ snapshot, club }: ViewProps) {
   const liveState = useFinishedResults(snapshot.state);
-  const [competition, setCompetition] = useState(
-    club.division === 'REGIONAL' ? 'serie-a' : `serie-${club.division.toLowerCase()}`,
-  );
+  const [competition, setCompetition] = useState(() => {
+    const requested = new URLSearchParams(location.hash.split('?')[1] ?? '').get('competition');
+    if (
+      requested &&
+      (COMPETITIONS.some((item) => item.id === requested) ||
+        REGIONAL_QUALIFIERS.some((item) => item.id === requested))
+    )
+      return requested;
+    return club.division === 'REGIONAL' ? 'serie-a' : `serie-${club.division.toLowerCase()}`;
+  });
   const parentCompetition =
     REGIONAL_QUALIFIERS.find((q) => q.id === competition)?.cupId ??
     (competition === 'pre-libertadores' ? 'libertadores' : competition);
@@ -24,6 +31,7 @@ export function Calendar({ snapshot, club }: ViewProps) {
   const [tab, setTab] = useState('table');
   const [cupStage, setCupStage] = useState('groups');
   const [selectedSeason, setSelectedSeason] = useState<number | null>(null);
+  const [roundSelection, setRoundSelection] = useState<{ scope: string; key: string } | null>(null);
   const archive = snapshot.state.seasonArchives?.find((item) => item.season === selectedSeason);
   const state = archive
     ? { ...snapshot.state, competitionNotes: undefined, ...archive }
@@ -107,16 +115,33 @@ export function Calendar({ snapshot, club }: ViewProps) {
   const completed = new Set(state.results.map((result) => result.fixtureId));
   const pending = competitionFixtures.filter((fixture) => !completed.has(fixture.id));
   const nextFixture = pending[0];
-  const nextRound = nextFixture
-    ? pending.filter(
-        (fixture) =>
-          phaseOf(fixture) === phaseOf(nextFixture) &&
-          fixture.round === nextFixture.round &&
-          (phaseOf(fixture) !== 'knockout' ||
-            fixture.id.endsWith(':first') === nextFixture.id.endsWith(':first')),
-      )
-    : [];
-  const displayedFixtures = activeTab === 'next' ? nextRound : fixtures;
+  const roundKey = (fixture: Fixture) =>
+    `${phaseOf(fixture)}:${fixture.round}:${phaseOf(fixture) === 'knockout' && fixture.id.endsWith(':first') ? 'first' : 'last'}`;
+  const rounds = [
+    ...new Map(competitionFixtures.map((fixture) => [roundKey(fixture), fixture])).values(),
+  ];
+  const roundScope = `${competition}:${selectedSeason ?? state.season}`;
+  const defaultRound = nextFixture
+    ? roundKey(nextFixture)
+    : rounds.at(-1)
+      ? roundKey(rounds.at(-1)!)
+      : '';
+  const selectedRoundKey = roundSelection?.scope === roundScope ? roundSelection.key : defaultRound;
+  const selectedRoundIndex = Math.max(
+    0,
+    rounds.findIndex((fixture) => roundKey(fixture) === selectedRoundKey),
+  );
+  const selectedRound = rounds[selectedRoundIndex];
+  const displayedFixtures =
+    activeTab === 'next'
+      ? competitionFixtures.filter(
+          (fixture) => selectedRound && roundKey(fixture) === roundKey(selectedRound),
+        )
+      : fixtures;
+  const navigateRound = (index: number) => {
+    const fixture = rounds[index];
+    if (fixture) setRoundSelection({ scope: roundScope, key: roundKey(fixture) });
+  };
   const pendingDraw = !archive
     ? state.competitionDraws?.find(
         (draw) => draw.competitionId === competition && draw.completedAt === undefined,
@@ -189,7 +214,7 @@ export function Calendar({ snapshot, club }: ViewProps) {
               title={pendingDraw ? 'Disponível após o sorteio' : undefined}
               onClick={() => setTab('next')}
             >
-              <Icon name="calendar" size={18} /> Próxima rodada
+              <Icon name="calendar" size={18} /> Partidas
             </button>
             <button
               className={activeTab === 'fixtures' ? 'selected' : ''}
@@ -289,11 +314,51 @@ export function Calendar({ snapshot, club }: ViewProps) {
           )}
         </div>
       ) : (
-        <section className="panel">
+        <section className="panel tournament-matches">
           <div className="section-header">
-            <h2>{activeTab === 'next' ? 'Próxima rodada' : `Calendário do ${club.name}`}</h2>
+            <h2>{activeTab === 'next' ? 'Partidas' : `Calendário do ${club.name}`}</h2>
+            {activeTab === 'next' && rounds.length > 0 && (
+              <div className="tournament-round-navigation" aria-label="Navegar entre rodadas">
+                <button
+                  type="button"
+                  aria-label="Rodada anterior"
+                  disabled={selectedRoundIndex === 0}
+                  onClick={() => navigateRound(selectedRoundIndex - 1)}
+                >
+                  ‹
+                </button>
+                <Select
+                  aria-label="Rodada"
+                  value={String(selectedRoundIndex)}
+                  onValueChange={(value) => navigateRound(Number(value))}
+                >
+                  {rounds.map((fixture, index) => (
+                    <Option key={roundKey(fixture)} value={String(index)}>
+                      {phaseOf(fixture) === 'groups'
+                        ? 'Grupos · '
+                        : phaseOf(fixture) === 'knockout'
+                          ? 'Mata-mata · '
+                          : ''}
+                      Rodada {fixture.round + 1}
+                      {phaseOf(fixture) === 'knockout'
+                        ? fixture.id.endsWith(':first')
+                          ? ' · Ida'
+                          : ' · Volta / único'
+                        : ''}
+                    </Option>
+                  ))}
+                </Select>
+                <button
+                  type="button"
+                  aria-label="Rodada seguinte"
+                  disabled={selectedRoundIndex >= rounds.length - 1}
+                  onClick={() => navigateRound(selectedRoundIndex + 1)}
+                >
+                  ›
+                </button>
+              </div>
+            )}
           </div>
-          <p className="calendar-home-note">Mandante à esquerda · Visitante à direita</p>
           {[
             { id: 'groups', label: 'Fase de grupos' },
             { id: 'knockout', label: 'Mata-mata' },
@@ -308,7 +373,11 @@ export function Calendar({ snapshot, club }: ViewProps) {
                   {matches.map((fixture) => {
                     const result = state.results.find((item) => item.fixtureId === fixture.id);
                     return (
-                      <article className="calendar-match-card" key={fixture.id}>
+                      <article
+                        className="calendar-match-card"
+                        data-finished={Boolean(result)}
+                        key={fixture.id}
+                      >
                         <header>
                           <time>{dateTime(fixture.scheduledAt)}</time>
                           <span>
@@ -322,19 +391,42 @@ export function Calendar({ snapshot, club }: ViewProps) {
                             const team = state.clubs.byId[id];
                             return (
                               <div
+                                className={`calendar-match-side calendar-match-side-${side}`}
                                 key={side}
-                                className={`calendar-match-team calendar-match-${side} ${id === club.id ? 'user-team-outline' : ''}`}
-                                aria-label={`${side === 'home' ? 'Mandante' : 'Visitante'}: ${team?.name ?? 'Clube'}`}
                               >
-                                <PixelBadge
-                                  name={team?.name ?? 'Clube'}
-                                  {...(team?.crestUrl ? { url: team.crestUrl } : {})}
-                                  size={26}
-                                />
-                                <span>{team?.name}</span>
+                                <div
+                                  className={`calendar-match-team calendar-match-${side} ${id === club.id ? 'user-team-outline' : ''}`}
+                                  aria-label={`${side === 'home' ? 'Mandante' : 'Visitante'}: ${team?.name ?? 'Clube'}`}
+                                >
+                                  <PixelBadge
+                                    name={team?.name ?? 'Clube'}
+                                    {...(team?.crestUrl ? { url: team.crestUrl } : {})}
+                                    size={26}
+                                  />
+                                  <span className="calendar-match-team-name">{team?.name}</span>
+                                  {state.participants.some(
+                                    (participant) => participant.clubId === id,
+                                  ) && (
+                                    <span
+                                      className="calendar-human-manager"
+                                      title="Clube treinado por jogador real"
+                                      aria-label="Clube treinado por jogador real"
+                                    >
+                                      <Icon name="squad" size={13} />
+                                    </span>
+                                  )}
+                                </div>
                                 {side === 'home' && (
                                   <strong className="calendar-match-score">
-                                    {result ? `${result.homeGoals}–${result.awayGoals}` : '×'}
+                                    {result ? (
+                                      <>
+                                        <span>{result.homeGoals}</span>
+                                        <span className="calendar-score-separator">×</span>
+                                        <span>{result.awayGoals}</span>
+                                      </>
+                                    ) : (
+                                      '×'
+                                    )}
                                   </strong>
                                 )}
                               </div>

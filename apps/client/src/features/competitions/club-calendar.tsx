@@ -307,9 +307,6 @@ export function ClubCalendar({ state: rawState, clubId }: { state: WorldState; c
                       onClick={() => setSelectedDrawId(draw.id)}
                     >
                       <span className="calendar-draw-label">
-                        <small>
-                          <Icon name="trophy" size={10} /> Sorteio
-                        </small>
                         <strong className="calendar-draw-name">
                           {drawThemes[draw.competitionId]?.label ??
                             COMPETITIONS.find((r) => r.id === draw.competitionId)?.name ??

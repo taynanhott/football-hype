@@ -201,7 +201,7 @@ export function Dashboard({ snapshot, club, stadium, center }: ViewProps) {
         <ClubCalendar state={state} clubId={club.id} />
       </div>
       <div className="dashboard-bottom dashboard-season-summary">
-        <section className="panel">
+        <section className="panel dashboard-standouts">
           <div className="section-header">
             <div>
               <span className="eyebrow">QUEM FAZ A DIFERENÇA</span>
@@ -251,7 +251,7 @@ export function Dashboard({ snapshot, club, stadium, center }: ViewProps) {
           </div>
         </section>
         <CompetitionStatus snapshot={snapshot} club={club} stadium={stadium} center={center} />
-        <section className="panel">
+        <section className="panel dashboard-recent-results">
           <div className="section-header">
             <div>
               <span className="eyebrow">A BOLA ROLOU</span>
@@ -276,7 +276,14 @@ export function Dashboard({ snapshot, club, stadium, center }: ViewProps) {
                       {...(home?.crestUrl ? { url: home.crestUrl } : {})}
                       size={24}
                     />
-                    <span>{home?.name ?? 'Casa'}</span>
+                    {home ? (
+                      <a href={`#/trophies?club=${encodeURIComponent(home.id)}`}>
+                        {home.name}
+                        <span aria-hidden="true"> ↗</span>
+                      </a>
+                    ) : (
+                      <span>Casa</span>
+                    )}
                   </span>
                   <span className="dashboard-result-score">
                     <strong>
@@ -298,7 +305,14 @@ export function Dashboard({ snapshot, club, stadium, center }: ViewProps) {
                       {...(away?.crestUrl ? { url: away.crestUrl } : {})}
                       size={24}
                     />
-                    <span>{away?.name ?? 'Fora'}</span>
+                    {away ? (
+                      <a href={`#/trophies?club=${encodeURIComponent(away.id)}`}>
+                        {away.name}
+                        <span aria-hidden="true"> ↗</span>
+                      </a>
+                    ) : (
+                      <span>Fora</span>
+                    )}
                   </span>
                 </div>
               );

@@ -941,7 +941,14 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
                         {positionLabel(player.position)} · {playerClub?.name ?? 'Sem clube'}
                       </span>
                       <span className="market-list-summary">
-                        {player.age} anos · <b>interesse {interestLabel(context.playerInterest)}</b>
+                        {player.age} anos ·{' '}
+                        <b
+                          className="market-list-potential"
+                          aria-label={`Potencial: ${potentialStars(player.potential)} estrelas`}
+                          title="Potencial"
+                        >
+                          {'★'.repeat(potentialStars(player.potential))}
+                        </b>
                       </span>
                     </div>
                     <strong className="market-list-price">
@@ -1049,6 +1056,12 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
                           clubName={seller?.name ?? 'Sem clube'}
                           kit={clubKit(seller)}
                         />
+                        <span
+                          className="market-portrait-potential"
+                          aria-label={`Potencial: ${potentialStars(player.potential)} estrelas`}
+                        >
+                          {'★'.repeat(potentialStars(player.potential))}
+                        </span>
                       </button>
                       <div className="incoming-offer-details">
                         <span className="eyebrow">JOGADOR NO MERCADO</span>

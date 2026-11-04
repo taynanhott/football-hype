@@ -239,8 +239,13 @@ export function PlayerCard({
               [
                 'Clube',
                 player.clubId ? (
-                  <a href={'#/trophies?club=' + player.clubId} onClick={(e) => e.stopPropagation()}>
+                  <a
+                    className="player-club-access"
+                    href={'#/trophies?club=' + player.clubId}
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     {clubName}
+                    <span aria-hidden="true"> ↗</span>
                   </a>
                 ) : (
                   clubName

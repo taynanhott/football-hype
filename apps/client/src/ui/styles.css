@@ -38586,10 +38586,6 @@ dialog.player-card-overlay[open] {
   background: transparent;
   color: var(--draw-surface, #f4e9be);
   border: 0;
-  border-image: none !important;
-  border-radius: 0 !important;
-  clip-path: none !important;
-  box-shadow: none !important;
 }
 
 /* Draw names use the same legible label size as pending cup matches. */
@@ -39526,4 +39522,815 @@ html body dialog.game-loading-screen[open] {
   border-radius: 0 !important;
   box-shadow: none !important;
   background: transparent;
+}
+
+@media (max-width: 760px) {
+  .club-inspection .squad-planning-list,
+  .club-inspection .squad-planning-list-row,
+  .club-inspection .squad-planning-list-row * {
+    touch-action: pan-y pinch-zoom;
+  }
+
+  .market-reference-list .market-list-row > .market-list-negotiate {
+    align-self: start;
+  }
+
+  .market-reference-list .market-list-row > .market-list-interest {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-row: 2;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .market-reference-list .market-list-interest > div > span {
+    display: block;
+  }
+}
+/* Visiting rosters scroll with the page at every viewport size. */
+.club-inspection .squad-planning-list {
+  overflow: visible;
+  overscroll-behavior: auto;
+}
+
+/* Central loading scenes share a monochromatic yellow palette. */
+.game-loading-screen .game-loading-content {
+  filter: none;
+  color: #f5d76e;
+}
+.training-loading-pass {
+  animation: training-combination 4s ease-in-out infinite;
+}
+.training-loading-player {
+  animation: training-support 4s ease-in-out infinite;
+}
+.training-loading-receiver {
+  animation: training-receive 4s ease-in-out infinite;
+}
+.training-loading-defender {
+  animation: training-press 4s ease-in-out infinite;
+}
+.training-loading-route {
+  animation: training-route 4s ease-in-out infinite;
+}
+@keyframes training-combination {
+  0%,
+  10% {
+    transform: translate(0, 0);
+  }
+  32%,
+  40% {
+    transform: translate(39px, -16px);
+  }
+  60%,
+  66% {
+    transform: translate(51px, -4px);
+  }
+  82%,
+  90% {
+    transform: translate(78px, -5px);
+    opacity: 1;
+  }
+  95%,
+  100% {
+    transform: translate(78px, -5px);
+    opacity: 0;
+  }
+}
+@keyframes training-support {
+  0%,
+  10%,
+  100% {
+    transform: translate(0, 0);
+  }
+  60%,
+  90% {
+    transform: translate(28px, 8px);
+  }
+}
+@keyframes training-receive {
+  0%,
+  32%,
+  100% {
+    transform: translate(0, 0);
+  }
+  60%,
+  90% {
+    transform: translate(12px, 12px);
+  }
+}
+@keyframes training-press {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  50%,
+  90% {
+    transform: translate(-9px, -8px);
+  }
+}
+@keyframes training-route {
+  to {
+    stroke-dashoffset: -28;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .training-loading-scene svg * {
+    animation: none;
+  }
+}
+
+/* Draw events follow the same stacked icon and label layout as match events. */
+.club-calendar .club-calendar-day .calendar-draw-event {
+  width: 100%;
+  justify-content: center;
+}
+.club-calendar .club-calendar-day .calendar-draw-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  width: 100%;
+  min-width: 0;
+}
+.club-calendar .club-calendar-day .calendar-draw-label small {
+  position: static;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  overflow: visible;
+  font-size: 0;
+  line-height: 1;
+  opacity: 1;
+}
+.club-calendar .club-calendar-day .calendar-draw-label small svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+.club-calendar .club-calendar-day .calendar-draw-label .calendar-draw-name {
+  width: 100%;
+  text-align: center;
+  font-size: 9px;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 620px) {
+  .club-calendar .club-calendar-day .calendar-draw-label .calendar-draw-name {
+    font-size: 8px;
+  }
+}
+
+/* Season panels: woven shirt fabric and engraved tournament board. */
+.dashboard-season-summary > .panel:is(.dashboard-standouts, .dashboard-competitions) {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border: 1px solid #d8bb6a80;
+  border-radius: 18px;
+  padding: 18px 16px;
+  color: #f5efd9;
+  box-shadow:
+    inset 0 1px #fff3c41a,
+    0 8px 22px #061b1830;
+}
+.dashboard-season-summary > .dashboard-standouts {
+  background:
+    radial-gradient(ellipse at 0 0, #6d96723d, transparent 70%),
+    repeating-linear-gradient(45deg, #ffffff05 0 1px, transparent 1px 4px),
+    repeating-linear-gradient(-45deg, #00000014 0 1px, transparent 1px 4px),
+    linear-gradient(135deg, #163e32, #0c2722);
+}
+.dashboard-season-summary > .dashboard-competitions {
+  background:
+    radial-gradient(ellipse at 100% 0, #c9a34f24, transparent 65%),
+    repeating-linear-gradient(0deg, #e8cf8a06 0 1px, transparent 1px 5px),
+    repeating-linear-gradient(
+      120deg,
+      transparent 0 38px,
+      #e8cf8a05 38px 39px,
+      transparent 39px 76px
+    ),
+    linear-gradient(145deg, #263c39, #102725);
+}
+.dashboard-season-summary > :is(.dashboard-standouts, .dashboard-competitions)::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: 7px;
+  border: 1px solid #d8bb6a20;
+  border-radius: 12px;
+  pointer-events: none;
+}
+.dashboard-season-summary :is(.dashboard-standouts, .dashboard-competitions) .section-header {
+  border-bottom: 1px solid #d8bb6a40;
+  padding-bottom: 12px;
+  margin-bottom: 12px;
+  gap: 8px;
+}
+.dashboard-season-summary :is(.dashboard-standouts, .dashboard-competitions) .section-header h2 {
+  color: #fff3ce;
+}
+.dashboard-season-summary
+  :is(.dashboard-standouts, .dashboard-competitions)
+  .section-header
+  h2
+  svg {
+  color: #e8c66d;
+}
+.dashboard-season-summary :is(.dashboard-standouts, .dashboard-competitions) .section-header a {
+  color: #e8c66d;
+  white-space: nowrap;
+}
+.dashboard-standouts .dashboard-featured-list {
+  gap: 9px;
+}
+.dashboard-standouts .dashboard-featured-row {
+  background: linear-gradient(100deg, #ffffff0d, #ffffff03);
+  color: #f5efd9;
+  border: 1px solid #d8bb6a36;
+  border-left: 3px solid #9f884d;
+  border-radius: 9px;
+  clip-path: none;
+  box-shadow: inset 0 1px #ffffff08;
+  padding: 10px 9px;
+}
+.dashboard-standouts .dashboard-featured-row:first-child {
+  border-left-color: #f4d37e;
+  background: linear-gradient(100deg, #d6b35b22, #ffffff04);
+}
+.dashboard-standouts .dashboard-featured-rank {
+  color: #edcf83;
+  font-weight: 800;
+}
+.dashboard-standouts .dashboard-featured-name strong {
+  color: #fff3d5;
+}
+.dashboard-standouts .dashboard-featured-name small,
+.dashboard-standouts .dashboard-featured-rating small {
+  color: #bfcfc1;
+}
+.dashboard-standouts .dashboard-featured-rating {
+  border-left: 1px solid #d8bb6a30;
+  padding-left: 10px;
+}
+.dashboard-standouts .dashboard-featured-rating b {
+  color: #f4d37e;
+  text-shadow: 0 2px 8px #e8c66d18;
+}
+.dashboard-competitions .dashboard-competition-list {
+  gap: 8px;
+}
+.dashboard-competitions .dashboard-competition-row {
+  position: relative;
+  color: #f5efd9;
+  background: linear-gradient(110deg, #d8bb6a10, #ffffff04);
+  border: 1px solid #d8bb6a30;
+  border-radius: 9px;
+  padding: 12px 10px;
+  box-shadow: inset 0 1px #fff5cf08;
+}
+.dashboard-competitions .dashboard-competition-row > svg {
+  color: #e8c66d;
+  padding: 5px;
+  width: 28px;
+  height: 28px;
+  box-sizing: border-box;
+  border: 1px solid #d8bb6a40;
+  border-radius: 50%;
+  background: #d8bb6a0d;
+}
+.dashboard-competitions .dashboard-competition-row strong {
+  color: #f5efd9;
+}
+.dashboard-competitions .dashboard-competition-row > span {
+  color: #edd28e;
+  font-size: 11px;
+}
+.dashboard-competitions .dashboard-competition-row.is-eliminated {
+  opacity: 0.65;
+}
+.dashboard-standouts .dashboard-compact-empty,
+.dashboard-competitions .dashboard-competition-list > p {
+  color: #c6d1c6;
+}
+@media (hover: hover) {
+  .dashboard-standouts .dashboard-featured-row:hover {
+    background: #d8bb6a20;
+    border-color: #d8bb6a90;
+  }
+}
+
+/* Draw buttons inherit the same cut-corner frame as match buttons. */
+.club-calendar .club-calendar-day .calendar-draw-event {
+  margin-top: 2px;
+  padding: 0;
+}
+.club-calendar .club-calendar-day .calendar-draw-label {
+  box-sizing: border-box;
+  min-height: 30px;
+  padding: 4px 2px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+/* Pending fixtures share the draw event's framed label dimensions. */
+.club-calendar .club-calendar-day .calendar-pending-event {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 30px;
+  margin-top: 2px;
+  padding: 4px 2px;
+  gap: 0;
+  background: transparent;
+}
+.club-calendar .club-calendar-day .calendar-pending-event > strong {
+  width: 100%;
+  text-align: center;
+  font-size: 9px;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+.club-calendar .club-calendar-day .calendar-pending-event > :is(svg, small) {
+  display: none;
+}
+@media (max-width: 620px) {
+  .club-calendar .club-calendar-day .calendar-pending-event > strong {
+    font-size: 8px;
+  }
+}
+
+.dashboard-competitions a.dashboard-competition-row:focus-visible {
+  outline: 2px solid #f4d37e;
+  outline-offset: 2px;
+}
+@media (hover: hover) {
+  .dashboard-competitions a.dashboard-competition-row:hover {
+    background: linear-gradient(110deg, #d8bb6a26, #ffffff0a);
+    border-color: #d8bb6a90;
+  }
+}
+
+.player-card .reverse-facts a.player-club-access {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #f4d37e;
+  text-decoration: underline;
+  text-decoration-color: #f4d37e80;
+  text-underline-offset: 3px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+.player-card .reverse-facts a.player-club-access > span {
+  color: #ffe7a1;
+  font-size: 13px;
+  text-decoration: none;
+}
+.player-card .reverse-facts a.player-club-access:hover {
+  color: #fff0bd;
+  text-decoration-color: currentColor;
+}
+.player-card .reverse-facts a.player-club-access:focus-visible {
+  outline: 2px solid #f4d37e;
+  outline-offset: 4px;
+}
+
+/* Cream match tickets with a dark scoreboard and subtle pitch markings. */
+.dashboard-season-summary > .dashboard-recent-results {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 100% 100%, #b7b18418, transparent 65%),
+    repeating-linear-gradient(0deg, #9e8c5605 0 1px, transparent 1px 4px), #f5f0e4;
+  border: 1px solid #cbbb8c80;
+  box-shadow:
+    inset 0 1px #fffdf5,
+    0 8px 22px #061b181a;
+}
+.dashboard-recent-results .result-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  padding: 14px 10px;
+  margin-bottom: 10px;
+  border: 1px solid #c7b98f66;
+  border-left: 3px solid #b39a56;
+  border-radius: 10px;
+  background:
+    linear-gradient(90deg, transparent 49.7%, #8b98700c 49.7% 50.3%, transparent 50.3%),
+    repeating-linear-gradient(115deg, #ffffff28 0 14px, transparent 14px 28px),
+    linear-gradient(110deg, #eae8db, #f0ecdf);
+  box-shadow:
+    inset 0 1px #ffffffb0,
+    0 2px 4px #233d3410;
+}
+.dashboard-recent-results .dashboard-result-team {
+  min-width: 0;
+  gap: 6px;
+}
+.dashboard-recent-results .dashboard-result-team > a {
+  min-width: 0;
+  color: #185448;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  text-decoration: underline;
+  text-decoration-color: #8b9e7966;
+  text-underline-offset: 3px;
+}
+.dashboard-recent-results .dashboard-result-team > a > span {
+  color: #927b3d;
+  font-size: 10px;
+  white-space: nowrap;
+}
+.dashboard-recent-results .dashboard-result-team > a:hover {
+  color: #94732b;
+  text-decoration-color: currentColor;
+}
+.dashboard-recent-results .dashboard-result-team > a:focus-visible {
+  outline: 2px solid #9b823d;
+  outline-offset: 3px;
+}
+.dashboard-recent-results .dashboard-result-score > strong {
+  padding: 7px 9px;
+  border: 1px solid #c3ac6866;
+  border-radius: 6px;
+  color: #fff7df;
+  background: repeating-linear-gradient(0deg, #ffffff04 0 1px, transparent 1px 3px), #203b49;
+  box-shadow:
+    inset 0 1px #ffffff20,
+    0 2px 4px #122e2720;
+}
+@media (max-width: 600px) {
+  .dashboard-recent-results .result-row {
+    padding: 12px 7px;
+    gap: 6px;
+  }
+  .dashboard-recent-results .dashboard-result-team > a {
+    font-size: 10px;
+  }
+}
+
+/* Match centre: compact cream tickets, green pitch texture and framed scores. */
+.tournament-matches > .section-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #bdab7445;
+}
+.tournament-round-navigation {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.tournament-round-navigation > button {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  font-size: 23px;
+}
+.tournament-round-navigation .game-select {
+  min-width: 150px;
+}
+.tournament-matches .calendar-phase > h3 {
+  color: #7e6d3f;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  margin-bottom: 10px;
+}
+.tournament-matches .calendar-match-grid {
+  gap: 12px;
+}
+.tournament-matches .calendar-match-card {
+  color: #23473d;
+  padding: 12px 14px;
+  border: 1px solid #c5b88b80;
+  border-left: 3px solid #aa9454;
+  border-radius: 10px;
+  background:
+    repeating-linear-gradient(115deg, #ffffff38 0 18px, transparent 18px 36px),
+    linear-gradient(115deg, #e7eadc, #f1eddf);
+  box-shadow:
+    inset 0 1px #ffffffb0,
+    0 3px 8px #173b2e0c;
+}
+.tournament-matches .calendar-match-card > header {
+  color: #687969;
+  font-size: 10px;
+  padding-bottom: 9px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid #9b997b26;
+}
+.tournament-matches .calendar-match-card > header > span {
+  color: #7e6d3f;
+  font-weight: 700;
+}
+.tournament-matches .calendar-match-card[data-finished='true'] {
+  border-left-color: #38745b;
+}
+.tournament-matches .calendar-match-team {
+  color: #23473d;
+}
+.tournament-matches .calendar-match-team > span {
+  color: #23473d;
+  font-weight: 700;
+  font-size: 12px;
+}
+.tournament-matches .calendar-match-score {
+  color: #fff3d2;
+  background: #203f38;
+  border: 1px solid #bba36588;
+  border-radius: 5px;
+  padding: 5px 3px;
+  width: 60px;
+  min-width: 60px;
+  height: 32px;
+  text-align: center;
+  box-shadow: inset 0 1px #ffffff20;
+}
+.tournament-matches .user-team-outline {
+  outline: none;
+  color: #235c44;
+}
+@media (max-width: 600px) {
+  .tournament-matches .tournament-round-navigation {
+    width: 100%;
+  }
+  .tournament-round-navigation > :nth-child(2) {
+    flex: 1;
+    min-width: 0;
+  }
+  .tournament-matches .calendar-match-card {
+    padding: 10px 8px;
+  }
+  .tournament-matches .calendar-match-team > span {
+    font-size: 11px;
+  }
+}
+
+.tournament-matches > .section-header > h2 {
+  font-family: 'Press Start 2P', monospace;
+  font-size: clamp(12px, 1.3vw, 16px);
+  line-height: 1.6;
+  color: #21634d;
+  text-shadow: 1px 1px #d8bd7438;
+}
+.tournament-matches .calendar-match-team.user-team-outline {
+  width: fit-content;
+  max-width: 100%;
+  padding: 6px 8px;
+  border: 1px solid #af9148;
+  border-radius: 6px;
+  background: linear-gradient(110deg, #e4ce8b55, #f7e9bb44);
+  box-shadow:
+    inset 0 1px #fff8db,
+    0 1px 4px #7d68221a;
+}
+.tournament-matches .calendar-match-team.user-team-outline > span {
+  color: #18503a;
+  font-weight: 800;
+}
+.tournament-matches .calendar-match-team > .calendar-human-manager {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 15px;
+  width: 15px;
+  height: 15px;
+  border: 0;
+  border-radius: 50%;
+  color: #172d20;
+  background: #d6ff36;
+}
+.tournament-matches .calendar-match-home.user-team-outline {
+  justify-self: end;
+}
+.tournament-matches .calendar-match-away.user-team-outline {
+  justify-self: start;
+}
+.tournament-matches .calendar-match-team.user-team-outline > .calendar-human-manager {
+  color: #172d20;
+}
+.tournament-matches .calendar-human-manager > svg {
+  display: block;
+  width: 11px;
+  height: 11px;
+  flex: 0 0 11px;
+  stroke: currentColor;
+}
+@media (max-width: 600px) {
+  .tournament-matches .calendar-match-team.user-team-outline {
+    padding: 4px;
+  }
+  .tournament-matches .calendar-match-team {
+    display: grid;
+    grid-template-columns: 26px minmax(0, 1fr);
+    gap: 4px;
+  }
+  .tournament-matches .calendar-match-home {
+    grid-template-columns: minmax(0, 1fr) 26px;
+  }
+  .tournament-matches .calendar-match-team > .official-club-badge {
+    grid-row: 1;
+    grid-column: 1;
+  }
+  .tournament-matches .calendar-match-team > .calendar-match-team-name {
+    grid-row: 1;
+    grid-column: 2;
+    min-width: 0;
+  }
+  .tournament-matches .calendar-match-home > .official-club-badge {
+    grid-column: 2;
+  }
+  .tournament-matches .calendar-match-home > .calendar-match-team-name {
+    grid-column: 1;
+  }
+  .tournament-matches .calendar-match-team > .calendar-human-manager {
+    grid-row: 1;
+    grid-column: 1;
+    align-self: end;
+    justify-self: end;
+    transform: translate(3px, 4px);
+    z-index: 1;
+    box-shadow: 0 0 0 1px #f5f0e4;
+  }
+  .tournament-matches .calendar-match-home > .calendar-human-manager {
+    grid-column: 2;
+  }
+}
+
+.tournament-matches .calendar-match-score {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+.tournament-matches .calendar-match-sides {
+  column-gap: 76px;
+}
+.tournament-matches .calendar-score-separator {
+  font-family: Inter, 'Segoe UI', sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  opacity: 0.75;
+}
+
+/* Manager markers sit beyond the team's outer edge, clear of its frame. */
+.tournament-matches .calendar-match-side {
+  min-width: 0;
+  display: flex;
+}
+.tournament-matches .calendar-match-side-home {
+  justify-content: flex-end;
+  padding-left: 19px;
+}
+.tournament-matches .calendar-match-side-away {
+  justify-content: flex-start;
+  padding-right: 19px;
+}
+.tournament-matches .calendar-match-team {
+  position: relative;
+  width: fit-content;
+  max-width: 100%;
+}
+.tournament-matches .calendar-match-team > .calendar-human-manager {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  margin: 0;
+  box-shadow: none;
+}
+.tournament-matches .calendar-match-home > .calendar-human-manager {
+  left: -20px;
+  right: auto;
+}
+.tournament-matches .calendar-match-away > .calendar-human-manager {
+  right: -20px;
+  left: auto;
+}
+
+.tournament-matches .calendar-match-team > .calendar-human-manager {
+  grid-area: auto;
+  align-self: auto;
+  justify-self: auto;
+  bottom: auto;
+}
+.tournament-matches .calendar-match-home > .calendar-human-manager {
+  left: auto;
+  right: calc(100% + 5px);
+}
+.tournament-matches .calendar-match-away > .calendar-human-manager {
+  right: auto;
+  left: calc(100% + 5px);
+}
+
+@media (max-width: 600px) {
+  .tournament-matches .calendar-match-side-home {
+    padding-left: 0;
+  }
+  .tournament-matches .calendar-match-side-away {
+    padding-right: 0;
+  }
+  .tournament-matches .calendar-match-team > .calendar-match-team-name {
+    white-space: nowrap;
+    overflow-wrap: normal;
+    font-size: 10px;
+    line-height: 1.3;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .tournament-matches .calendar-match-team.user-team-outline {
+    padding: 5px 4px;
+  }
+}
+
+/* Every fixture reserves the same team row, including highlighted clubs. */
+.tournament-matches .calendar-match-sides {
+  min-height: 40px;
+  height: 40px;
+}
+.tournament-matches .calendar-match-side {
+  align-items: center;
+  height: 40px;
+}
+.tournament-matches .calendar-match-card {
+  min-height: 102px;
+}
+@media (max-width: 600px) {
+  .tournament-matches .calendar-match-card {
+    min-height: 98px;
+  }
+}
+
+.tournament-round-navigation {
+  align-items: stretch;
+}
+.tournament-round-navigation > button,
+.tournament-round-navigation > .game-select,
+.tournament-round-navigation .game-select-trigger {
+  box-sizing: border-box;
+  height: 40px;
+  min-height: 40px;
+  max-height: 40px;
+}
+.tournament-round-navigation > button {
+  display: grid;
+  place-items: center;
+  padding-block: 0;
+  line-height: 1;
+}
+.tournament-round-navigation .game-select-trigger {
+  padding-block: 0;
+}
+
+@media (max-width: 760px) {
+  .market-reference-list .market-list-row > .market-list-negotiate {
+    min-height: 40px;
+    min-width: 82px;
+    padding: 10px 9px;
+    font-size: 11px;
+  }
+}
+
+.market-list-summary .market-list-potential {
+  color: #e8c66d;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+
+.transfer-hub .market-league-offers .market-player-card-trigger {
+  position: relative;
+  padding-bottom: 24px;
+}
+.transfer-hub .market-player-card-trigger .market-portrait-potential {
+  position: absolute;
+  bottom: 3px;
+  left: 0;
+  right: 0;
+  display: block;
+  text-align: center;
+  color: #967020;
+  font-size: 14px;
+  line-height: 18px;
+  letter-spacing: 1px;
+  text-shadow: 0 1px #fff2b5;
 }

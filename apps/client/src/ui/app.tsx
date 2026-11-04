@@ -387,12 +387,12 @@ function GameApp() {
         </a>
         <a
           href="#/calendar"
-          aria-label="Calendário"
+          aria-label="Torneios"
           aria-current={route === 'calendar' && !menuOpen ? 'page' : undefined}
           onClick={() => setMenuOpen(false)}
         >
-          <Icon name="calendar" />
-          <span>Calendário</span>
+          <Icon name="trophy" />
+          <span>Torneios</span>
         </a>
       </nav>
       {error && (

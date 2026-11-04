@@ -412,6 +412,7 @@ export function MatchInstructionsEditor({
           <button
             type="button"
             aria-label={`Não substituir · ${value.protected.length}/2`}
+            disabled={value.protected.length >= 2}
             onClick={() => setProtect(true)}
           >
             <span className="protected-button-label">Não substituir</span>

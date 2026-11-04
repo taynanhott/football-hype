@@ -61,17 +61,18 @@ export function CompetitionStatus({ snapshot, club }: ViewProps) {
       </div>
       <div className="dashboard-competition-list">
         {rows.map((row) => (
-          <div
+          <a
             className={`dashboard-competition-row ${row.eliminated ? 'is-eliminated' : ''}`}
             key={row.id}
+            href={`#/calendar?competition=${encodeURIComponent(row.id)}`}
           >
-            <Icon name={row.trophy ? 'trophy' : 'calendar'} size={18} />
+            <Icon name="trophy" size={18} />
             <strong>{row.name}</strong>
             <span>
               {row.label}
               {row.eliminated && <small>Eliminado</small>}
             </span>
-          </div>
+          </a>
         ))}
         {!rows.length && <p>Nenhuma participação registrada nesta temporada.</p>}
       </div>
