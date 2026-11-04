@@ -1,4 +1,5 @@
-import { MatchInstructionsEditor, UnavailablePlayers } from './match-instructions';
+import { PixelBadge } from '../../ui/pixel-badge';
+import { MatchInstructionsEditor } from './match-instructions';
 import { FormationIcon } from './formation-icon';
 import { showDraggedCard, startCardPointerDrag } from '../../ui/card-drag';
 import { SquadAverages } from './squad-averages';
@@ -379,43 +380,30 @@ export function LineupEditor({ snapshot, club, center }: ViewProps) {
           </button>
         </div>
       )}
-      <LineupPresets
-        presets={state.lineupPresets?.[club.id] ?? []}
-        current={{
-          formation,
-          starters: ids,
-          style,
-          bench: reserves,
-          instructions: activeInstructions,
-        }}
-        onLoad={(plan) => {
-          setInstructions(plan.instructions ?? emptyInstructions);
-          setFormation(plan.formation);
-          setStyle(plan.style ?? 'balanced');
-          setStarters([...plan.starters]);
-          const loadedIds = resolveLineup(
-            state,
-            club,
-            availabilityAt,
-            state.players.byId,
-            plan.formation,
-            plan.starters,
-          ).flatMap((entry) => (entry.player ? [entry.player.id] : []));
-          setBench(resolveBench(state, club, availabilityAt, loadedIds, plan.bench));
-          setDirty(true);
-          lastAttempt.current = '';
-          useGameStore.getState().clearError();
-        }}
-      />
       <div className="lineup-layout">
         <div className="lineup-main-column">
           <section className="tactics-panel">
             <div className="tactics-header lineup-club-summary">
+              <div className="lineup-summary-crest">
+                <PixelBadge
+                  name={club.name}
+                  {...(club.crestUrl ? { url: club.crestUrl } : {})}
+                  size={48}
+                />
+              </div>
+              <strong className="lineup-summary-club-name">{club.name}</strong>
               <div className="lineup-summary-metrics">
                 <SquadAverages state={snapshot.state} club={club} lineup={entries} />
                 <div className="lineup-summary-stat">
                   <span>Entrosamento</span>
-                  <strong>{chemistry}%</strong>
+                  <strong
+                    className="chemistry-summary-badge"
+                    style={{
+                      backgroundColor: `hsl(${Math.max(0, Math.min(100, chemistry)) * 1.2} 62% 68%)`,
+                    }}
+                  >
+                    {chemistry}%
+                  </strong>
                 </div>
               </div>
             </div>
@@ -589,7 +577,6 @@ export function LineupEditor({ snapshot, club, center }: ViewProps) {
             />
           </section>
           <div className="lineup-support">
-            <UnavailablePlayers state={state} club={club} />
             <section className="sector-chemistry" aria-label="Entrosamento por setor">
               <span className="eyebrow">CONEXÃO EM CAMPO</span>
               {sectors.map((sector) => (
@@ -610,12 +597,41 @@ export function LineupEditor({ snapshot, club, center }: ViewProps) {
           </div>
         </div>
         <div className="tactics-sidebar">
+          <LineupPresets
+            presets={state.lineupPresets?.[club.id] ?? []}
+            current={{
+              formation,
+              starters: ids,
+              style,
+              bench: reserves,
+              instructions: activeInstructions,
+            }}
+            onLoad={(plan) => {
+              setInstructions(plan.instructions ?? emptyInstructions);
+              setFormation(plan.formation);
+              setStyle(plan.style ?? 'balanced');
+              setStarters([...plan.starters]);
+              const loadedIds = resolveLineup(
+                state,
+                club,
+                availabilityAt,
+                state.players.byId,
+                plan.formation,
+                plan.starters,
+              ).flatMap((entry) => (entry.player ? [entry.player.id] : []));
+              setBench(resolveBench(state, club, availabilityAt, loadedIds, plan.bench));
+              setDirty(true);
+              lastAttempt.current = '';
+              useGameStore.getState().clearError();
+            }}
+          />
+
           {!mobile && (
             <aside className="tactics-clipboard" aria-label="Prancheta tática">
               <span className="clipboard-pencil" aria-hidden="true" />
               <span className="eyebrow">PLANO DE JOGO</span>
 
-              <label>Formação{formationControl}</label>
+              <div className="lineup-formation-control">{formationControl}</div>
               {tacticalControls}
             </aside>
           )}
@@ -744,7 +760,7 @@ export function LineupEditor({ snapshot, club, center }: ViewProps) {
                               {state.injuries[player.id] && medicallyAvailable(state, player.id)
                                 ? 'Liberado para a próxima partida'
                                 : state.injuries[player.id]
-                                  ? `Lesionado · ${state.injuries[player.id]} dias`
+                                  ? `Lesionado · ${state.injuries[player.id]} jogos`
                                   : `Risco ${Math.round(risk * 100)}% · ${load?.consecutiveMatches ?? 0} jogos seguidos`}
                             </small>
                           </span>

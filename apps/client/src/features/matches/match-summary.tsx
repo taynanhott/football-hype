@@ -80,7 +80,7 @@ export function RoundResults({
     <section className="round-results report-dark">
       <header>
         <h2>Placar da rodada</h2>
-        {fixture && <span>Rodada {fixture.round}</span>}
+        {fixture && <span>Rodada {fixture.round + 1}</span>}
       </header>
       {orderedGroups.map(([competitionId, matches]) => (
         <section
@@ -267,10 +267,6 @@ export const PlayerRatings = memo(
     const visibleActions = visibleRatingActions(result, minute);
     return (
       <section className="match-player-ratings report-dark">
-        <header>
-          <h2>Notas dos atletas</h2>
-          <span>{minute >= 90 ? 'Notas finais' : `Ao vivo · ${Math.floor(minute)}′`}</span>
-        </header>
         <div className="ratings-pitch">
           <div className="ratings-pitch-lines" aria-hidden="true">
             <i />
@@ -397,18 +393,21 @@ export const PlayerRatings = memo(
           {(result.substitutions ?? [])
             .filter((s) => s.minute <= minute)
             .map((s) => (
-              <p key={s.out}>
-                <strong>
-                  {s.minute}′ ⇄ {state.players.byId[s.in]?.name}
-                </strong>{' '}
-                entra · {state.players.byId[s.out]?.name} sai ·{' '}
-                {s.reason === 'planned'
-                  ? 'Planejada'
-                  : s.reason === 'fatigue'
-                    ? 'Cansaço'
-                    : 'Rendimento'}{' '}
-                · Nota de quem saiu: {ratings[s.out]?.toFixed(1) ?? '—'}
-              </p>
+              <article className="match-substitution" data-side={s.side} key={s.out}>
+                <span className="substitution-team-minute">
+                  <Badge state={state} id={s.side === 'home' ? result.homeId : result.awayId} />
+                  <strong>{s.minute}′</strong>
+                </span>
+                <span className="substitution-in">
+                  <span>Entra</span>
+                  <strong>{state.players.byId[s.in]?.name ?? 'Jogador'}</strong>
+                </span>
+                <span className="substitution-out">
+                  <span>Sai</span>
+                  <strong>{state.players.byId[s.out]?.name ?? 'Jogador'}</strong>
+                  <small>Nota: {ratings[s.out]?.toFixed(1).replace('.', ',') ?? '—'}</small>
+                </span>
+              </article>
             ))}
         </div>
       </section>

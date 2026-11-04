@@ -337,7 +337,7 @@ export function Matches({ snapshot, club }: ViewProps) {
             {[
               ['stats', 'Estatísticas'],
               ['round', 'Partidas'],
-              ['ratings', 'Notas dos jogadores'],
+              ['ratings', 'Notas'],
               ['events', 'Gols e cartões'],
             ]
               .filter(([id]) => !desktop || id !== 'ratings')
@@ -414,9 +414,9 @@ export function Matches({ snapshot, club }: ViewProps) {
           </div>
         </section>
         {desktop && (
-          <aside className="match-ratings-persistent" aria-label="Notas dos jogadores">
+          <aside className="match-ratings-persistent" aria-label="Notas">
             <header className="persistent-ratings-heading">
-              <h2>Notas dos jogadores</h2>
+              <h2>Notas</h2>
             </header>
             <div className="match-tab-panel match-ratings-body" tabIndex={0}>
               <PlayerRatings state={state} result={result} minute={minute} />

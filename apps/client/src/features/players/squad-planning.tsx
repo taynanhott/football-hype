@@ -1,3 +1,4 @@
+import { Icon } from '../../ui/icons';
 import { CountryFlag } from '../../ui/country-flag';
 import { shortMoney } from '../../ui/format';
 import { PixelBadge } from '../../ui/pixel-badge';
@@ -7,9 +8,9 @@ import {
   playerCategoryHeading,
   playerPositionCategory,
 } from './field-position-order';
-import { useEffect, useState, useSyncExternalStore } from 'react';
+import { useState, useSyncExternalStore } from 'react';
 import { clubKit } from '@football/shared';
-import { renewalTerms, contractEnd } from '@football/domain';
+import { renewalTerms, contractEnd, masteredPositions } from '@football/domain';
 import type { ViewProps } from '../../ui/view-props';
 import { useGameStore } from '../../store/game-store';
 
@@ -34,47 +35,11 @@ const mobileActions = [
 ] as const;
 
 export function SquadPlanning({ snapshot, club }: ViewProps) {
-  const view = 'list';
   const [position, setPosition] = useState('ALL');
   const [order, setOrder] = useState('position');
   const [rosterTab, setRosterTab] = useState('players');
   const [collapsedList, toggleListCategory] = useCollapsedPlayerCategories('squad');
   const mobile = useSyncExternalStore(subscribeMobile, mobileSnapshot, () => false);
-  useEffect(() => {
-    if (!mobile) return;
-    const roster = document.querySelector('.squad-office-roster');
-    const container = roster?.querySelector<HTMLElement>(
-      '.squad-office-players, .squad-planning-list',
-    );
-    if (!container) return;
-    let frame = 0;
-    const update = () => {
-      const heading = container.querySelector<HTMLElement>(
-        '.squad-category-group > button[aria-expanded="true"]',
-      );
-      const content = heading?.parentElement?.querySelector<HTMLElement>('.squad-category-players');
-      if (heading && content) {
-        const inset = Math.max(
-          12,
-          heading.getBoundingClientRect().bottom + 12 - content.getBoundingClientRect().top,
-        );
-        content.style.setProperty('--category-clip-top', inset + 'px');
-      }
-    };
-    const schedule = () => {
-      cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(update);
-    };
-    container.addEventListener('scroll', schedule, { passive: true });
-    const observer = new ResizeObserver(schedule);
-    observer.observe(container);
-    update();
-    return () => {
-      cancelAnimationFrame(frame);
-      observer.disconnect();
-      container.removeEventListener('scroll', schedule);
-    };
-  }, [collapsedList, view, position, mobile]);
   function playerAlert(player: (typeof players)[number]) {
     return (
       snapshot.state.management?.offers?.some(
@@ -150,7 +115,7 @@ export function SquadPlanning({ snapshot, club }: ViewProps) {
               aria-pressed={rosterTab === 'players'}
               onClick={() => setRosterTab('players')}
             >
-              Jogadores
+              <Icon name="shirt" size={16} /> Jogadores
             </button>
             <button
               type="button"
@@ -158,7 +123,7 @@ export function SquadPlanning({ snapshot, club }: ViewProps) {
               aria-pressed={rosterTab === 'numbers'}
               onClick={() => setRosterTab('numbers')}
             >
-              ⚽ Números
+              <Icon name="tactics" size={16} /> Estatísticas
             </button>
           </div>
           <div className="squad-sector-filters" role="group" aria-label="Setor do jogador">
@@ -247,8 +212,19 @@ export function SquadPlanning({ snapshot, club }: ViewProps) {
                             setSelectedPlayerId(player.id);
                           }}
                         >
-                          <strong>{player.name}</strong>
-                          <small>{positionLabel(player.position)}</small>
+                          <Portrait player={player} clubName={club.name} kit={clubKit(club)} />
+                          <span className="squad-statistics-identity">
+                            <strong>
+                              {player.name}
+                              {renewalTerms(snapshot.state, player).demand && (
+                                <span
+                                  className="squad-notification-dot"
+                                  aria-label="Jogador pede renovação"
+                                />
+                              )}
+                            </strong>
+                            <small>{positionLabel(player.position)}</small>
+                          </span>
                         </button>
                       </td>
                       <td>{history.length}</td>
@@ -340,6 +316,13 @@ export function SquadPlanning({ snapshot, club }: ViewProps) {
                               <span className="squad-player-country">
                                 <CountryFlag country={player.nationality} />
                               </span>
+                              {mobile && (
+                                <span className="squad-player-positions">
+                                  {masteredPositions(snapshot.state, player)
+                                    .map(positionLabel)
+                                    .join(' / ')}
+                                </span>
+                              )}
                               {playerAlert(player) && (
                                 <span
                                   className="squad-notification-dot squad-player-alert"
@@ -348,9 +331,13 @@ export function SquadPlanning({ snapshot, club }: ViewProps) {
                                 />
                               )}
                             </strong>
-                            <span className="squad-player-positions">
-                              {positionLabel(player.position)}
-                            </span>
+                            {!mobile && (
+                              <span className="squad-player-positions">
+                                {masteredPositions(snapshot.state, player)
+                                  .map(positionLabel)
+                                  .join(' / ')}
+                              </span>
+                            )}
                           </div>
                           <div className="squad-list-player-facts">
                             <div className="squad-list-facts-line">

@@ -1,9 +1,10 @@
+import { Icon } from '../../ui/icons';
 import { CountryFlag } from '../../ui/country-flag';
 import { useGameStore } from '../../store/game-store';
 import { marketValue } from '../../ui/format';
 import { positionLabel } from '../../ui/position-label';
 import { Overall } from './overall';
-import { potentialStars } from '@football/domain';
+import { potentialStars, renewalTerms } from '@football/domain';
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import type { PlayerSnapshot, ClubKit } from '@football/shared';
@@ -35,11 +36,17 @@ export function PlayerCard({
   hidePotential?: boolean;
   onActivate?: () => void;
 }) {
+  const renewalRequested = useGameStore((store) => {
+    const world = store.snapshot?.state;
+    return world && player.clubId && world.participants.some((p) => p.clubId === player.clubId)
+      ? renewalTerms(world, player).demand
+      : false;
+  });
   const [flipped, setFlipped] = useState(initiallyFlipped);
   const loanAvailable = useGameStore(
     (state) => state.snapshot?.state.management?.policies?.[player.id]?.loanAvailable ?? false,
   );
-  const injuryDays = useGameStore((state) => state.snapshot?.state.injuries[player.id] ?? 0);
+  const injuryGames = useGameStore((state) => state.snapshot?.state.injuries[player.id] ?? 0);
   const tier =
     player.overall <= 69
       ? 'bronze'
@@ -69,6 +76,15 @@ export function PlayerCard({
         else setFlipped(!flipped);
       }}
     >
+      {renewalRequested && (
+        <span
+          className="card-renewal-request"
+          title="Jogador pede renovação"
+          aria-label="Jogador pede renovação"
+        >
+          <Icon name="salary-demand" size={19} />
+        </span>
+      )}
       {contractExpiring && (
         <span
           className="card-contract-alert"
@@ -130,11 +146,11 @@ export function PlayerCard({
           $
         </span>
       )}
-      {injuryDays > 0 && (
+      {injuryGames > 0 && (
         <span
           className="card-injury"
-          title={`Lesionado · ${injuryDays} dias`}
-          aria-label={`Lesionado · ${injuryDays} dias`}
+          title={`Lesionado · ${injuryGames} jogos`}
+          aria-label={`Lesionado · ${injuryGames} jogos`}
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
             <path d="M9 3h6v6h6v6h-6v6H9v-6H3V9h6Z" />

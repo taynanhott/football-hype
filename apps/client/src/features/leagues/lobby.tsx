@@ -291,7 +291,7 @@ function AuthenticatedLobby({ user }: { user: { uid: string; name: string } }) {
     if (!selected || spinning || binding.current) return;
     setError('');
     try {
-      useGameStore.setState({ busy: true });
+      useGameStore.setState({ busy: true, loadingMessage: 'Criando carreira…' });
       const id =
         boundLeague ||
         existingMode?.id ||
@@ -421,7 +421,7 @@ function AuthenticatedLobby({ user }: { user: { uid: string; name: string } }) {
           {error}
         </p>
       )}
-      {(leagues.isLoading || (busy && loadingSaveId !== null)) && (
+      {leagues.isLoading && !busy && (
         <div
           className="career-loading career-loading-screen"
           role="status"
@@ -511,7 +511,7 @@ function AuthenticatedLobby({ user }: { user: { uid: string; name: string } }) {
                     <b>{league.season}</b>Temporada
                   </span>
                   <span>
-                    <b>{league.round}</b>Rodada
+                    <b>{league.round + 1}</b>Rodada
                   </span>
                 </span>
                 <span className="career-save-continue">Entrar em campo →</span>

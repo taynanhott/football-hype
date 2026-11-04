@@ -32,9 +32,8 @@ export function CounterOfferChat({
   const [initialFee] = useState(originalFee);
   const step = MONEY_STEPS.transfer;
   const minimum = ceilMoney(initialFee + step, step);
-  const maximum = Math.max(minimum + step, ceilMoney(initialFee * 3, step));
-  const normalize = (value: number) =>
-    Math.max(minimum, Math.min(maximum, Math.round(value / step) * step));
+  const maximum = Math.max(minimum + step, ceilMoney(initialFee * 3, step), ceilMoney(fee, step));
+  const normalize = (value: number) => Math.max(minimum, Math.round(value / step) * step);
   const currentValue = normalize(fee);
   useEffect(() => openModalPreservingScroll(dialog.current), []);
   useEffect(() => {
@@ -123,7 +122,7 @@ export function CounterOfferChat({
                 <button
                   type="button"
                   aria-label="Aumentar oferta"
-                  disabled={busy || submitted || currentValue >= maximum}
+                  disabled={busy || submitted}
                   onClick={() => change(currentValue + step)}
                 >
                   +

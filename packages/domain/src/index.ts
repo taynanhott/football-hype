@@ -60,7 +60,12 @@ export * from './competitions/competition-draws.js';
 export * from './competitions/cup-calendar.js';
 export * from './competitions/regional-qualifiers.js';
 
-export { renewalTerms, maxContractYears, ageFatigueFactor } from './game/player-contracts.js';
+export {
+  averageMonthlySalary,
+  renewalTerms,
+  maxContractYears,
+  ageFatigueFactor,
+} from './game/player-contracts.js';
 
 export { annualDecline } from './game/training-progression.js';
 

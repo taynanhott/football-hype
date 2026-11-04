@@ -1,3 +1,4 @@
+import { resetTransferredEffects, settleContractDecisions } from './contract-lifecycle.js';
 import {
   progressTraining,
   emptyTrainingProgression,
@@ -136,11 +137,7 @@ function advanceGameDaysInternal(state: WorldState, target: number): WorldState 
               ),
           ),
         };
-        if (injured) {
-          const progress = (medicalProgress[id] ?? 0) + (ops.medical.includes(id) ? 1.5 : 1);
-          injuries[id] = Math.max(0, injuries[id]! - Math.floor(progress));
-          medicalProgress[id] = progress % 1;
-        } else if (routine === 'training') {
+        if (!injured && routine === 'training') {
           const growth =
             (development[id] ?? 0) +
             0.003 *
@@ -358,8 +355,13 @@ export function realTimeGameDate(state: WorldState, nextGameAt: number, realNow:
 }
 
 export function advanceGameDays(state: WorldState, target: number): WorldState {
-  return realizeCompetitionDraws(
-    returnLoans(advanceGameDaysInternal(normalizeRoundCalendar(state), target), target),
-    target,
+  return settleContractDecisions(
+    resetTransferredEffects(
+      state,
+      realizeCompetitionDraws(
+        returnLoans(advanceGameDaysInternal(normalizeRoundCalendar(state), target), target),
+        target,
+      ),
+    ),
   );
 }

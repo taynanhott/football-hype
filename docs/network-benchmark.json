@@ -4,10 +4,10 @@
   "hours": 4,
   "oldPeriodicPresence": {
     "applicationMessages": 4800,
-    "presenceRowsWritten": 16613,
-    "sqlStatements": 62300,
+    "presenceRowsWritten": 19013,
+    "sqlStatements": 64700,
     "returnedRows": 273350,
-    "elapsedMs": 5818
+    "elapsedMs": 6247
   },
   "optimizedPresence": {
     "applicationPresenceMessages": 0,

@@ -213,8 +213,13 @@ export function ClubInspection({
           </div>
           <label>
             Posição
-            <Select value={position} onValueChange={setPosition}>
-              <Option value="ALL">Todas as posições</Option>
+            <Select
+              value={position}
+              onValueChange={setPosition}
+              menuMinWidth={160}
+              aria-label="Posição"
+            >
+              <Option value="ALL">Todos</Option>
               {positions
                 .filter((p) => p !== 'SS')
                 .map((p) => (

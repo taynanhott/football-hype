@@ -49,7 +49,7 @@ function RoundConfirmation({
   return (
     <dialog
       ref={dialog}
-      className="modal career-confirm-dialog round-confirm-dialog"
+      className="modal career-confirm-dialog round-confirm-dialog compact-content-modal"
       onCancel={onClose}
       aria-labelledby="advance-round-title"
     >

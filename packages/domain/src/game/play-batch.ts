@@ -1,5 +1,6 @@
+import { settleContractDecisions } from './contract-lifecycle.js';
 import { roundSponsorship } from '../finance/sponsorship.js';
-import { lineupTacticalBonus, canLearnPosition } from './tactics.js';
+import { lineupTacticalBonus, canLearnPosition, masteredPositions } from './tactics.js';
 import { FORMATIONS } from '@football/shared';
 import { ageFatigueFactor, moraleSensitivity } from './player-contracts.js';
 import { upgradeUnstartedCompetitions } from '../competitions/upgrade-formats.js';
@@ -70,6 +71,7 @@ export function playNextBatch(state: WorldState, processedAt: number): Result<Wo
   const players = { ...state.players.byId };
   const clubs = { ...state.clubs.byId };
   const injuries = { ...state.injuries };
+  const contractHistory = { ...state.management?.contractHistory };
   const development = { ...state.development };
   const debts = { ...state.debts };
   const positionExperience = Object.fromEntries(
@@ -108,6 +110,7 @@ export function playNextBatch(state: WorldState, processedAt: number): Result<Wo
       'balanced',
       'wings',
       'gegenpress',
+      'all-out-press',
       'low-block',
       'possession',
       'counter',
@@ -273,6 +276,13 @@ export function playNextBatch(state: WorldState, processedAt: number): Result<Wo
     result.startedAt = processedAt;
     results.push(result);
     revenue.set(home.id, (revenue.get(home.id) ?? 0) + result.revenue);
+    // Injuries count missed club fixtures, not elapsed calendar days. Recover before new match injuries.
+    for (const team of [home, away]) {
+      const medical = centers[team.trainingCenterId]?.operations?.medical ?? [];
+      for (const id of team.playerIds)
+        if ((injuries[id] ?? 0) > 0)
+          injuries[id] = Math.max(0, injuries[id]! - (medical.includes(id) ? 2 : 1));
+    }
     const random = mulberry32(result.seed);
     for (const player of [
       ...new Set(
@@ -282,6 +292,9 @@ export function playNextBatch(state: WorldState, processedAt: number): Result<Wo
       ),
     ].flatMap((id) => (players[id] ? [players[id]!] : []))) {
       appeared.add(player.id);
+      const contract = contractHistory[player.id];
+      if (contract?.valuedGames)
+        contractHistory[player.id] = { ...contract, valuedGames: contract.valuedGames - 1 };
       const load = workload[player.id];
       const consecutive = (load?.consecutiveMatches ?? 0) + 1;
       const restHours = load ? Math.max(0, (scheduledAt - load.lastPlayedAt) / 3600000) : 168;
@@ -291,7 +304,12 @@ export function playNextBatch(state: WorldState, processedAt: number): Result<Wo
         const slot = plan
           ? FORMATIONS[plan.formation][plan.starters.indexOf(player.id)]
           : undefined;
-        if (slot && canLearnPosition(player.position, slot.position))
+        if (
+          slot &&
+          canLearnPosition(player.position, slot.position) &&
+          (masteredPositions({ positionExperience }, player).length < 2 ||
+            masteredPositions({ positionExperience }, player).includes(slot.position))
+        )
           positionExperience[player.id] = {
             ...positionExperience[player.id],
             [slot.position]: Math.min(
@@ -369,6 +387,15 @@ export function playNextBatch(state: WorldState, processedAt: number): Result<Wo
           player.fitness -
             Math.ceil(
               ((GAMEPLAY.fitnessCost + Math.min(10, Math.max(0, consecutive - 2) * 2)) *
+                ((player.clubId
+                  ? result.tacticalPlans?.[player.clubId === home.id ? 'home' : 'away']?.style
+                  : undefined) === 'all-out-press'
+                  ? 1.5
+                  : (player.clubId
+                        ? result.tacticalPlans?.[player.clubId === home.id ? 'home' : 'away']?.style
+                        : undefined) === 'gegenpress'
+                    ? 1.25
+                    : 1) *
                 ageFatigueFactor(player.age) *
                 ((result.minutesPlayed?.[player.id] ?? 90) / 90)) /
                 (1 +
@@ -496,6 +523,7 @@ export function playNextBatch(state: WorldState, processedAt: number): Result<Wo
       players: { ...state.players, byId: players },
       clubs: { ...state.clubs, byId: clubs },
       injuries,
+      management: { ...state.management, contractHistory },
       chemistry,
       positionExperience,
       workload,
@@ -529,7 +557,7 @@ export function playNextBatch(state: WorldState, processedAt: number): Result<Wo
   if (!pendingFixtures(next).length) next = scheduleIntercontinental(next);
   next = normalizeRoundCalendar(next);
   const nextTime = pendingFixtures(next)[0]?.scheduledAt;
-  next = generateIncomingOffers(next);
+  next = settleContractDecisions(generateIncomingOffers(next));
   return success({
     ...next,
     ...(state.seasonClock ? { calendarAnchor: { realAt: processedAt, gameAt: scheduledAt } } : {}),

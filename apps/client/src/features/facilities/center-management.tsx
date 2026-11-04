@@ -1,3 +1,4 @@
+import { Icon } from '../../ui/icons';
 import { IndividualTrainingRoster } from './individual-training-roster';
 import { GeneratedPerson } from '../../ui/person-avatar';
 import { FitnessGym } from './fitness-gym';
@@ -105,15 +106,17 @@ export function CenterManagement({
     <div className={`center-management sector-${sector}`}>
       <div className="center-management-content">
         <SectorGuide sector={sector} rules={sector === 'coaching'} />
-        <p className="management-passive">
-          {sector === 'fitness'
-            ? 'Benefício passivo: descanso mais rápido entre partidas, ampliado a cada nível.'
-            : medical
-              ? 'Benefício passivo: menor probabilidade e gravidade das lesões a cada nível.'
-              : sector === 'coaching'
-                ? 'Benefício passivo: evolução até o potencial mais rápida e menor perda de overall com a idade.'
-                : 'Benefícios automáticos de acordo com o desenvolvimento do setor.'}
-        </p>
+        {!treatment && sector !== 'coaching' && (
+          <p className="management-passive">
+            {sector === 'fitness'
+              ? 'Benefício passivo: descanso mais rápido entre partidas, ampliado a cada nível.'
+              : medical
+                ? 'Benefício passivo: menor probabilidade e gravidade das lesões a cada nível.'
+                : sector === 'coaching'
+                  ? 'Benefício passivo: evolução até o potencial mais rápida e menor perda de overall com a idade.'
+                  : 'Benefícios automáticos de acordo com o desenvolvimento do setor.'}
+          </p>
+        )}
         {(treatment || sector === 'coaching') && (
           <section className="management-block">
             <div className="section-header">
@@ -160,12 +163,14 @@ export function CenterManagement({
                       value={playerId}
                       onValueChange={setPlayerId}
                     >
-                      <Option value="">Escolha um jogador</Option>
+                      <Option value="" disabled={eligible.length === 0}>
+                        {eligible.length === 0 ? 'Nenhum jogador elegível' : 'Escolha um jogador'}
+                      </Option>
                       {eligible.map((p) => (
                         <Option key={p.id} value={p.id}>
                           {p.name} ·{' '}
                           {medical
-                            ? `${state.injuries[p.id]} dias de recuperação`
+                            ? `${state.injuries[p.id]} jogos de recuperação`
                             : `${Math.round(p.fitness)}% de condição · OVR ${p.overall}`}
                         </Option>
                       ))}
@@ -184,7 +189,6 @@ export function CenterManagement({
                     Iniciar · {currency(cost)}
                   </button>
                   {occupied >= slots && <p>Todas as vagas estão ocupadas.</p>}
-                  {eligible.length === 0 && <p>Nenhum jogador elegível no momento.</p>}
                 </>
               )}
               {(treatment && slots > 0) || sector === 'coaching' ? (
@@ -224,9 +228,14 @@ export function CenterManagement({
         {medical && (
           <section className="management-block">
             <h3>Seringa · liberação para uma partida</h3>
-            <p>
-              Permite que um lesionado jogue a próxima partida do clube no calendário. A lesão
-              permanece. Estoque máximo: uma unidade.
+            <p className="medical-clearance-description">
+              <span className="medical-clearance-description-full">
+                Permite que um lesionado jogue a próxima partida do clube no calendário. A lesão
+                permanece. Estoque máximo: uma unidade.
+              </span>
+              <span className="medical-clearance-description-mobile">
+                Libera um lesionado por 1 jogo, sem curar a lesão. Máximo: 1 seringa.
+              </span>
             </p>
             {level < 5 ? (
               <div className="locked-feature">🔒 Disponível no nível 5</div>
@@ -285,16 +294,28 @@ export function CenterManagement({
             <ol className="marketing-benefits">
               {MARKETING_BENEFITS.map((benefit, i) => (
                 <li key={benefit} className={level > i ? 'unlocked' : ''}>
-                  <span>
-                    {level > i ? '✓' : '🔒'} Nível {i + 1}
-                  </span>
-                  <strong>{benefit}</strong>
+                  <div className="marketing-benefit-icon">
+                    <Icon name={['shirt', 'shorts', 'squad', 'finance', 'stadium'][i]!} size={24} />
+                  </div>
+                  <div className="marketing-benefit-copy">
+                    <span>
+                      {level > i ? '✓' : '🔒'} Nível {i + 1}
+                    </span>
+                    <strong>{benefit}</strong>
+                  </div>
                 </li>
               ))}
             </ol>
-            <button className="secondary full" onClick={onCustomize}>
-              Personalizar clube ↗
-            </button>
+            <section className="marketing-club-identity">
+              <div>
+                <Icon name="shield" size={26} />
+                <h3>Identidade do clube</h3>
+              </div>
+              <button className="primary full" onClick={onCustomize}>
+                <Icon name="settings" size={18} /> Personalizar clube{' '}
+                <Icon name="arrow" size={18} />
+              </button>
+            </section>
           </>
         )}
       </div>

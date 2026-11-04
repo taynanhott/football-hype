@@ -9,7 +9,7 @@ export function MoneyRange({
   ...props
 }: InputHTMLAttributes<HTMLInputElement>) {
   const lower = Number(min);
-  const upper = Number(max);
+  const upper = Math.max(Number(max), Number(value ?? min));
   const progress =
     upper > lower
       ? Math.max(0, Math.min(100, ((Number(value ?? lower) - lower) / (upper - lower)) * 100))
@@ -19,7 +19,7 @@ export function MoneyRange({
       {...props}
       type="range"
       min={min}
-      max={max}
+      max={upper}
       value={value}
       className={`money-range ${className}`}
       style={{ ...style, '--money-progress': `${progress}%` } as CSSProperties}

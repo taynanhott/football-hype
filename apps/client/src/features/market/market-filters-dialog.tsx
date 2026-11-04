@@ -1,7 +1,6 @@
 import { shortMoney } from '../../ui/format';
-import { openModalPreservingScroll } from '../../ui/modal-scroll';
 import { Select, Option } from '../../ui/select';
-import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import {
   UNLIMITED_MARKET_PRICE,
   defaultMarketFilters,
@@ -17,13 +16,24 @@ type FilterProps = {
   onClose: () => void;
 };
 export function MarketFiltersDialog(props: FilterProps) {
-  const dialog = useRef<HTMLDialogElement>(null);
   const [draft, setDraft] = useState<MarketFilterValues>(() => ({
     ...defaultMarketFilters(),
     ...props.value,
   }));
-  useEffect(() => openModalPreservingScroll(dialog.current), []);
-  const count = props.countResults(draft);
+  const { countResults } = props;
+  const [counted, setCounted] = useState<{ draft: MarketFilterValues | null; count: number }>({
+    draft: null,
+    count: 0,
+  });
+  const counting = counted.draft !== draft;
+  const count = counted.count;
+  const [activeHandle, setActiveHandle] = useState('');
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setCounted({ draft, count: countResults(draft) });
+    }, 180);
+    return () => clearTimeout(timer);
+  }, [draft, countResults]);
   const money = (value: number) =>
     value === UNLIMITED_MARKET_PRICE ? 'Sem limite' : shortMoney(value * 100);
   const ranges = [
@@ -51,7 +61,7 @@ export function MarketFiltersDialog(props: FilterProps) {
       values: draft.price,
       min: 0,
       max: props.priceCeiling,
-      step: 50000,
+      step: 10000000,
       format: money,
     },
     {
@@ -60,24 +70,16 @@ export function MarketFiltersDialog(props: FilterProps) {
       values: draft.salary ?? [0, UNLIMITED_MARKET_PRICE],
       min: 0,
       max: props.salaryCeiling ?? 10000,
-      step: 1,
+      step: 50,
       format: money,
     },
   ] as const;
   return (
-    <dialog
-      ref={dialog}
-      className="market-filter-dialog market-filter-redesign"
-      aria-labelledby="filter-title"
-      onCancel={props.onClose}
-      onClick={(event) => {
-        if (event.target === event.currentTarget) props.onClose();
-      }}
+    <section
+      className="market-filter-dialog market-filter-redesign market-inline-advanced"
+      aria-label="Filtros avançados"
     >
       <div className="market-filter-surface">
-        <header className="market-filter-heading">
-          <h2 id="filter-title">⚽ Filtros</h2>
-        </header>
         <div className="market-filter-selects">
           <label className="filter-situation">
             Situação
@@ -150,21 +152,39 @@ export function MarketFiltersDialog(props: FilterProps) {
         <div className="market-filter-dual-ranges">
           {ranges.map((range) => {
             const low = Math.min(range.max, range.values[0]!);
-            const high = Math.min(range.max, range.values[1]!);
+            const firstMaximum = Math.min(range.max, range.min + range.step);
+            const high = Math.max(low, firstMaximum, Math.min(range.max, range.values[1]!));
             const style = {
               '--range-start': ((low - range.min) / (range.max - range.min)) * 100 + '%',
               '--range-end': ((high - range.min) / (range.max - range.min)) * 100 + '%',
             } as CSSProperties;
             return (
               <fieldset key={range.id} className="market-dual-range">
-                <legend>{range.label}</legend>
-                <output>
-                  {range.format(range.values[0]!)} – {range.format(range.values[1]!)}
-                </output>
+                <legend className="market-range-heading">
+                  <span>{range.label}</span>
+                  <output className="market-range-values">
+                    <span>{range.format(low)}</span>
+                    <span>
+                      {range.format(
+                        range.values[1] === UNLIMITED_MARKET_PRICE ? UNLIMITED_MARKET_PRICE : high,
+                      )}
+                    </span>
+                  </output>
+                </legend>
                 <div className="market-dual-track" style={style}>
                   {[0, 1].map((index) => (
                     <input
                       key={index}
+                      style={{
+                        zIndex:
+                          activeHandle === `${range.id}-${index}`
+                            ? 3
+                            : index === 0 && low >= range.max
+                              ? 2
+                              : 1,
+                      }}
+                      onPointerDown={() => setActiveHandle(`${range.id}-${index}`)}
+                      onFocus={() => setActiveHandle(`${range.id}-${index}`)}
                       type="range"
                       min={range.min}
                       max={range.max}
@@ -175,7 +195,7 @@ export function MarketFiltersDialog(props: FilterProps) {
                         const next = [...range.values];
                         let value = Number(event.target.value);
                         if (index === 0) value = Math.min(value, high);
-                        else value = Math.max(value, low);
+                        else value = Math.max(value, low, firstMaximum);
                         next[index] =
                           (range.id === 'price' || range.id === 'salary') &&
                           index === 1 &&
@@ -195,7 +215,11 @@ export function MarketFiltersDialog(props: FilterProps) {
           <button
             type="button"
             className="market-filter-reset"
-            onClick={() => setDraft(defaultMarketFilters())}
+            onClick={() => {
+              const cleared = defaultMarketFilters();
+              setDraft(cleared);
+              props.onApply(cleared);
+            }}
           >
             Limpar
           </button>
@@ -204,13 +228,10 @@ export function MarketFiltersDialog(props: FilterProps) {
             className="market-filter-apply"
             onClick={() => props.onApply(draft)}
           >
-            Ver {count.toLocaleString('pt-BR')} jogadores
+            {counting ? 'Ver resultados' : `Ver ${count.toLocaleString('pt-BR')} resultados`}
           </button>
         </footer>
-        <button type="button" className="market-filter-back" onClick={props.onClose}>
-          ← Voltar
-        </button>
       </div>
-    </dialog>
+    </section>
   );
 }

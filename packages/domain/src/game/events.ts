@@ -1,3 +1,4 @@
+import { resetTransferredEffects } from './contract-lifecycle.js';
 import {
   gameEventSchema,
   worldStateSchema,
@@ -13,6 +14,7 @@ export function recordEvent(
   next: WorldState,
   metadata: Omit<GameEvent, 'sequence' | 'patch'>,
 ): Result<GameEvent> {
+  next = resetTransferredEffects(previous, next);
   next = recordFinancialHistory(previous, next);
   // Unchanged branches already passed validation when the world was loaded.
   // Validate the event's changed branches instead of cloning the entire world.

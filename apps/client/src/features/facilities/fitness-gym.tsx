@@ -156,7 +156,7 @@ export function FitnessGym({
                   </span>
                   {coaching ? null : medical ? (
                     <span className="medical-room-days">
-                      {snapshot.state.injuries[player.id] ?? 0} dias de recuperação
+                      {snapshot.state.injuries[player.id] ?? 0} jogos de recuperação
                     </span>
                   ) : (
                     <div

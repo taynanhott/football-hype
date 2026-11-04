@@ -1,5 +1,6 @@
 import { CountryFlag } from '../../ui/country-flag';
 import {
+  renewalTerms,
   clubPayroll,
   maintenanceBreakdown,
   pendingFixtures,
@@ -31,6 +32,10 @@ const MOBILE_SHORTCUTS = [
 ];
 export function Dashboard({ snapshot, club, stadium, center }: ViewProps) {
   const { state } = snapshot;
+  const hasRenewalRequests = club.playerIds.some((id) => {
+    const player = state.players.byId[id];
+    return player && renewalTerms(state, player).demand;
+  });
   const hasTransferNotifications =
     (state.management?.offers?.some(
       (offer) => offer.sellerId === club.id && offer.status === 'pending',
@@ -162,10 +167,15 @@ export function Dashboard({ snapshot, club, stadium, center }: ViewProps) {
           <a key={item.id} href={`#/${item.id}`}>
             <Icon name={item.id} size={20} />
             <span>{item.label}</span>
-            {item.id === 'market' && hasTransferNotifications ? (
+            {(item.id === 'market' && hasTransferNotifications) ||
+            (item.id === 'squad' && hasRenewalRequests) ? (
               <span
                 className="transfer-alert-dot"
-                aria-label="Há propostas recebidas ou negociações em análise"
+                aria-label={
+                  item.id === 'squad'
+                    ? 'Há jogadores pedindo renovação'
+                    : 'Há propostas recebidas ou negociações em análise'
+                }
               />
             ) : (
               <Icon name="arrow" size={14} />

@@ -1,3 +1,5 @@
+import { useLayoutEffect, useRef, type CSSProperties } from 'react';
+import { Icon } from '../../ui/icons';
 import { continentalPlaces } from '@football/domain';
 import { COMPETITIONS, type GameSnapshot } from '@football/shared';
 import { PixelBadge } from '../../ui/pixel-badge';
@@ -11,6 +13,57 @@ type Props = {
 };
 
 export function StandingsTable({ state, table, competitionId, clubId, group }: Props) {
+  const cardRef = useRef<HTMLElement>(null);
+  const league =
+    !group && COMPETITIONS.find((item) => item.id === competitionId)?.format === 'league';
+  useLayoutEffect(() => {
+    const card = cardRef.current;
+    if (!card || !league) return;
+    const tableElement = card.querySelector<HTMLTableElement>('table');
+    const main = card.closest<HTMLElement>('.main-content');
+    const workspace = card.closest<HTMLElement>('.workspace');
+    const nav = document.querySelector('.mobile-bottom-nav');
+    const controls = document.querySelector('.competition-controls');
+    const legend = card.querySelector('.standings-legend');
+    if (!tableElement) return;
+    const measure = () => {
+      if (!window.matchMedia('(max-width: 760px)').matches) {
+        tableElement.style.removeProperty('height');
+        card.style.removeProperty('--league-row-height');
+        return;
+      }
+      const viewportHeight = window.visualViewport?.height ?? window.innerHeight;
+      const bottomPadding =
+        (main ? parseFloat(getComputedStyle(main).paddingBottom) : 0) +
+        (workspace ? parseFloat(getComputedStyle(workspace).paddingBottom) : 0);
+      const navTop = nav?.getBoundingClientRect().top ?? viewportHeight;
+      const bottom = Math.min(navTop - 8, viewportHeight - bottomPadding - 8);
+      const top = tableElement.getBoundingClientRect().top + window.scrollY;
+      const cardStyle = getComputedStyle(card);
+      const footerHeight = legend?.getBoundingClientRect().height ?? 0;
+      const available = Math.max(
+        0,
+        Math.floor(bottom - top - footerHeight - parseFloat(cardStyle.paddingBottom) - 2),
+      );
+      const header = tableElement.tHead?.getBoundingClientRect().height ?? 25;
+      tableElement.style.setProperty('height', available + 'px', 'important');
+      card.style.setProperty(
+        '--league-row-height',
+        Math.max(0, (available - header) / Math.max(1, table.length)) + 'px',
+      );
+    };
+    const observer = new ResizeObserver(measure);
+    for (const element of [controls, nav, legend]) if (element) observer.observe(element);
+    measure();
+    window.addEventListener('resize', measure);
+    window.visualViewport?.addEventListener('resize', measure);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', measure);
+      window.visualViewport?.removeEventListener('resize', measure);
+      tableElement.style.removeProperty('height');
+    };
+  }, [league, table.length]);
   const places = competitionId === 'serie-a' ? continentalPlaces(state) : [];
   const rule = COMPETITIONS.find((item) => item.id === competitionId);
   const qualifier = state.regionalQualifiers?.find((q) => q.competitionId === competitionId);
@@ -83,6 +136,8 @@ export function StandingsTable({ state, table, competitionId, clubId, group }: P
   }
   return (
     <section
+      ref={cardRef}
+      style={{ '--standings-rows': Math.max(1, table.length) } as CSSProperties}
       className={`standings-card ${!group && rule?.format === 'league' ? 'standings-league' : ''}`}
     >
       {group && (
@@ -100,6 +155,14 @@ export function StandingsTable({ state, table, competitionId, clubId, group }: P
           <caption className="standings-sr-only">
             {rule?.name ?? 'Classificação'} · Temporada {state.season}
           </caption>
+          <colgroup>
+            <col className="standings-col-rank" />
+            <col className="standings-col-club" />
+            {Array.from({ length: 8 }, (_, i) => (
+              <col className="standings-col-stat" key={i} />
+            ))}
+            <col className="standings-col-form" />
+          </colgroup>
           <thead>
             <tr>
               <th scope="col" colSpan={2}>
@@ -114,7 +177,7 @@ export function StandingsTable({ state, table, competitionId, clubId, group }: P
                 ['GP', 'Gols pró'],
                 ['GC', 'Gols contra'],
                 ['SG', 'Saldo de gols'],
-                ['Últimos 5', 'Últimos cinco resultados'],
+                ['Últ. 5', 'Últimos cinco resultados'],
               ].map(([label, title]) => (
                 <th key={label} scope="col" title={title}>
                   {label}
@@ -144,7 +207,16 @@ export function StandingsTable({ state, table, competitionId, clubId, group }: P
                         {...(team?.crestUrl ? { url: team.crestUrl } : {})}
                         size={group && rule?.groupCount === 4 ? 24 : 18}
                       />
-                      <span>{team?.name ?? 'Clube'}</span>
+                      <span className="standings-club-name">{team?.name ?? 'Clube'}</span>
+                      {state.participants.some((participant) => participant.clubId === row.id) && (
+                        <span
+                          className="standings-human-manager"
+                          title="Clube treinado por jogador real"
+                          aria-label="Clube treinado por jogador real"
+                        >
+                          <Icon name="squad" size={11} />
+                        </span>
+                      )}
                       {places.find((place) => place.clubId === row.id)?.origin === 'title' && (
                         <span title="Vaga pelo título" aria-label="Vaga pelo título">
                           ★

@@ -50,6 +50,6 @@ export function resetSeasonCompetitions(state: WorldState, now: number): WorldSt
     trophies: state.trophies.filter((row) => row.season !== state.season),
     workload: {},
     chemistry: {},
-    injuries: {},
+    injuries: state.injuries,
   };
 }

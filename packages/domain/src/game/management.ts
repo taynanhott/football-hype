@@ -1,6 +1,10 @@
 import { formatMoney } from '@football/shared';
-import { renewalTerms, contractExpires } from './player-contracts.js';
-import { stableId } from './world-factory.js';
+import {
+  averageMonthlySalary,
+  renewalPatience,
+  renewalTerms,
+  contractExpires,
+} from './player-contracts.js';
 import { prepareAcademy } from './academy.js';
 import { scheduledFixtures } from '../competitions/fixtures.js';
 import { upgradePrice, facilityCosts } from '../finance/facility-costs.js';
@@ -28,6 +32,7 @@ export const STYLE_LABELS: Record<PlayStyle, string> = {
   balanced: 'Equilibrado',
   wings: 'Avanço pelas pontas',
   gegenpress: 'Gegenpress',
+  'all-out-press': 'Pressão total',
   'low-block': 'Recuo total',
   possession: 'Posse de bola',
   counter: 'Contra-ataque',
@@ -230,12 +235,21 @@ export function maintenanceBreakdown(state: WorldState, club: ClubSnapshot) {
 export function temporaryModifiers(state: WorldState, player: PlayerSnapshot) {
   if (!player.clubId) return [];
   const clubId = player.clubId;
-  const games = state.results.filter((r) => r.homeId === clubId || r.awayId === clubId);
+  const games = state.results
+    .filter((r) => r.homeId === clubId || r.awayId === clubId)
+    .slice(state.management?.contractHistory?.[player.id]?.effectsClubGames ?? 0);
   const won = (r: (typeof games)[number]) =>
     r.homeId === clubId ? r.homeGoals > r.awayGoals : r.awayGoals > r.homeGoals;
   let streak = 0;
   for (let i = games.length - 1; i >= 0 && won(games[i]!); i--) streak++;
   const effects: Array<{ label: string; value: number; until: string }> = [];
+  const valuedGames = state.management?.contractHistory?.[player.id]?.valuedGames ?? 0;
+  if (valuedGames > 0)
+    effects.push({
+      label: 'Sentido-se valorizado',
+      value: 2,
+      until: valuedGames + ' jogos restantes',
+    });
   const cycleBonus =
     state.centers.byId[state.clubs.byId[clubId]?.trainingCenterId ?? '']?.operations
       ?.cycleBonuses?.[player.id]?.games ?? 0;
@@ -264,8 +278,8 @@ export function temporaryModifiers(state: WorldState, player: PlayerSnapshot) {
   if (state.management?.contractHistory?.[player.id]?.dissatisfied)
     effects.push({
       label: 'Insatisfeito com o contrato',
-      value: -8,
-      until: 'Até receber a valorização salarial solicitada',
+      value: state.management?.contractHistory?.[player.id]?.severeDissatisfaction ? -10 : -8,
+      until: 'Até renovar ou mudar de clube',
     });
   if (streak >= 3)
     effects.push({
@@ -273,13 +287,19 @@ export function temporaryModifiers(state: WorldState, player: PlayerSnapshot) {
       value: 1,
       until: 'Até a sequência de vitórias acabar',
     });
-  if ((state.management?.wageDebts?.[clubId] ?? 0) > 0)
+  if (
+    (state.management?.contractHistory?.[player.id]?.effectsClubGames === undefined ||
+      games.length > 0) &&
+    (state.management?.wageDebts?.[clubId] ?? 0) > 0
+  )
     effects.push({ label: 'Salário atrasado', value: -5, until: 'Até quitar a folha atrasada' });
   let winless = 0;
   for (let i = games.length - 1; i >= 0 && !won(games[i]!); i--) winless++;
   if (winless >= 3)
     effects.push({ label: 'Má fase do time', value: -1, until: 'Até a próxima vitória' });
-  const ratings = state.ratingHistory.filter((entry) => entry.playerId === player.id);
+  const ratings = state.ratingHistory
+    .filter((entry) => entry.playerId === player.id)
+    .slice(state.management?.contractHistory?.[player.id]?.effectsRatingCount ?? 0);
   const averageRating = ratings.length
     ? ratings.reduce((sum, entry) => sum + entry.rating, 0) / ratings.length
     : null;
@@ -317,7 +337,7 @@ export function temporaryModifiers(state: WorldState, player: PlayerSnapshot) {
   const trophy = [...state.trophies]
     .reverse()
     .find((t) => t.clubId === clubId && t.season === state.season);
-  if (trophy && games.filter((r) => (r.startedAt ?? 0) > trophy.wonAt).length < 3)
+  if (trophy && games.length && games.filter((r) => (r.startedAt ?? 0) > trophy.wonAt).length < 3)
     effects.push({ label: 'Título conquistado', value: 3, until: 'Por três partidas do clube' });
   return effects;
 }
@@ -330,6 +350,15 @@ export function effectiveOverall(state: WorldState, player: PlayerSnapshot) {
     ),
   );
 }
+export const STYLE_ADVANTAGES: Record<PlayStyle, readonly PlayStyle[]> = {
+  balanced: ['counter', 'all-out-press'],
+  wings: ['low-block', 'balanced'],
+  gegenpress: ['possession', 'wings'],
+  'low-block': ['gegenpress', 'all-out-press'],
+  possession: ['balanced', 'low-block'],
+  counter: ['gegenpress', 'wings'],
+  'all-out-press': ['possession', 'counter'],
+};
 export function tacticalBonus(
   style: PlayStyle,
   formation: Formation,
@@ -341,6 +370,7 @@ export function tacticalBonus(
     balanced: ['CM', 'CB'],
     wings: ['LW', 'RW', 'LM', 'RM', 'LB', 'RB', 'LWB', 'RWB'],
     gegenpress: ['ST', 'CM', 'DM', 'LW', 'RW'],
+    'all-out-press': ['ST', 'LW', 'RW', 'AM', 'CM', 'DM', 'LB', 'RB'],
     'low-block': ['CB', 'DM', 'GK'],
     possession: ['CM', 'DM', 'AM'],
     counter: ['ST', 'SS', 'LW', 'RW', 'AM'],
@@ -348,14 +378,7 @@ export function tacticalBonus(
   const key = players.filter((p) => roles[style].includes(p.position));
   const quality =
     key.reduce((s, p) => s + p.overall * (0.5 + p.fitness / 200), 0) / Math.max(1, key.length);
-  const beats: Record<PlayStyle, PlayStyle[]> = {
-    balanced: ['counter'],
-    wings: ['low-block'],
-    gegenpress: ['possession'],
-    'low-block': ['gegenpress'],
-    possession: ['balanced', 'low-block'],
-    counter: ['gegenpress', 'wings'],
-  };
+  const beats = STYLE_ADVANTAGES;
   const matchup =
     (beats[style].includes(opponent) ? 2 : 0) - (beats[opponent].includes(style) ? 2 : 0);
   const profile = (shape: Formation) => {
@@ -378,6 +401,8 @@ export function tacticalBonus(
         return 1 - Math.abs(p.attack - 3) * 0.25 - Math.abs(p.defense - 4) * 0.25;
       case 'wings':
         return p.width * 0.3 - (p.width === 0 ? 0.75 : 0);
+      case 'all-out-press':
+        return (p.attack + p.mid) * 0.2 - (p.defense >= 5 ? 0.75 : 0);
       case 'gegenpress':
         return (p.attack + p.mid) * 0.2 - (p.defense >= 5 ? 0.5 : 0);
       case 'low-block':
@@ -564,33 +589,66 @@ export function manageClub({
       return fail('Atleta indisponível na lista do Scout');
     if (club.playerIds.length >= MAX_SQUAD_SIZE)
       return fail('O elenco atingiu o limite de 45 jogadores');
-    if (
-      state.negotiations.some(
-        (n) => n.playerId === player.id && n.buyerId === club.id && n.status === 'salary',
-      )
-    )
-      return done(state, 'Negociação salarial em andamento');
-    return done(
-      {
-        ...state,
-        negotiations: [
-          ...state.negotiations,
-          {
-            id: stableId(84, state.negotiations.length + 1),
-            buyerId: club.id,
-            playerId: player.id,
-            fee: 0,
-            offeredSalary: null,
-            interest: 100,
-            status: 'salary',
-            minimumSalary: player.salary.cents,
-            reply: 'Vamos conversar sobre meu primeiro contrato profissional.',
+    const salary = averageMonthlySalary(player.overall, player.age);
+    const next: WorldState = {
+      ...state,
+      clubs: {
+        ...state.clubs,
+        byId: {
+          ...state.clubs.byId,
+          [club.id]: {
+            ...club,
+            playerIds: [...club.playerIds, player.id],
+            balance: { ...club.balance, cents: Math.max(0, club.balance.cents - salary) },
           },
-        ],
+        },
       },
-      'Negociação salarial iniciada',
-    );
+      debts: {
+        ...state.debts,
+        [club.id]: (state.debts[club.id] ?? 0) + Math.max(0, salary - club.balance.cents),
+      },
+      players: {
+        ...state.players,
+        byId: {
+          ...state.players.byId,
+          [player.id]: {
+            ...player,
+            clubId: club.id,
+            academyPromotedSeason: state.season,
+            salary: { ...player.salary, cents: salary },
+            shirtNumber:
+              Array.from({ length: 99 }, (_, index) => index + 1).find(
+                (number) =>
+                  !club.playerIds.some((id) => state.players.byId[id]?.shirtNumber === number),
+              ) ?? 99,
+          },
+        },
+      },
+      management: {
+        ...state.management,
+        contracts: {
+          ...state.management?.contracts,
+          [player.id]: state.lastProcessedAt + 3 * 365 * 86400000,
+        },
+        contractHistory: {
+          ...state.management?.contractHistory,
+          [player.id]: {
+            overall: player.overall,
+            marketValue: player.marketValue.cents,
+            signedAt: state.lastProcessedAt,
+            dissatisfied: false,
+          },
+        },
+      },
+      negotiations: state.negotiations.map((offer) =>
+        offer.playerId === player.id && offer.buyerId === club.id && offer.status === 'salary'
+          ? { ...offer, status: 'completed' as const, offeredSalary: salary }
+          : offer,
+      ),
+    };
+    return done(prepareAcademy(next, club.id), player.name + ' subiu para o profissional', -salary);
   }
+
   if (command.action === 'center') {
     const center = state.centers.byId[club.trainingCenterId];
     if (!center) return fail('Centro não encontrado');
@@ -755,22 +813,48 @@ export function manageClub({
   }
   if (command.action === 'reject-renewal') {
     if (!player || player.clubId !== club.id) return fail('Jogador não pertence ao clube');
-    if (
-      !renewalTerms(state, player).demand ||
-      management.contractHistory?.[player.id]?.dissatisfied
-    )
-      return fail('Não existe novo pedido de valorização');
+    const terms = renewalTerms(state, player);
+    if (!terms.demand) return fail('Não existe novo pedido de valorização');
+    const record = management.contractHistory![player.id]!;
+    const count = Math.min(3, (record.renewalRefusals ?? 0) + 1);
+    const patience = renewalPatience(player);
+    const final = count >= patience.refusals;
     management.contractHistory = {
       ...management.contractHistory,
-      [player.id]: { ...management.contractHistory![player.id]!, dissatisfied: true },
+      [player.id]: {
+        ...record,
+        dissatisfied: true,
+        renewalRefusals: count,
+        nextRequestAt: final ? 0 : state.lastProcessedAt + patience.retryDays * 86400000,
+        refusesRenewal: final && terms.remaining <= 180,
+        severeDissatisfaction: final && terms.remaining > 180,
+      },
     };
-    return done({ ...state, management }, 'Pedido recusado: jogador insatisfeito (−8)');
+    const next = {
+      ...state,
+      management,
+      players: {
+        ...state.players,
+        byId: {
+          ...state.players.byId,
+          [player.id]: { ...player, morale: Math.max(0, player.morale - (final ? 12 : 8)) },
+        },
+      },
+    };
+    return done(
+      next,
+      final
+        ? terms.remaining <= 180
+          ? 'O jogador não renovará e sairá ao fim do contrato.'
+          : 'Pedido recusado novamente: jogador insatisfeito (−10)'
+        : 'Pedido recusado: jogador insatisfeito (−8)',
+    );
   }
   if (command.action === 'renew') {
     if (!player || player.clubId !== club.id) return fail('Jogador não pertence ao clube');
-    const terms = renewalTerms(state, player);
-    if (terms.reason) return fail(terms.reason);
     const totalYears = command.years ?? 1;
+    const terms = renewalTerms(state, player, totalYears);
+    if (terms.reason) return fail(terms.reason);
     if (totalYears > terms.maxYears)
       return fail(
         'O jogador recusa um contrato tão longo. Prazo total máximo: ' +
@@ -789,10 +873,19 @@ export function manageClub({
     management.contractHistory = {
       ...management.contractHistory,
       [player.id]: {
+        ...management.contractHistory?.[player.id],
+        renewalRefusals: 0,
+        nextRequestAt: 0,
+        refusesRenewal: false,
+        severeDissatisfaction: false,
         overall: player.overall,
         marketValue: player.marketValue.cents,
         signedAt: state.lastProcessedAt,
         dissatisfied: false,
+        valuedGames:
+          !terms.demand && command.salary > player.salary.cents
+            ? 5
+            : (management.contractHistory?.[player.id]?.valuedGames ?? 0),
       },
     };
     management.contracts = {
@@ -810,7 +903,15 @@ export function manageClub({
           ...state.players,
           byId: {
             ...state.players.byId,
-            [player.id]: { ...player, salary: { ...player.salary, cents: command.salary } },
+            [player.id]: {
+              ...player,
+              morale: Math.min(
+                100,
+                player.morale +
+                  (state.management?.contractHistory?.[player.id]?.dissatisfied ? 12 : 6),
+              ),
+              salary: { ...player.salary, cents: command.salary },
+            },
           },
         },
       },

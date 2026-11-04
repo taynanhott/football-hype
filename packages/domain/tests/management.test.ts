@@ -1,3 +1,4 @@
+import { averageMonthlySalary } from '../src/game/player-contracts.js';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { worldStateSchema, roundMoney, type WorldState } from '@football/shared';
 import {
@@ -307,7 +308,7 @@ describe('contratação direta de jogadores livres', () => {
 });
 
 describe('Scout da base', () => {
-  it('negocia apenas salário, repõe três vagas e esgota a lista na temporada', () => {
+  it('promove com salário automático, repõe três vagas e esgota a lista na temporada', () => {
     const clubId = own().id;
     state = act({ type: 'management', action: 'scout-academy' });
     const prospects = () =>
@@ -319,16 +320,13 @@ describe('Scout da base', () => {
     for (let i = 0; i < 8; i++) {
       const player = prospects()[0]!;
       state = act({ type: 'management', action: 'promote-academy', playerId: player.id });
-      expect(own().playerIds.length).toBe(originalCount + i);
-      const negotiation = state.negotiations.find(
-        (n) => n.playerId === player.id && n.status === 'salary',
-      )!;
-      expect(negotiation.fee).toBe(0);
-      state = act({
-        type: 'salary',
-        negotiationId: negotiation.id,
-        salary: negotiation.minimumSalary!,
-      });
+      expect(own().playerIds.length).toBe(originalCount + i + 1);
+      expect(state.players.byId[player.id]!.salary.cents).toBe(
+        averageMonthlySalary(player.overall, player.age),
+      );
+      expect(
+        state.negotiations.some((n) => n.playerId === player.id && n.status === 'salary'),
+      ).toBe(false);
       expect(state.players.byId[player.id]?.clubId).toBe(clubId);
       expect(prospects()).toHaveLength(Math.max(0, 5 - Math.max(0, i + 1 - 3)));
     }
@@ -353,11 +351,12 @@ it('dispensas compartilham as três reposições e encerram a negociação salar
     );
   for (let i = 0; i < 4; i++) {
     const player = list()[0]!;
-    state = act({ type: 'management', action: 'promote-academy', playerId: player.id });
     state = act({ type: 'management', action: 'dismiss-academy', playerId: player.id });
     expect(list()).toHaveLength(i < 3 ? 5 : 4);
     expect(list().some((p) => p.id === player.id)).toBe(false);
-    expect(state.negotiations.find((n) => n.playerId === player.id)?.status).toBe('rejected');
+    expect(state.negotiations.some((n) => n.playerId === player.id && n.status === 'salary')).toBe(
+      false,
+    );
   }
   state = act({ type: 'management', action: 'scout-academy' });
   expect(list()).toHaveLength(4);

@@ -6,21 +6,21 @@
   "authentications": 11,
   "alarms": 0,
   "errors": 0,
-  "receivedBytes": 8328,
-  "sqlStatements": 469,
-  "rowsRead": 298,
-  "rowsWritten": 122,
+  "receivedBytes": 8330,
+  "sqlStatements": 460,
+  "rowsRead": 281,
+  "rowsWritten": 129,
   "sentMessages": 127,
-  "sentBytes": 19595265,
+  "sentBytes": 19595872,
   "fullSnapshots": 12,
   "deltaSnapshots": 100,
   "alarmWrites": 2,
   "cacheResume": {
-    "fullSnapshotBytes": 1608759,
-    "resumeBytes": 2561
+    "fullSnapshotBytes": 1608765,
+    "resumeBytes": 2570
   },
   "usageLogEvents": 37,
-  "queueWaitMs": 64.79950000000281,
-  "maxQueueWaitMs": 18.231900000000223,
-  "payloadBytes": 3397356
+  "queueWaitMs": 2.240899999999556,
+  "maxQueueWaitMs": 0.3528999999999769,
+  "payloadBytes": 3397913
 }

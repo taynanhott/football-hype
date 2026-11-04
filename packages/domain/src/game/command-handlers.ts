@@ -1045,7 +1045,7 @@ function handleNewSeason({
     results: [],
     round: 0,
     negotiations: [],
-    injuries: {},
+    injuries: state.injuries,
     workload: {},
     participants: state.participants.map((member) => ({ ...member, ready: false })),
   };

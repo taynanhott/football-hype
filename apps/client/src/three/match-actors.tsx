@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/immutability -- Three.js animation buffers are updated in place each frame. */
 import type { OrbitControls } from 'three-stdlib';
 import { useFrame, useThree } from '@react-three/fiber';
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, type RefObject } from 'react';
 import {
   AdditiveBlending,
   BufferAttribute,
@@ -49,6 +49,17 @@ export function MatchActors({
     );
   }, [result, state.players, home?.id, away?.id]);
   const view = samplePlayback(timeline, minute);
+  const renderedView = useRef(view);
+  const sceneClock = useThree((state) => state.clock);
+  const anchor = useRef({ elapsed, at: 0 });
+  useLayoutEffect(() => {
+    anchor.current = { elapsed, at: sceneClock.elapsedTime };
+  }, [elapsed, sceneClock]);
+  // Update scene objects each frame without re-rendering the React interface.
+  useFrame(({ clock }) => {
+    const time = anchor.current.elapsed + (clock.elapsedTime - anchor.current.at) * 1000;
+    renderedView.current = samplePlayback(timeline, Math.min(90, (time / MATCH_DURATION_MS) * 90));
+  });
   const wall = (view.frame?.action.wallIds ?? []).flatMap((id) =>
     view.positions[id] ? [view.positions[id]!] : [],
   );
@@ -83,6 +94,8 @@ export function MatchActors({
         return (
           <Runner
             key={id}
+            playerId={id}
+            renderedView={renderedView}
             x={point.x}
             z={point.z}
             kit={kits[side]}
@@ -152,10 +165,7 @@ export function MatchActors({
           <meshBasicMaterial color="#ffe080" />
         </mesh>
       )}
-      <mesh position={[view.ball.x, view.height, view.ball.z]} castShadow>
-        <sphereGeometry args={[0.45, 12, 8]} />
-        <meshStandardMaterial color="white" />
-      </mesh>
+      <PlaybackBall renderedView={renderedView} />
       {elapsed >= MATCH_DURATION_MS &&
         elapsed < MATCH_DURATION_MS + 6000 &&
         result.homeGoals > result.awayGoals && (
@@ -229,6 +239,8 @@ function MatchCamera({
 }
 
 function Runner({
+  playerId,
+  renderedView,
   x,
   z,
   kit,
@@ -242,6 +254,8 @@ function Runner({
   dive,
   jump,
 }: {
+  playerId: string;
+  renderedView: RefObject<ReturnType<typeof samplePlayback>>;
   x: number;
   z: number;
   kit: ClubKit;
@@ -260,16 +274,19 @@ function Runner({
   const body = useRef<Group>(null);
   useFrame(({ clock }) => {
     if (!group.current) return;
-    const distance = Math.hypot(x - group.current.position.x, z - group.current.position.z);
-    group.current.position.set(x, Math.abs(dive) * 0.85 + jump, z);
+    const point = renderedView.current.positions[playerId];
+    const nextX = point?.x ?? x;
+    const nextZ = point?.z ?? z;
+    const distance = Math.hypot(nextX - group.current.position.x, nextZ - group.current.position.z);
+    group.current.position.set(nextX, Math.abs(dive) * 0.85 + jump, nextZ);
     if (body.current) body.current.rotation.z = -dive * (side === 'home' ? 1 : -1) * 1.2;
     if (distance > 0.02)
       group.current.rotation.y = Math.atan2(
-        x - (group.current.userData.lastX ?? x),
-        z - (group.current.userData.lastZ ?? z),
+        nextX - (group.current.userData.lastX ?? nextX),
+        nextZ - (group.current.userData.lastZ ?? nextZ),
       );
-    group.current.userData.lastX = x;
-    group.current.userData.lastZ = z;
+    group.current.userData.lastX = nextX;
+    group.current.userData.lastZ = nextZ;
     if (Math.abs(dive) > 0.01) group.current.rotation.y = side === 'home' ? 0 : Math.PI;
     if (kicking) group.current.rotation.y = facing;
     if (leg.current)
@@ -425,5 +442,23 @@ function Fireworks({ color: victoryColor }: { color: string }) {
         toneMapped={false}
       />
     </lineSegments>
+  );
+}
+
+function PlaybackBall({
+  renderedView,
+}: {
+  renderedView: RefObject<ReturnType<typeof samplePlayback>>;
+}) {
+  const ball = useRef<Mesh>(null);
+  useFrame(() => {
+    const view = renderedView.current;
+    ball.current?.position.set(view.ball.x, view.height, view.ball.z);
+  });
+  return (
+    <mesh ref={ball} castShadow>
+      <sphereGeometry args={[0.45, 12, 8]} />
+      <meshStandardMaterial color="white" />
+    </mesh>
   );
 }

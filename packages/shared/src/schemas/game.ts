@@ -369,6 +369,13 @@ export const worldStateSchema = z.strictObject({
             marketValue: z.number(),
             signedAt: z.number(),
             dissatisfied: z.boolean(),
+            valuedGames: z.number().int().min(0).max(5).optional(),
+            renewalRefusals: z.number().int().min(0).max(3).optional(),
+            nextRequestAt: z.number().nonnegative().optional(),
+            refusesRenewal: z.boolean().optional(),
+            severeDissatisfaction: z.boolean().optional(),
+            effectsClubGames: z.number().int().nonnegative().optional(),
+            effectsRatingCount: z.number().int().nonnegative().optional(),
           }),
         )
         .optional(),

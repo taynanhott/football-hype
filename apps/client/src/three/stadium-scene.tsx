@@ -439,12 +439,37 @@ export default function StadiumScene(props: {
   awayKit?: { primary: string; secondary: string };
 }) {
   const mobile = useSyncExternalStore(subscribeCameraMobile, cameraMobileSnapshot, () => false);
+  const sceneRoot = useRef<HTMLDivElement>(null);
+  const [inactive, setInactive] = useState(false);
+  useEffect(() => {
+    let visible = true;
+    const update = () =>
+      setInactive(document.hidden || !visible || Boolean(document.querySelector('dialog[open]')));
+    const observer = new IntersectionObserver(([entry]) => {
+      visible = entry?.isIntersecting ?? false;
+      update();
+    });
+    if (sceneRoot.current) observer.observe(sceneRoot.current);
+    document.addEventListener('visibilitychange', update);
+    document.addEventListener('toggle', update, true);
+    update();
+    return () => {
+      observer.disconnect();
+      document.removeEventListener('visibilitychange', update);
+      document.removeEventListener('toggle', update, true);
+    };
+  }, []);
   const [cameraUnlocked, setCameraUnlocked] = useState(false);
   const cameraLocked = mobile && !cameraUnlocked;
   const [loaded, setLoaded] = useState(false);
   const ready = useCallback(() => setLoaded(true), []);
   return (
-    <div className="scene-root" data-scene-ready={loaded} data-camera-locked={cameraLocked}>
+    <div
+      ref={sceneRoot}
+      className="scene-root"
+      data-scene-ready={loaded}
+      data-camera-locked={cameraLocked}
+    >
       {cameraLocked && <div className="scene-scroll-surface" aria-hidden="true" />}
       {mobile && (
         <button
@@ -474,7 +499,7 @@ export default function StadiumScene(props: {
       )}
       <SceneBoundary>
         <Canvas
-          frameloop={props.paused ? 'demand' : 'always'}
+          frameloop={props.paused || inactive ? 'demand' : 'always'}
           shadows={!mobile}
           dpr={mobile ? 1 : [1, 1.25]}
           camera={{

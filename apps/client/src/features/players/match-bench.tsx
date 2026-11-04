@@ -1,3 +1,4 @@
+import { UnavailablePlayers } from './match-instructions';
 import { showDraggedCard, startCardPointerDrag } from '../../ui/card-drag';
 import { positionLabel } from '../../ui/position-label';
 import { Icon } from '../../ui/icons';
@@ -88,7 +89,7 @@ export function MatchBench({
             <h2>{related ? 'Reservas' : 'Não relacionados'}</h2>
             <span>
               {related
-                ? `${reserves.length}/12 reservas`
+                ? `${reserves.length}/12 atletas`
                 : `${players.filter((player) => !reserves.includes(player.id)).length} atletas`}
             </span>
             <span className="reserve-toggle" aria-hidden="true">
@@ -162,6 +163,7 @@ export function MatchBench({
           </div>
         </details>
       ))}
+      <UnavailablePlayers state={state} club={club} />
       {selected && (
         <PlayerModal
           className="lineup-selection-modal"

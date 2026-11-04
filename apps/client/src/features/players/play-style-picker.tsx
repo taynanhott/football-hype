@@ -1,49 +1,29 @@
-import type { PlayStyle } from '@football/shared';
-import { STYLE_LABELS } from '@football/domain';
+import { PLAY_STYLE_ICONS } from './play-style-icons';
+import { playStyleSchema, type PlayStyle } from '@football/shared';
+import { STYLE_LABELS, STYLE_ADVANTAGES } from '@football/domain';
 import { Icon } from '../../ui/icons';
+import { Select, Option } from '../../ui/select';
 
-const STYLES: { id: PlayStyle; icon: string; description: string }[] = [
-  {
-    id: 'balanced',
-    icon: 'balance',
-    description:
-      'Meio-campistas e zagueiros fortes e descansados sustentam o equilíbrio. Leva vantagem contra contra-ataques.',
-  },
-  {
-    id: 'gegenpress',
-    icon: 'bolt',
-    description:
-      'Atacantes, pontas, volantes e meias com bom overall e condição física fortalecem a pressão. Leva vantagem contra posse de bola.',
-  },
-  {
-    id: 'possession',
-    icon: 'connections',
-    description:
-      'Meias, volantes e armadores com bom overall e condição física fortalecem o controle da bola. Leva vantagem contra equilíbrio e recuo total.',
-  },
-  {
-    id: 'counter',
-    icon: 'counterattack',
-    description:
-      'Centroavantes, pontas e armadores fortes e descansados favorecem as transições. Leva vantagem contra gegenpress e avanço pelas pontas.',
-  },
-  {
-    id: 'wings',
-    icon: 'width',
-    description:
-      'Pontas, meias abertos e laterais fortes e descansados ampliam a força pelos lados. Combina com 4-3-3, 3-4-3 e 4-2-4; leva vantagem contra recuo total.',
-  },
-  {
-    id: 'low-block',
-    icon: 'shield',
-    description:
-      'Zagueiros, volantes e goleiro com bom overall e condição física fortalecem a defesa. Combina com 5-3-2 e 5-4-1 e leva vantagem contra gegenpress.',
-  },
-];
-export const PLAY_STYLE_ICONS = Object.fromEntries(
-  STYLES.map(({ id, icon }) => [id, icon]),
-) as Record<PlayStyle, string>;
-
+const DESCRIPTIONS: Record<PlayStyle, string> = {
+  balanced: 'Meio-campistas e zagueiros fortes e descansados sustentam o equilíbrio.',
+  gegenpress:
+    'Atacantes e meio-campistas pressionam após perder a bola. Exige mais condição física.',
+  possession: 'Meias, volantes e armadores fortes e descansados sustentam o controle da bola.',
+  counter: 'Centroavantes, pontas e armadores fortes favorecem transições rápidas.',
+  wings: 'Pontas e laterais ampliam a força pelos lados. Favorece formações abertas.',
+  'low-block':
+    'Zagueiros, volantes e goleiro reforçam a defesa. Favorece formações com cinco defensores.',
+  'all-out-press':
+    'Todo o time avança para sufocar a saída adversária. Aumenta a pressão e o desgaste físico, deixando espaço nas costas.',
+};
+export function PlayStyleOption({ style }: { style: PlayStyle }) {
+  return (
+    <span className={`play-style-option play-style-${style}`}>
+      <Icon name={PLAY_STYLE_ICONS[style]} size={20} />
+      <span>{STYLE_LABELS[style]}</span>
+    </span>
+  );
+}
 export function PlayStylePicker({
   value,
   onChange,
@@ -51,35 +31,33 @@ export function PlayStylePicker({
   value: PlayStyle;
   onChange: (style: PlayStyle) => void;
 }) {
-  const selected = STYLES.find((style) => style.id === value)!;
+  const strong = STYLE_ADVANTAGES[value].map((s) => STYLE_LABELS[s]).join(' e ');
+  const weak = playStyleSchema.options
+    .filter((s) => STYLE_ADVANTAGES[s].includes(value))
+    .map((s) => STYLE_LABELS[s])
+    .join(' e ');
   return (
     <section className="play-style-cards" aria-label="Estilo de jogo">
-      <h3>Estilo de jogo</h3>
-      <div className="play-style-grid" role="group" aria-label="Escolher estilo de jogo">
-        {STYLES.map((style) => (
-          <button
-            key={style.id}
-            type="button"
-            className={`play-style-card play-style-${style.id} ${value === style.id ? 'is-selected' : ''}`}
-            aria-pressed={value === style.id}
-            aria-describedby={value === style.id ? 'play-style-description' : undefined}
-            onClick={() => onChange(style.id)}
-          >
-            <Icon name={style.icon} size={25} />
-            <span>{STYLE_LABELS[style.id]}</span>
-          </button>
+      <Select
+        value={value}
+        onValueChange={(s) => onChange(playStyleSchema.parse(s))}
+        className="play-style-select"
+        aria-label="Estilo de jogo"
+        menuMinWidth={240}
+      >
+        {playStyleSchema.options.map((style) => (
+          <Option key={style} value={style}>
+            <span className={`play-style-option play-style-${style}`}>
+              <Icon name={PLAY_STYLE_ICONS[style]} size={20} />
+              <span>{STYLE_LABELS[style]}</span>
+            </span>
+          </Option>
         ))}
-      </div>
+      </Select>
       <div className="play-style-description">
-        {STYLES.map((style) => (
-          <span className="play-style-description-measure" aria-hidden="true" key={style.id}>
-            <strong>{STYLE_LABELS[style.id]}: </strong>
-            {style.description}
-          </span>
-        ))}
         <p id="play-style-description" aria-live="polite">
           <strong>{STYLE_LABELS[value]}: </strong>
-          {selected.description}
+          {DESCRIPTIONS[value]} Vantagem contra {strong}. Fraco contra {weak}.
         </p>
       </div>
     </section>

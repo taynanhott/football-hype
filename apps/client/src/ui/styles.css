@@ -17671,18 +17671,12 @@ html {
 
 /* Draw dates share the cup's full-cell identity. */
 .club-calendar .club-calendar-day:has(.calendar-draw-event) {
-  background:
-    repeating-linear-gradient(120deg, #ffffff0d 0 9px, transparent 9px 22px),
-    radial-gradient(
-      ellipse at top right,
-      color-mix(in srgb, var(--draw-color, #bd9635) 85%, transparent),
-      transparent 85%
-    ),
-    #142c23;
   border: 1px solid var(--draw-color, #bd9635);
-  border-bottom: 2px solid var(--draw-color, #bd9635);
   color: var(--draw-surface, #f4e9be);
-  box-shadow: inset 0 1px #ffffff20;
+  background:
+    repeating-linear-gradient(120deg, #ffffff08 0 9px, transparent 9px 22px),
+    linear-gradient(135deg, color-mix(in srgb, var(--draw-color, #bd9635) 75%, #10221d), #10221d);
+  box-shadow: none;
 }
 .club-calendar .club-calendar-day:has(.calendar-draw-event) > time {
   color: var(--draw-surface, #f4e9be);
@@ -23824,28 +23818,31 @@ dialog.modal.ledger-book-modal[open] {
   }
   .coach-editor {
     min-height: calc(100dvh - 80px - env(safe-area-inset-bottom));
-    padding: 14px;
-    gap: 12px;
+    padding: 12px 14px;
+    gap: 8px;
   }
   .coach-editor .coach-preview {
-    gap: 7px;
+    gap: 5px;
   }
   .coach-editor .coach-preview .coach-pixel-portrait {
     max-width: 115px;
   }
   .coach-editor .coach-controls {
-    gap: 8px 12px;
+    gap: 6px 12px;
   }
   .coach-editor .coach-controls fieldset {
     margin: 0;
-    padding-block: 4px;
+    padding-block: 2px;
+  }
+  .coach-editor .coach-controls legend {
+    margin-bottom: 6px;
   }
   .coach-editor .coach-colors-grid {
-    gap: 6px;
-    padding-bottom: 3px;
+    gap: 5px 6px;
+    padding-bottom: 2px;
   }
   .coach-editor .coach-colors-grid .coach-color-field {
-    padding: 6px;
+    padding: 5px 6px;
   }
   .coach-editor .coach-save {
     margin: 0;
@@ -28055,12 +28052,16 @@ button.squad-list-category {
   .twitter-news .news-search {
     display: flex;
   }
-  :is(dialog, .modal-backdrop > [role='dialog']):not(.compact-match-preview):not(
+  :is(dialog, .modal-backdrop > [role='dialog']):not(.game-loading-screen):not(
+      .compact-content-modal
+    ):not(.player-card-overlay):not(.career-confirm-dialog):not(.invite-dialog):not(
+      .compact-match-preview
+    ):not(.competition-draw-modal):not(.club-calendar-modal):not(.calendar-pending-dialog),
+  dialog:not(.game-loading-screen):not(.compact-content-modal):not(.player-card-overlay):not(
+      .club-customization-modal
+    ):not(.career-confirm-dialog):not(.invite-dialog):not(.compact-match-preview):not(
       .competition-draw-modal
-    ):not(.club-calendar-modal):not(.calendar-pending-dialog),
-  dialog:not(.compact-match-preview):not(.competition-draw-modal):not(.club-calendar-modal):not(
-      .calendar-modal
-    ):not(.calendar-pending-dialog) {
+    ):not(.club-calendar-modal):not(.calendar-modal):not(.calendar-pending-dialog) {
     position: fixed;
     inset: 0 !important;
     margin: 0 !important;
@@ -28076,9 +28077,11 @@ button.squad-list-category {
     overflow-y: auto;
     padding: max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom));
   }
-  :is(dialog, .modal-backdrop > [role='dialog']):not(.compact-match-preview):not(
-      .competition-draw-modal
-    ):not(.club-calendar-modal):not(.calendar-modal)
+  :is(dialog, .modal-backdrop > [role='dialog']):not(.game-loading-screen):not(
+      .compact-content-modal
+    ):not(.player-card-overlay):not(.career-confirm-dialog):not(.invite-dialog):not(
+      .compact-match-preview
+    ):not(.competition-draw-modal):not(.club-calendar-modal):not(.calendar-modal)
     .close-modal {
     position: sticky;
     inset: auto;
@@ -28103,16 +28106,20 @@ button.squad-list-category {
     font-size: 0;
     transform: none;
   }
-  :is(dialog, .modal-backdrop > [role='dialog']):not(.compact-match-preview):not(
-      .competition-draw-modal
-    ):not(.club-calendar-modal):not(.calendar-modal)
+  :is(dialog, .modal-backdrop > [role='dialog']):not(.game-loading-screen):not(
+      .compact-content-modal
+    ):not(.player-card-overlay):not(.career-confirm-dialog):not(.invite-dialog):not(
+      .compact-match-preview
+    ):not(.competition-draw-modal):not(.club-calendar-modal):not(.calendar-modal)
     .close-modal
     > * {
     display: none;
   }
-  :is(dialog, .modal-backdrop > [role='dialog']):not(.compact-match-preview):not(
-      .competition-draw-modal
-    ):not(.club-calendar-modal):not(.calendar-modal)
+  :is(dialog, .modal-backdrop > [role='dialog']):not(.game-loading-screen):not(
+      .compact-content-modal
+    ):not(.player-card-overlay):not(.career-confirm-dialog):not(.invite-dialog):not(
+      .compact-match-preview
+    ):not(.competition-draw-modal):not(.club-calendar-modal):not(.calendar-modal)
     .close-modal::before {
     content: '← Voltar';
     position: static;
@@ -28124,9 +28131,11 @@ button.squad-list-category {
     background: none;
     border: 0;
   }
-  :is(dialog, .modal-backdrop > [role='dialog']):not(.compact-match-preview):not(
-      .competition-draw-modal
-    ):not(.club-calendar-modal):not(.calendar-modal)
+  :is(dialog, .modal-backdrop > [role='dialog']):not(.game-loading-screen):not(
+      .compact-content-modal
+    ):not(.player-card-overlay):not(.career-confirm-dialog):not(.invite-dialog):not(
+      .compact-match-preview
+    ):not(.competition-draw-modal):not(.club-calendar-modal):not(.calendar-modal)
     .close-modal::after {
     display: none;
   }
@@ -28280,7 +28289,11 @@ button.squad-list-category {
   display: none;
 }
 @media (max-width: 900px) {
-  dialog:not(.compact-match-preview):not(.competition-draw-modal):not(.calendar-pending-dialog) {
+  dialog:not(.game-loading-screen):not(.compact-content-modal):not(.player-card-overlay):not(
+      .club-customization-modal
+    ):not(.career-confirm-dialog):not(.invite-dialog):not(.compact-match-preview):not(
+      .competition-draw-modal
+    ):not(.calendar-pending-dialog) {
     scrollbar-gutter: auto;
     scrollbar-width: thin;
     scrollbar-color: #bca25d #163e30;
@@ -30797,18 +30810,22 @@ dialog[open].modal.player-management-modal.match-plan-modal {
   }
   .lineup-editor .lineup-support > .unavailable-players {
     grid-column: 1;
-    grid-row: 3;
+    grid-row: 2;
+    margin-block: 0;
   }
   .lineup-editor .tactics-sidebar > .match-instructions {
     grid-column: 1;
-    grid-row: 4;
+    grid-row: 3;
+    margin-block: 0;
   }
   .lineup-editor .lineup-support > .sector-chemistry {
     grid-column: 1;
-    grid-row: 5;
+    grid-row: 4;
+    margin-block: 0;
   }
 }
-.lineup-editor .unavailable-empty {
+.lineup-editor .unavailable-empty,
+.transfer-hub .market-empty-state {
   display: flex;
   align-items: center;
   gap: 9px;
@@ -30822,7 +30839,8 @@ dialog[open].modal.player-management-modal.match-plan-modal {
   line-height: 1.4;
   font-weight: 600;
 }
-.unavailable-empty svg {
+.unavailable-empty svg,
+.market-empty-state svg {
   flex: 0 0 auto;
 }
 .lineup-editor .protected-players > button {
@@ -34271,9 +34289,9 @@ dialog.modal[open].squad-action-modal.squad-roster-management-modal {
 .squad-roster-management-modal > .modal-content::-webkit-scrollbar {
   display: none;
 }
-/* Leave room for availability and one complete offer below the card. */
+/* Keep roster cards readable regardless of viewport height. */
 .squad-roster-management-modal .squad-modal-player-card {
-  width: min(250px, max(100px, calc((100dvh - 570px) * 310 / 446)), 100%);
+  width: min(100%, clamp(200px, 55vw, 250px));
   margin-bottom: 8px;
 }
 .squad-roster-management-modal .modal-title {
@@ -34356,7 +34374,7 @@ dialog.modal[open].squad-action-modal.squad-roster-management-modal {
   color: #143b29;
   border-color: #d6ee39;
 }
-/* Compact roster toolbar: reserve only the width needed by each control. */
+/* Let roster position filters fill the available toolbar width. */
 .squad-office .squad-office-controls {
   display: flex;
   align-items: center;
@@ -34365,14 +34383,20 @@ dialog.modal[open].squad-action-modal.squad-roster-management-modal {
 }
 .squad-office-controls .squad-sector-filters {
   display: flex;
+  align-self: stretch;
+  align-items: stretch;
   flex: 1 1 auto;
   min-width: 0;
   gap: 4px;
   flex-wrap: nowrap;
 }
 .squad-office-controls .squad-sector-filters button {
-  flex: 0 0 auto;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 32px;
   padding: 7px 8px;
+  display: grid;
+  place-items: center;
   font-size: 10px;
 }
 .squad-office-controls > :last-child {
@@ -34395,7 +34419,7 @@ dialog.modal[open].squad-action-modal.squad-roster-management-modal {
   justify-content: flex-start;
 }
 .squad-office-controls .squad-sector-filters {
-  flex: 0 1 auto;
+  flex: 1 1 auto;
 }
 .squad-office-controls > .game-select:last-child {
   flex: 0 0 140px;
@@ -35007,7 +35031,7 @@ dialog.modal[open].squad-action-modal.squad-roster-management-modal {
 }
 @media (min-width: 761px) {
   .market-reference-list .market-list-row {
-    grid-template-columns: 32px 40px 44px minmax(140px, 1fr) 140px minmax(200px, 1fr) 110px;
+    grid-template-columns: 40px 44px minmax(140px, 1fr) 140px minmax(200px, 1fr) 110px;
   }
 }
 @media (max-width: 760px) {
@@ -35677,4 +35701,3829 @@ dialog.market-filter-redesign .market-filter-surface > .market-filter-back {
   border-bottom: 1px solid #d8c269;
   padding-bottom: 3px;
   margin-bottom: 3px;
+}
+
+@media (max-width: 760px) {
+  .squad-office .squad-player-identity > strong > .squad-player-positions {
+    display: inline-flex;
+    margin-top: 0;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+}
+
+@media (max-width: 760px) {
+  .squad-office .squad-planning-list-row {
+    grid-template-columns: 28px clamp(44px, 14vw, 64px) minmax(0, 1fr) auto auto;
+  }
+  .squad-office .squad-list-portrait {
+    position: relative;
+    align-self: stretch;
+    width: 100%;
+    height: auto;
+    min-height: 0;
+  }
+  .squad-office .squad-list-portrait .portrait {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    object-fit: contain;
+  }
+}
+
+.squad-roster-tabs button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.squad-roster-tabs button svg {
+  flex-shrink: 0;
+}
+.squad-office .squad-numbers td:first-child button {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+.squad-office .squad-numbers .portrait {
+  flex: 0 0 36px;
+  width: 36px;
+  height: 44px;
+  margin: 0;
+}
+.squad-statistics-identity {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
+  min-width: 0;
+}
+
+/* Select palettes follow the surrounding football panels, including popover menus. */
+.game-select {
+  --select-top: #245540;
+  --select-bottom: #12392c;
+  --select-text: #f3efd5;
+  --select-border: #82945a;
+  --select-accent: #d6ee78;
+  --select-menu: #13382c;
+  --select-hover: #2a5841;
+  --select-selected: #405b2c;
+}
+:is(.tactics-clipboard, .club-customization-modal, .coach-editor) .game-select {
+  --select-top: #e5d9b4;
+  --select-bottom: #cbbc8e;
+  --select-text: #253c2b;
+  --select-border: #8c7950;
+  --select-accent: #536d35;
+  --select-menu: #e6ddbf;
+  --select-hover: #d1c59c;
+  --select-selected: #b8c18b;
+}
+:is(.competition-controls, .league-admission-fields) .game-select {
+  --select-top: #294b51;
+  --select-bottom: #173339;
+  --select-text: #e8f1df;
+  --select-border: #71958c;
+  --select-accent: #c4dda0;
+  --select-menu: #19383d;
+  --select-hover: #31565a;
+  --select-selected: #3e6260;
+}
+:is(.match-situation-controls, .stadium-skin-control) .game-select {
+  --select-top: #3f5032;
+  --select-bottom: #263820;
+  --select-border: #ad9858;
+  --select-accent: #f0d483;
+  --select-menu: #293b24;
+  --select-hover: #485b36;
+  --select-selected: #5b6133;
+}
+.game-select button.game-select-trigger {
+  background: linear-gradient(155deg, var(--select-top), var(--select-bottom));
+  color: var(--select-text);
+  border-color: var(--select-border);
+  box-shadow:
+    inset 0 1px 0 #ffffff12,
+    0 2px 5px #061b1526;
+}
+.game-select button.game-select-trigger:hover:not(:disabled) {
+  border-color: var(--select-accent);
+}
+.game-select button.game-select-trigger:focus-visible,
+.game-select button.game-select-trigger[aria-expanded='true'] {
+  outline-color: var(--select-accent);
+  border-color: var(--select-accent);
+}
+.game-select button.game-select-trigger > svg {
+  color: var(--select-accent);
+}
+.game-select .game-select-menu {
+  background: var(--select-menu);
+  color: var(--select-text);
+  border-color: var(--select-border);
+  box-shadow:
+    0 14px 32px #03150e66,
+    inset 0 1px 0 #ffffff0d;
+  scrollbar-color: var(--select-border) transparent;
+}
+.game-select .game-select-option.is-active {
+  background: var(--select-hover);
+}
+.game-select .game-select-option[aria-selected='true'] {
+  background: var(--select-selected);
+  color: var(--select-text);
+  box-shadow: inset 3px 0 var(--select-accent);
+}
+.game-select .game-select-option[aria-selected='true'].is-active {
+  background: var(--select-hover);
+}
+.game-select .game-select-check {
+  color: var(--select-accent);
+}
+.game-select .game-select-empty {
+  color: var(--select-text);
+}
+
+.unavailable-players > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  list-style: none;
+}
+.unavailable-players > summary::-webkit-details-marker {
+  display: none;
+}
+.unavailable-players > summary > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.unavailable-players > summary > svg {
+  flex-shrink: 0;
+  transition: transform 0.15s;
+}
+.unavailable-players[open] > summary > svg {
+  transform: rotate(180deg);
+}
+.unavailable-players > summary:focus-visible {
+  outline: 2px solid #d6ee78;
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+.play-style-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--style-color);
+}
+.play-style-option svg {
+  flex-shrink: 0;
+}
+.play-style-balanced {
+  --style-color: #eed38d;
+}
+.play-style-gegenpress {
+  --style-color: #ffe067;
+}
+.play-style-possession {
+  --style-color: #65dec2;
+}
+.play-style-counter {
+  --style-color: #86c5ff;
+}
+.play-style-wings {
+  --style-color: #b5e579;
+}
+.play-style-low-block {
+  --style-color: #c7acff;
+}
+.play-style-all-out-press {
+  --style-color: #ff9c83;
+}
+.play-style-select .game-select-value {
+  display: flex;
+}
+
+.tactics-clipboard .play-style-select {
+  --select-top: #245540;
+  --select-bottom: #12392c;
+  --select-text: #f3efd5;
+  --select-border: #82945a;
+  --select-accent: #d6ee78;
+  --select-menu: #13382c;
+  --select-hover: #2a5841;
+  --select-selected: #405b2c;
+}
+
+/* Tactical colors belong to the surface; labels keep a readable contrast. */
+.game-select .play-style-option {
+  color: inherit;
+}
+.game-select :is(.game-select-option, .game-select-trigger):has(.play-style-balanced) {
+  --tactic-bg: #e5cd85;
+  --tactic-ink: #29351f;
+  --tactic-edge: #a99145;
+}
+.game-select :is(.game-select-option, .game-select-trigger):has(.play-style-wings) {
+  --tactic-bg: #385c2c;
+  --tactic-ink: #f0f8df;
+  --tactic-edge: #a3ca6e;
+}
+.game-select :is(.game-select-option, .game-select-trigger):has(.play-style-gegenpress) {
+  --tactic-bg: #6b531b;
+  --tactic-ink: #fff3c7;
+  --tactic-edge: #dfbd50;
+}
+.game-select :is(.game-select-option, .game-select-trigger):has(.play-style-all-out-press) {
+  --tactic-bg: #743b30;
+  --tactic-ink: #fff0e8;
+  --tactic-edge: #ed9d83;
+}
+.game-select :is(.game-select-option, .game-select-trigger):has(.play-style-low-block) {
+  --tactic-bg: #514065;
+  --tactic-ink: #f5eeff;
+  --tactic-edge: #bda1e5;
+}
+.game-select :is(.game-select-option, .game-select-trigger):has(.play-style-possession) {
+  --tactic-bg: #215c50;
+  --tactic-ink: #e6fff5;
+  --tactic-edge: #68c9ae;
+}
+.game-select :is(.game-select-option, .game-select-trigger):has(.play-style-counter) {
+  --tactic-bg: #294e72;
+  --tactic-ink: #edf6ff;
+  --tactic-edge: #85b8e6;
+}
+.game-select .game-select-menu:has(.play-style-option) {
+  background: #122d24;
+  border-color: #8b9b65;
+}
+.game-select .game-select-option:has(.play-style-option) {
+  background: var(--tactic-bg);
+  color: var(--tactic-ink);
+  border: 1px solid var(--tactic-edge);
+  margin-block: 3px;
+}
+.game-select .game-select-option:has(.play-style-option).is-active {
+  background: color-mix(in srgb, var(--tactic-bg) 85%, white);
+  color: var(--tactic-ink);
+  outline: 2px solid var(--tactic-edge);
+  outline-offset: -2px;
+}
+.game-select .game-select-option:has(.play-style-option)[aria-selected='true'] {
+  box-shadow: inset 3px 0 var(--tactic-ink);
+  font-weight: 700;
+}
+.game-select .game-select-option:has(.play-style-option) .game-select-check {
+  color: var(--tactic-ink);
+}
+.game-select button.game-select-trigger:has(.play-style-option) {
+  background: var(--tactic-bg);
+  color: var(--tactic-ink);
+  border-color: var(--tactic-edge);
+}
+.game-select button.game-select-trigger:has(.play-style-option) > svg {
+  color: var(--tactic-ink);
+}
+
+.planned-swap-slots {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin-block: 10px;
+}
+.lineup-editor .planned-swap-slots .planned-swap {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  min-width: 0;
+  margin: 0;
+  padding: 8px;
+}
+.planned-swap-slots .planned-swap-players {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.planned-swap-slots .planned-swap-players strong {
+  overflow-wrap: anywhere;
+}
+.planned-swap-slots .planned-delete {
+  align-self: center;
+}
+.planned-slot-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 100px;
+  padding: 8px 4px;
+  border: 1px dashed #82916c66;
+  border-radius: 9px;
+  background: #142c2380;
+  color: #8f9f83;
+  font-size: 11px;
+}
+.planned-slot-empty small {
+  color: #829078;
+}
+.planned-slot-empty:focus-visible {
+  outline: 2px solid #d6ee78;
+  outline-offset: 2px;
+}
+
+.lineup-editor .protected-players {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+.lineup-editor .protected-players > button {
+  width: 100%;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.lineup-editor .protected-players > .protected-slot-empty {
+  background: #142c2380;
+  color: #8f9f83;
+  border: 1px dashed #82916c66;
+  box-shadow: none;
+}
+
+.lineup-editor dialog.modal.match-plan-modal.match-plan-choice-modal[open] {
+  width: min(440px, calc(100vw - 24px)) !important;
+  max-width: calc(100vw - 24px) !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: calc(100dvh - 24px) !important;
+  border-radius: 14px;
+  padding: 16px;
+}
+.lineup-editor .match-plan-choice-modal > .modal-content {
+  flex: 0 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+}
+.lineup-editor .match-plan-choice-modal .modal-title {
+  margin: 0;
+}
+.lineup-editor .match-plan-choice-modal .match-plan-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-auto-rows: auto;
+  flex: 0 0 auto;
+  gap: 8px;
+  align-content: start;
+}
+.lineup-editor .match-plan-choice-modal .match-plan-options > button {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 56px;
+  height: auto;
+  padding: 12px 8px;
+  font-size: 13px;
+  border-radius: 9px;
+}
+.lineup-editor .match-plan-choice-modal .match-plan-options > button:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+}
+.lineup-editor .match-plan-choice-modal .match-plan-step-back {
+  margin: 0;
+}
+.lineup-editor .match-plan-choice-modal > .modal-return {
+  flex: 0 0 auto;
+  margin-top: 12px;
+}
+.planned-inline-slots {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin-block: 10px;
+}
+.planned-inline-row {
+  grid-column: 1 / -1;
+  min-width: 0;
+  padding: 8px;
+  border: 1px solid #8b9b6566;
+  border-radius: 10px;
+  background: #102e24;
+}
+.planned-inline-settings {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 30px;
+  align-items: center;
+  gap: 6px;
+}
+.lineup-editor .planned-inline-row .game-select-trigger {
+  min-height: 36px;
+  height: auto;
+  padding: 7px;
+  gap: 4px;
+  font-size: 11px;
+  border-radius: 7px;
+}
+.planned-inline-remove {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 32px;
+  padding: 0;
+  color: #e6c1ac;
+  background: #48352d;
+  border: 1px solid #a2755c;
+  border-radius: 6px;
+}
+.planned-inline-players {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 16px minmax(0, 1fr);
+  align-items: center;
+  gap: 5px;
+  margin-top: 7px;
+}
+.planned-inline-players > label {
+  min-width: 0;
+  padding: 5px;
+  border-radius: 7px;
+}
+.planned-inline-out {
+  background: #75433940;
+}
+.planned-inline-in {
+  background: #5d793940;
+}
+.planned-inline-players > label > span {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+.planned-inline-out > span {
+  color: #ffb099;
+}
+.planned-inline-in > span {
+  color: #d6ee78;
+}
+.planned-player-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.planned-player-option > .portrait {
+  flex: 0 0 32px;
+  width: 32px;
+  height: 40px;
+  margin: 0;
+}
+.planned-player-option > span {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 3px;
+}
+.planned-player-option strong {
+  font-size: 12px;
+  line-height: 1.3;
+}
+.planned-player-option small {
+  font-size: 10px;
+  line-height: 1.3;
+  opacity: 0.8;
+}
+.planned-player-select .game-select-value {
+  white-space: normal;
+}
+.planned-player-select .game-select-trigger .planned-player-option {
+  gap: 4px;
+}
+.planned-player-select .game-select-trigger .portrait {
+  flex-basis: 22px;
+  width: 22px;
+  height: 28px;
+}
+.planned-player-select .game-select-trigger .planned-player-option strong {
+  font-size: 10px;
+}
+.planned-player-select .game-select-trigger .planned-player-option small {
+  display: none;
+}
+.planned-player-select .game-select-option {
+  border-bottom: 1px solid #82945a33;
+}
+
+.planned-player-option > .planned-option-overall {
+  display: grid;
+  place-items: center;
+  flex: 0 0 28px;
+  width: 28px;
+  height: 30px;
+  border-radius: 5px;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1;
+}
+.planned-player-select .game-select-trigger .planned-option-overall {
+  flex-basis: 22px;
+  width: 22px;
+  height: 25px;
+  font-size: 11px;
+}
+
+.planned-score-select .game-select-menu .game-select-option {
+  white-space: nowrap;
+  overflow-wrap: normal;
+}
+
+.planned-inline-slots:empty {
+  display: none;
+}
+
+.unavailable-players > summary > span > svg {
+  color: #f4776b;
+}
+
+.planned-player-option .planned-player-short-name {
+  display: none;
+}
+.planned-player-select .game-select-trigger .planned-player-full-name {
+  display: none;
+}
+.planned-player-select .game-select-trigger .planned-player-short-name {
+  display: block;
+  white-space: nowrap;
+}
+@media (min-width: 761px) {
+  .lineup-editor .lineup-layout {
+    grid-template-columns: minmax(0, 1fr) clamp(340px, 38vw, 460px);
+  }
+  .planned-inline-players {
+    grid-template-columns: minmax(0, 1fr) 16px minmax(0, 1fr);
+  }
+  .planned-inline-players > svg {
+    justify-self: center;
+  }
+  .planned-inline-players > label > .game-select .game-select-trigger {
+    min-height: 42px;
+  }
+}
+
+/* Saved lineups share the tactical sidebar and start collapsed on every screen. */
+.lineup-editor .lineup-presets > .lineup-presets-heading {
+  display: none;
+}
+.lineup-editor .lineup-presets-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 36px;
+  padding: 4px 0;
+  color: #edd18a;
+  background: transparent;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 800;
+}
+.lineup-editor .lineup-presets-toggle > span:first-child {
+  flex: 1;
+}
+.lineup-editor .lineup-presets[data-expanded='false'] > .lineup-presets-body {
+  display: none;
+}
+.lineup-editor .lineup-presets[data-expanded='true'] .lineup-collapse-icon {
+  transform: rotate(180deg);
+}
+@media (max-width: 760px) {
+  .lineup-editor .tactics-sidebar > .lineup-presets {
+    grid-column: 1;
+    grid-row: 1;
+    margin: 0;
+  }
+  .lineup-editor .lineup-main-column > .tactics-panel {
+    grid-column: 1;
+    grid-row: 2;
+  }
+  .lineup-editor .lineup-support > .unavailable-players {
+    grid-row: 3;
+  }
+  .lineup-editor .tactics-sidebar > .match-instructions {
+    grid-row: 4;
+  }
+  .lineup-editor .lineup-support > .sector-chemistry {
+    grid-row: 5;
+  }
+}
+
+.lineup-editor .tactics-clipboard .play-style-cards {
+  margin-top: 0;
+}
+.lineup-editor .tactics-clipboard .play-style-description {
+  margin-top: 8px;
+}
+@media (max-width: 760px) {
+  .lineup-editor .tactics-panel > .lineup-integrated-tactics {
+    padding-top: 8px;
+  }
+}
+
+.lineup-editor .tactics-sidebar .tactics-clipboard > .lineup-formation-control {
+  margin: 0 0 8px;
+}
+.lineup-editor .tactics-sidebar .tactics-clipboard > .lineup-formation-control > .game-select {
+  display: flex;
+}
+
+.lineup-editor .reserve-roster > .unavailable-players {
+  margin: 0;
+  padding: 12px 0;
+  border: 0;
+  border-top: 1px solid #ffffff20;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.lineup-editor .reserve-roster > .unavailable-players > summary {
+  min-height: 38px;
+  padding: 8px;
+  border: 1px solid #c5a452;
+  border-radius: 6px;
+  background: var(--lineup-menu-surface);
+  box-sizing: border-box;
+}
+@media (max-width: 760px) {
+  .lineup-editor .tactics-sidebar > .match-instructions {
+    grid-row: 3;
+  }
+  .lineup-editor .lineup-support > .sector-chemistry {
+    grid-row: 4;
+  }
+}
+
+/* Distinct woven surfaces identify each squad availability group. */
+.lineup-editor .reserve-roster .reserve-section.related > .reserve-section-heading {
+  background:
+    repeating-linear-gradient(105deg, #dcecff08 0 1px, transparent 1px 4px),
+    linear-gradient(135deg, #294f62, #173744);
+  border-color: #809eaa;
+  color: #eff7fa;
+}
+.lineup-editor .reserve-roster .reserve-section.unrelated > .reserve-section-heading {
+  background:
+    repeating-linear-gradient(105deg, #ffe6ad08 0 1px, transparent 1px 4px),
+    linear-gradient(135deg, #625333, #3c3523);
+  border-color: #b5a16b;
+  color: #fff2d3;
+}
+.lineup-editor .reserve-roster > .unavailable-players > summary {
+  background:
+    repeating-linear-gradient(105deg, #ffd7cc08 0 1px, transparent 1px 4px),
+    linear-gradient(135deg, #623d37, #3b2927);
+  border-color: #b88170;
+  color: #ffe9df;
+}
+.lineup-editor .reserve-roster .reserve-section-heading h2,
+.lineup-editor .reserve-roster .reserve-section-heading > span {
+  color: inherit;
+}
+
+.lineup-editor .reserve-roster > .unavailable-players > summary > span:first-child {
+  flex: 1;
+}
+.lineup-editor .reserve-roster > .unavailable-players > summary > .unavailable-count {
+  font-size: 10px;
+  font-weight: 400;
+  white-space: nowrap;
+}
+.lineup-editor .reserve-roster > .unavailable-players > summary > .reserve-toggle {
+  display: grid;
+  place-items: center;
+  flex: 0 0 24px;
+  width: 24px;
+  height: 24px;
+}
+.lineup-editor .reserve-roster > .unavailable-players[open] > summary > .reserve-toggle {
+  transform: rotate(180deg);
+}
+.lineup-editor .reserve-roster > .unavailable-players > summary > .reserve-toggle > svg {
+  color: inherit;
+}
+
+.lineup-editor .tactics-header.lineup-club-summary :is(.squad-average, .lineup-summary-stat) {
+  min-height: 88px;
+  padding: 12px 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+.lineup-editor
+  .tactics-header.lineup-club-summary
+  :is(.squad-average, .lineup-summary-stat)
+  > span {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 10px;
+  font-weight: 400;
+  line-height: 1.5;
+  margin: 0;
+}
+.lineup-editor
+  .tactics-header.lineup-club-summary
+  :is(.squad-average, .lineup-summary-stat)
+  > strong {
+  font-family: 'Press Start 2P', monospace;
+  font-size: clamp(26px, 2.5vw, 34px);
+  font-weight: 400;
+  line-height: 1.2;
+  margin: 0;
+}
+@media (max-width: 760px) {
+  .lineup-editor .tactics-header.lineup-club-summary :is(.squad-average, .lineup-summary-stat) {
+    min-height: 76px;
+    gap: 10px;
+  }
+  .lineup-editor
+    .tactics-header.lineup-club-summary
+    :is(.squad-average, .lineup-summary-stat)
+    > span {
+    font-size: 8px;
+  }
+  .lineup-editor
+    .tactics-header.lineup-club-summary
+    :is(.squad-average, .lineup-summary-stat)
+    > strong {
+    font-size: 24px;
+  }
+}
+
+.lineup-club-summary .squad-average[data-tier='bronze'] {
+  --average-color: #e8bb8d;
+}
+.lineup-club-summary .squad-average[data-tier='silver'] {
+  --average-color: #d2dce3;
+}
+.lineup-club-summary .squad-average[data-tier='gold'] {
+  --average-color: #e1c66c;
+}
+.lineup-club-summary .squad-average[data-tier='diamond'] {
+  --average-color: #b8eaf3;
+}
+.lineup-editor .tactics-header.lineup-club-summary .squad-average[data-tier] {
+  border-color: var(--average-color);
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--average-color) 18%, #183f30),
+    #143829
+  );
+}
+.lineup-editor .tactics-header.lineup-club-summary .squad-average[data-tier] > strong {
+  color: var(--average-color);
+}
+
+.lineup-editor .tactics-header.lineup-club-summary .squad-average[data-tier] {
+  background: #214b38;
+  border-color: #a8945366;
+}
+.lineup-editor
+  .tactics-header.lineup-club-summary
+  :is(.squad-average, .lineup-summary-stat)
+  > strong {
+  display: grid;
+  place-items: center;
+  min-width: 56px;
+  min-height: 44px;
+  padding: 5px 9px;
+  border: 1px solid #ffffff55;
+  border-radius: 5px;
+  font-family: Arial, sans-serif;
+  font-size: 32px;
+  font-weight: 800;
+  line-height: 1;
+  color: #172d28;
+  box-shadow: inset 0 1px 0 #ffffff40;
+}
+@media (max-width: 760px) {
+  .lineup-editor
+    .tactics-header.lineup-club-summary
+    :is(.squad-average, .lineup-summary-stat)
+    > strong {
+    min-width: 48px;
+    min-height: 38px;
+    font-size: 26px;
+  }
+}
+
+.lineup-editor .tactics-header.lineup-club-summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.lineup-summary-crest {
+  display: grid;
+  place-items: center;
+  flex: 0 0 48px;
+}
+.lineup-club-summary .lineup-summary-metrics {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr)) minmax(100px, 1.3fr);
+  gap: 6px;
+}
+.lineup-club-summary .lineup-summary-metrics > .squad-averages {
+  display: contents;
+}
+.lineup-editor .tactics-header.lineup-club-summary :is(.squad-average, .lineup-summary-stat) {
+  min-height: 52px;
+  height: auto;
+  padding: 5px 4px;
+  gap: 5px;
+  border-radius: 6px;
+}
+.lineup-editor
+  .tactics-header.lineup-club-summary
+  :is(.squad-average, .lineup-summary-stat)
+  > span {
+  font-size: 7px;
+  line-height: 1.4;
+}
+.lineup-editor
+  .tactics-header.lineup-club-summary
+  :is(.squad-average, .lineup-summary-stat)
+  > strong {
+  min-width: 34px;
+  min-height: 28px;
+  padding: 3px 6px;
+  font-size: 23px;
+}
+@media (max-width: 1050px) {
+  .lineup-club-summary .lineup-summary-metrics {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 760px) {
+  .lineup-editor .tactics-header.lineup-club-summary {
+    gap: 8px;
+  }
+  .lineup-editor
+    .tactics-header.lineup-club-summary
+    :is(.squad-average, .lineup-summary-stat)
+    > span {
+    font-size: 6px;
+  }
+  .lineup-editor
+    .tactics-header.lineup-club-summary
+    :is(.squad-average, .lineup-summary-stat)
+    > strong {
+    font-size: 20px;
+    min-height: 25px;
+  }
+}
+
+@media (max-width: 760px) {
+  .lineup-editor .tactics-header.lineup-club-summary {
+    gap: 5px;
+    padding: 0;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+  }
+  .lineup-summary-crest {
+    flex-basis: 30px;
+  }
+  .lineup-summary-crest > * {
+    width: 30px;
+    height: 30px;
+  }
+  .lineup-club-summary .lineup-summary-metrics {
+    grid-template-columns: repeat(5, minmax(0, 1fr)) minmax(0, 1.4fr);
+    gap: 3px;
+  }
+  .lineup-editor .tactics-header.lineup-club-summary :is(.squad-average, .lineup-summary-stat) {
+    min-height: 38px;
+    padding: 0;
+    gap: 5px;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+  .lineup-editor
+    .tactics-header.lineup-club-summary
+    :is(.squad-average, .lineup-summary-stat)
+    > span {
+    font-size: clamp(4px, 1.05vw, 7px);
+    white-space: nowrap;
+    letter-spacing: -0.3px;
+  }
+  .lineup-editor
+    .tactics-header.lineup-club-summary
+    :is(.squad-average, .lineup-summary-stat)
+    > strong {
+    min-width: 0;
+    min-height: 23px;
+    padding: 3px 4px;
+    font-size: clamp(15px, 4vw, 21px);
+  }
+}
+
+@media (min-width: 761px) {
+  .lineup-editor .tactics-header.lineup-club-summary {
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+  }
+  .lineup-club-summary .lineup-summary-metrics {
+    grid-template-columns: repeat(5, minmax(0, 1fr)) minmax(100px, 1.3fr);
+  }
+  .lineup-editor .tactics-header.lineup-club-summary :is(.squad-average, .lineup-summary-stat) {
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+}
+
+.lineup-editor .tactics-header.lineup-club-summary .squad-average[data-tier] {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+@media (min-width: 761px) {
+  .lineup-editor .tactics-header.lineup-club-summary {
+    justify-content: space-between;
+  }
+  .lineup-club-summary .lineup-summary-metrics {
+    flex: 0 1 auto;
+    width: auto;
+    margin-left: auto;
+    grid-template-columns: repeat(5, minmax(50px, 72px)) minmax(90px, 110px);
+    gap: 8px;
+  }
+}
+
+.lineup-editor .tactics-header.lineup-club-summary > .lineup-summary-club-name {
+  display: none;
+}
+@media (min-width: 761px) {
+  .lineup-editor .tactics-header.lineup-club-summary > .lineup-summary-club-name {
+    display: block;
+    min-width: 0;
+    margin-right: auto;
+    color: #fff0be;
+    font-family: 'Press Start 2P', monospace;
+    font-size: clamp(12px, 1.2vw, 18px);
+    font-weight: 400;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+  }
+}
+
+@media (max-width: 760px) {
+  .lineup-club-summary .lineup-summary-metrics {
+    grid-template-columns: repeat(5, minmax(0, 1fr)) max-content;
+    column-gap: 6px;
+  }
+  .lineup-editor .tactics-header.lineup-club-summary .lineup-summary-stat {
+    margin-inline: 0;
+  }
+}
+
+/* Transfer filter rows have distinct shapes and selected-state palettes. */
+.transfer-hub .market-controls > .market-tabs button {
+  background: transparent;
+  color: #b7c9b6;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  border-radius: 5px 5px 0 0;
+  box-shadow: none;
+}
+.transfer-hub .market-controls > .market-tabs button.selected {
+  background: linear-gradient(180deg, #ead28225, #ead28210);
+  color: #ffe5a0;
+  border-bottom-color: #edcf71;
+  font-weight: 800;
+  box-shadow: none;
+}
+.transfer-hub .market-reference-controls .market-position-tabs button:not(.selected) {
+  background: #152f39;
+  color: #b7cbd3;
+  border: 1px solid #547480;
+  border-radius: 6px;
+  box-shadow: none;
+}
+.transfer-hub .market-reference-controls .market-position-tabs button.selected {
+  background: linear-gradient(145deg, #b8dfec, #7fb4c6);
+  color: #102e39;
+  border: 1px solid #d6f3ff;
+  border-radius: 6px;
+  font-weight: 800;
+  box-shadow: inset 0 -3px #44788a;
+}
+.transfer-hub .market-reference-controls .market-quick-filters button {
+  background: transparent;
+  color: #accb9c;
+  border: 1px dashed #749462;
+  border-radius: 18px;
+  box-shadow: none;
+}
+.transfer-hub .market-reference-controls .market-quick-filters button.selected {
+  background: #c8e88c;
+  color: #20341a;
+  border: 1px solid #e2ffc0;
+  font-weight: 800;
+  box-shadow: inset 0 -2px #82aa4e;
+}
+.transfer-hub
+  .market-controls
+  :is(.market-tabs, .market-position-tabs, .market-quick-filters)
+  button:focus-visible {
+  outline: 2px solid #f5e5a3;
+  outline-offset: 2px;
+}
+
+.market-player-list.market-reference-list:empty {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .transfer-hub .market-controls.panel:has(> .market-reference-controls) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    column-gap: 0;
+    row-gap: 6px;
+    align-items: center;
+  }
+  .transfer-hub .market-controls > .market-reference-controls {
+    display: contents;
+  }
+  .transfer-hub .market-controls:has(> .market-reference-controls) > .market-tabs {
+    grid-column: 1;
+    grid-row: 1;
+    width: 100%;
+    min-width: 0;
+    margin: 0;
+    padding: 0 12px 0 0;
+    border-bottom: 0;
+    flex-wrap: nowrap;
+  }
+  .transfer-hub .market-controls:has(> .market-reference-controls) > .market-tabs button {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding-inline: 5px;
+    white-space: nowrap;
+  }
+  .transfer-hub .market-reference-controls > .market-quick-filters {
+    grid-column: 2;
+    grid-row: 1;
+    width: 100%;
+    min-width: 0;
+    padding-left: 12px;
+    border-left: 1px solid #b8a15d;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+  }
+  .transfer-hub
+    .market-reference-controls
+    > :is(.market-position-tabs, .transfer-searchbar, .market-result-toolbar) {
+    grid-column: 1 / -1;
+    width: 100%;
+    min-width: 0;
+  }
+  .transfer-hub .market-reference-controls > .market-position-tabs {
+    grid-row: 2;
+    border-top: 1px solid #b8a15d66;
+    padding-top: 6px;
+  }
+}
+
+@media (max-width: 760px) {
+  .transfer-hub .market-reference-controls > .transfer-searchbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 6px;
+  }
+  .transfer-hub
+    .market-reference-controls
+    .transfer-searchbar
+    > :is(.search-label, .market-filter-button) {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    margin: 0;
+  }
+  .transfer-hub .market-reference-controls .transfer-searchbar > .market-filter-button {
+    justify-content: center;
+  }
+}
+
+.market-filter-redesign .market-filter-dual-ranges {
+  gap: 24px;
+}
+.market-filter-redesign .market-dual-range output {
+  position: static;
+  display: block;
+  margin-top: 8px;
+  text-align: right;
+  line-height: 1.4;
+}
+.market-filter-redesign .market-dual-track {
+  height: 24px;
+  margin-top: 14px;
+  margin-inline: 8px;
+  border-radius: 20px;
+  background: linear-gradient(
+    to right,
+    #52884b 0 var(--range-start),
+    #dfc785 var(--range-start) var(--range-end),
+    #52884b var(--range-end) 100%
+  );
+  box-shadow: inset 0 1px 3px #061b1540;
+}
+.market-filter-redesign .market-dual-track input::-webkit-slider-runnable-track {
+  height: 24px;
+}
+.market-filter-redesign .market-dual-track input::-webkit-slider-thumb {
+  width: 32px;
+  height: 32px;
+  margin-top: -4px;
+  border: 0;
+  border-radius: 50%;
+  background: url('/brand/slider-football.svg') center / contain no-repeat;
+}
+.market-filter-redesign .market-dual-track input::-moz-range-track {
+  height: 24px;
+}
+.market-filter-redesign .market-dual-track input::-moz-range-thumb {
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 50%;
+  background: url('/brand/slider-football.svg') center / contain no-repeat;
+}
+
+.market-filter-dialog.market-filter-redesign .market-dual-range output {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  padding: 0;
+}
+
+@media (min-width: 761px) {
+  .transfer-hub .market-reference-controls > .transfer-searchbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) calc((100% - 12px) / 5);
+    gap: 3px;
+  }
+  .transfer-hub .market-reference-controls .transfer-searchbar > .market-filter-button {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    justify-content: center;
+  }
+  .transfer-hub .market-reference-controls .transfer-searchbar > .search-label {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+@media (min-width: 761px) {
+  .transfer-hub .market-reference-controls > .market-result-toolbar {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    align-items: stretch;
+  }
+  .transfer-hub .market-result-toolbar > .market-view-toggle {
+    display: contents;
+  }
+  .transfer-hub .market-result-toolbar > .market-view-toggle > button {
+    width: 100%;
+    min-height: 38px;
+    border-radius: 7px;
+    margin: 0;
+  }
+  .transfer-hub .market-result-toolbar > .market-sort-label {
+    width: 100%;
+    min-width: 0;
+    margin: 0;
+  }
+}
+
+@media (min-width: 761px) {
+  .transfer-hub .market-controls.panel:has(> .market-reference-controls) {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    column-gap: 6px;
+    row-gap: 6px;
+  }
+  .transfer-hub .market-controls:has(> .market-reference-controls) > .market-tabs {
+    grid-column: 1 / 7;
+    grid-row: 1;
+  }
+  .transfer-hub .market-reference-controls > .market-quick-filters {
+    grid-column: 7 / -1;
+    grid-row: 1;
+  }
+  .transfer-hub .market-controls > .market-reference-controls {
+    display: contents;
+  }
+  .transfer-hub .market-reference-controls > .market-position-tabs {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+  .transfer-hub .market-reference-controls > .transfer-searchbar {
+    display: grid;
+    grid-column: 1 / 7;
+    grid-row: 3;
+    grid-template-columns: minmax(0, 1fr) minmax(90px, 0.35fr);
+    gap: 6px;
+  }
+  .transfer-hub .market-reference-controls > .market-result-toolbar {
+    display: grid;
+    grid-column: 7 / -1;
+    grid-row: 3;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 6px;
+  }
+  .transfer-hub .market-result-toolbar > .market-view-toggle {
+    display: flex;
+    min-width: 0;
+    width: 100%;
+  }
+  .transfer-hub .market-result-toolbar > .market-view-toggle > button {
+    flex: 1;
+    min-width: 0;
+  }
+  .transfer-hub .market-result-toolbar > .market-sort-label {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .transfer-hub .market-reference-controls .transfer-searchbar > .market-filter-button,
+  .transfer-hub .market-reference-controls .transfer-searchbar input,
+  .transfer-hub .market-result-toolbar .game-select-trigger {
+    height: 38px;
+    min-height: 38px;
+  }
+}
+
+@media (min-width: 761px) {
+  .transfer-hub .market-reference-controls .market-result-toolbar > .market-view-toggle {
+    display: flex;
+    align-items: stretch;
+    gap: 3px;
+    height: 38px;
+    min-height: 38px;
+    padding: 3px;
+    box-sizing: border-box;
+  }
+  .transfer-hub .market-reference-controls .market-result-toolbar > .market-view-toggle > button {
+    flex: 1 1 0;
+    width: auto;
+    min-width: 0;
+    height: 30px;
+    min-height: 0;
+    margin: 0;
+    padding: 4px 6px;
+    border: 0;
+    border-radius: 5px;
+    box-sizing: border-box;
+  }
+}
+
+.transfer-hub .market-grid.market-league-offers:empty,
+.transfer-hub .market-player-list.market-reference-list:empty {
+  display: none;
+  margin: 0;
+  padding: 0;
+  min-height: 0;
+}
+.transfer-hub .market-empty-state {
+  margin-block: 12px 0;
+}
+
+@media (max-width: 760px) {
+  .market-reference-list .market-list-row {
+    grid-template-columns: 30px 36px minmax(0, 1fr);
+  }
+  .market-reference-list .market-list-overall {
+    grid-column: 1;
+    grid-row: 1;
+  }
+}
+
+@media (max-width: 760px) {
+  .market-reference-list .market-list-row {
+    grid-template-columns: 28px 30px minmax(0, 1fr) auto;
+    gap: 6px;
+    align-items: center;
+    padding: 12px 8px;
+  }
+  .market-reference-list .market-list-row > .market-list-overall {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .market-reference-list .market-list-row > .pixel-portrait {
+    grid-column: 2;
+    grid-row: 1;
+    width: 30px;
+  }
+  .market-reference-list .market-list-row > .market-list-identity {
+    grid-column: 3;
+    grid-row: 1;
+  }
+  .market-reference-list .market-list-row > .market-list-negotiate {
+    grid-column: 4;
+    grid-row: 1;
+    align-self: center;
+    justify-self: end;
+    margin: 0;
+    min-width: 0;
+    padding: 7px 6px;
+    font-size: 10px;
+    white-space: nowrap;
+  }
+}
+
+/* Collapsible transfer filters; result presentation stays above the results. */
+.transfer-hub section.market-controls.market-collapsible-controls.panel {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  width: 100%;
+  box-sizing: border-box;
+}
+.transfer-hub .market-controls.market-collapsible-controls > .market-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  width: 100%;
+  gap: 3px;
+  padding: 0;
+  margin: 0;
+  border: 0;
+}
+.transfer-hub .market-controls.market-collapsible-controls > .market-tabs button {
+  flex: 1 1 auto;
+  padding: 7px 6px;
+  white-space: nowrap;
+}
+.transfer-hub .market-controls.market-collapsible-controls > .market-reference-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+  padding: 8px 0 0;
+  border-top: 1px solid #b8a15d66;
+}
+.transfer-hub .market-controls.market-collapsible-controls > .market-reference-controls[hidden] {
+  display: none;
+}
+.transfer-hub .market-controls.market-collapsible-controls .market-quick-filters {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  width: 100%;
+  padding: 0;
+  border: 0;
+  gap: 5px;
+}
+.transfer-hub .market-controls.market-collapsible-controls .transfer-searchbar {
+  display: block;
+  width: 100%;
+}
+.transfer-hub .market-controls.market-collapsible-controls .transfer-searchbar > .search-label {
+  width: 100%;
+}
+.market-expand-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 24px;
+  width: 100%;
+  padding: 3px;
+  border: 0;
+  border-top: 1px solid #b8a15d44;
+  background: transparent;
+  color: #d5dfba;
+  font-size: 9px;
+}
+.market-expand-toggle[aria-expanded='true'] svg {
+  transform: rotate(180deg);
+}
+.transfer-hub .market-inline-advanced.market-filter-dialog {
+  position: static;
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+  height: auto;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  overflow: visible;
+}
+.market-inline-advanced .market-filter-surface {
+  padding: 0;
+}
+.transfer-hub > .market-result-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px;
+  align-items: stretch;
+  margin: 10px 0;
+}
+.transfer-hub > .market-result-toolbar > .market-view-toggle {
+  display: flex;
+  min-width: 0;
+  gap: 3px;
+  padding: 3px;
+  border: 1px solid #cbbb76;
+  border-radius: 8px;
+  background: #f2edda;
+}
+.transfer-hub > .market-result-toolbar .market-view-toggle button {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 30px;
+  border: 0;
+  border-radius: 5px;
+  padding: 5px;
+  background: transparent;
+  color: #173d2b;
+}
+.transfer-hub > .market-result-toolbar .market-view-toggle button[aria-pressed='true'] {
+  background: #174d36;
+  color: #fff1b3;
+}
+.transfer-hub > .market-result-toolbar > .market-sort-label {
+  display: flex;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  min-width: 0;
+}
+@media (min-width: 761px) {
+  .transfer-hub section.market-controls.market-collapsible-controls.panel {
+    width: 50%;
+    align-self: start;
+  }
+}
+
+.transfer-hub .market-inline-advanced.market-filter-dialog {
+  color: #f1ebce;
+}
+
+.transfer-hub .market-result-toolbar:not(.market-reference-controls .market-result-toolbar) {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px;
+  width: 100%;
+  align-items: stretch;
+}
+.transfer-hub .market-result-toolbar > .market-view-toggle {
+  display: flex;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+.transfer-hub .market-result-toolbar > .market-view-toggle > button {
+  flex: 1 1 0;
+  min-width: 0;
+}
+.transfer-hub .market-result-toolbar > .market-sort-label {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+  margin: 0;
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.transfer-hub .market-controls.market-collapsible-controls > .market-tabs {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 3px;
+}
+.transfer-hub .market-controls.market-collapsible-controls > .market-tabs button {
+  width: 100%;
+  min-width: 0;
+  padding-inline: 2px;
+}
+.transfer-hub .market-controls.market-collapsible-controls > .market-tabs button:nth-child(n + 7) {
+  grid-column: span 2;
+}
+.transfer-hub .market-controls.market-collapsible-controls .market-position-tabs {
+  order: 0;
+}
+.transfer-hub .market-controls.market-collapsible-controls .market-quick-filters {
+  order: 1;
+}
+.transfer-hub .market-controls.market-collapsible-controls .transfer-searchbar {
+  order: 2;
+}
+.transfer-hub .market-controls.market-collapsible-controls .market-inline-advanced {
+  order: 3;
+}
+
+.transfer-hub
+  .market-controls.market-collapsible-controls
+  > .market-expand-toggle[aria-expanded='true'] {
+  order: 2;
+  margin-top: 4px;
+}
+
+.transfer-hub > .market-result-toolbar > .market-view-toggle {
+  grid-column: 1;
+  grid-row: 1;
+  align-self: stretch;
+  justify-self: stretch;
+  height: 38px;
+}
+.transfer-hub > .market-result-toolbar > .market-sort-label {
+  grid-column: 2;
+  grid-row: 1;
+  align-self: stretch;
+  height: 38px;
+}
+.transfer-hub > .market-result-toolbar .game-select-trigger {
+  min-height: 38px;
+  height: 38px;
+  padding-block: 6px;
+}
+
+.transfer-hub .market-controls.market-collapsible-controls .transfer-searchbar {
+  order: 4;
+}
+.transfer-hub .market-controls.market-collapsible-controls .transfer-searchbar > .search-label {
+  display: grid;
+  grid-template-rows: auto auto;
+  gap: 8px;
+}
+.transfer-hub .market-controls.market-collapsible-controls .search-label > span {
+  color: #f1ebce;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.transfer-hub > .market-result-toolbar > .transfer-searchbar {
+  grid-column: 1;
+  grid-row: 1;
+  display: block;
+  min-width: 0;
+  width: 100%;
+}
+.transfer-hub > .market-result-toolbar .search-label {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+}
+.transfer-hub > .market-result-toolbar .search-label input {
+  width: 100%;
+  min-width: 0;
+  height: 38px;
+  box-sizing: border-box;
+}
+.transfer-hub .market-inline-advanced .market-filter-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 16px;
+}
+.transfer-hub .market-inline-advanced .market-filter-actions button {
+  width: 100%;
+  min-width: 0;
+}
+.transfer-hub .market-listing-switch {
+  margin: 0;
+  padding: 0;
+  display: flex;
+  justify-content: flex-end;
+}
+.transfer-hub .market-listing-switch .market-view-toggle {
+  display: flex;
+  width: 100%;
+  height: 25px;
+  min-height: 25px;
+  padding: 2px;
+  margin: 0;
+  gap: 3px;
+  border-radius: 6px 6px 0 0;
+  box-sizing: border-box;
+}
+.transfer-hub .market-listing-switch .market-view-toggle button {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
+  height: 19px;
+  padding: 1px 8px;
+  font-size: 10px;
+  line-height: 1;
+}
+.transfer-hub .market-listing-switch + :is(.market-grid, .market-player-list) {
+  margin-top: 0;
+}
+
+.market-filter-redesign .market-dual-track,
+.market-filter-redesign .market-dual-track input[type='range'] {
+  transition: none;
+  animation: none;
+}
+.market-filter-redesign .market-dual-track input::-webkit-slider-thumb {
+  touch-action: none;
+  transition: none;
+}
+.market-filter-redesign .market-dual-track input::-moz-range-thumb {
+  touch-action: none;
+  transition: none;
+}
+
+.transfer-hub .market-listing-switch {
+  background: #f1eedc;
+  border-radius: 8px 8px 0 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+.transfer-hub .market-listing-switch .market-view-toggle {
+  border-radius: 6px;
+  width: 100%;
+}
+.transfer-hub .market-listing-switch + .market-player-list.market-reference-list {
+  margin-top: 0;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+.transfer-hub .market-listing-switch + .market-player-list .market-list-row:first-child {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+.transfer-hub .market-listing-switch + .market-grid.market-league-offers {
+  margin-top: 0;
+  padding-top: 6px;
+}
+
+@media (min-width: 761px) {
+  .transfer-hub .market-controls.market-collapsible-controls > .market-tabs {
+    grid-template-columns: repeat(6, minmax(0, 1fr)) repeat(2, minmax(0, 1.3fr)) minmax(0, 1.4fr);
+    gap: 3px;
+  }
+  .transfer-hub
+    .market-controls.market-collapsible-controls
+    > .market-tabs
+    button:nth-child(n + 7) {
+    grid-column: auto;
+  }
+  .transfer-hub .market-controls.market-collapsible-controls .market-filter-dual-ranges {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 24px;
+    row-gap: 24px;
+  }
+}
+
+@media (min-width: 761px) {
+  .transfer-hub section.market-controls.market-collapsible-controls.panel {
+    width: 100%;
+  }
+  .transfer-hub .market-controls.market-collapsible-controls > .market-tabs {
+    grid-template-columns: repeat(9, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 761px) {
+  .transfer-hub .market-controls.market-collapsible-controls .market-filter-selects {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    align-items: end;
+  }
+  .transfer-hub .market-controls.market-collapsible-controls .market-filter-selects > label {
+    grid-column: auto;
+    min-width: 0;
+  }
+  .transfer-hub .market-controls.market-collapsible-controls .market-filter-dual-ranges {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    column-gap: 24px;
+  }
+}
+
+.transfer-hub .market-controls.market-collapsible-controls,
+.transfer-hub .market-controls.market-collapsible-controls > .market-reference-controls {
+  animation: none;
+  transition: none;
+}
+
+@media (min-width: 761px) {
+  .transfer-hub > .market-result-toolbar:not(.market-reference-controls .market-result-toolbar) {
+    width: 50%;
+    grid-template-columns: minmax(0, 66fr) minmax(0, 34fr);
+    align-self: start;
+    justify-self: start;
+  }
+}
+
+/* Keep grass shading anchored to the viewport as result counts change. */
+.workspace:has(.transfer-hub) {
+  background-size:
+    180px 180px,
+    100% 220px,
+    100% 100dvh;
+  background-position:
+    left top,
+    left top,
+    center top;
+  background-repeat: repeat, repeat, no-repeat;
+}
+
+.transfer-hub > .market-controls.market-collapsible-controls.panel {
+  margin-bottom: 0;
+}
+.transfer-hub > .market-result-toolbar {
+  margin-block: 6px;
+}
+.transfer-hub > .market-listing-switch {
+  margin-top: 0;
+}
+
+.transfer-hub > .market-result-toolbar {
+  margin-block: 6px;
+  padding-bottom: 0;
+}
+.transfer-hub > .market-listing-switch {
+  padding-top: 0;
+}
+
+/* The search wrapper must not add its old 20px bottom margin to the toolbar. */
+.transfer-hub > .market-result-toolbar > .transfer-searchbar {
+  margin: 0;
+  padding: 0;
+}
+.transfer-hub > .market-result-toolbar {
+  margin-block: 6px;
+}
+
+.transfer-hub > .market-result-toolbar + .incoming-offers {
+  margin-top: 0;
+  padding-top: 0;
+}
+.transfer-hub > .incoming-offers > .offers-empty-state {
+  margin-top: 0;
+}
+.transfer-hub > .incoming-offers > .incoming-offers-grid:empty {
+  display: none;
+  margin: 0;
+  padding: 0;
+}
+
+.transfer-hub > .market-result-toolbar + .market-empty-state {
+  margin-top: 0;
+}
+.transfer-hub > .market-result-toolbar:has(+ .market-player-list:empty) ~ .market-empty-state,
+.transfer-hub > .market-result-toolbar:has(+ .market-grid:empty) ~ .market-empty-state {
+  margin-top: 0;
+}
+
+/* Shared football button finish; dimensions and bottom navigation stay untouched. */
+:where(.workspace, dialog)
+  button:not(
+    :where(
+      .mobile-bottom-nav *,
+      .twitter-news *,
+      .game-select-trigger,
+      .tactics-player,
+      .reserve-mini,
+      .bench-player,
+      .player-card,
+      .market-player-card-trigger
+    )
+  ) {
+  --button-rim: #c6ad65;
+  border-color: var(--button-rim);
+  border-radius: 0;
+  --button-cut: 7px;
+  clip-path: polygon(
+    0 0,
+    calc(100% - var(--button-cut)) 0,
+    100% var(--button-cut),
+    100% 100%,
+    var(--button-cut) 100%,
+    0 calc(100% - var(--button-cut))
+  );
+  background-color: #194632;
+  color: #f4edce;
+  box-shadow:
+    inset 0 1px 0 #fff2ba24,
+    inset 0 -2px 0 #041e1959,
+    0 1px 2px #03181026;
+  transition:
+    box-shadow 120ms ease,
+    filter 120ms ease;
+}
+:where(.workspace, dialog)
+  button:not(
+    :where(
+      .mobile-bottom-nav *,
+      .twitter-news *,
+      .game-select-trigger,
+      .tactics-player,
+      .reserve-mini,
+      .bench-player,
+      .player-card,
+      .market-player-card-trigger
+    )
+  ):hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+:where(.workspace, dialog)
+  button:not(
+    :where(
+      .mobile-bottom-nav *,
+      .twitter-news *,
+      .game-select-trigger,
+      .tactics-player,
+      .reserve-mini,
+      .bench-player,
+      .player-card,
+      .market-player-card-trigger
+    )
+  ):active:not(:disabled) {
+  box-shadow:
+    inset 0 2px 4px #03181066,
+    inset 0 0 0 1px #ead28d55;
+}
+:where(.workspace, dialog) button:not(:where(.mobile-bottom-nav *, .twitter-news *)):focus-visible {
+  outline-color: #e6ce83;
+}
+@media (prefers-reduced-motion: reduce) {
+  :where(.workspace, dialog) button:not(:where(.mobile-bottom-nav *, .twitter-news *)) {
+    transition: none;
+  }
+}
+
+/* Navigation uses links; enforce the same cut-corner finish on links and actions. */
+.sidebar nav > a,
+.sidebar .sidebar-exit,
+.workspace
+  button:not(
+    :where(
+      .mobile-bottom-nav *,
+      .twitter-news *,
+      .game-select-trigger,
+      .tactics-player,
+      .reserve-mini,
+      .bench-player,
+      .player-card,
+      .market-player-card-trigger
+    )
+  ),
+dialog
+  button:not(
+    :where(
+      .game-select-trigger,
+      .bench-player,
+      .player-card,
+      .market-player-card-trigger,
+      .twitter-news *
+    )
+  ),
+.lineup-editor .bench-player > b {
+  --button-cut: 7px;
+  border-radius: 0 !important;
+  clip-path: polygon(
+    0 0,
+    calc(100% - var(--button-cut)) 0,
+    100% var(--button-cut),
+    100% 100%,
+    var(--button-cut) 100%,
+    0 calc(100% - var(--button-cut))
+  ) !important;
+  box-shadow:
+    inset 0 0 0 1px #c6ad65,
+    inset 0 2px 0 #fff2ba24,
+    inset 0 -2px 0 #041e1959 !important;
+}
+
+/* Follow the clipped diagonals without changing the control's dimensions. */
+.sidebar nav > a,
+.sidebar .sidebar-exit,
+.workspace
+  button:not(
+    :where(
+      .mobile-bottom-nav *,
+      .twitter-news *,
+      .game-select-trigger,
+      .tactics-player,
+      .reserve-mini,
+      .bench-player,
+      .player-card,
+      .market-player-card-trigger
+    )
+  ),
+dialog
+  button:not(
+    :where(
+      .game-select-trigger,
+      .bench-player,
+      .player-card,
+      .market-player-card-trigger,
+      .twitter-news *
+    )
+  ),
+.lineup-editor .bench-player > b {
+  border-image-source: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='30' height='30' viewBox='0 0 30 30'%3E%3Cpath d='M.5.5H22.5L29.5 7.5V29.5H7.5L.5 22.5Z' fill='none' stroke='%23c6ad65' stroke-width='1'/%3E%3C/svg%3E");
+  border-image-slice: 10;
+  border-image-width: 10px;
+  border-image-outset: 0;
+  border-image-repeat: stretch;
+}
+
+/* Shared control silhouette across the whole game, including navigation links. */
+button:not(.mobile-bottom-nav *, .twitter-news *),
+nav a:not(.mobile-bottom-nav *, .twitter-news *),
+a:is(
+    .primary,
+    .secondary,
+    [role='button'],
+    [class*='button'],
+    [class*='action'],
+    [class*='shortcut']
+  ):not(.twitter-news *),
+[role='button']:not(.mobile-bottom-nav *, .twitter-news *) {
+  --button-cut: 7px;
+  border-radius: 0 !important;
+  clip-path: polygon(
+    0 0,
+    calc(100% - var(--button-cut)) 0,
+    100% var(--button-cut),
+    100% 100%,
+    var(--button-cut) 100%,
+    0 calc(100% - var(--button-cut))
+  ) !important;
+  border-image-source: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='30' height='30' viewBox='0 0 30 30'%3E%3Cpath d='M.5.5H22.5L29.5 7.5V29.5H7.5L.5 22.5Z' fill='none' stroke='%23c6ad65' stroke-width='1'/%3E%3C/svg%3E") !important;
+  border-image-slice: 10 !important;
+  border-image-width: 10px !important;
+  border-image-outset: 0 !important;
+  border-image-repeat: stretch !important;
+  box-shadow:
+    inset 0 0 0 1px #c6ad65,
+    inset 0 2px 0 #fff2ba24,
+    inset 0 -2px 0 #041e1959 !important;
+}
+
+@media (max-width: 900px) {
+  /* Short workflows are sized by their maximum fixed content, never by viewport height. */
+  dialog.modal.compact-content-modal[open] {
+    position: fixed !important;
+    inset: 0 !important;
+    transform: none !important;
+    translate: none !important;
+    margin: auto !important;
+    width: min(480px, calc(100vw - 28px)) !important;
+    max-width: calc(100vw - 28px) !important;
+    min-width: 0 !important;
+    height: fit-content !important;
+    block-size: fit-content !important;
+    min-height: 0 !important;
+    min-block-size: 0 !important;
+    max-height: calc(100dvh - 28px) !important;
+    max-block-size: calc(100dvh - 28px) !important;
+    padding: 20px !important;
+    display: flex !important;
+    flex-direction: column;
+    gap: 14px;
+    overflow-y: auto;
+    box-sizing: border-box;
+  }
+  dialog.modal.compact-content-modal[open] > .modal-content {
+    display: block;
+    flex: 0 0 auto !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none;
+    padding: 0;
+    overflow: visible;
+  }
+  dialog.modal.compact-content-modal[open] > .modal-return {
+    position: static;
+    flex: 0 0 auto;
+    margin-top: 0;
+  }
+  dialog.modal.compact-content-modal[open] .facility-confirmation-emblem {
+    margin-top: 0;
+  }
+  .modal-backdrop > :is(.career-confirm-dialog, .invite-dialog)[role='dialog'] {
+    width: min(480px, calc(100vw - 28px));
+    height: auto;
+    min-height: 0;
+    max-height: calc(100dvh - 28px);
+    overflow-y: auto;
+  }
+}
+
+/* Transfer category tabs retain their original flat, underlined design. */
+.transfer-hub .market-controls.market-collapsible-controls > .market-tabs > button {
+  clip-path: none !important;
+  border-image: none !important;
+  box-shadow: none !important;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  border-radius: 5px 5px 0 0 !important;
+  background: transparent;
+  color: #b7c9b6;
+}
+.transfer-hub .market-controls.market-collapsible-controls > .market-tabs > button.selected {
+  background: linear-gradient(180deg, #ead28225, #ead28210);
+  color: #ffe5a0;
+  border-bottom-color: #edcf71;
+}
+
+.transfer-hub .market-controls.market-collapsible-controls > .market-expand-toggle:disabled {
+  color: #879488;
+  background: #213a2b;
+  opacity: 0.45;
+  cursor: not-allowed;
+  filter: none;
+}
+
+/* Visiting-club ratings use the same compact overall badges as the squad. */
+.club-inspection > .squad-averages {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 6px;
+  align-items: stretch;
+}
+.club-inspection > .squad-averages > .squad-average {
+  width: auto;
+  height: auto;
+  min-height: 64px;
+  aspect-ratio: auto;
+  padding: 8px 4px;
+  gap: 8px;
+  border: 1px solid #81926766;
+  border-radius: 7px;
+  background: linear-gradient(145deg, #214b38, #143829);
+  color: #f3eed6;
+}
+.club-inspection > .squad-averages > .squad-average > span {
+  font-size: 10px;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+.club-inspection > .squad-averages > .squad-average > .market-overall-badge {
+  display: grid;
+  place-items: center;
+  min-width: 34px;
+  min-height: 30px;
+  padding: 3px 6px;
+  border: 1px solid #ffffff55;
+  border-radius: 5px;
+  font:
+    800 23px/1 Arial,
+    sans-serif;
+}
+@media (max-width: 760px) {
+  .club-inspection > .squad-averages {
+    gap: 4px;
+  }
+  .club-inspection > .squad-averages > .squad-average {
+    min-height: 58px;
+    padding: 6px 2px;
+    gap: 6px;
+  }
+  .club-inspection > .squad-averages > .squad-average > span {
+    font-size: 9px;
+  }
+  .club-inspection > .squad-averages > .squad-average > .market-overall-badge {
+    min-width: 30px;
+    min-height: 27px;
+    font-size: 21px;
+  }
+}
+
+.club-inspection .club-inspection-filters > label:last-child {
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+}
+.club-inspection .club-inspection-filters {
+  grid-template-columns: minmax(0, 220px) minmax(160px, 200px);
+}
+@media (max-width: 760px) {
+  .club-inspection .club-inspection-filters {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 8px;
+  }
+}
+
+.standings-human-manager {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 15px;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: #d6ff36;
+  color: #172d20;
+}
+@media (max-width: 760px) {
+  .main-content:has(.competition-controls) {
+    padding: 6px;
+  }
+  .main-content:has(.competition-controls) .competition-controls.panel {
+    padding: 6px;
+    margin-bottom: 6px;
+  }
+  .main-content:has(.competition-controls) .standings-card {
+    padding: 4px;
+    border-radius: 12px;
+  }
+  .standings-card .standings-scroll {
+    overflow-x: hidden;
+  }
+  .standings-card .standings-table {
+    table-layout: fixed;
+    min-width: 0;
+    width: 100%;
+    height: auto;
+    border-collapse: collapse;
+  }
+  .standings-col-rank {
+    width: 5%;
+  }
+  .standings-col-club {
+    width: 32%;
+  }
+  .standings-col-stat {
+    width: 6%;
+  }
+  .standings-col-form {
+    width: 15%;
+  }
+  .main-content .standings-card .standings-table :is(tbody td, tbody th) {
+    height: clamp(18px, calc((100dvh - 230px) / var(--standings-rows)), 28px);
+    padding: 2px 1px;
+    font:
+      600 clamp(8px, 2.2vw, 11px)/1.15 Arial,
+      sans-serif;
+    white-space: nowrap;
+  }
+  .standings-card .standings-table thead th {
+    height: 25px;
+    padding: 4px 1px;
+    font-size: 8px;
+  }
+  .standings-card .standings-table .standings-rank {
+    width: auto;
+    padding-left: 2px;
+    text-align: center;
+  }
+  .standings-card .standings-table .standings-club {
+    width: auto;
+  }
+  .standings-card .standings-club a {
+    gap: 3px;
+    min-height: 16px;
+  }
+  .standings-card .standings-club a > .pixel-badge {
+    width: 14px;
+    height: 14px;
+    flex: 0 0 14px;
+  }
+  .standings-card .standings-club-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .standings-card .standings-form {
+    gap: 2px;
+    padding: 0;
+  }
+  .standings-card .standings-form .form-dot {
+    width: 6px;
+    height: 6px;
+    min-width: 6px;
+    font-size: 0;
+    line-height: 1;
+    border-radius: 50%;
+  }
+  .standings-card .standings-legend {
+    gap: 5px;
+    padding-block: 5px;
+    font-size: 8px;
+  }
+  .standings-card .standings-my-club {
+    color: #d6ff36;
+    background: #424924;
+  }
+}
+
+/* Only league table rows adapt to the available mobile height. */
+@media (max-width: 760px) {
+  .main-content .standings-card.standings-league .standings-table :is(tbody td, tbody th) {
+    height: var(--league-row-height, auto);
+    padding-block: 0;
+    font-size: clamp(8px, calc(var(--league-row-height, 24px) * 0.42), 11px);
+    line-height: 1;
+  }
+  .main-content .standings-card.standings-league .standings-club a {
+    min-height: 0;
+  }
+}
+
+/* Let the mobile side navigation use the free space above its account footer. */
+@media (max-width: 760px) and (min-height: 521px) {
+  .sidebar.mobile-open nav {
+    flex: 1 1 0;
+    min-height: 0;
+    max-height: none;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-auto-rows: minmax(0, 1fr);
+    gap: clamp(6px, 0.9dvh, 9px);
+  }
+  .sidebar.mobile-open nav a {
+    height: 100%;
+    min-height: 0;
+    padding-block: 6px;
+    box-sizing: border-box;
+  }
+  .sidebar.mobile-open .sidebar-exit,
+  .sidebar.mobile-open .sidebar-user {
+    flex-shrink: 0;
+  }
+}
+
+/* Market shortcuts use a subtle dotted edge; reset remains neutral. */
+.transfer-hub .market-controls.market-collapsible-controls .market-quick-filters > button {
+  border-image: none !important;
+  clip-path: none !important;
+  border: 1px dashed #75965b !important;
+  border-radius: 7px !important;
+  box-shadow: none !important;
+}
+.transfer-hub .market-inline-advanced .market-filter-actions > .market-filter-reset {
+  border-image-source: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='30' height='30' viewBox='0 0 30 30'%3E%3Cpath d='M.5.5H22.5L29.5 7.5V29.5H7.5L.5 22.5Z' fill='none' stroke='%238a968c' stroke-width='1'/%3E%3C/svg%3E") !important;
+  border-color: #8a968c !important;
+  box-shadow: inset 0 0 0 1px #8a968c !important;
+}
+
+.transfer-hub .market-reference-controls .market-position-tabs > button {
+  border-color: #547480 !important;
+  border-image-source: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='30' height='30' viewBox='0 0 30 30'%3E%3Cpath d='M.5.5H22.5L29.5 7.5V29.5H7.5L.5 22.5Z' fill='none' stroke='%23547480' stroke-width='1'/%3E%3C/svg%3E") !important;
+  box-shadow: inset 0 0 0 1px #547480 !important;
+}
+.transfer-hub .market-reference-controls .market-position-tabs > button.selected {
+  border-color: #c1e8f3 !important;
+  border-image-source: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='30' height='30' viewBox='0 0 30 30'%3E%3Cpath d='M.5.5H22.5L29.5 7.5V29.5H7.5L.5 22.5Z' fill='none' stroke='%23c1e8f3' stroke-width='1'/%3E%3C/svg%3E") !important;
+  box-shadow:
+    inset 0 0 0 1px #c1e8f3,
+    inset 0 -2px #44788a !important;
+}
+
+@media (min-width: 761px) {
+  .transfer-hub .market-controls.market-collapsible-controls > .market-tabs > button {
+    font-size: 13px;
+    line-height: 1.3;
+  }
+}
+
+.transfer-hub .market-controls.market-collapsible-controls .market-quick-filters {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+@media (min-width: 761px) {
+  .transfer-hub .market-controls.market-collapsible-controls > .market-tabs {
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+  }
+}
+
+.transfer-hub .market-controls.market-collapsible-controls > .market-expand-toggle {
+  min-height: 36px;
+  padding-block: 8px;
+  border: 0 !important;
+  border-top: 1px solid #b8a15d33 !important;
+  border-image: none !important;
+  box-shadow: none !important;
+  clip-path: none !important;
+  background: transparent;
+}
+
+.transfer-hub .market-controls.market-collapsible-controls > .market-filter-expansion {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition:
+    grid-template-rows 240ms ease,
+    opacity 180ms ease;
+}
+.transfer-hub
+  .market-controls.market-collapsible-controls
+  > .market-filter-expansion[data-expanded='true'] {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+.transfer-hub
+  .market-controls.market-collapsible-controls
+  .market-filter-expansion
+  > .market-reference-controls {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .transfer-hub .market-controls.market-collapsible-controls > .market-filter-expansion {
+    transition: none;
+  }
+}
+
+.market-filter-dialog.market-filter-redesign .market-dual-range legend {
+  padding-inline: 8px;
+  color: #fff0bd;
+  font-weight: 800;
+}
+.market-filter-dialog.market-filter-redesign .market-dual-range > .market-range-values {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 8px 0;
+  padding: 0;
+  color: #fff2c6;
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 1px 2px #092419;
+  line-height: 1.4;
+}
+.market-filter-dialog.market-filter-redesign .market-range-values > span {
+  padding: 3px 6px;
+  background: #102f2370;
+  border-radius: 4px;
+}
+
+.market-filter-dialog.market-filter-redesign .market-dual-range > .market-range-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  padding-inline: 8px;
+}
+.market-filter-dialog.market-filter-redesign .market-range-heading > .market-range-values {
+  position: static;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+  margin: 0;
+  padding: 0;
+  color: #fff2c6;
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.4;
+}
+.market-filter-dialog.market-filter-redesign .market-range-heading .market-range-values > span {
+  padding: 0;
+  background: transparent;
+  white-space: nowrap;
+}
+.market-range-heading .market-range-values > span + span::before {
+  content: '–';
+  margin-right: 5px;
+  color: #a9bc91;
+}
+
+.market-filter-dialog.market-filter-redesign .market-range-heading > .market-range-values {
+  color: #deec9b;
+  font-size: 11px;
+  font-weight: 800;
+  gap: 4px;
+  text-shadow: none;
+}
+.market-range-heading .market-range-values > span + span::before {
+  color: inherit;
+  margin-right: 4px;
+}
+
+@media (max-width: 760px) {
+  .transfer-hub .market-controls.market-collapsible-controls > .market-tabs > button:nth-child(7) {
+    grid-column: 1 / 4;
+  }
+  .transfer-hub .market-controls.market-collapsible-controls > .market-tabs > button:nth-child(8) {
+    grid-column: 4 / 7;
+  }
+}
+
+.transfer-hub .market-controls.market-collapsible-controls .market-tabs button .transfer-count,
+.transfer-hub
+  .market-controls.market-collapsible-controls
+  .market-tabs
+  button.selected
+  .transfer-count {
+  background: #e4eee9;
+  color: #254f41;
+  border-color: #c6d9cd;
+}
+
+@media (min-width: 761px) {
+  .transfer-hub > .incoming-offers > .offers-empty-state {
+    min-height: 102px;
+    padding: 22px;
+    box-sizing: border-box;
+    align-items: center;
+  }
+}
+
+.transfer-hub .market-controls.market-collapsible-controls > .market-expand-toggle {
+  height: 36px;
+  min-height: 36px;
+  max-height: 36px;
+  flex: 0 0 36px;
+  box-sizing: border-box;
+}
+.transfer-hub
+  .market-controls.market-collapsible-controls
+  > .market-filter-expansion[data-expanded='false'] {
+  margin-top: -6px;
+}
+
+.transfer-hub .market-list-identity > button,
+.transfer-hub .market-player-name-trigger {
+  border: 0 !important;
+  border-image: none !important;
+  box-shadow: none !important;
+  clip-path: none !important;
+  background: transparent;
+}
+
+.workspace:has(.club-inspection) {
+  background-size:
+    180px 180px,
+    100% 220px,
+    100% 100dvh;
+  background-position:
+    left top,
+    left top,
+    center top;
+  background-repeat: repeat, repeat, no-repeat;
+}
+
+/* Effect badges extend above lineup cards and must not be clipped by button styling. */
+.lineup-editor .tactics-player,
+.lineup-editor .reserve-mini {
+  clip-path: none !important;
+  overflow: visible;
+}
+.lineup-editor .tactics-rating,
+.lineup-editor .reserve-mini-rating,
+.lineup-editor .tactics-rating .overall-value,
+.lineup-editor .reserve-mini-rating .overall-value {
+  overflow: visible;
+}
+
+/* Draw the card frame separately so modifiers can extend outside its silhouette. */
+.lineup-editor .tactics-player {
+  --lineup-card-fill: linear-gradient(140deg, #eadb91, #ad9655);
+  --lineup-card-edge: #b8a25b;
+  background: transparent !important;
+  border-color: transparent !important;
+  border-image: none !important;
+  box-shadow: none !important;
+  clip-path: none !important;
+}
+.lineup-editor .tactics-player[data-tier='bronze'] {
+  --lineup-card-fill: linear-gradient(140deg, #dfb48c, #936039);
+  --lineup-card-edge: #c58d5d;
+}
+.lineup-editor .tactics-player[data-tier='silver'] {
+  --lineup-card-fill: linear-gradient(140deg, #edf2f5, #94a1af);
+  --lineup-card-edge: #b7c3cf;
+}
+.lineup-editor .tactics-player[data-tier='diamond'] {
+  --lineup-card-fill: linear-gradient(140deg, #d2fbff, #8da0de);
+  --lineup-card-edge: #b9e8ff;
+}
+.lineup-editor .tactics-player.out-of-position {
+  --lineup-card-edge: #df8766;
+}
+.lineup-editor .tactics-player::before,
+.lineup-editor .tactics-player::after {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+  clip-path: polygon(0 0, calc(100% - 7px) 0, 100% 7px, 100% 100%, 7px 100%, 0 calc(100% - 7px));
+}
+.lineup-editor .tactics-player::before {
+  inset: -1px;
+  z-index: -2;
+  background: var(--lineup-card-edge);
+}
+.lineup-editor .tactics-player::after {
+  inset: 1px;
+  z-index: -1;
+  background: var(--lineup-card-fill);
+}
+
+.player-management .renewal-layout > .negotiation-range {
+  display: flex;
+  flex-direction: column;
+  align-self: stretch;
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+  grid-column: 1 / -1;
+}
+.player-management .renewal-layout > .negotiation-range > span {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 10px;
+}
+.player-management .renewal-layout > .negotiation-range > span > output {
+  margin-left: auto;
+  text-align: right;
+}
+.player-management .renewal-layout > .negotiation-range > input.money-range {
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+  box-sizing: border-box;
+}
+.player-management .renewal-layout > .negotiation-range > small {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  gap: 8px;
+}
+
+.player-management .renewal-layout > .renewal-years {
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+  align-self: stretch;
+  grid-column: 1 / -1;
+  box-sizing: border-box;
+}
+.player-management .renewal-layout > .renewal-years > .segmented {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  width: 100%;
+  min-width: 0;
+  gap: 4px;
+  box-sizing: border-box;
+}
+.player-management .renewal-layout > .renewal-years > .segmented > button {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  padding-inline: 4px;
+}
+
+.player-management.transfer-policy-panel .transfer-availability .loan-duration > .segmented {
+  display: flex;
+  gap: 6px;
+  padding: 3px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  box-sizing: border-box;
+}
+.player-management.transfer-policy-panel .transfer-availability .loan-duration .segmented > button {
+  margin: 0;
+  box-sizing: border-box;
+}
+.player-management.transfer-policy-panel .loan-duration .segmented > button:focus-visible {
+  outline-offset: 0;
+}
+
+.player-management.transfer-policy-panel .loan-duration .segmented > button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding-inline: 4px;
+  line-height: 1.2;
+}
+
+.renewal-player-speech {
+  --speech-color: #82c992;
+  --speech-background: #174632;
+  position: relative;
+  display: grid;
+  grid-template-rows: repeat(2, 20px);
+  align-content: center;
+  gap: 2px;
+  width: 100%;
+  min-width: 0;
+  padding: 10px 12px;
+  margin: 0 0 4px;
+  border: 1px solid var(--speech-color);
+  border-radius: 10px 10px 10px 2px;
+  background: var(--speech-background);
+  color: var(--speech-color);
+  box-sizing: border-box;
+  grid-column: 1 / -1;
+}
+.renewal-player-speech::after {
+  content: '';
+  position: absolute;
+  left: 12px;
+  bottom: -5px;
+  width: 8px;
+  height: 8px;
+  background: var(--speech-background);
+  border-right: 1px solid var(--speech-color);
+  border-bottom: 1px solid var(--speech-color);
+  transform: rotate(45deg);
+}
+.renewal-player-speech.is-low {
+  --speech-color: #ffc0b4;
+  --speech-background: #542d29;
+}
+.renewal-player-speech.is-close {
+  --speech-color: #f4df94;
+  --speech-background: #4b4224;
+}
+.renewal-player-speech > span {
+  display: block;
+  white-space: nowrap;
+  font-size: clamp(10px, 2.8vw, 12px);
+  font-weight: 600;
+  line-height: 20px;
+}
+.renewal-player-speech > span:last-child {
+  font-weight: 800;
+}
+.renewal-player-terms {
+  grid-column: 1 / -1;
+  color: #c5d6bd;
+  font-size: 11px;
+}
+
+.renewal-player-speech.is-waiting {
+  --speech-color: #d7dfc0;
+  --speech-background: #193d30;
+}
+
+.contract-demand {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.contract-demand > button {
+  width: 100%;
+}
+.contract-demand > .renewal-demand-reject {
+  background: #923d35;
+  color: #fff0e7;
+  border-color: #dc8877;
+}
+.renewal-salary-stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+.renewal-salary-stepper > button {
+  width: 30px;
+  height: 28px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+}
+
+.player-management .renewal-layout > .renewal-salary-control {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+}
+.player-management .renewal-layout .renewal-salary-stepper {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr) 30px;
+  align-items: center;
+  gap: 8px;
+  width: min(100%, 260px);
+  margin: 0 auto;
+}
+.player-management .renewal-layout .renewal-salary-stepper > output {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.player-management .renewal-layout .renewal-salary-stepper > button {
+  width: 30px;
+  min-width: 30px;
+  height: 28px;
+  min-height: 28px;
+  margin: 0;
+  padding: 0;
+}
+.player-management .renewal-layout > .renewal-salary-control > input.money-range {
+  margin-block: 2px 0;
+}
+.player-management .renewal-layout > .renewal-years {
+  margin-top: 8px;
+  margin-bottom: 0;
+  padding-top: 0;
+}
+
+.player-management .renewal-layout {
+  gap: 8px;
+}
+.player-management .renewal-layout > .renewal-salary-control + .renewal-years {
+  margin-top: 0;
+}
+
+.card-renewal-request {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 6;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  color: #ffb0a0;
+  background: #742b29;
+  border: 1px solid #ff7869;
+  border-radius: 50%;
+}
+.player-card:has(.card-renewal-request) .card-contract-alert {
+  right: 40px;
+}
+
+/* Empty protection slots stay subdued instead of using the action-button finish. */
+.lineup-editor .protected-players > .protected-slot-empty {
+  border: 1px dashed #63857380;
+  border-image: none !important;
+  border-radius: 4px !important;
+  clip-path: none !important;
+  background: #142c2340;
+  color: #83998b;
+  box-shadow: none !important;
+}
+
+/* Player identity is a plain table action, without the global button frame. */
+.squad-office .squad-numbers td:first-child button {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  border-image: none !important;
+  clip-path: none !important;
+  border-radius: 0 !important;
+  background: transparent;
+  box-shadow: none !important;
+}
+.squad-office .squad-numbers .squad-statistics-identity strong {
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+@media (max-width: 650px) {
+  .squad-office .squad-numbers-wrap {
+    min-width: 0;
+    max-width: 100%;
+  }
+  .squad-office .squad-numbers {
+    table-layout: fixed;
+    width: 100%;
+    min-width: 0;
+  }
+  .squad-office .squad-numbers :is(th, td) {
+    padding-inline: 3px;
+  }
+  .squad-office .squad-numbers :is(th, td):first-child {
+    width: 49%;
+    padding-left: 8px;
+  }
+  .squad-office .squad-numbers :is(th, td):last-child {
+    width: 15%;
+    padding-right: 6px;
+  }
+  .squad-office .squad-numbers td:first-child button {
+    gap: 5px;
+  }
+  .squad-office .squad-numbers .portrait {
+    flex-basis: 28px;
+    width: 28px;
+    height: 36px;
+  }
+  .squad-office .squad-numbers td:first-child strong {
+    font-size: 12px;
+  }
+  .squad-office .squad-numbers .squad-rating {
+    display: inline-block;
+    min-width: 28px;
+    padding-inline: 3px;
+  }
+}
+
+/* Card status icons must not inherit the global clipped button silhouette. */
+.player-card[role='button'] {
+  clip-path: none !important;
+  border-image: none !important;
+  border-radius: 12px !important;
+  box-shadow: none !important;
+  overflow: visible;
+}
+
+/* Position categories use the game's yellow palette. */
+:is(.squad-office, .club-inspection) .squad-list-category {
+  background: linear-gradient(135deg, #ead98d, #cfb65e) !important;
+  color: #18382b !important;
+  border-color: #e8d58b;
+}
+
+/* Standalone player cards keep their own frame instead of the full-screen menu layout. */
+dialog.player-card-overlay[open] {
+  display: block;
+  translate: none;
+  overflow: visible;
+}
+
+@media (max-width: 900px) {
+  .player-card-overlay .player-detail-card .player-card {
+    width: min(300px, calc(100vw - 48px), calc((100dvh - 100px) * 200 / 368));
+  }
+}
+
+/* Calendar hit targets are invisible; draw labels retain their compact event styling. */
+.club-calendar .calendar-day-hit-area {
+  background: transparent;
+  border: 0;
+  border-image: none !important;
+  border-radius: inherit !important;
+  clip-path: none !important;
+  box-shadow: none !important;
+}
+.club-calendar .club-calendar-day .calendar-draw-event {
+  min-width: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--draw-surface, #f4e9be);
+  border: 0;
+  border-image: none !important;
+  border-radius: 0 !important;
+  clip-path: none !important;
+  box-shadow: none !important;
+}
+
+/* Draw names use the same legible label size as pending cup matches. */
+.club-calendar .club-calendar-day .calendar-draw-label .calendar-draw-name {
+  font-size: 9px;
+  line-height: 1.2;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  letter-spacing: normal;
+}
+@media (max-width: 620px) {
+  .club-calendar .club-calendar-day .calendar-draw-label .calendar-draw-name {
+    font-size: 8px;
+  }
+}
+
+/* Readable treatment copy on the dark football panels. */
+.center-management:is(.sector-fitness, .sector-medical) .management-block p {
+  color: #e2ecdc;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.center-management:is(.sector-fitness, .sector-medical) .management-block label {
+  color: #f2edcf;
+  font-weight: 600;
+}
+.center-management:is(.sector-fitness, .sector-medical) .section-header .pill {
+  background: #254c3b;
+  color: #fff0b8;
+  border: 1px solid #789270;
+}
+.center-management:is(.sector-fitness, .sector-medical) .sector-guide p {
+  color: #344b40;
+  line-height: 1.45;
+}
+
+/* The entire individual-training header is the mobile expansion control. */
+@media (max-width: 760px) {
+  .sector-coaching .management-block > .section-header:has(.individual-training-toggle) {
+    position: relative;
+    justify-content: flex-end;
+    min-height: 40px;
+  }
+  .sector-coaching .management-block > .section-header .individual-training-toggle {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    justify-content: flex-start;
+    padding: 4px 0;
+    border: 0;
+    border-image: none !important;
+    clip-path: none !important;
+    background: transparent;
+    box-shadow: none !important;
+  }
+  .sector-coaching .management-block > .section-header:has(.individual-training-toggle) > .pill {
+    position: relative;
+    pointer-events: none;
+  }
+}
+
+/* Keep unsaved-training decisions legible on the dark dialog surface. */
+dialog.discard-training-confirm .modal-content > p {
+  color: #f0f3df;
+  font-size: 14px;
+  line-height: 1.6;
+  margin-block: 10px 18px;
+}
+dialog.discard-training-confirm .modal-title {
+  color: #fff0bd;
+}
+@media (max-width: 760px) {
+  .individual-coaching-modal .center-management.sector-coaching,
+  .individual-coaching-modal .center-management-content {
+    overflow: visible;
+  }
+  .individual-coaching-modal .individual-training-roster {
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100dvh - 120px - env(safe-area-inset-bottom));
+    min-height: 0;
+    overflow: hidden;
+    background: #0d2b22;
+    border: 1px solid #8c9d6b;
+    border-radius: 12px;
+  }
+  .individual-coaching-modal .individual-training-roster .training-roster-header {
+    position: static;
+    flex: 0 0 auto;
+    background: transparent;
+    margin: 0 0 10px;
+    width: 100%;
+    padding: 0;
+    box-shadow: none;
+  }
+  .individual-coaching-modal .individual-training-roster .training-roster-list {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+  }
+  .sector-guide:has(.coordinator-rules-toggle) {
+    grid-template-columns: 56px minmax(0, 1fr);
+  }
+  .sector-guide:has(.coordinator-rules-toggle) > .sector-avatar {
+    width: 56px;
+    height: 64px;
+    flex-basis: 56px;
+    border-radius: 6px;
+  }
+}
+
+/* Consistent, readable portraits for every training-center assistant. */
+.center-management .sector-guide > .sector-avatar {
+  flex: 0 0 64px;
+  width: 64px;
+  height: 72px;
+  border-radius: 6px;
+}
+.center-management .sector-guide > .sector-avatar .person-pixel-portrait {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.center-management .sector-guide:has(.coordinator-rules-toggle) {
+  grid-template-columns: 64px minmax(0, 1fr);
+}
+
+/* Desktop technical preparation fits the dialog; only the player roster scrolls. */
+@media (min-width: 901px) {
+  dialog.individual-coaching-modal[open] > .modal-content {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-height: 0;
+  }
+  .individual-coaching-modal .modal-title {
+    flex: 0 0 auto;
+    margin-block: 0 10px;
+  }
+  .individual-coaching-modal .center-management.sector-coaching {
+    flex: 1;
+    min-height: 0;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+    grid-template-rows: minmax(0, 1fr);
+    gap: 14px;
+    overflow: hidden;
+  }
+  .individual-coaching-modal .center-management-content {
+    min-height: 0;
+    overflow: hidden;
+    gap: 10px;
+  }
+  .individual-coaching-modal .center-management-content > .sector-guide {
+    margin: 0;
+    padding: 10px;
+    width: 100%;
+    box-sizing: border-box;
+    gap: 10px;
+  }
+  .individual-coaching-modal .coordinator-training-rules {
+    gap: 5px;
+    margin-top: 5px;
+  }
+  .individual-coaching-modal .sector-guide .coordinator-training-rules p {
+    padding-bottom: 5px;
+    line-height: 1.35;
+  }
+  .individual-coaching-modal .center-management-content > .management-block {
+    flex: 1 1 auto;
+    min-height: 0;
+    margin: 0;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+  }
+  .individual-coaching-modal .management-block > .section-header {
+    margin-bottom: 6px;
+    flex: 0 0 auto;
+  }
+  .individual-coaching-modal .individual-training-expandable {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+  }
+  .individual-coaching-modal .center-management-content .fitness-gym {
+    flex: 1;
+    min-height: 0;
+    margin: 0;
+  }
+  .individual-coaching-modal .center-management-content .fitness-gym-players {
+    height: 100%;
+    min-height: 0;
+    box-sizing: border-box;
+    padding: 30px 10px 8px;
+    align-items: flex-end;
+    gap: 8px;
+  }
+  .individual-coaching-modal .fitness-gym-station {
+    width: min(80px, 10dvh);
+  }
+  .individual-coaching-modal .individual-training-roster {
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+    box-sizing: border-box;
+  }
+  .individual-coaching-modal .individual-training-roster .training-roster-list {
+    flex: 1;
+    min-height: 0;
+    max-height: none;
+    overflow-y: auto;
+  }
+}
+
+@media (min-width: 901px) {
+  .individual-coaching-modal .center-management-content > .management-block > .section-header {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .individual-coaching-modal .individual-training-expandable {
+    width: 100%;
+    align-self: stretch;
+  }
+  .individual-coaching-modal .center-management-content .fitness-gym {
+    width: 100%;
+    max-width: none;
+    align-self: stretch;
+  }
+  .individual-coaching-modal .center-management-content .fitness-gym-station {
+    flex: 1 1 0;
+    width: auto;
+    min-width: 0;
+  }
+  .individual-coaching-modal .fitness-gym-station > .player-card {
+    max-width: min(80px, 10dvh);
+    margin-inline: auto;
+  }
+}
+
+/* Fixed CT workflows use their content height on desktop, with treatment controls beside stations. */
+@media (min-width: 901px) {
+  dialog.center-management-modal[open]:has(
+      .sector-fitness,
+      .sector-medical,
+      .sector-marketing,
+      .academy-camp
+    ) {
+    height: fit-content !important;
+    min-height: 0 !important;
+    max-height: calc(100dvh - 32px) !important;
+    padding: 20px;
+    gap: 12px;
+  }
+  dialog.center-management-modal:has(
+      .sector-fitness,
+      .sector-medical,
+      .sector-marketing,
+      .academy-camp
+    )
+    > .modal-content {
+    flex: 0 1 auto;
+    min-height: 0;
+    padding: 0;
+  }
+  .center-management-modal:has(.academy-camp) .modal-title {
+    display: none;
+  }
+  .center-management-modal:is(:has(.sector-fitness), :has(.sector-medical)) .modal-title {
+    margin: 0 0 10px;
+  }
+  .center-management:is(.sector-fitness, .sector-medical)
+    .management-block:has(.individual-training-expandable) {
+    display: block;
+    padding: 12px;
+  }
+  .center-management:is(.sector-fitness, .sector-medical) .individual-training-expandable {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+    column-gap: 20px;
+    align-items: start;
+  }
+  .center-management:is(.sector-fitness, .sector-medical)
+    .individual-training-expandable
+    > :not(.fitness-gym) {
+    grid-column: 1;
+  }
+  .center-management:is(.sector-fitness, .sector-medical)
+    .individual-training-expandable
+    > .fitness-gym {
+    grid-column: 2;
+    grid-row: 1 / span 8;
+    width: 100%;
+    height: 100%;
+    min-height: 230px;
+    max-height: 280px;
+    margin: 0;
+  }
+  .center-management:is(.sector-fitness, .sector-medical) .fitness-gym-players {
+    min-height: 230px;
+    height: 100%;
+    box-sizing: border-box;
+    padding: 40px 14px 14px;
+  }
+  .center-management:is(.sector-fitness, .sector-medical) .fitness-gym-station {
+    flex: 1;
+    min-width: 0;
+    max-width: 110px;
+  }
+  .center-management:is(.sector-fitness, .sector-medical) .management-block > .section-header {
+    width: 100%;
+    margin-bottom: 8px;
+    justify-content: space-between;
+  }
+  .center-management.sector-medical .management-block:not(:has(.individual-training-expandable)) {
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    gap: 6px 16px;
+    padding: 10px 12px;
+  }
+  .center-management.sector-medical
+    .management-block:not(:has(.individual-training-expandable))
+    > button,
+  .center-management.sector-medical
+    .management-block:not(:has(.individual-training-expandable))
+    > .game-select {
+    grid-column: 2;
+  }
+  .center-management.sector-medical .management-block:not(:has(.individual-training-expandable)) p {
+    margin: 2px 0;
+  }
+}
+
+.medical-clearance-description-mobile {
+  display: none;
+}
+@media (max-width: 900px) {
+  .medical-clearance-description-full {
+    display: none;
+  }
+  .medical-clearance-description-mobile {
+    display: inline;
+  }
+  .center-management.sector-medical .medical-clearance-description {
+    margin-block: 5px;
+    font-size: 12px;
+    line-height: 1.35;
+  }
+}
+
+/* Club identity is a fixed short form, so its dialog follows content height. */
+dialog.modal.club-customization-modal[open] {
+  position: fixed !important;
+  inset: 0 !important;
+  margin: auto !important;
+  height: fit-content !important;
+  min-height: 0 !important;
+  max-height: calc(100dvh - 28px) !important;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow: auto;
+}
+dialog.modal.club-customization-modal[open] > .modal-content {
+  flex: 0 1 auto;
+  min-height: 0;
+}
+dialog.modal.club-customization-modal[open] > .modal-return {
+  margin-top: 0 !important;
+}
+@media (max-width: 900px) {
+  dialog.modal.club-customization-modal[open] {
+    width: calc(100vw - 28px) !important;
+    max-width: 480px !important;
+    padding: 14px !important;
+  }
+}
+
+.center-management-modal .sector-marketing .marketing-benefits {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 7px;
+}
+.center-management-modal .sector-marketing .marketing-benefits li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 12px;
+}
+.marketing-benefit-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 38px;
+  height: 38px;
+  border-radius: 8px;
+  background: #126c6020;
+}
+.marketing-benefit-copy {
+  min-width: 0;
+}
+.center-management-modal .sector-marketing .marketing-benefit-copy span {
+  margin-bottom: 3px;
+}
+.marketing-club-identity {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid #c6ad65;
+  border-radius: 10px;
+  background: #153e30;
+  color: #fff0bd;
+}
+.marketing-club-identity > div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.marketing-club-identity h3 {
+  margin: 0;
+  font-size: 15px;
+}
+.marketing-club-identity button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+@media (min-width: 901px) {
+  .club-customization-modal .club-kit-controls > label {
+    margin: 0;
+    padding-bottom: 0;
+  }
+  .club-customization-modal .club-kit-controls > .primary {
+    align-self: end !important;
+    transform: none;
+  }
+}
+@media (max-width: 900px) {
+  dialog.modal.club-customization-modal[open] {
+    height: calc(100dvh - 28px) !important;
+    max-height: calc(100dvh - 28px) !important;
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+  dialog.modal.club-customization-modal[open] > .modal-content {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+  }
+  dialog.modal.club-customization-modal[open] > .modal-return {
+    flex: 0 0 44px;
+    margin-top: auto !important;
+  }
+  .club-customization-modal .customization {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  .club-customization-modal .club-kit-stage {
+    flex-direction: column;
+    gap: 5px;
+    padding: 8px;
+  }
+  .club-customization-modal .club-kit-stage svg {
+    width: 110px;
+    height: 120px;
+  }
+  .club-customization-modal .club-kit-controls {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+  .club-customization-modal .club-color-field > span {
+    min-height: 0;
+    font-weight: 600;
+  }
+  .club-customization-modal .coach-swatches {
+    grid-template-columns: repeat(11, minmax(0, 1fr)) !important;
+  }
+  .club-customization-modal .club-kit-controls > .primary {
+    transform: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .club-customization-modal .club-kit-stage {
+    min-height: clamp(180px, 31dvh, 300px);
+    justify-content: center;
+    box-sizing: border-box;
+  }
+  .club-customization-modal .club-kit-stage svg {
+    width: clamp(150px, 23dvh, 230px);
+    height: clamp(164px, 25dvh, 250px);
+  }
+}
+
+/* Distribute spare mobile height between color groups instead of below the form. */
+@media (max-width: 900px) {
+  dialog.modal.club-customization-modal[open] > .modal-content {
+    display: flex;
+    flex-direction: column;
+  }
+  .club-customization-modal .modal-title {
+    flex: 0 0 auto;
+  }
+  .club-customization-modal .customization {
+    flex: 1 0 auto;
+    display: flex !important;
+    flex-direction: column;
+    align-items: stretch !important;
+    min-height: 0;
+    box-sizing: border-box;
+  }
+  .club-customization-modal .club-kit-stage {
+    flex: 0 0 auto;
+  }
+  .club-customization-modal .club-kit-controls {
+    flex: 1 0 auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: stretch;
+    gap: 14px;
+  }
+}
+
+@media (max-width: 900px) {
+  .club-customization-modal .club-kit-controls {
+    width: 100%;
+  }
+  .club-customization-modal .club-kit-controls > .primary {
+    align-self: stretch !important;
+    flex: 0 0 44px;
+    height: 44px;
+  }
+}
+
+/* Blocking game transitions, without simulated progress or additional requests. */
+dialog.game-loading-screen[open] {
+  position: fixed !important;
+  inset: 0 !important;
+  margin: 0 !important;
+  width: 100vw !important;
+  max-width: none !important;
+  height: 100dvh !important;
+  max-height: none !important;
+  padding: 24px !important;
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 0;
+  background: #09251af2;
+  color: #fff0bd;
+  overflow: hidden;
+  transform: none !important;
+}
+.game-loading-screen::backdrop {
+  background: rgb(0 0 0 / 50%) !important;
+}
+.game-loading-screen::before,
+.game-loading-screen::after {
+  content: none !important;
+}
+.game-loading-content {
+  width: min(100%, 420px);
+  text-align: center;
+}
+.game-loading-content > strong {
+  display: block;
+  font-size: 20px;
+  line-height: 1.4;
+}
+.game-loading-content > p {
+  color: #d4e6d5;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.team-bus-scene {
+  width: min(100%, 300px);
+  margin: 0 auto 20px;
+  overflow: hidden;
+}
+.team-bus {
+  display: block;
+  margin: auto;
+  max-width: 100%;
+  animation: bus-bounce 600ms ease-in-out infinite alternate;
+}
+.team-bus-wheel {
+  animation: bus-wheel 700ms linear infinite;
+}
+.team-bus-road {
+  height: 4px;
+  background: repeating-linear-gradient(90deg, #d6c67f 0 28px, transparent 28px 55px);
+  animation: bus-road 600ms linear infinite;
+}
+.career-loading-ball {
+  font-size: 48px;
+  margin-bottom: 20px;
+  animation: bus-wheel 1800ms linear infinite;
+}
+@keyframes bus-bounce {
+  to {
+    transform: translateY(-3px);
+  }
+}
+@keyframes bus-wheel {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes bus-road {
+  to {
+    background-position: -55px 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .team-bus,
+  .team-bus-wheel,
+  .team-bus-road,
+  .career-loading-ball {
+    animation: none;
+  }
+}
+
+/* Minimal loading overlay; override generic themed dialog surfaces. */
+html body dialog.game-loading-screen[open] {
+  background: transparent !important;
+  background-image: none !important;
+  border: 0 !important;
+  border-image: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  display: grid !important;
+  place-items: center !important;
+}
+.game-loading-screen .game-loading-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+.game-loading-screen .game-loading-content > strong {
+  font-size: 16px;
+}
+.game-loading-screen .game-loading-content > p {
+  margin: 0;
+  font-size: 12px;
+}
+.game-loading-screen .career-loading-ball {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  margin: 0 0 6px;
+  color: #e8d486;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+.game-loading-screen .team-bus-scene {
+  width: 130px;
+  margin: 0 0 6px;
+}
+.game-loading-screen .team-bus {
+  width: 130px;
+  height: 65px;
+}
+.game-loading-screen .team-bus-road {
+  position: relative;
+  overflow: hidden;
+  height: 2px;
+  background: none;
+  animation: none;
+}
+.game-loading-screen .team-bus-road::after {
+  content: '';
+  position: absolute;
+  inset: 0 -55px 0 0;
+  background: repeating-linear-gradient(90deg, #d6c67f 0 18px, transparent 18px 55px);
+  animation: bus-road-slide 600ms linear infinite;
+}
+@keyframes bus-road-slide {
+  to {
+    transform: translateX(-55px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .game-loading-screen .team-bus-road::after {
+    animation: none;
+  }
+}
+
+.training-loading-scene {
+  width: 130px;
+  height: 70px;
+  margin-bottom: 6px;
+  color: #dcca83;
+}
+.training-loading-scene svg {
+  display: block;
+}
+.training-loading-pass {
+  animation: training-pass 2s ease-in-out infinite;
+}
+.training-loading-player {
+  animation: training-run 2s ease-in-out infinite;
+}
+@keyframes training-pass {
+  0%,
+  15%,
+  100% {
+    transform: translate(0, 0);
+  }
+  50%,
+  65% {
+    transform: translate(31px, -13px);
+  }
+}
+@keyframes training-run {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  50%,
+  65% {
+    transform: translate(9px, -4px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .training-loading-pass,
+  .training-loading-player {
+    animation: none;
+  }
+}
+
+/* Broadcast controls share one aligned mobile column. */
+@media (max-width: 760px) {
+  .match-center .match-scene .scene-camera-lock {
+    top: 10px;
+    right: 10px;
+    margin: 0;
+    width: 34px;
+    height: 34px;
+  }
+  .match-center .match-scene .match-sound-toggle {
+    top: 52px;
+    right: 10px;
+    width: 34px;
+    height: 34px;
+  }
+}
+.match-reports-layout .match-tab-list [role='tab'] {
+  border: 0;
+  border-image: none !important;
+  clip-path: none !important;
+  border-radius: 5px !important;
+  box-shadow: none !important;
+}
+@media (max-width: 900px) {
+  .match-reports-layout .match-tab-list {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow: visible;
+    padding: 4px;
+    gap: 2px;
+  }
+  .match-reports-layout .match-tab-list [role='tab'] {
+    flex: 1 1 auto;
+    min-width: 0;
+    white-space: nowrap;
+    padding: 10px 3px;
+    font-size: clamp(9px, 2.6vw, 12px);
+  }
+  .match-reports-layout .match-tab-panel.match-ratings-body {
+    height: auto;
+    max-height: none;
+    overflow: visible;
+  }
+  .match-ratings-body .match-player-ratings {
+    height: auto;
+    overflow: visible;
+  }
+  .match-ratings-body .ratings-pitch {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: repeat(2, 350px);
+    height: auto;
+    min-height: 0;
+    margin: 8px;
+  }
+  .match-ratings-body .ratings-half {
+    min-height: 0;
+    grid-template-rows: 28px minmax(0, 1fr);
+  }
+  .match-ratings-body .ratings-formation {
+    margin: 18px 24px 26px;
+  }
+  .match-ratings-body .ratings-formation .rated-player {
+    width: 56px;
+    max-width: 26%;
+  }
+}
+.match-ratings-body .match-player-ratings {
+  grid-template-rows: minmax(0, 1fr) auto auto;
+}
+.match-ratings-body .match-substitution-report {
+  display: grid;
+  gap: 8px;
+  padding: 10px 12px 14px;
+  min-width: 0;
+}
+.match-substitution {
+  padding: 10px 12px;
+  border: 1px solid #607e6b66;
+  border-radius: 8px;
+  background: #17372c;
+  color: #eef4e7;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.match-substitution > header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+  color: #e8d58b;
+}
+.match-substitution > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+}
+.match-substitution > div > span {
+  min-width: 34px;
+  font-weight: 700;
+}
+.match-substitution .substitution-in > span {
+  color: #a6e9a8;
+}
+.match-substitution .substitution-out > span {
+  color: #ffb3a5;
+}
+.match-substitution small {
+  color: #c8d6c9;
+}
+
+.substitution-team-minute {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.substitution-team-minute .pixel-badge {
+  width: 24px !important;
+  height: 24px !important;
+  flex-shrink: 0;
+}
+
+.match-substitution {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 8px 12px;
+}
+.match-substitution > .substitution-team-minute {
+  white-space: nowrap;
+}
+.match-substitution > :is(.substitution-in, .substitution-out) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 6px;
+  min-width: 0;
+}
+.match-substitution > :is(.substitution-in, .substitution-out) > strong {
+  overflow-wrap: anywhere;
+}
+.match-substitution > .substitution-in > span {
+  color: #a6e9a8;
+  font-weight: 700;
+}
+.match-substitution > .substitution-out > span {
+  color: #ffb3a5;
+  font-weight: 700;
+}
+@media (max-width: 600px) {
+  .match-substitution {
+    padding: 8px;
+    gap: 7px;
+    font-size: 11px;
+  }
+  .substitution-team-minute {
+    gap: 4px;
+  }
+}
+
+.match-substitution {
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-rows: auto auto;
+}
+.match-substitution > .substitution-team-minute {
+  grid-column: 1;
+  grid-row: 1 / 3;
+}
+.match-substitution > .substitution-in {
+  grid-column: 2;
+  grid-row: 1;
+}
+.match-substitution > .substitution-out {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+@media (min-width: 901px) {
+  .match-ratings-body .match-substitution-report {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-flow: row dense;
+    align-items: start;
+  }
+  .match-substitution-report > .match-substitution[data-side='home'] {
+    grid-column: 1;
+  }
+  .match-substitution-report > .match-substitution[data-side='away'] {
+    grid-column: 2;
+  }
+}
+
+.club-calendar .club-calendar-month-navigation > button {
+  border: 0;
+  border-image: none !important;
+  clip-path: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  background: transparent;
 }

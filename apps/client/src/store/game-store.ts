@@ -1,3 +1,4 @@
+import { pendingFixtures, scheduledBatches } from '@football/domain';
 import { create } from 'zustand';
 import { z } from 'zod';
 import { Client } from 'colyseus.js';
@@ -32,6 +33,8 @@ type GameStore = {
   userId: string;
   connected: boolean;
   busy: boolean;
+  loadingMessage: string | null;
+  loadingActivity: 'travel' | 'training' | null;
   pendingActions: number;
   confirmedActionId: string | null;
   error: string | null;
@@ -110,6 +113,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
   userId: '',
   connected: false,
   busy: false,
+  loadingMessage: null,
+  loadingActivity: null,
   pendingActions: 0,
   confirmedActionId: null,
   error: null,
@@ -221,7 +226,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
           );
         },
         (view) => {
-          if (get().room === room) set(view);
+          if (get().room === room)
+            set({ ...view, ...(!view.busy ? { loadingActivity: null } : {}) });
         },
         (message) => {
           if (get().room === room) set({ error: message });
@@ -463,6 +469,21 @@ export const useGameStore = create<GameStore>((set, get) => ({
     try {
       set({ error: null });
       const requestId = crypto.randomUUID();
+      if (command.type === 'advance' && get().snapshot) {
+        const state = get().snapshot!.state;
+        const clubId = state.participants.find((member) => member.userId === get().userId)?.clubId;
+        const fixtures = pendingFixtures(state);
+        const batch = state.seasonClock
+          ? (scheduledBatches(fixtures)[0] ?? [])
+          : fixtures.filter((fixture) => fixture.scheduledAt === fixtures[0]?.scheduledAt);
+        set({
+          loadingActivity: batch.some(
+            (fixture) => fixture.homeId === clubId || fixture.awayId === clubId,
+          )
+            ? 'travel'
+            : 'training',
+        });
+      }
       actions.enqueue(commandSchema.parse(command), requestId, Date.now() + get().clockOffset);
       return requestId;
     } catch (error) {

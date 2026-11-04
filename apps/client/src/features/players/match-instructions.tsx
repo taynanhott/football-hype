@@ -16,14 +16,14 @@ import { Portrait } from './pixel-portrait';
 import { positionLabel } from '../../ui/position-label';
 import { Icon } from '../../ui/icons';
 import { FormationIcon } from './formation-icon';
-import { PLAY_STYLE_ICONS } from './play-style-picker';
+import { PLAY_STYLE_ICONS } from './play-style-icons';
 
 const triggers = [
   ['winning-two', '↑ Se estiver vencendo por 2+'],
   ['losing-60', '◷ Se estiver perdendo após 60′'],
   ['drawing-75', '◷ Se estiver empatando após 75′'],
 ] as const;
-const times = [60, 70, 80, 90, 'fatigue'] as const;
+const times = [60, 70, 80, 'fatigue'] as const;
 const scores = {
   always: 'Sempre',
   winning: 'Se vencendo',
@@ -33,19 +33,19 @@ const scores = {
 export function UnavailablePlayers({ state, club }: { state: WorldState; club: ClubSnapshot }) {
   const unavailable = clubUnavailablePlayers(state, club);
   const returns = clubAvailabilityReturns(state, club);
-  if (!unavailable.length)
-    return (
-      <section className="match-instructions unavailable-players" aria-label="Indisponíveis">
-        <h3>✚ Indisponíveis · 0</h3>
-        <p className="unavailable-empty">
-          <Icon name="shield" size={18} />
-          <span>Todo o elenco está disponível.</span>
-        </p>
-      </section>
-    );
   return (
     <details className="match-instructions unavailable-players">
-      <summary>✚ Indisponíveis · {unavailable.length}</summary>
+      <summary>
+        <span>
+          <Icon name="recovery" size={16} /> Indisponíveis
+        </span>
+        <small className="unavailable-count">
+          {unavailable.length} {unavailable.length === 1 ? 'atleta' : 'atletas'}
+        </small>
+        <span className="reserve-toggle" aria-hidden="true">
+          <Icon name="chevron-down" size={16} />
+        </span>
+      </summary>
       {unavailable.length ? (
         unavailable.map((p) => {
           const forecast = returns.get(p.id);
@@ -76,14 +76,16 @@ export function UnavailablePlayers({ state, club }: { state: WorldState; club: C
                         ? `Faltam ${forecast.games} ${forecast.games === 1 ? 'jogo' : 'jogos'} para voltar`
                         : 'Volta antes do próximo jogo'}
                     </span>
-                    <small>
-                      Retorno {forecast.injured ? 'previsto ' : ''}
-                      {new Date(forecast.at).toLocaleDateString('pt-BR', {
-                        day: '2-digit',
-                        month: '2-digit',
-                        timeZone: 'America/Sao_Paulo',
-                      })}
-                    </small>
+                    {forecast.at !== null && (
+                      <small>
+                        Retorno {forecast.injured ? 'previsto ' : ''}
+                        {new Date(forecast.at).toLocaleDateString('pt-BR', {
+                          day: '2-digit',
+                          month: '2-digit',
+                          timeZone: 'America/Sao_Paulo',
+                        })}
+                      </small>
+                    )}
                   </>
                 )}
               </span>
@@ -106,9 +108,25 @@ export function UnavailablePlayers({ state, club }: { state: WorldState; club: C
           );
         })
       ) : (
-        <p>Todo o elenco está disponível.</p>
+        <p className="unavailable-empty">
+          <Icon name="shield" size={18} />
+          <span>Todo o elenco está disponível.</span>
+        </p>
       )}
     </details>
+  );
+}
+
+function abbreviatedPlayerName(name: string) {
+  const parts = name.trim().split(/\s+/);
+  if (parts.length < 2) return name;
+  return (
+    parts
+      .slice(0, -1)
+      .map((part) => part[0] + '.')
+      .join(' ') +
+    ' ' +
+    parts[parts.length - 1]
   );
 }
 
@@ -129,7 +147,6 @@ export function MatchInstructionsEditor({
   onChange: (value: MatchInstructions) => void;
 }) {
   const [draft, setDraft] = useState<Partial<Plan> | null>(null);
-  const [step, setStep] = useState<'out' | 'in' | 'when' | 'score'>('out');
   const [protect, setProtect] = useState(false);
   const unavailable = clubUnavailablePlayers(state, club);
   const playerList = (ids: string[], choose: (id: string) => void) => (
@@ -181,7 +198,6 @@ export function MatchInstructionsEditor({
               <strong>{label}</strong>
               <div className="match-situation-controls">
                 <label>
-                  Estilo
                   <Select
                     className="match-situation-select"
                     menuMinWidth={240}
@@ -194,7 +210,7 @@ export function MatchInstructionsEditor({
                     <Option value="">Não muda</Option>
                     {playStyleSchema.options.map((s) => (
                       <Option key={s} value={s}>
-                        <span className="match-option-content">
+                        <span className={`match-option-content play-style-option play-style-${s}`}>
                           <Icon name={PLAY_STYLE_ICONS[s]} size={18} />
                           <span>{STYLE_LABELS[s]}</span>
                         </span>
@@ -203,7 +219,6 @@ export function MatchInstructionsEditor({
                   </Select>
                 </label>
                 <label>
-                  Formação
                   <Select
                     className="match-situation-select"
                     menuMinWidth={240}
@@ -234,53 +249,165 @@ export function MatchInstructionsEditor({
           <strong>⇄ Trocas planejadas · {value.substitutions.length}/3</strong>
           <button
             type="button"
-            disabled={value.substitutions.length >= 3 || !reserves.length}
+            disabled={value.substitutions.length >= 3 || !reserves.length || draft !== null}
             onClick={() => {
-              setDraft({});
-              setStep('out');
+              setDraft({ when: 60, score: 'always' });
             }}
           >
             + Planejar
           </button>
         </div>
-        <p className="match-plan-hint">
-          Até 5 trocas no total. Automáticas por condição abaixo de 30 ou nota abaixo de 5,8, a
-          partir dos 60′.
-        </p>
-        {value.substitutions.map((p, i) => (
-          <div className="planned-swap" key={p.out}>
-            <div className="planned-swap-info">
-              <div className="planned-swap-players">
-                <span className="planned-player-out">
-                  <small>Sai</small>
-                  <strong>{state.players.byId[p.out]?.name}</strong>
-                </span>
-                <span className="planned-player-in">
-                  <small>Entra</small>
-                  <strong>{state.players.byId[p.in]?.name}</strong>
-                </span>
-              </div>
-              <small>
-                {p.when === 'fatigue' ? "Por cansaço, após 60'" : `Aos ${p.when}′`} ·{' '}
-                {scores[p.score]}
-              </small>
-            </div>
-            <button
-              type="button"
-              className="planned-delete"
-              aria-label={`Remover troca ${i + 1}`}
-              onClick={() =>
+        <div className="planned-inline-slots">
+          {Array.from({ length: 3 }, (_, i) => {
+            const saved = value.substitutions[i];
+            const editing = !saved && i === value.substitutions.length && draft !== null;
+            const plan: Partial<Plan> | undefined = saved ?? (editing ? draft! : undefined);
+            if (!plan) return null;
+            const update = (patch: Partial<Plan>) => {
+              const next = {
+                ...plan,
+                when: plan.when === 90 ? (80 as const) : (plan.when ?? 60),
+                ...patch,
+              };
+              if (saved)
                 onChange({
                   ...value,
-                  substitutions: value.substitutions.filter((_, index) => index !== i),
-                })
-              }
-            >
-              <Icon name="trash" size={16} />
-              <span>Excluir</span>
-            </button>
-          </div>
-        ))}
+                  substitutions: value.substitutions.map((p, index) =>
+                    index === i ? (next as Plan) : p,
+                  ),
+                });
+              else if (next.out && next.in && next.when && next.score) {
+                onChange({ ...value, substitutions: [...value.substitutions, next as Plan] });
+                setDraft(null);
+              } else setDraft(next);
+            };
+            const options = (ids: string[], field: 'out' | 'in') =>
+              ids
+                .filter(
+                  (id) =>
+                    !value.protected.includes(id) &&
+                    !value.substitutions.some((p, index) => index !== i && p[field] === id),
+                )
+                .flatMap((id) => {
+                  const player = state.players.byId[id];
+                  return player
+                    ? [
+                        <Option key={id} value={id} disabled={unavailable.some((p) => p.id === id)}>
+                          <span className="planned-player-option">
+                            <b
+                              className="planned-option-overall market-overall-badge"
+                              data-tier={
+                                player.overall <= 69
+                                  ? 'bronze'
+                                  : player.overall <= 77
+                                    ? 'silver'
+                                    : player.overall <= 85
+                                      ? 'gold'
+                                      : 'diamond'
+                              }
+                              aria-label={`Overall ${player.overall}`}
+                            >
+                              {player.overall}
+                            </b>
+                            <Portrait player={player} clubName={club.name} kit={clubKit(club)} />
+                            <span>
+                              <strong className="planned-player-full-name">{player.name}</strong>
+                              <strong className="planned-player-short-name" title={player.name}>
+                                {abbreviatedPlayerName(player.name)}
+                              </strong>
+                              <small>
+                                {positionLabel(player.position)} · Condição {player.fitness}%
+                              </small>
+                            </span>
+                          </span>
+                        </Option>,
+                      ]
+                    : [];
+                });
+            return (
+              <div className="planned-inline-row" key={i}>
+                <div className="planned-inline-settings">
+                  <Select
+                    value={plan.when === 90 ? 80 : (plan.when ?? 60)}
+                    aria-label={`Quando trocar · troca ${i + 1}`}
+                    onValueChange={(when) =>
+                      update({
+                        when: when === 'fatigue' ? 'fatigue' : (Number(when) as Plan['when']),
+                      })
+                    }
+                  >
+                    {times.map((when) => (
+                      <Option key={when} value={when}>
+                        {when === 'fatigue' ? 'Por cansaço' : `Aos ${when}′`}
+                      </Option>
+                    ))}
+                  </Select>
+                  <Select
+                    className="planned-score-select"
+                    menuMinWidth={190}
+                    value={plan.score ?? 'always'}
+                    aria-label={`Condição do placar · troca ${i + 1}`}
+                    onValueChange={(score) => update({ score: score as Plan['score'] })}
+                  >
+                    {(Object.keys(scores) as Plan['score'][]).map((score) => (
+                      <Option key={score} value={score}>
+                        {scores[score]}
+                      </Option>
+                    ))}
+                  </Select>
+                  <button
+                    type="button"
+                    className="planned-inline-remove"
+                    aria-label={`Remover troca ${i + 1}`}
+                    onClick={() =>
+                      saved
+                        ? onChange({
+                            ...value,
+                            substitutions: value.substitutions.filter((_, index) => index !== i),
+                          })
+                        : setDraft(null)
+                    }
+                  >
+                    <Icon name="trash" size={16} />
+                  </button>
+                </div>
+                <div className="planned-inline-players">
+                  <label className="planned-inline-out">
+                    <span>Sai</span>
+                    <Select
+                      className="planned-player-select"
+                      menuMinWidth={280}
+                      aria-label={`Jogador que sai · troca ${i + 1}`}
+                      value={plan.out ?? ''}
+                      onValueChange={(out) => update({ out })}
+                    >
+                      <Option value="" disabled>
+                        Escolher jogador
+                      </Option>
+                      {options(starters, 'out')}
+                    </Select>
+                  </label>
+                  <Icon name="market" size={16} />
+                  <label className="planned-inline-in">
+                    <span>Entra</span>
+                    <Select
+                      className="planned-player-select"
+                      menuMinWidth={280}
+                      aria-label={`Jogador que entra · troca ${i + 1}`}
+                      value={plan.in ?? ''}
+                      onValueChange={(incoming) => update({ in: incoming })}
+                    >
+                      <Option value="" disabled>
+                        Escolher jogador
+                      </Option>
+                      {options(reserves, 'in')}
+                    </Select>
+                  </label>
+                </div>
+              </div>
+            );
+          })}
+        </div>
         <div className="protected-players">
           <button
             type="button"
@@ -293,23 +420,39 @@ export function MatchInstructionsEditor({
               {value.protected.length}/2
             </small>
           </button>
-          {value.protected.map((id) => (
-            <button
-              type="button"
-              key={id}
-              title={state.players.byId[id]?.name}
-              aria-label={`Remover proteção de ${state.players.byId[id]?.name}`}
-              onClick={() =>
-                onChange({ ...value, protected: value.protected.filter((p) => p !== id) })
-              }
-            >
-              <span className="protected-button-label">{state.players.byId[id]?.name}</span>
-              <small className="protected-button-detail">
-                <Icon name="trash" size={11} />
-                Remover
-              </small>
-            </button>
-          ))}
+          {Array.from({ length: 2 }, (_, index) => {
+            const id = value.protected[index];
+            if (!id)
+              return (
+                <button
+                  type="button"
+                  className="protected-slot-empty"
+                  key={index}
+                  aria-label={`Escolher jogador para não substituir no espaço ${index + 1}`}
+                  onClick={() => setProtect(true)}
+                >
+                  <Icon name="shield" size={16} />
+                  <span className="protected-button-label">Vazio</span>
+                </button>
+              );
+            return (
+              <button
+                type="button"
+                key={id}
+                title={state.players.byId[id]?.name}
+                aria-label={`Remover proteção de ${state.players.byId[id]?.name}`}
+                onClick={() =>
+                  onChange({ ...value, protected: value.protected.filter((p) => p !== id) })
+                }
+              >
+                <span className="protected-button-label">{state.players.byId[id]?.name}</span>
+                <small className="protected-button-detail">
+                  <Icon name="trash" size={11} />
+                  Remover
+                </small>
+              </button>
+            );
+          })}
         </div>
       </section>
       {protect && (
@@ -330,85 +473,6 @@ export function MatchInstructionsEditor({
                 onChange({ ...value, protected: [...value.protected, id] });
               setProtect(false);
             },
-          )}
-        </PlayerModal>
-      )}
-      {draft && (
-        <PlayerModal
-          className="lineup-selection-modal match-plan-modal"
-          title={
-            step === 'out'
-              ? 'Quem sai'
-              : step === 'in'
-                ? 'Quem entra'
-                : step === 'when'
-                  ? 'Quando trocar'
-                  : 'Condição do placar'
-          }
-          onClose={() => setDraft(null)}
-        >
-          {step === 'out' &&
-            playerList(
-              starters.filter(
-                (id) =>
-                  !value.protected.includes(id) && !value.substitutions.some((p) => p.out === id),
-              ),
-              (out) => {
-                setDraft({ ...draft, out });
-                setStep('in');
-              },
-            )}
-          {step === 'in' &&
-            playerList(
-              reserves.filter((id) => !value.substitutions.some((p) => p.in === id)),
-              (incoming) => {
-                setDraft({ ...draft, in: incoming });
-                setStep('when');
-              },
-            )}
-          {step === 'when' && (
-            <div className="match-plan-options">
-              {times.map((when) => (
-                <button
-                  type="button"
-                  key={when}
-                  onClick={() => {
-                    setDraft({ ...draft, when });
-                    setStep('score');
-                  }}
-                >
-                  {when === 'fatigue' ? "Por cansaço, após 60'" : `Aos ${when}′`}
-                </button>
-              ))}
-            </div>
-          )}
-          {step === 'score' && (
-            <div className="match-plan-options">
-              {(Object.keys(scores) as Plan['score'][]).map((score) => (
-                <button
-                  type="button"
-                  key={score}
-                  onClick={() => {
-                    onChange({
-                      ...value,
-                      substitutions: [...value.substitutions, { ...draft, score } as Plan],
-                    });
-                    setDraft(null);
-                  }}
-                >
-                  {scores[score]}
-                </button>
-              ))}
-            </div>
-          )}
-          {step !== 'out' && (
-            <button
-              type="button"
-              className="match-plan-step-back"
-              onClick={() => setStep(step === 'in' ? 'out' : step === 'when' ? 'in' : 'when')}
-            >
-              ← Etapa anterior
-            </button>
           )}
         </PlayerModal>
       )}

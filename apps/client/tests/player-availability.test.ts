@@ -47,7 +47,27 @@ describe('retorno dos jogadores indisponíveis', () => {
     )!;
     expect(result.injured).toBe(true);
     expect(result.calledUp).toBe(true);
-    expect(result.games).toBe(3);
-    expect(result.at).toBe(Date.parse('2026-04-04T00:00:00-03:00'));
+    expect(result.games).toBe(12);
+    expect(result.at).toBeNull();
   });
+});
+
+it('tratamento médico avança a recuperação a cada partida, sem depender de dias', () => {
+  const state = world({
+    injuries: { player: 4 },
+    players: {
+      byId: { player: { id: 'player', clubId: 'club', overall: 70 } },
+    } as unknown as WorldState['players'],
+  });
+  const center = state.centers.byId.ct!;
+  const treated = {
+    ...state,
+    centers: {
+      ...state.centers,
+      byId: { ct: { ...center, operations: { ...center.operations!, medical: ['player'] } } },
+    },
+  };
+  const result = clubAvailabilityReturns(treated, club).get('player')!;
+  expect(result.games).toBe(2);
+  expect(result.at).toBe(at('2026-03-31') + 1);
 });

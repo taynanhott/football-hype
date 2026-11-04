@@ -1,3 +1,5 @@
+import { GameLoading } from './game-loading';
+import { renewalTerms } from '@football/domain';
 import { TransferNews } from '../features/market/transfer-news';
 import { request } from '../features/leagues/api';
 import { CoachAvatar, CoachEditor } from './coach-profile';
@@ -144,6 +146,10 @@ function GameApp() {
       </div>
     );
   const props = { snapshot, club, stadium, center };
+  const hasRenewalRequests = club.playerIds.some((id) => {
+    const player = state.players.byId[id];
+    return player && renewalTerms(state, player).demand;
+  });
   const hasUnavailablePlayers = clubUnavailablePlayers(state, club).length > 0;
   const ready = state.participants.filter((member) => member.ready).length;
   const view =
@@ -230,6 +236,12 @@ function GameApp() {
               >
                 <Icon name={item.id} />
                 <span>{item.label}</span>
+                {item.id === 'squad' && hasRenewalRequests && (
+                  <span
+                    className="transfer-alert-dot"
+                    aria-label="Há jogadores pedindo renovação"
+                  />
+                )}
                 {item.id === 'lineup' && hasUnavailablePlayers && (
                   <span className="transfer-alert-dot" aria-label="Há jogadores indisponíveis" />
                 )}
@@ -398,6 +410,7 @@ export function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <GameApp />
+      <GameLoading />
     </QueryClientProvider>
   );
 }

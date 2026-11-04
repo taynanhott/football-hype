@@ -46,11 +46,10 @@ export function clubAvailabilityReturns(state: WorldState, club: ClubSnapshot) {
   const callupReturn = window
     ? Date.parse(`${day.slice(0, 4)}${window.end.slice(4)}T00:00:00-03:00`) + 86400000
     : 0;
-  const currentDay = new Date(state.lastProcessedAt - 10800000).toISOString().slice(0, 10);
   const center = state.centers.byId[club.trainingCenterId];
   const returns = new Map<
     string,
-    { games: number; at: number; calledUp: boolean; injured: boolean }
+    { games: number; at: number | null; calledUp: boolean; injured: boolean }
   >();
   for (const id of club.playerIds) {
     const player = state.players.byId[id];
@@ -58,12 +57,22 @@ export function clubAvailabilityReturns(state: WorldState, club: ClubSnapshot) {
     const injured = !medicallyAvailable(state, id);
     const calledUp = Boolean(window && player.overall >= 80);
     if (!injured && !calledUp) continue;
-    const recoveryRate = center?.operations?.medical.includes(id) ? 1.5 : 1;
-    const days = injured ? Math.ceil((state.injuries[id] ?? 0) / recoveryRate) : 0;
-    const recoveryAt = Date.parse(`${currentDay}T00:00:00-03:00`) + days * 86400000;
-    const at = Math.max(injured ? recoveryAt : 0, calledUp ? callupReturn : 0);
+    const recoveryRate = center?.operations?.medical.includes(id) ? 2 : 1;
+    const missedGames = injured ? Math.ceil((state.injuries[id] ?? 0) / recoveryRate) : 0;
+    const finalMissedFixture = fixtures[missedGames - 1];
+    const recoveryAt = missedGames
+      ? finalMissedFixture
+        ? finalMissedFixture.scheduledAt + 1
+        : null
+      : 0;
+    const at = recoveryAt === null ? null : Math.max(recoveryAt, calledUp ? callupReturn : 0);
     returns.set(id, {
-      games: fixtures.filter((fixture) => fixture.scheduledAt < at).length,
+      games: Math.max(
+        missedGames,
+        fixtures.filter((fixture) =>
+          at !== null ? fixture.scheduledAt < at : calledUp && fixture.scheduledAt < callupReturn,
+        ).length,
+      ),
       at,
       calledUp,
       injured,

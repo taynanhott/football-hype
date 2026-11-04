@@ -1,6 +1,7 @@
 import { PixelBadge } from './pixel-badge';
 import { type ClubKit } from '@football/shared';
 const PATHS: Record<string, string> = {
+  'salary-demand': 'M12 2v20M17 6H9a4 4 0 0 0 0 8h6a4 4 0 0 0 0-8H9M7 18h8a4 4 0 0 0 0-8',
   flag: 'M5 21V3M5 4c4-3 10 3 14 0v10c-4 3-10-3-14 0',
   'chevron-down': 'M6 9l6 6 6-6',
   trash: 'M4 7h16M9 7V4h6v3M6 7l1 14h10l1-14M10 11v6M14 11v6',
@@ -15,6 +16,7 @@ const PATHS: Record<string, string> = {
   pitch: 'M3 4h18v16H3zM12 4v16M3 9h4v6H3M21 9h-4v6h4M15 12a3 3 0 1 0-6 0 3 3 0 0 0 6 0',
   entrance: 'M4 21V7l8-4 8 4v14M8 21V10h8v11M2 21h20M10 6h4',
   food: 'M5 3v6M8 3v6M11 3v6M5 7h6M8 9v12M19 3c-4 3-4 8 0 9v9M19 3v9',
+  shorts: 'M5 3h14l2 17h-7l-2-9-2 9H3zM5 6h14',
   shirt: 'M8 3l4 2 4-2 6 5-4 4-2-2v11H8V10l-2 2-4-4z',
   hospitality: 'M5 21h14M8 21l1-7M16 21l-1-7M5 3h14l-2 11H7zM6 8h12M12 3v11',
   trophy:

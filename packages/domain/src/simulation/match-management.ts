@@ -31,7 +31,7 @@ export function matchManagement(
       0,
       p.fitness -
         ((GAMEPLAY.fitnessCost * (minute - (entered[p.id] ?? 0))) / 90) *
-          (styles[side] === 'gegenpress' ? 1.25 : 1),
+          (styles[side] === 'all-out-press' ? 1.5 : styles[side] === 'gegenpress' ? 1.25 : 1),
     );
   const update = (minute: number, homeGoals: number, awayGoals: number) => {
     for (const side of ['home', 'away'] as const) {

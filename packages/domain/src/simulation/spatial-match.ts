@@ -444,15 +444,29 @@ export function spatialMatch(
           desired.z = clamp(desired.z * d - 5, -43, 20) * d;
         if (owns && styles[team] === 'wings' && ['LW', 'RW', 'LM', 'RM'].includes(p.position))
           desired.x = clamp(desired.x * 1.13, -30, 30);
-        poses[p.id] = move(poses[p.id]!, desired, styles[team] === 'gegenpress' ? 3.7 : 3.5);
+        poses[p.id] = move(
+          poses[p.id]!,
+          desired,
+          styles[team] === 'all-out-press' ? 3.9 : styles[team] === 'gegenpress' ? 3.7 : 3.5,
+        );
       }
     separate(carrier.id);
     const pressure = presser ? distance(poses[presser.id]!, ball) : 100;
     if (
       !forceShot &&
       presser &&
-      pressure < (styles[opposite] === 'gegenpress' ? 5.2 : 4.5) &&
-      random() < (styles[opposite] === 'gegenpress' ? 0.27 : 0.22)
+      pressure <
+        (styles[opposite] === 'all-out-press'
+          ? 5.8
+          : styles[opposite] === 'gegenpress'
+            ? 5.2
+            : 4.5) &&
+      random() <
+        (styles[opposite] === 'all-out-press'
+          ? 0.31
+          : styles[opposite] === 'gegenpress'
+            ? 0.27
+            : 0.22)
     ) {
       const offenderSide = opposite;
       if (random() < 0.4) {

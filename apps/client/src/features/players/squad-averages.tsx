@@ -52,11 +52,37 @@ export function SquadAverages({
         return (
           <div
             className="squad-average"
+            data-tier={
+              average === '—'
+                ? undefined
+                : average <= 69
+                  ? 'bronze'
+                  : average <= 77
+                    ? 'silver'
+                    : average <= 85
+                      ? 'gold'
+                      : 'diamond'
+            }
             key={group.label}
             title={`Média de overall · ${members.length} jogadores`}
           >
             <span>{group.label}</span>
-            <strong>{average}</strong>
+            <strong
+              className="market-overall-badge"
+              data-tier={
+                average === '—'
+                  ? undefined
+                  : average <= 69
+                    ? 'bronze'
+                    : average <= 77
+                      ? 'silver'
+                      : average <= 85
+                        ? 'gold'
+                        : 'diamond'
+              }
+            >
+              {average}
+            </strong>
           </div>
         );
       })}

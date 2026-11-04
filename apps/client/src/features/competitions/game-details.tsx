@@ -165,7 +165,7 @@ export function GameDetails({
       </header>
       <h2 id="game-details-title" className="match-competition-badge">
         <Icon name="trophy" size={14} /> {competition?.name ?? fixture.competitionId} · Rodada{' '}
-        {fixture.round}
+        {fixture.round + 1}
       </h2>
       <div className="game-details-teams">
         {[home, away].map((team) => {

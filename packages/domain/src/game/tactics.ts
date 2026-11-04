@@ -38,6 +38,18 @@ export function positionFactor(natural: Position, assigned: Position, matches = 
   if (!canLearnPosition(natural, assigned)) return 0.45;
   return 0.85 + (0.15 * Math.min(15, Math.max(0, matches))) / 15;
 }
+export function masteredPositions(
+  state: Pick<WorldState, 'positionExperience'>,
+  player: PlayerSnapshot,
+): Position[] {
+  const extra = Object.entries(state.positionExperience?.[player.id] ?? {}).find(
+    ([pos, matches]) =>
+      pos !== player.position &&
+      matches >= 15 &&
+      canLearnPosition(player.position, pos as Position),
+  );
+  return extra ? [player.position, extra[0] as Position] : [player.position];
+}
 export function learnedPositionFactor(
   state: WorldState,
   player: PlayerSnapshot,

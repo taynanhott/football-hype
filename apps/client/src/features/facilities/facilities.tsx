@@ -199,7 +199,6 @@ export function Facilities(props: ViewProps & { training?: boolean }) {
           {!training && (
             <>
               <div className="stadium-skin-control">
-                <span>Estádio</span>
                 <Select
                   aria-label="Skin do Estádio"
                   value={
@@ -376,7 +375,6 @@ export function Facilities(props: ViewProps & { training?: boolean }) {
                     }}
                   >
                     {level >= 5 ? 'Estrutura no máximo' : `Upgrade · ${currency(cost)}`}
-                    {level < 5 && <Icon name="arrow" />}
                   </button>
                   {level > 1 && (
                     <button
@@ -397,7 +395,7 @@ export function Facilities(props: ViewProps & { training?: boolean }) {
                         });
                       }}
                     >
-                      Vender um nível · {currency(upgradePrice(level - 1, target) * 0.5)}
+                      Vender · {currency(upgradePrice(level - 1, target) * 0.5)}
                     </button>
                   )}
                 </div>
@@ -436,14 +434,30 @@ export function Facilities(props: ViewProps & { training?: boolean }) {
         </PlayerModal>
       )}
       {discardTraining && (
-        <PlayerModal title="Treino não salvo" onClose={() => setDiscardTraining(false)}>
+        <PlayerModal
+          className="discard-training-confirm"
+          title="Treino não salvo"
+          onClose={() => setDiscardTraining(false)}
+        >
           <p>
             Você alterou as cargas de treino e ainda não salvou. Deseja sair e descartar as
             alterações?
           </p>
           <div className="career-confirm-actions">
-            <button className="secondary" onClick={() => setDiscardTraining(false)}>
-              Continuar editando
+            <button
+              className="primary"
+              disabled={busy}
+              onClick={() => {
+                const request = send({
+                  type: 'management',
+                  action: 'center',
+                  target: 'save-training',
+                  playerLoads: trainingDraft,
+                });
+                if (request) setDiscardTraining(false);
+              }}
+            >
+              {busy ? 'Salvando…' : 'Salvar treino'}
             </button>
             <button
               className="career-confirm-danger"

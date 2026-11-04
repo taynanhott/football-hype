@@ -1,6 +1,5 @@
-import { useState } from 'react';
 import { clubKit, MAX_SQUAD_SIZE } from '@football/shared';
-import { potentialStars } from '@football/domain';
+import { averageMonthlySalary, potentialStars } from '@football/domain';
 import type { ViewProps } from '../../ui/view-props';
 import { useGameStore } from '../../store/game-store';
 import { Portrait } from '../players/pixel-portrait';
@@ -13,7 +12,6 @@ export function AcademyScout({ snapshot, club, center }: ViewProps) {
   const send = useGameStore((s) => s.send);
   const busy = useGameStore((s) => s.busy);
   const error = useGameStore((s) => s.error);
-  const [offers, setOffers] = useState<Record<string, string>>({});
   const players = Object.values(state.players.byId)
     .filter(
       (p) =>
@@ -45,9 +43,6 @@ export function AcademyScout({ snapshot, club, center }: ViewProps) {
       </div>
       <div className="academy-training-pitch">
         {players.map((player) => {
-          const negotiation = state.negotiations.find(
-            (n) => n.playerId === player.id && n.buyerId === club.id && n.status === 'salary',
-          );
           const stars = potentialStars(player.potential);
           return (
             <article className="academy-training-card" key={player.id}>
@@ -64,65 +59,24 @@ export function AcademyScout({ snapshot, club, center }: ViewProps) {
                 <p>
                   {player.age} anos · Base do {club.name}
                 </p>
+                <small>Potencial</small>
                 <span className="academy-stars" aria-label={`Potencial: ${stars} de 5 estrelas`}>
                   {'★'.repeat(stars)}
                   {'☆'.repeat(5 - stars)}
                 </span>
-                <small>Potencial</small>
+                <small className="academy-player-salary">
+                  {currency(averageMonthlySalary(player.overall, player.age))}/mês
+                </small>
               </div>
-              {negotiation ? (
-                <form
-                  className="academy-salary"
-                  onSubmit={(event) => {
-                    event.preventDefault();
-                    const salary = Math.round(
-                      Number(
-                        offers[player.id] ??
-                          String((negotiation.minimumSalary ?? player.salary.cents) / 100),
-                      ) * 100,
-                    );
-                    if (Number.isFinite(salary) && salary > 0)
-                      send({ type: 'salary', negotiationId: negotiation.id, salary });
-                  }}
-                >
-                  <p>{negotiation.reply}</p>
-                  <label>
-                    Salário mensal (R$)
-                    <input
-                      type="number"
-                      min="1"
-                      step="1"
-                      required
-                      value={
-                        offers[player.id] ??
-                        String((negotiation.minimumSalary ?? player.salary.cents) / 100)
-                      }
-                      onChange={(event) =>
-                        setOffers({ ...offers, [player.id]: event.target.value })
-                      }
-                    />
-                  </label>
-                  <small>
-                    Pretensão: {currency(negotiation.minimumSalary ?? player.salary.cents)}/mês
-                  </small>
-                  <button
-                    className="primary"
-                    disabled={busy || club.playerIds.length >= MAX_SQUAD_SIZE}
-                  >
-                    Oferecer contrato
-                  </button>
-                </form>
-              ) : (
-                <button
-                  className="primary"
-                  disabled={busy || club.playerIds.length >= MAX_SQUAD_SIZE}
-                  onClick={() =>
-                    send({ type: 'management', action: 'promote-academy', playerId: player.id })
-                  }
-                >
-                  Negociar promoção <Icon name="arrow" size={16} />
-                </button>
-              )}
+              <button
+                className="primary"
+                disabled={busy || club.playerIds.length >= MAX_SQUAD_SIZE}
+                onClick={() =>
+                  send({ type: 'management', action: 'promote-academy', playerId: player.id })
+                }
+              >
+                Subir pro Profissional
+              </button>
               <button
                 className="academy-dismiss"
                 disabled={busy}

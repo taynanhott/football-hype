@@ -590,6 +590,7 @@ export const playStyleSchema = z.enum([
   'balanced',
   'wings',
   'gegenpress',
+  'all-out-press',
   'low-block',
   'possession',
   'counter',

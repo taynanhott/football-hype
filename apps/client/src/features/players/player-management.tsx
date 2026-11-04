@@ -3,7 +3,7 @@ import { marketValue, transferMoney } from '../../ui/format';
 import { positionLabel } from '../../ui/position-label';
 import { MoneyRange } from '../../ui/money-range';
 import { useLayoutEffect, useRef, useState } from 'react';
-import { ceilMoney, roundMoney, clubKit, MONEY_STEPS, type PlayerSnapshot } from '@football/shared';
+import { roundMoney, clubKit, MONEY_STEPS, type PlayerSnapshot } from '@football/shared';
 import {
   contractEnd,
   effectiveOverall,
@@ -47,9 +47,16 @@ export function PlayerManagement({
     value: player.salary.cents,
   });
   const [years, setYears] = useState(1);
+  const [submittedSalary, setSubmittedSalary] = useState<{
+    playerId: string;
+    salary: number;
+    minimum: number;
+  } | null>(null);
   const loan = loanTerms(state, player);
   const effects = temporaryModifiers(state, player);
-  const terms = renewalTerms(state, player);
+  const demandTerms = renewalTerms(state, player);
+  const demandYears = Math.max(1, Math.ceil(days / 365));
+  const terms = renewalTerms(state, player, demandTerms.demand ? demandYears : years);
   const hasOffers =
     state.management?.offers?.some(
       (offer) =>
@@ -57,19 +64,44 @@ export function PlayerManagement({
         offer.sellerId === player.clubId &&
         offer.status === 'pending',
     ) ?? false;
-  const salaryStep = MONEY_STEPS.salary * 1000;
-  const salaryMinimum = ceilMoney(player.salary.cents * 0.5, salaryStep);
-  const salaryMaximum = Math.max(
+  const salaryStep = MONEY_STEPS.salary;
+  const salaryMinimum = salaryStep;
+  const salaryCents = Math.max(
     salaryMinimum,
-    Math.floor((player.salary.cents * 2) / salaryStep) * salaryStep,
+    roundMoney(
+      salaryDraft.base === player.salary.cents ? salaryDraft.value : player.salary.cents,
+      salaryStep,
+    ),
   );
-  const salaryCents =
-    salaryDraft.base === player.salary.cents
-      ? Math.max(salaryMinimum, Math.min(salaryMaximum, roundMoney(salaryDraft.value, salaryStep)))
-      : Math.max(
-          salaryMinimum,
-          Math.min(salaryMaximum, roundMoney(player.salary.cents, salaryStep)),
-        );
+  const salaryMaximum = Math.max(
+    salaryStep * 2,
+    Math.ceil((player.salary.cents * 4) / salaryStep) * salaryStep,
+    salaryCents,
+  );
+  const submitted = submittedSalary?.playerId === player.id ? submittedSalary : null;
+  const salaryReaction = !submitted
+    ? 'waiting'
+    : submitted.salary >= submitted.minimum
+      ? 'accepted'
+      : submitted.salary >= submitted.minimum * 0.8
+        ? 'close'
+        : 'low';
+  const salarySpeech = !submitted
+    ? [
+        'Estou satisfeito com o salário atual.',
+        'Podemos conversar. Que tal ' + currency(terms.minimumSalary) + '?',
+      ]
+    : salaryReaction === 'accepted'
+      ? ['Obrigado! Aceito a oferta.', currency(submitted.salary) + ' por mês está ótimo.']
+      : salaryReaction === 'close'
+        ? [
+            'Estamos perto do que eu queria.',
+            'Pensei em ' + currency(submitted.minimum) + ' por mês.',
+          ]
+        : [
+            'Por esse valor, não posso aceitar.',
+            'Quero ' + currency(submitted.minimum) + ' por mês.',
+          ];
   return (
     <section className="player-management transfer-policy-panel" data-section={section}>
       <p className={days <= 180 ? 'negative' : ''}>
@@ -79,22 +111,47 @@ export function PlayerManagement({
       </p>
       {terms.demand && (
         <div className="contract-demand">
-          <strong>Pedido de valorização</strong>
-          <p>
-            {player.name} pede salário de {currency(terms.minimumSalary)} após sua evolução.
-          </p>
-          <button type="button" onClick={() => setSection('renew')}>
-            Negociar aumento
+          <div className="renewal-player-speech is-close" role="status">
+            <span>
+              {terms.demandReason === 'expiring'
+                ? 'Meu contrato está perto do fim.'
+                : 'Minha evolução merece reconhecimento.'}
+            </span>
+            <span>Quero {currency(terms.minimumSalary)} por mês.</span>
+          </div>
+          <button
+            type="button"
+            className="negotiate-button full"
+            disabled={busy || Boolean(terms.reason)}
+            onClick={() =>
+              send({
+                type: 'management',
+                action: 'renew',
+                playerId: player.id,
+                salary: terms.minimumSalary,
+                years: demandYears,
+              })
+            }
+          >
+            Aceitar · {currency(terms.minimumSalary)}
           </button>
           <button
             type="button"
-            disabled={busy || Boolean(state.management?.contractHistory?.[player.id]?.dissatisfied)}
+            className="renewal-demand-reject"
+            disabled={busy}
             onClick={() =>
               send({ type: 'management', action: 'reject-renewal', playerId: player.id })
             }
           >
-            Recusar pedido (−8)
+            Recusar
           </button>
+          {state.management?.contractHistory?.[player.id]?.dissatisfied && (
+            <small>
+              Insatisfeito ·{' '}
+              {state.management?.contractHistory?.[player.id]?.severeDissatisfaction ? '−10' : '−8'}{' '}
+              de overall temporário
+            </small>
+          )}
         </div>
       )}
       {!hideTabs && (
@@ -221,37 +278,57 @@ export function PlayerManagement({
           <strong>{terms.reason}</strong>
         </div>
       )}
-      {section === 'renew' && !terms.reason && (
+      {section === 'renew' && !terms.reason && !terms.demand && (
         <div className="renewal-layout">
-          <p>
-            {terms.reason ||
-              'Moral: ' +
-                terms.morale +
-                '% · Salário solicitado: ' +
-                currency(terms.minimumSalary) +
-                ' · Prazo total máximo: ' +
-                terms.maxYears +
-                ' anos'}
-          </p>
-          <label className="negotiation-range">
-            <span>
-              Salário mensal <output>{currency(salaryCents)}</output>
-            </span>
+          <div
+            className={`renewal-player-speech is-${salaryReaction}`}
+            role="status"
+            aria-live="polite"
+            aria-label={`${player.name} sobre a proposta`}
+          >
+            <span>{salarySpeech[0]}</span>
+            <span>{salarySpeech[1]}</span>
+          </div>
+          <div className="negotiation-range renewal-salary-control">
+            <span>Salário mensal</span>
+            <div className="renewal-salary-stepper">
+              <button
+                type="button"
+                aria-label="Diminuir salário"
+                disabled={busy || salaryCents <= salaryMinimum}
+                onClick={() =>
+                  setSalaryDraft({
+                    base: player.salary.cents,
+                    value: Math.max(salaryMinimum, salaryCents - salaryStep),
+                  })
+                }
+              >
+                −
+              </button>
+              <output>{currency(salaryCents)}</output>
+              <button
+                type="button"
+                aria-label="Aumentar salário"
+                disabled={busy}
+                onClick={() =>
+                  setSalaryDraft({ base: player.salary.cents, value: salaryCents + salaryStep })
+                }
+              >
+                +
+              </button>
+            </div>
             <MoneyRange
+              aria-label="Salário mensal oferecido"
               min={salaryMinimum}
               max={salaryMaximum}
               step={salaryStep}
               value={salaryCents}
-              disabled={busy || salaryMaximum === 0}
+              disabled={busy || salaryMaximum <= salaryMinimum}
               onChange={(e) =>
                 setSalaryDraft({ base: player.salary.cents, value: Number(e.target.value) })
               }
             />
-            <small>
-              <span>50% · {currency(salaryMinimum)}</span>
-              <span>200% · {currency(salaryMaximum)}</span>
-            </small>
-          </label>
+          </div>
           <fieldset className="renewal-years">
             <legend>Prazo do novo contrato</legend>
             <div className="segmented">
@@ -278,17 +355,22 @@ export function PlayerManagement({
               years > terms.maxYears ||
               years * 365 < days
             }
-            onClick={() =>
+            onClick={() => {
+              setSubmittedSalary({
+                playerId: player.id,
+                salary: salaryCents,
+                minimum: terms.minimumSalary,
+              });
               send({
                 type: 'management',
                 action: 'renew',
                 playerId: player.id,
                 salary: salaryCents,
                 years,
-              })
-            }
+              });
+            }}
           >
-            Propor renovação · {currency(salaryCents)}
+            Enviar oferta
           </button>
         </div>
       )}
