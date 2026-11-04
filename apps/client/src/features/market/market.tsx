@@ -505,14 +505,13 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
   const salaryCents = Math.max(0, roundMoney(Number(salary) * 100, salaryStep));
   const transferMinimum = 0;
   const transferMaximum = selected?.clubId
-    ? Math.min(feeMaximum, ceilMoney(selected.marketValue.cents * 2.5, MONEY_STEPS.transferSlider))
+    ? Math.min(feeMaximum, ceilMoney(selected.marketValue.cents * 2.5, MONEY_STEPS.transfer))
     : 0;
   const feeCents = Math.max(
     transferMinimum,
     Math.min(
       feeMaximum,
-      Math.floor((Number(fee) * 100) / (MONEY_STEPS.transferSlider / 2)) *
-        (MONEY_STEPS.transferSlider / 2),
+      Math.floor((Number(fee) * 100) / MONEY_STEPS.transfer) * MONEY_STEPS.transfer,
     ),
   );
   return (

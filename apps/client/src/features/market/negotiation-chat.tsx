@@ -376,9 +376,7 @@ export function NegotiationChat({
                     type="button"
                     aria-label="Diminuir oferta"
                     disabled={typing || blocked}
-                    onClick={() =>
-                      onValue(Math.max(minimumOffer, value - MONEY_STEPS.transferSlider / 2))
-                    }
+                    onClick={() => onValue(Math.max(minimumOffer, value - MONEY_STEPS.transfer))}
                   >
                     −
                   </button>
@@ -387,9 +385,7 @@ export function NegotiationChat({
                     type="button"
                     aria-label="Aumentar oferta"
                     disabled={typing || blocked}
-                    onClick={() =>
-                      onValue(Math.min(maximum, value + MONEY_STEPS.transferSlider / 2))
-                    }
+                    onClick={() => onValue(Math.min(maximum, value + MONEY_STEPS.transfer))}
                   >
                     +
                   </button>
@@ -404,7 +400,7 @@ export function NegotiationChat({
                   aria-label="Valor da proposta"
                   min={minimumOffer}
                   max={Math.max(maximumOffer, value)}
-                  step={MONEY_STEPS.transferSlider / 2}
+                  step={MONEY_STEPS.transfer * 2}
                   value={value}
                   onChange={(e) =>
                     onValue(
@@ -412,8 +408,8 @@ export function NegotiationChat({
                         maximum,
                         Math.max(
                           minimumOffer,
-                          Math.round(Number(e.target.value) / (MONEY_STEPS.transferSlider / 2)) *
-                            (MONEY_STEPS.transferSlider / 2),
+                          Math.round(Number(e.target.value) / (MONEY_STEPS.transfer * 2)) *
+                            (MONEY_STEPS.transfer * 2),
                         ),
                       ),
                     )

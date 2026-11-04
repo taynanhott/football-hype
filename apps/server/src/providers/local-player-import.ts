@@ -430,6 +430,22 @@ export function convertLocalPlayers(
       salary: { ...current.salary, cents: Math.round(details.sal * 30 * 100) },
     };
   }
+  // Treineiros starts with 30% of squad value, scaled by the economy factor 0.7.
+  // Apply after source economics, rounding to whole thousands with a 1,000 minimum.
+  const squadValues = new Map<string, number>();
+  for (const player of players) {
+    if (player.clubId)
+      squadValues.set(
+        player.clubId,
+        (squadValues.get(player.clubId) ?? 0) + player.marketValue.cents,
+      );
+  }
+  for (const club of clubs) {
+    club.balance.cents = Math.max(
+      100000,
+      Math.round(((squadValues.get(club.id) ?? 0) * 0.3 * 0.7) / 100000) * 100000,
+    );
+  }
   const dataset = worldDatasetSchema.parse({
     clubs: normalized(clubs),
     players: normalized(players),
