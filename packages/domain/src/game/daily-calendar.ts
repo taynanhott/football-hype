@@ -47,13 +47,17 @@ function advanceGameDaysInternal(state: WorldState, target: number): WorldState 
   if (end <= start) return finishIndividualCycles(state, target);
   state = initializeContractHistory(state);
   const dates = new Map<string, Set<number>>();
-  for (const fixture of scheduledFixtures(state)) {
-    for (const id of [fixture.homeId, fixture.awayId]) {
-      const days = dates.get(id) ?? new Set<number>();
-      days.add(gameDayStart(fixture.scheduledAt));
-      dates.set(id, days);
+  const refreshDates = () => {
+    dates.clear();
+    for (const fixture of scheduledFixtures(state)) {
+      for (const id of [fixture.homeId, fixture.awayId]) {
+        const days = dates.get(id) ?? new Set<number>();
+        days.add(gameDayStart(fixture.scheduledAt));
+        dates.set(id, days);
+      }
     }
-  }
+  };
+  refreshDates();
   const players = { ...state.players.byId };
   const centers = { ...state.centers.byId };
   const injuries = { ...state.injuries };
@@ -61,7 +65,31 @@ function advanceGameDaysInternal(state: WorldState, target: number): WorldState 
   const drawDays = new Set(
     (state.competitionDraws ?? []).map((draw) => gameDayStart(draw.scheduledAt)),
   );
+  const attemptedDraws = new Set<string>();
   for (let day = start; day < end; day += GAME_DAY_MS) {
+    // A long advance must use the calendar known on each completed day, not
+    // postpone all draws until the end and train against obsolete fixture dates.
+    if (
+      state.competitionDraws?.some(
+        (draw) =>
+          draw.completedAt === undefined &&
+          draw.scheduledAt < day + GAME_DAY_MS &&
+          !attemptedDraws.has(draw.id),
+      )
+    ) {
+      for (const draw of state.competitionDraws)
+        if (draw.completedAt === undefined && draw.scheduledAt < day + GAME_DAY_MS)
+          attemptedDraws.add(draw.id);
+      const drawn = realizeCompetitionDraws(state, day + GAME_DAY_MS - 1);
+      const changed =
+        drawn.fixtures !== state.fixtures ||
+        drawn.cups !== state.cups ||
+        drawn.roundDates !== state.roundDates;
+      state = drawn;
+      if (changed) refreshDates();
+      drawDays.clear();
+      for (const draw of state.competitionDraws ?? []) drawDays.add(gameDayStart(draw.scheduledAt));
+    }
     for (const center of Object.values(centers)) {
       const scheduledRoutine = routineAt(dates.get(center.clubId) ?? new Set(), day);
       const routine =
@@ -254,22 +282,22 @@ function advanceGameDaysInternal(state: WorldState, target: number): WorldState 
 }
 
 function finishIndividualCycles(state: WorldState, at: number): WorldState {
-  state = {
-    ...state,
-    negotiations: state.negotiations.map((n) =>
-      ['review', 'salary'].includes(n.status) && (n.expiresAt ?? Infinity) <= at
-        ? { ...n, status: 'rejected', reply: 'Proposta expirada após duas semanas.' }
-        : n,
-    ),
-    management: {
-      ...state.management,
-      offers: state.management?.offers?.map((o) =>
-        o.status === 'pending' && (o.offeredAt ?? state.createdAt) + 14 * GAME_DAY_MS <= at
-          ? { ...o, status: 'rejected' }
-          : o,
-      ),
-    },
-  };
+  const negotiations = state.negotiations.map((n) =>
+    ['review', 'salary'].includes(n.status) && (n.expiresAt ?? Infinity) <= at
+      ? { ...n, status: 'rejected' as const, reply: 'Proposta expirada após duas semanas.' }
+      : n,
+  );
+  const offers = state.management?.offers?.map((o) =>
+    o.status === 'pending' && (o.offeredAt ?? state.createdAt) + 14 * GAME_DAY_MS <= at
+      ? { ...o, status: 'rejected' as const }
+      : o,
+  );
+  if (
+    negotiations.some((n, index) => n !== state.negotiations[index]) ||
+    offers?.some((o, index) => o !== state.management?.offers?.[index])
+  ) {
+    state = { ...state, negotiations, management: { ...state.management, offers } };
+  }
   const due = new Set(
     state.negotiations
       .filter(

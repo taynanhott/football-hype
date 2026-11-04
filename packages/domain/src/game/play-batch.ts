@@ -61,14 +61,30 @@ export function pendingFixtures(state: WorldState): Fixture[] {
 export function playNextBatch(state: WorldState, processedAt: number): Result<WorldState> {
   state = normalizeRoundCalendar(upgradeUnstartedCompetitions(state));
   let pending = pendingFixtures(state);
-  const scheduledAt = pending[0]?.scheduledAt;
-  if (scheduledAt === undefined)
+  const firstScheduledAt = pending[0]?.scheduledAt;
+  if (firstScheduledAt === undefined)
     return failure(domainError('VALIDATION_ERROR', 'Não existem partidas pendentes'));
-  state = settleMonthly(advanceGameDays(state, scheduledAt), scheduledAt);
-  pending = pendingFixtures(state);
+  let scheduledAt = Math.max(state.lastProcessedAt, firstScheduledAt);
+  // Reaching a draw can move the next round. Complete its newly required days
+  // before selecting the actual batch; never anchor the clock to the old date.
+  const calendarChanges =
+    (state.competitionDraws?.length ?? 0) + (state.regionalQualifiers?.length ?? 0) + 3;
+  for (let attempt = 0; ; attempt++) {
+    state = settleMonthly(advanceGameDays(state, scheduledAt), scheduledAt);
+    pending = pendingFixtures(state);
+    if (!pending.length)
+      return failure(domainError('VALIDATION_ERROR', 'Não existem partidas pendentes'));
+    const actualDate = Math.max(state.lastProcessedAt, pending[0]!.scheduledAt);
+    if (actualDate <= scheduledAt) break;
+    if (attempt >= calendarChanges)
+      return failure(
+        domainError('VALIDATION_ERROR', 'O calendário não estabilizou para avançar a rodada'),
+      );
+    scheduledAt = actualDate;
+  }
   const batch = state.seasonClock
     ? scheduledBatches(pending)[0]!
-    : pending.filter((fixture) => fixture.scheduledAt === scheduledAt);
+    : pending.filter((fixture) => fixture.scheduledAt === pending[0]!.scheduledAt);
   const centers = { ...state.centers.byId };
   const players = { ...state.players.byId };
   const clubs = { ...state.clubs.byId };

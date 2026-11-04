@@ -1,6 +1,10 @@
 import { useFinishedResults } from '../../ui/use-finished-results';
 import { CompetitionDrawDetails } from './competition-draw-details';
-import { clubCalendarFixtures, clubCalendarPendingGames } from './club-calendar-fixtures';
+import {
+  clubCalendarCurrentTime,
+  clubCalendarFixtures,
+  clubCalendarPendingGames,
+} from './club-calendar-fixtures';
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { openModalPreservingScroll } from '../../ui/modal-scroll';
 import { clubDayRoutine, pendingFixtures, realFixtureTime } from '@football/domain';
@@ -72,15 +76,15 @@ export function ClubCalendar({ state: rawState, clubId }: { state: WorldState; c
   >(null);
   const [selectedDrawId, setSelectedDrawId] = useState<string | null>(null);
   const selectedDraw = state.competitionDraws?.find((draw) => draw.id === selectedDrawId);
-  const today = dayKey(state.lastProcessedAt);
+  const fixtures = clubCalendarFixtures(state, clubId);
+  const completedIds = new Set(state.results.map((result) => result.fixtureId));
+  const today = dayKey(clubCalendarCurrentTime(state, fixtures, completedIds));
   const [selectedGame, setSelectedGame] = useState<Fixture | null>(null);
   const swipeStart = useRef<{ x: number; y: number } | null>(null);
   const suppressClickUntil = useRef(0);
   const [viewedMonth, setViewedMonth] = useState<{ day: string; date: Date } | null>(null);
   const month = viewedMonth?.day === today ? viewedMonth.date : new Date(`${today}T12:00:00Z`);
-  const fixtures = clubCalendarFixtures(state, clubId);
   const pendingGames = clubCalendarPendingGames(state, clubId);
-  const completedIds = new Set(state.results.map((result) => result.fixtureId));
   const missedGames = selectedFifa
     ? fixtures.filter((fixture) => {
         const day = dayKey(fixture.scheduledAt);
@@ -124,11 +128,11 @@ export function ClubCalendar({ state: rawState, clubId }: { state: WorldState; c
           const dx = touch.clientX - start.x,
             dy = touch.clientY - start.y;
           if (Math.abs(dx) < 45 || Math.abs(dx) <= Math.abs(dy) * 1.4) return;
-          suppressClickUntil.current = Date.now() + 400;
+          suppressClickUntil.current = event.timeStamp + 400;
           moveMonth(dx < 0 ? 1 : -1);
         }}
         onClickCapture={(event) => {
-          if (Date.now() < suppressClickUntil.current) {
+          if (event.timeStamp < suppressClickUntil.current) {
             event.preventDefault();
             event.stopPropagation();
           }

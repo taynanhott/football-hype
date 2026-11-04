@@ -11,6 +11,7 @@ type FilterProps = {
   value: MarketFilterValues;
   priceCeiling: number;
   salaryCeiling?: number;
+  overallAvailable?: boolean;
   countResults: (filters: MarketFilterValues) => number;
   onApply: (filters: MarketFilterValues) => void;
   onClose: () => void;
@@ -186,6 +187,7 @@ export function MarketFiltersDialog(props: FilterProps) {
                       onPointerDown={() => setActiveHandle(`${range.id}-${index}`)}
                       onFocus={() => setActiveHandle(`${range.id}-${index}`)}
                       type="range"
+                      disabled={range.id === 'overall' && props.overallAvailable === false}
                       min={range.min}
                       max={range.max}
                       step={range.step}

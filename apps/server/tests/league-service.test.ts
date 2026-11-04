@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
@@ -11,6 +11,8 @@ import {
   pendingFixtures,
   realFixtureTime,
   nextRealMatchTime,
+  fixtureRoundKey,
+  ROUND_CALENDAR_VERSION,
 } from '@football/domain';
 
 const now = Date.parse('2026-10-26T15:00:00Z');
@@ -25,6 +27,67 @@ afterEach(async () => {
 });
 
 describe('serviço autoritativo de ligas', () => {
+  it('realoca 18h para 15h30 após antecipar às 14h, com uma gravação e sem duplicar reenvios', async () => {
+    let clock = Date.parse('2026-10-28T14:00:00-03:00');
+    const repository = new LocalLeagueRepository(undefined);
+    const state = unwrap(
+      createWorld({
+        id: IDS.league,
+        userId: host.userId,
+        name: 'Reagendamento',
+        mode: 'multiplayer',
+        now: clock,
+      }),
+    );
+    const home = state.participants[0]!.clubId;
+    const away = state.clubs.ids.find((id) => id !== home)!;
+    state.participants = [
+      ...state.participants,
+      { userId: guest.userId, clubId: away, ready: false },
+    ].map((member) => ({ ...member, lastSeenAt: clock }));
+    state.inviteCode ??= IDS.league;
+    state.fixtures = [0, 1, 2, 3].map((round) => ({
+      id: 'clock-' + round,
+      competitionId: 'serie-a',
+      round,
+      homeId: home,
+      awayId: away,
+      scheduledAt: state.lastProcessedAt + (round + 1) * 3 * 86400000,
+    }));
+    state.cups = [];
+    state.competitionDraws = [];
+    state.regionalQualifiers = [];
+    state.roundDates = Object.fromEntries(
+      state.fixtures.map((f) => [fixtureRoundKey(f), f.scheduledAt]),
+    );
+    state.roundCalendarVersion = ROUND_CALENDAR_VERSION;
+    state.nextScheduledAt = nextRealMatchTime(clock);
+    state.calendarAnchor = { realAt: clock, gameAt: state.lastProcessedAt };
+    await repository.create(state);
+    const service = new LeagueService(repository, () => clock);
+    const writes = vi.spyOn(repository, 'append');
+    await service.command(state.id, host.userId, { type: 'advance' }, false, IDS.player);
+    const first = (await repository.load(state.id))!.state;
+    expect(writes).toHaveBeenCalledTimes(1);
+    expect(first.nextScheduledAt).toBe(Date.parse('2026-10-28T15:30:00-03:00'));
+    expect(realFixtureTime(first, pendingFixtures(first), pendingFixtures(first)[0]!)).toBe(
+      first.nextScheduledAt,
+    );
+    expect((await service.snapshot(state.id, guest.userId)).state.lastProcessedAt).toBe(
+      first.lastProcessedAt,
+    );
+    await service.command(state.id, host.userId, { type: 'advance' }, false, IDS.player);
+    expect(writes).toHaveBeenCalledTimes(1);
+    await expect(service.command(state.id, host.userId, { type: 'advance' })).rejects.toThrow(
+      'encerramento',
+    );
+    clock = first.nextScheduledAt;
+    await Promise.all([service.tick(), service.tick()]);
+    const automatic = (await repository.load(state.id))!.state;
+    expect(automatic.round).toBe(2);
+    expect(automatic.nextScheduledAt).toBe(Date.parse('2026-10-28T18:00:00-03:00'));
+    expect(writes).toHaveBeenCalledTimes(2);
+  });
   it('salva entrada imediata e perfil do convidado após reiniciar o servidor', async () => {
     const directory = await mkdtemp(join(tmpdir(), 'football-invite-'));
     directories.push(directory);
@@ -302,7 +365,7 @@ describe('serviço autoritativo de ligas', () => {
     expect(retry).toBe(first);
     const saved = (await repository.load(id))!;
     expect(saved.events.filter((event) => event.id === requestId)).toHaveLength(1);
-    expect(saved.state.homeTicketPrices?.[saved.state.participants[0]!.clubId]).toBe(10000);
+    expect(saved.state.homeTicketPrices?.[saved.state.participants[0]!.clubId]).toBe(100);
   });
   it('serializa criação concorrente e permite duas solos e uma multiplayer', async () => {
     const repository = new LocalLeagueRepository(undefined);

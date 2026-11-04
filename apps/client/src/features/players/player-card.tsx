@@ -1,10 +1,11 @@
+import { useScoutingReport } from './use-scouting-report';
 import { Icon } from '../../ui/icons';
 import { CountryFlag } from '../../ui/country-flag';
 import { useGameStore } from '../../store/game-store';
 import { marketValue } from '../../ui/format';
 import { positionLabel } from '../../ui/position-label';
 import { Overall } from './overall';
-import { contractEnd, potentialStars, renewalTerms } from '@football/domain';
+import { contractEnd, renewalTerms } from '@football/domain';
 import { playerCardStats } from './player-card-stats';
 import { useState } from 'react';
 import { motion } from 'framer-motion';
@@ -17,7 +18,6 @@ export function PlayerCard({
   clubName,
   kit,
   initiallyFlipped = false,
-  hidePotential = false,
   onActivate,
   modifier = 0,
   negotiable = false,
@@ -34,9 +34,9 @@ export function PlayerCard({
   clubName: string;
   kit?: ClubKit | undefined;
   initiallyFlipped?: boolean;
-  hidePotential?: boolean;
   onActivate?: () => void;
 }) {
+  const report = useScoutingReport()(player);
   const world = useGameStore((store) => store.snapshot?.state);
   const stats = world ? playerCardStats(world, player.id) : null;
   const remainingMonths =
@@ -62,15 +62,14 @@ export function PlayerCard({
     (state) => state.snapshot?.state.management?.policies?.[player.id]?.loanAvailable ?? false,
   );
   const injuryGames = useGameStore((state) => state.snapshot?.state.injuries[player.id] ?? 0);
-  const tier =
-    player.overall <= 69
-      ? 'bronze'
-      : player.overall <= 77
-        ? 'silver'
-        : player.overall <= 85
-          ? 'gold'
-          : 'diamond';
-  const tierName = { bronze: 'Bronze', silver: 'Prata', gold: 'Ouro', diamond: 'Diamante' }[tier];
+  const tier = report.tier;
+  const tierName = {
+    bronze: 'Bronze',
+    silver: 'Prata',
+    gold: 'Ouro',
+    diamond: 'Diamante',
+    unknown: 'Não avaliado',
+  }[tier];
   return (
     <div
       role="button"
@@ -84,7 +83,7 @@ export function PlayerCard({
       }}
       className={`player-card ${flipped ? 'is-flipped' : ''}`}
       data-tier={tier}
-      aria-label={`${onActivate ? 'Detalhes' : flipped ? 'Ver frente' : 'Ver atributos'} de ${player.name} · ${tierName} · Overall ${player.overall}`}
+      aria-label={`${onActivate ? 'Detalhes' : flipped ? 'Ver frente' : 'Ver atributos'} de ${player.name} · ${tierName} · Overall ${report.overall}`}
       aria-pressed={flipped}
       onClick={() => {
         if (onActivate) onActivate();
@@ -180,7 +179,7 @@ export function PlayerCard({
         <div className="card-front">
           <div className="card-rank">
             <strong>
-              <Overall base={player.overall} modifier={modifier} />
+              <Overall base={report.overall} modifier={modifier} />
             </strong>
             <span>{positionLabel(player.position)}</span>
           </div>
@@ -221,10 +220,7 @@ export function PlayerCard({
               ['Moral', player.morale],
               ['Condição', player.fitness],
               ['Forma (5 jogos)', score(stats?.form)],
-              [
-                'Potencial',
-                hidePotential ? '★'.repeat(potentialStars(player.potential)) : player.potential,
-              ],
+              ['Potencial', report.potential],
             ].map(([label, value]) => (
               <div key={String(label)}>
                 <strong>{value}</strong>

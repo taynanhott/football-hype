@@ -1,3 +1,4 @@
+import { useScoutingReport } from '../players/use-scouting-report';
 import { countryContinent } from './market-filters';
 import { CountryFlag } from '../../ui/country-flag';
 import { marketValue, transferMoney } from '../../ui/format';
@@ -15,7 +16,6 @@ import {
   loanTerms,
   transferContext,
   interestLabel,
-  potentialStars,
   financialLimits,
   SearchTrie,
 } from '@football/domain';
@@ -50,6 +50,7 @@ const SORT_OPTIONS: Record<string, string> = {
   name: 'Nome · A–Z',
 };
 export function Market({ snapshot, club, center, stadium }: ViewProps) {
+  const report = useScoutingReport();
   const renewalCount = club.playerIds.filter((id) => {
     const player = snapshot.state.players.byId[id];
     return (
@@ -294,7 +295,7 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
         const reach = player.id.split('').reduce((sum, c) => sum + c.charCodeAt(0), 0) % 5;
         if (!(
           player.age <= 23 &&
-          potentialStars(player.potential) >= 3 &&
+          (report(player).hidden || (report(player).maximum ?? 0) >= 70) &&
           reach < center.levels.scouting
         ))
           return false;
@@ -306,7 +307,14 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
     });
   const filterCandidates = (filters: MarketFilterValues) =>
     candidates
-      .filter((player) => matchesMarketRanges(player, filters.overall, filters.age, filters.price))
+      .filter((player) =>
+        matchesMarketRanges(
+          player,
+          report(player).hidden ? [1, 99] : filters.overall,
+          filters.age,
+          filters.price,
+        ),
+      )
       .filter((player) => {
         if (filters.position && filters.position !== 'ALL' && player.position !== filters.position)
           return false;
@@ -381,9 +389,9 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
         difference = a.name.localeCompare(b.name, 'pt-BR');
         break;
       default:
-        difference = b.overall - a.overall;
+        difference = (Number(report(b).overall) || 0) - (Number(report(a).overall) || 0);
     }
-    return difference || b.overall - a.overall || a.name.localeCompare(b.name, 'pt-BR');
+    return difference || a.name.localeCompare(b.name, 'pt-BR');
   });
   const players = matchingPlayers.slice(
     0,
@@ -682,6 +690,7 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
                 </button>
               </div>
               <MarketFiltersDialog
+                overallAvailable={center.levels.scouting >= 2}
                 key={JSON.stringify({ advancedFilters, overall, age, price })}
                 value={{
                   ...advancedFilters,
@@ -905,14 +914,7 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
               {players.map((player) => {
                 const playerClub = snapshot.state.clubs.byId[player.clubId ?? ''];
                 const context = transferContext(snapshot.state, player, club);
-                const tier =
-                  player.overall <= 69
-                    ? 'bronze'
-                    : player.overall <= 77
-                      ? 'silver'
-                      : player.overall <= 85
-                        ? 'gold'
-                        : 'diamond';
+                const tier = report(player).tier;
                 return (
                   <div
                     className="market-list-row"
@@ -923,9 +925,9 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
                     <strong
                       className="market-list-overall"
                       data-tier={tier}
-                      aria-label={`Overall ${player.overall}`}
+                      aria-label={`Overall ${report(player).overall}`}
                     >
-                      {player.overall}
+                      {report(player).overall}
                     </strong>
                     <Portrait
                       player={player}
@@ -943,10 +945,10 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
                         {player.age} anos ·{' '}
                         <b
                           className="market-list-potential"
-                          aria-label={`Potencial: ${potentialStars(player.potential)} estrelas`}
+                          aria-label={`Potencial: ${report(player).potential}`}
                           title="Potencial"
                         >
-                          {'★'.repeat(potentialStars(player.potential))}
+                          {report(player).potential}
                         </b>
                       </span>
                     </div>
@@ -1030,17 +1032,9 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
                       </div>
                       <span
                         className="offer-status market-overall-badge"
-                        data-tier={
-                          player.overall <= 69
-                            ? 'bronze'
-                            : player.overall <= 77
-                              ? 'silver'
-                              : player.overall <= 85
-                                ? 'gold'
-                                : 'diamond'
-                        }
+                        data-tier={report(player).tier}
                       >
-                        {player.overall} OVR
+                        {report(player).overall} OVR
                       </span>
                     </header>
                     <div className="offer-body">
@@ -1057,9 +1051,9 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
                         />
                         <span
                           className="market-portrait-potential"
-                          aria-label={`Potencial: ${potentialStars(player.potential)} estrelas`}
+                          aria-label={`Potencial: ${report(player).potential}`}
                         >
-                          {'★'.repeat(potentialStars(player.potential))}
+                          {report(player).potential}
                         </span>
                       </button>
                       <div className="incoming-offer-details">

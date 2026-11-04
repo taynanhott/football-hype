@@ -1,3 +1,4 @@
+import { useScoutingReport } from '../players/use-scouting-report';
 import { marketValue } from '../../ui/format';
 import { useCollapsedPlayerCategories } from '../../ui/use-collapsed-player-categories';
 import { usePlayerPositionFilter } from '../../ui/use-player-position-filter';
@@ -14,7 +15,7 @@ import { PlayerDetails } from '../players/player-details';
 import { SquadAverages } from '../players/squad-averages';
 import { positionLabel } from '../../ui/position-label';
 import { Select, Option } from '../../ui/select';
-import { contractEnd, potentialStars } from '@football/domain';
+import { contractEnd } from '@football/domain';
 const positions = ['GK', 'CB', 'RB', 'LB', 'DM', 'CM', 'RM', 'LM', 'AM', 'RW', 'LW', 'SS', 'ST'];
 import { STYLE_LABELS } from '@football/domain';
 import { useGameStore } from '../../store/game-store';
@@ -31,6 +32,7 @@ export function ClubInspection({
   club: ClubSnapshot;
   view: 'squad' | 'stadium' | 'training';
 }) {
+  const report = useScoutingReport();
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
   const selectedPlayer = selectedPlayerId ? state.players.byId[selectedPlayerId] : undefined;
   const [position, setPosition] = usePlayerPositionFilter('club');
@@ -59,13 +61,21 @@ export function ClubInspection({
   if (view === 'squad') {
     const all = club.playerIds
       .flatMap((id) => (state.players.byId[id] ? [state.players.byId[id]!] : []))
-      .sort((a, b) => b.overall - a.overall || a.name.localeCompare(b.name));
+      .sort(
+        (a, b) =>
+          (Number(report(b).overall) || 0) - (Number(report(a).overall) || 0) ||
+          a.name.localeCompare(b.name),
+      );
     const players = all
       .filter((p) => position === 'ALL' || p.position === position)
       .sort(compareFieldPosition);
     return (
       <section className="club-inspection">
-        <SquadAverages state={state} club={club} />
+        <SquadAverages
+          state={state}
+          club={club}
+          hidden={!own && all.some((player) => report(player).hidden)}
+        />
         <details className="panel club-match-history">
           <summary>Últimas 5 partidas · esquemas, táticas e escalações</summary>
           {historyCount > 1 && (
@@ -176,7 +186,7 @@ export function ClubInspection({
                             <span>{positionLabel(assigned)}</span>
                             <strong>{player?.name ?? 'Jogador indisponível'}</strong>
                             <b className="club-history-overall" title="Overall atual">
-                              {player?.overall ?? '—'}
+                              {player ? report(player).overall : '—'}
                             </b>
                           </li>
                         );
@@ -259,7 +269,6 @@ export function ClubInspection({
                     player={player}
                     clubName={club.name}
                     kit={clubKit(club)}
-                    hidePotential={!own}
                     contractExpiring={
                       new Date(contractEnd(state, player)).getUTCFullYear() <= state.season
                     }
@@ -305,19 +314,8 @@ export function ClubInspection({
                   aria-haspopup="dialog"
                   onClick={() => setSelectedPlayerId(player.id)}
                 >
-                  <strong
-                    className="squad-list-overall"
-                    data-tier={
-                      player.overall >= 86
-                        ? 'diamond'
-                        : player.overall >= 78
-                          ? 'gold'
-                          : player.overall >= 70
-                            ? 'silver'
-                            : 'bronze'
-                    }
-                  >
-                    {player.overall}
+                  <strong className="squad-list-overall" data-tier={report(player).tier}>
+                    {report(player).overall}
                   </strong>
                   <span className="squad-list-portrait">
                     <Portrait player={player} clubName={club.name} kit={clubKit(club)} />
@@ -353,13 +351,7 @@ export function ClubInspection({
                       </div>
                       <div className="squad-list-facts-line">
                         <span>
-                          Potencial{' '}
-                          <b>
-                            {own
-                              ? player.potential
-                              : '★'.repeat(potentialStars(player.potential)) +
-                                '☆'.repeat(5 - potentialStars(player.potential))}
-                          </b>
+                          Potencial <b>{report(player).potential}</b>
                         </span>
                         <span>
                           À venda{' '}

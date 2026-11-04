@@ -16,6 +16,7 @@ import { isPlayingWindow } from '../competitions/calendar.js';
 import { seasonSchedule } from './world-factory.js';
 import { failure } from '../core/result.js';
 import { domainError } from '../core/domain-error.js';
+import { hashSeed, mulberry32 } from '../simulation/random.js';
 
 export interface DataProvider {
   load(): Promise<Result<WorldDataset>>;
@@ -71,7 +72,24 @@ export function importDataset(state: WorldState, input: unknown): Result<WorldSt
         dataSource: dataset.source,
         dataLicense: dataset.license,
         clubs: correctedClubs,
-        players: dataset.players,
+        players: {
+          ...dataset.players,
+          byId: Object.fromEntries(
+            Object.entries(dataset.players.byId).map(([id, player]) => {
+              const random = mulberry32(
+                hashSeed(state.seed, `${state.id}:${state.createdAt}:potential:${id}`),
+              );
+              const variation = Math.floor(random() * 7) - 4;
+              return [
+                id,
+                {
+                  ...player,
+                  potential: Math.max(player.overall, Math.min(99, player.potential + variation)),
+                },
+              ];
+            }),
+          ),
+        },
         stadiums: dataset.stadiums,
         centers: dataset.centers,
         fixtures,

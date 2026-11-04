@@ -10,6 +10,19 @@ import {
 import { COMPETITIONS } from '@football/shared';
 import type { WorldState } from '@football/shared';
 
+/** Existing careers may contain a played fixture ahead of their old clock anchor. */
+export function clubCalendarCurrentTime(
+  state: Pick<WorldState, 'lastProcessedAt' | 'results'>,
+  fixtures: readonly { id: string; scheduledAt: number }[],
+  completedIds: ReadonlySet<string> = new Set(state.results.map((result) => result.fixtureId)),
+) {
+  return fixtures.reduce(
+    (current, fixture) =>
+      completedIds.has(fixture.id) ? Math.max(current, fixture.scheduledAt) : current,
+    state.lastProcessedAt,
+  );
+}
+
 export function clubCalendarFixtures(state: WorldState, clubId: string) {
   return scheduledFixtures(state).filter(
     (fixture) =>

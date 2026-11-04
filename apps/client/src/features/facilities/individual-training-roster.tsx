@@ -1,5 +1,6 @@
 import { Select, Option } from '../../ui/select';
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { PlayerModal } from '../players/player-modal';
 import { currency } from '../../ui/format';
 import { clubKit } from '@football/shared';
@@ -45,7 +46,7 @@ export function IndividualTrainingRoster({
     });
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const confirmPlayer = state.players.byId[confirmId ?? ''];
-  const cost = 10000000;
+  const cost = 100000;
   const activeCount = center.operations?.individual.length ?? 0;
   const slots = Math.min(3, center.levels.coaching);
   return (
@@ -152,6 +153,9 @@ export function IndividualTrainingRoster({
                       disabled={busy}
                       onClick={() => onLoadChange(id, value)}
                     >
+                      <span className="training-load-check" aria-hidden="true">
+                        {load === value ? '✓' : ''}
+                      </span>
                       {label}
                     </button>
                   ))}
@@ -227,56 +231,86 @@ export function IndividualTrainingRoster({
           );
         })}
       </div>
-      {confirmPlayer && (
-        <PlayerModal
-          className="individual-training-confirm"
-          title="Confirmar treino individual"
-          onClose={() => setConfirmId(null)}
-        >
-          <p>
-            Iniciar um ciclo de 60 dias para <strong>{confirmPlayer.name}</strong>?
-          </p>
-          <p>
-            {confirmPlayer.age > 33
-              ? 'Reduz gradualmente a barra de desgaste até zero, sem recuperar overall perdido. O nível do CT melhora o efeito.'
-              : confirmPlayer.age < 33
-                ? confirmPlayer.overall < confirmPlayer.potential
-                  ? '+1 de overall ao concluir, limitado ao potencial.'
-                  : '+1 de bônus temporário por 15 jogos oficiais ao concluir.'
-                : 'Sem ganho de overall aos 33 anos.'}
-          </p>
-          <p className="individual-training-price">
-            Custo único: <strong>{currency(cost)}</strong>
-          </p>
-          <div className="career-confirm-actions">
-            <button type="button" className="secondary" onClick={() => setConfirmId(null)}>
-              Cancelar
-            </button>
-            <button
-              type="button"
-              className="primary"
-              disabled={
-                busy ||
-                club.balance.cents < cost ||
-                activeCount >= slots ||
-                Boolean(center.operations?.individual.some((plan) => plan.playerId === confirmId))
-              }
-              onClick={() => {
-                send({
-                  type: 'management',
-                  action: 'center',
-                  target: 'individual',
-                  playerId: confirmPlayer.id,
-                });
-                setConfirmId(null);
-              }}
-            >
-              Confirmar treino
-            </button>
-          </div>
-          {club.balance.cents < cost && <p role="status">Saldo insuficiente.</p>}
-        </PlayerModal>
-      )}
+      {confirmPlayer &&
+        createPortal(
+          <PlayerModal
+            className="individual-training-confirm"
+            title="Confirmar treino individual"
+            titleIcon={<span aria-hidden="true">⚽</span>}
+            hideClose
+            onClose={() => setConfirmId(null)}
+          >
+            <div className="training-confirm-player">
+              <Portrait player={confirmPlayer} clubName={club.name} kit={clubKit(club)} />
+              <div>
+                <strong>{confirmPlayer.name}</strong>
+                <span>
+                  {positionLabel(confirmPlayer.position)} · {confirmPlayer.age} anos
+                </span>
+              </div>
+              <span className="training-confirm-badge">CT</span>
+            </div>
+            <dl className="training-confirm-summary">
+              <div>
+                <dt>Duração do ciclo</dt>
+                <dd>60 dias</dd>
+              </div>
+              <div>
+                <dt>Custo único</dt>
+                <dd>{currency(cost)}</dd>
+              </div>
+            </dl>
+            <section className="training-confirm-outcome">
+              <h3>Ao concluir o treino</h3>
+              <p>
+                {confirmPlayer.age > 33
+                  ? 'Reduz gradualmente a barra de desgaste até zero, sem recuperar overall perdido. O nível do CT melhora o efeito.'
+                  : confirmPlayer.age < 33
+                    ? confirmPlayer.overall < confirmPlayer.potential
+                      ? '+1 de overall ao concluir, limitado ao potencial.'
+                      : '+1 de bônus temporário por 15 jogos oficiais ao concluir.'
+                    : 'Sem ganho de overall aos 33 anos.'}
+              </p>
+            </section>
+            <div className="career-confirm-actions">
+              <button type="button" className="secondary" onClick={() => setConfirmId(null)}>
+                Cancelar
+              </button>
+              <button
+                type="button"
+                className="primary"
+                disabled={
+                  busy ||
+                  club.balance.cents < cost ||
+                  activeCount >= slots ||
+                  Boolean(center.operations?.individual.some((plan) => plan.playerId === confirmId))
+                }
+                onClick={() => {
+                  send({
+                    type: 'management',
+                    action: 'center',
+                    target: 'individual',
+                    playerId: confirmPlayer.id,
+                  });
+                  setConfirmId(null);
+                }}
+              >
+                {busy ? 'Salvando…' : 'Iniciar treino'}
+              </button>
+            </div>
+            {club.balance.cents < cost && (
+              <p className="training-confirm-warning" role="status">
+                Saldo insuficiente para iniciar o ciclo.
+              </p>
+            )}
+            {activeCount >= slots && (
+              <p className="training-confirm-warning" role="status">
+                Todas as vagas de treino individual estão ocupadas.
+              </p>
+            )}
+          </PlayerModal>,
+          document.body,
+        )}
     </section>
   );
 }

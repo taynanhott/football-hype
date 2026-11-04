@@ -479,6 +479,7 @@ export default function StadiumScene(props: {
             cameraLocked ? 'Desbloquear controle da câmera' : 'Bloquear controle da câmera'
           }
           aria-pressed={cameraLocked}
+          title={cameraLocked ? 'Câmera travada' : 'Câmera livre'}
           onClick={() => setCameraUnlocked((value) => !value)}
         >
           <svg
@@ -492,7 +493,11 @@ export default function StadiumScene(props: {
           >
             <rect x="5" y="10" width="14" height="11" rx="2" />
             <path
-              d={cameraLocked ? 'M8 10V7a4 4 0 0 1 8 0v3M12 14v3' : 'M8 10V7a4 4 0 0 1 8 0M12 14v3'}
+              d={
+                cameraLocked
+                  ? 'M8 10V7a4 4 0 0 1 8 0v3M12 14v3'
+                  : 'M15 10V5a4 4 0 0 1 8 0v2M12 14v3'
+              }
             />
           </svg>
         </button>

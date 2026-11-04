@@ -5,10 +5,12 @@ export function SquadAverages({
   state,
   club,
   lineup,
+  hidden = false,
 }: {
   state: WorldState;
   club: ClubSnapshot;
   lineup?: ReturnType<typeof resolveLineup>;
+  hidden?: boolean;
 }) {
   const players = lineup
     ? lineup.flatMap((e) =>
@@ -53,7 +55,7 @@ export function SquadAverages({
           <div
             className="squad-average"
             data-tier={
-              average === '—'
+              hidden || average === '—'
                 ? undefined
                 : average <= 69
                   ? 'bronze'
@@ -70,7 +72,7 @@ export function SquadAverages({
             <strong
               className="market-overall-badge"
               data-tier={
-                average === '—'
+                hidden || average === '—'
                   ? undefined
                   : average <= 69
                     ? 'bronze'
@@ -81,7 +83,7 @@ export function SquadAverages({
                         : 'diamond'
               }
             >
-              {average}
+              {hidden ? '?' : average}
             </strong>
           </div>
         );

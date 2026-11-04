@@ -2,7 +2,6 @@ import { openModalPreservingScroll } from '../../ui/modal-scroll';
 import { useEffect, useRef } from 'react';
 import type { ClubSnapshot, PlayerSnapshot } from '@football/shared';
 import { clubKit } from '@football/shared';
-import { useGameStore } from '../../store/game-store';
 import { PlayerCard } from './player-card';
 export function PlayerDetails({
   player,
@@ -13,9 +12,6 @@ export function PlayerDetails({
   club: ClubSnapshot | undefined;
   onClose: () => void;
 }) {
-  const ownClubId = useGameStore(
-    (s) => s.snapshot?.state.participants.find((p) => p.userId === s.userId)?.clubId,
-  );
   const dialog = useRef<HTMLDialogElement>(null);
   useEffect(() => {
     return openModalPreservingScroll(dialog.current);
@@ -31,12 +27,7 @@ export function PlayerDetails({
       }}
     >
       <div className="player-detail-card">
-        <PlayerCard
-          player={player}
-          clubName={club?.name ?? 'Sem clube'}
-          kit={clubKit(club)}
-          hidePotential={player.clubId !== ownClubId}
-        />
+        <PlayerCard player={player} clubName={club?.name ?? 'Sem clube'} kit={clubKit(club)} />
       </div>
     </dialog>
   );

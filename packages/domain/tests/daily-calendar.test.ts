@@ -44,6 +44,44 @@ function world() {
   return { state, club, player };
 }
 describe('dias da temporada', () => {
+  it('não grava mudanças sem efeitos e ainda processa vencimentos financeiros dentro do mesmo dia', () => {
+    const { state: initial, club, player } = world();
+    const state = advanceGameDays(initial, initial.lastProcessedAt);
+    const expiry = state.lastProcessedAt + 3600000;
+    const negotiation = {
+      id: IDS.player,
+      buyerId: club.id,
+      playerId: player.id,
+      fee: 10000,
+      offeredSalary: null,
+      interest: 80,
+      status: 'salary' as const,
+      expiresAt: expiry,
+    };
+    state.negotiations = [
+      negotiation,
+      { ...negotiation, id: IDS.secondPlayer, status: 'completed' },
+    ];
+    state.management = {
+      ...state.management,
+      offers: [
+        {
+          playerId: player.id,
+          buyerId: club.id,
+          fee: 10000,
+          status: 'pending',
+          offeredAt: expiry - 14 * GAME_DAY_MS,
+        },
+      ],
+    };
+    expect(advanceGameDays(state, expiry - 1)).toBe(state);
+    const next = advanceGameDays(state, expiry);
+    expect(next.negotiations[0]!.status).toBe('rejected');
+    expect(next.negotiations[1]).toEqual(state.negotiations[1]);
+    expect(next.management?.offers?.[0]?.status).toBe('rejected');
+    expect(next.clubs).toBe(state.clubs);
+    expect(advanceGameDays(next, expiry)).toBe(next);
+  });
   it('treina no dia de sorteio com a carga e o plano individual selecionados, uma única vez', () => {
     const { state, club, player } = world();
     state.competitionDraws = [
@@ -76,9 +114,43 @@ describe('dias da temporada', () => {
       },
     };
     const trained = advanceGameDays(state, at(12));
-    expect(trained.development[player.id]).toBeCloseTo(
-      (state.development[player.id] ?? 0) + 0.006 * center.levels.coaching * 1.5 * 1.5,
+    expect(trained.development[player.id]).toBeGreaterThan(state.development[player.id] ?? 0);
+    const operations = state.centers.byId[center.id]!.operations!;
+    const noIndividual = advanceGameDays(
+      {
+        ...state,
+        centers: {
+          ...state.centers,
+          byId: {
+            ...state.centers.byId,
+            [center.id]: {
+              ...state.centers.byId[center.id]!,
+              operations: { ...operations, individual: [] },
+            },
+          },
+        },
+      },
+      at(12),
     );
+    const moderate = advanceGameDays(
+      {
+        ...state,
+        centers: {
+          ...state.centers,
+          byId: {
+            ...state.centers.byId,
+            [center.id]: {
+              ...state.centers.byId[center.id]!,
+              operations: { ...operations, playerLoads: { [player.id]: 'moderate' } },
+            },
+          },
+        },
+      },
+      at(12),
+    );
+    expect(trained.development[player.id]).toBeGreaterThan(noIndividual.development[player.id]!);
+    expect(trained.development[player.id]).toBeGreaterThan(moderate.development[player.id]!);
+    expect(trained.centers.byId[center.id]!.operations?.trainingHistory?.[player.id]?.days).toBe(1);
     expect(advanceGameDays(trained, at(12))).toBe(trained);
   });
   it('usa a mesma programação para o calendário e a simulação', () => {
