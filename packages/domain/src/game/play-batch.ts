@@ -25,6 +25,7 @@ import {
 import { standings } from '../competitions/standings.js';
 import { simulateMatch } from '../simulation/match.js';
 import { matchDemand } from '../finance/match-demand.js';
+import { shareMatchRevenue } from '../finance/gate-sharing.js';
 import { hashSeed, mulberry32 } from '../simulation/random.js';
 import {
   officialMatchDevelopment,
@@ -209,6 +210,7 @@ export function playNextBatch(state: WorldState, processedAt: number): Result<Wo
         ...p,
         overall: Math.max(1, Math.min(99, p.overall + bonus)),
       }));
+    const demand = matchDemand(state, fixture);
     const result = simulateMatch(
       fixture,
       adjusted(homeSelection, homeBonus + lineupTacticalBonus(homeSelection)),
@@ -216,7 +218,7 @@ export function playNextBatch(state: WorldState, processedAt: number): Result<Wo
       stadium,
       hashSeed(state.seed, String(state.season)),
       undefined,
-      matchDemand(state, fixture),
+      demand,
       { home: homePlan.style ?? 'balanced', away: awayPlan.style ?? 'balanced' },
       Object.fromEntries(
         (['home', 'away'] as const).map((side) => {
@@ -275,7 +277,9 @@ export function playNextBatch(state: WorldState, processedAt: number): Result<Wo
     };
     result.startedAt = processedAt;
     results.push(result);
-    revenue.set(home.id, (revenue.get(home.id) ?? 0) + result.revenue);
+    const gate = shareMatchRevenue(demand.ticketRevenue, result.revenue);
+    revenue.set(home.id, (revenue.get(home.id) ?? 0) + gate.home);
+    revenue.set(away.id, (revenue.get(away.id) ?? 0) + gate.away);
     // Injuries count missed club fixtures, not elapsed calendar days. Recover before new match injuries.
     for (const team of [home, away]) {
       const medical = centers[team.trainingCenterId]?.operations?.medical ?? [];

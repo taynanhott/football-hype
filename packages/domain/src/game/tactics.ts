@@ -10,7 +10,6 @@ import {
   type WorldState,
 } from '@football/shared';
 import { effectiveOverall } from './management.js';
-import { isFifaWindow } from '../competitions/calendar.js';
 
 const POSITION_PATHS: Partial<Record<Position, readonly Position[]>> = {
   GK: ['GK'],
@@ -167,7 +166,7 @@ export function tacticalAdaptation(
 export function resolveLineup(
   state: WorldState,
   club: ClubSnapshot,
-  at: number,
+  _at: number,
   pool = state.players.byId,
   formation?: Formation,
   preferred?: readonly string[],
@@ -186,9 +185,7 @@ export function resolveLineup(
     .map((id) => pool[id])
     .filter(
       (player): player is PlayerSnapshot =>
-        Boolean(player) &&
-        medicallyAvailable(state, player?.id ?? '') &&
-        !(isFifaWindow(at) && (player?.overall ?? 0) >= 80),
+        Boolean(player) && medicallyAvailable(state, player?.id ?? ''),
     );
   const used = new Set<string>();
   const retainedStarters = new Set(
@@ -243,7 +240,7 @@ export function resolveLineup(
 export function resolveBench(
   state: WorldState,
   club: ClubSnapshot,
-  at: number,
+  _at: number,
   starters: readonly string[],
   preferred?: readonly string[],
 ) {
@@ -251,10 +248,7 @@ export function resolveBench(
     .map((id) => state.players.byId[id])
     .filter(
       (player): player is PlayerSnapshot =>
-        Boolean(player) &&
-        !starters.includes(player!.id) &&
-        medicallyAvailable(state, player!.id) &&
-        !(isFifaWindow(at) && player!.overall >= 80),
+        Boolean(player) && !starters.includes(player!.id) && medicallyAvailable(state, player!.id),
     );
   const requested = preferred ?? state.tactics[club.id]?.bench;
   if (requested?.length) {
@@ -291,15 +285,15 @@ export function resolveBench(
     .map((player) => player.id);
 }
 
-/** Established starting elevens begin a new league fully integrated. */
+/** Every squad starts each season at 50% integration. */
 export function initializeStartingChemistry(state: WorldState): WorldState {
   const chemistry = Object.fromEntries(
     Object.values(state.clubs.byId).map((club) => [
       club.id,
       Object.fromEntries(
-        resolveLineup(state, club, state.createdAt).flatMap((slot) =>
-          slot.player ? [[slot.player.id, TACTICS.chemistryMatches]] : [],
-        ),
+        club.playerIds
+          .filter((id) => !!state.players.byId[id])
+          .map((id) => [id, TACTICS.chemistryMatches / 2]),
       ),
     ]),
   );

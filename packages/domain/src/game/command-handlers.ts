@@ -1,3 +1,4 @@
+import { initializeStartingChemistry } from './tactics.js';
 import { exchangeCandidates } from './player-exchange.js';
 import { formatMoney } from '@football/shared';
 import { maxContractYears, moraleSensitivity } from './player-contracts.js';
@@ -1050,6 +1051,7 @@ function handleNewSeason({
     participants: state.participants.map((member) => ({ ...member, ready: false })),
   };
   next = returnLoans(scheduleRegionalQualifiers(state, next), next.lastProcessedAt);
+  next = initializeStartingChemistry(next);
   type = 'season.started';
   message = `Temporada ${next.season} iniciada com acessos e descensos`;
   return success({ next, type, message, amount });

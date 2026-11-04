@@ -1,11 +1,13 @@
 import {
   FORMATIONS,
+  GAMEPLAY,
   penaltyPositions,
   type MatchResult,
   type PlayerSnapshot,
   type PlayStyle,
 } from '@football/shared';
 import { matchManagement, type MatchOptions } from './match-management.js';
+import { actionChance, actionQuality } from './action-quality.js';
 export type { MatchOptions } from './match-management.js';
 type Side = 'home' | 'away';
 type Point = { x: number; z: number };
@@ -27,6 +29,7 @@ export function spatialMatch(
   strength: number,
   initialStyles: { home: PlayStyle; away: PlayStyle } = { home: 'balanced', away: 'balanced' },
   options: MatchOptions = {},
+  venueAdvantage = 0,
 ) {
   const styles = { ...initialStyles };
   const teams = { home: home.map((p) => ({ ...p })), away: away.map((p) => ({ ...p })) };
@@ -369,7 +372,10 @@ export function spatialMatch(
           distance(poses[b.id]!, poses[crossTarget!.id]!),
       )[0];
       const intercepted = Boolean(
-        marker && distance(poses[marker.id]!, poses[crossTarget.id]!) < 5 && random() < 0.25,
+        marker &&
+        distance(poses[marker.id]!, poses[crossTarget.id]!) < 5 &&
+        random() <
+          actionChance(0.25, actionQuality(marker, 'defending'), actionQuality(carrier, 'passing')),
       );
       const destination = { ...poses[intercepted && marker ? marker.id : crossTarget.id]! };
       emit(minute, 'cross', carrier, ball, destination, {
@@ -462,11 +468,15 @@ export function spatialMatch(
             ? 5.2
             : 4.5) &&
       random() <
-        (styles[opposite] === 'all-out-press'
-          ? 0.31
-          : styles[opposite] === 'gegenpress'
-            ? 0.27
-            : 0.22)
+        actionChance(
+          styles[opposite] === 'all-out-press'
+            ? 0.31
+            : styles[opposite] === 'gegenpress'
+              ? 0.27
+              : 0.22,
+          actionQuality(presser, 'defending'),
+          actionQuality(carrier, 'dribbling'),
+        )
     ) {
       const offenderSide = opposite;
       if (random() < 0.4) {
@@ -507,20 +517,29 @@ export function spatialMatch(
         forceShot && setPiece === 'penalty'
           ? 0.76
           : clamp(
-              0.43 -
-                goalDistance * 0.012 -
-                Math.abs(ball.x) * 0.004 -
-                (pressure < 3 ? 0.07 : 0) +
-                (side === 'home' ? strength : -strength) / 1200,
+              (0.43 - goalDistance * 0.012 - Math.abs(ball.x) * 0.004 - (pressure < 3 ? 0.07 : 0)) *
+                GAMEPLAY.shotChanceScale +
+                (side === 'home' ? 1 : -1) *
+                  (strength / GAMEPLAY.shotStrengthDivisor +
+                    venueAdvantage * GAMEPLAY.shotVenueWeight),
               0.025,
               0.58,
             );
-      const goal: boolean = random() < xg;
+      const goalkeeper = keeper(opposite);
+      const scoreDifference = side === 'home' ? homeGoals - awayGoals : awayGoals - homeGoals;
+      // Chasing teams commit more players; leading teams protect their advantage.
+      const gameStateFactor = scoreDifference === 0 ? 1 : scoreDifference < 0 ? 1.4 : 0.6;
+      const goalChance = actionChance(
+        xg * (setPiece === 'penalty' ? 1 : gameStateFactor),
+        actionQuality(carrier, 'finishing'),
+        goalkeeper ? actionQuality(goalkeeper, 'keeping') : 35,
+      );
+      const goal: boolean = random() < goalChance;
       const outcome: Action['outcome'] = goal
         ? 'goal'
         : random() < 0.28
           ? 'blocked'
-          : random() < 0.6
+          : random() < actionChance(0.6, goalkeeper ? actionQuality(goalkeeper, 'keeping') : 35)
             ? 'saved'
             : 'wide';
       const onTarget: boolean = outcome === 'goal' || outcome === 'saved';
@@ -627,7 +646,15 @@ export function spatialMatch(
         .filter((item) => item.t > 0.12 && item.t < 0.88 && item.gap < 2.4)
         .sort((a, b) => a.gap - b.gap);
       const interception = opponents[0];
-      const intercepted = Boolean(interception && random() < 0.55);
+      const intercepted = Boolean(
+        interception &&
+        random() <
+          actionChance(
+            0.55,
+            actionQuality(interception.player, 'defending'),
+            actionQuality(carrier, 'passing'),
+          ),
+      );
       if (intercepted && interception) {
         poses[interception.player.id] = move(
           poses[interception.player.id]!,

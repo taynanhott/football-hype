@@ -309,7 +309,7 @@ export function temporaryModifiers(state: WorldState, player: PlayerSnapshot) {
       value: -1,
       until: 'Até a média das notas chegar a 6',
     });
-  if (averageRating !== null && averageRating > 7)
+  if (ratings.length >= 4 && averageRating !== null && averageRating > 7)
     effects.push({
       label: 'Boa fase do jogador',
       value: 1,
@@ -328,10 +328,16 @@ export function temporaryModifiers(state: WorldState, player: PlayerSnapshot) {
   if ((state.workload[player.id]?.consecutiveMatches ?? 0) >= 3)
     effects.push({ label: 'Sequência de jogos', value: 1, until: 'Até deixar de atuar' });
   if (
-    games.length >= 5 &&
+    games.length >= 6 &&
     games
-      .slice(-5)
-      .every((r) => !r.lineups?.home.includes(player.id) && !r.lineups?.away.includes(player.id))
+      .slice(-6)
+      .every(
+        (r) =>
+          !r.lineups?.home.includes(player.id) &&
+          !r.lineups?.away.includes(player.id) &&
+          !(r.minutesPlayed?.[player.id] ?? 0) &&
+          !r.substitutions?.some((substitution) => substitution.in === player.id),
+      )
   )
     effects.push({ label: 'Sem sequência', value: -1, until: 'Até voltar a jogar' });
   const trophy = [...state.trophies]
@@ -676,7 +682,7 @@ export function manageClub({
     } else if (target === 'buy-syringe') {
       if (center.levels.medical < 5 || operations.syringe || operations.clearance)
         return fail('Seringa indisponível ou já em estoque');
-      cost = 15000000;
+      cost = 150000;
       operations.syringe = true;
     } else {
       if (!player || player.clubId !== club.id) return fail('Escolha um jogador do seu elenco');
@@ -701,7 +707,7 @@ export function manageClub({
           return fail('O jogador não está lesionado');
         if (target === 'fitness' && player.fitness >= 100)
           return fail('O jogador já está descansado');
-        cost = target === 'fitness' ? 2500000 : 5000000;
+        cost = target === 'fitness' ? 25000 : 50000;
         operations[target] = [...operations[target], player.id];
       } else if (target === 'individual') {
         if (
@@ -709,7 +715,7 @@ export function manageClub({
           operations.individual.some((t) => t.playerId === player.id)
         )
           return fail('Treino indisponível para este jogador');
-        cost = 10000000;
+        cost = 100000;
         operations.individual = [
           ...operations.individual,
           {

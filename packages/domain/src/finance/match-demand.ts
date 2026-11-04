@@ -15,25 +15,25 @@ import { scheduledFixtures } from '../competitions/fixtures.js';
 export const TICKET_TIERS = [
   {
     label: 'Barato',
-    priceCents: 5000,
+    priceCents: 50,
     occupancy: 0.95,
     description: 'Mais torcida e força em casa.',
   },
   {
     label: 'Normal',
-    priceCents: 10000,
+    priceCents: 100,
     occupancy: 0.72,
     description: 'Equilíbrio entre público e renda.',
   },
   {
     label: 'Caro',
-    priceCents: 20000,
+    priceCents: 200,
     occupancy: 0.43,
     description: 'Ingresso maior, arquibancadas mais vazias.',
   },
   {
     label: 'Abusivo',
-    priceCents: 40000,
+    priceCents: 400,
     occupancy: 0.18,
     description: 'Preço alto afasta a torcida e reduz a renda.',
   },
@@ -129,8 +129,8 @@ export function matchDemand(state: WorldState, fixture: Fixture, priceOverride?:
         (1 + marketing * 0.02),
       MONEY_STEPS.ticket,
     ),
-    10000,
-    25000,
+    100,
+    250,
   );
   const priceCents = fixture.neutral
     ? GAMEPLAY.baseTicketCents

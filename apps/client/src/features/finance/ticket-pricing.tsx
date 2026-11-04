@@ -25,7 +25,7 @@ export function TicketPricing({ state, clubId }: { state: WorldState; clubId: st
   const current = state.homeTicketPrices?.[clubId] ?? GAMEPLAY.baseTicketCents;
   const demand = next
     ? matchDemand(state, next)
-    : { capacity, commerce: 0, selloutPriceCents: 5000, minimumCrowdPriceCents: 20000 };
+    : { capacity, commerce: 0, selloutPriceCents: 50, minimumCrowdPriceCents: 400 };
   const tiers = TICKET_TIERS;
   const selected = tiers.reduce(
     (best, t) =>
@@ -82,9 +82,7 @@ export function TicketPricing({ state, clubId }: { state: WorldState; clubId: st
               onClick={() => send({ type: 'home-ticket-price', priceCents: tier.priceCents })}
             >
               <span>
-                <b>
-                  {tier.label} · {formatMoneyFull(tier.priceCents)}
-                </b>
+                <b>{tier.label}</b>
                 <small>{tier.description}</small>
               </span>
               <span>

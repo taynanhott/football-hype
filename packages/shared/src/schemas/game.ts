@@ -303,7 +303,9 @@ export const worldStateSchema = z.strictObject({
   negotiations: z.array(negotiationSchema),
   tactics: z.record(entityIdSchema, lineupSchema).default({}),
   lineupPresets: z.record(entityIdSchema, z.array(lineupPresetSchema).max(3)).default({}),
-  chemistry: z.record(entityIdSchema, z.record(entityIdSchema, countSchema)).default({}),
+  chemistry: z
+    .record(entityIdSchema, z.record(entityIdSchema, z.number().finite().nonnegative()))
+    .default({}),
   workload: z
     .record(
       entityIdSchema,

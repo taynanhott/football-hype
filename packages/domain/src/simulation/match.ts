@@ -61,7 +61,15 @@ export function simulateMatch(
     occupancy * GAMEPLAY.cauldronBonus * Math.sqrt(attendance / GAMEPLAY.referenceAttendance);
   const difference =
     strategy.strength(home) - strategy.strength(away) + (fixture.neutral ? 0 : advantage);
-  const simulation = spatialMatch(home, away, random, difference, styles, options);
+  const simulation = spatialMatch(
+    home,
+    away,
+    random,
+    difference,
+    styles,
+    options,
+    fixture.neutral ? 0 : advantage,
+  );
   const commerce = benefits.commerce;
   return {
     fixtureId: fixture.id,

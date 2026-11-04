@@ -45,7 +45,7 @@ export function BudgetEditor({ snapshot, club }: Props) {
   const state = snapshot.state;
   const cash = Math.max(0, club.balance.cents);
   const operations = monthlyStructureCost(state, club);
-  const budgetStep = MONEY_STEPS.transferSlider / 2;
+  const budgetStep = MONEY_STEPS.general;
   const total = Math.floor(cash / budgetStep) * budgetStep;
   const plan = state.management?.financialPlans?.[club.id];
   const payroll = clubPayroll(state, club);

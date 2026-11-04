@@ -16,8 +16,8 @@ const rows = Object.values(d.clubs.byId).map((c) => {
         {
           capacity,
           commerce: stadiumBenefits(s).commerce,
-          selloutPriceCents: 5000,
-          minimumCrowdPriceCents: 40000,
+          selloutPriceCents: TICKET_TIERS[0].priceCents,
+          minimumCrowdPriceCents: TICKET_TIERS[3].priceCents,
           demandFactor,
         },
         t.priceCents,
@@ -101,11 +101,11 @@ const money = (value) => 'HC$ ' + Math.round(value).toLocaleString('pt-BR');
 const md = [
   '# Simulação mensal por clube',
   '',
-  'Base atual de salários. Dois jogos em casa, quatro parcelas de patrocínio e procura entre 85% e 108% do público de cada faixa. Ingressos fixos: 50, 100, 200 e 400. Valores em HC$, sem escala em milhares.',
+  'Base atual de salários. Dois jogos em casa, quatro parcelas de patrocínio e procura entre 85% e 108% do público de cada faixa. Faixas de ingresso: Barato, Normal, Caro e Abusivo. Valores em HC$, sem escala em milhares.',
   '',
   'Não inclui transferências, premiações, compras de estruturas ou eventos extraordinários. Elencos estrangeiros parciais podem subestimar gastos.',
   '',
-  '| Clube | País | Divisão | Folha mensal | Estruturas | Receita mínima | Receita máxima | Saldo mínimo | Saldo máximo |',
+  '| Clube | País | Divisão | Folha mensal | Estruturas | Receita mínima | Receita máxima | Lucro mínimo | Lucro máximo |',
   '|---|---|---|---:|---:|---:|---:|---:|---:|',
   ...[...rows]
     .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'))

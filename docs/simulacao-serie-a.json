@@ -1,0 +1,981 @@
+{
+  "assumptions": {
+    "seed": 20261026,
+    "season": 2026,
+    "scope": "Division A only; current engine, not experimental proposal; no cups, transfers or user interventions; formation chosen by initial lineup quality; bot styles adapt through game engine",
+    "batches": 38
+  },
+  "summary": {
+    "division": "A",
+    "clubs": 20,
+    "goalsPerMatch": 2.581578947368421,
+    "overall": {
+      "games": 760,
+      "winRate": 36.31578947368421,
+      "drawRate": 27.368421052631582,
+      "lossRate": 36.31578947368421
+    },
+    "matches": 380,
+    "home": {
+      "games": 380,
+      "wins": 191,
+      "draws": 104,
+      "losses": 85,
+      "winRate": 50.26315789473684,
+      "drawRate": 27.368421052631582,
+      "lossRate": 22.36842105263158
+    },
+    "away": {
+      "games": 380,
+      "wins": 85,
+      "draws": 104,
+      "losses": 191,
+      "winRate": 22.36842105263158,
+      "drawRate": 27.368421052631582,
+      "lossRate": 50.26315789473684
+    },
+    "goals": 981
+  },
+  "table": [
+    {
+      "id": "0000001f-0000-4000-8000-45643fcbe978",
+      "played": 38,
+      "points": 70,
+      "wins": 19,
+      "draws": 13,
+      "losses": 6,
+      "goalsFor": 67,
+      "goalsAgainst": 43,
+      "goalDifference": 24,
+      "rank": 1,
+      "name": "Corinthians",
+      "formation": "4-3-1-2",
+      "initialStrength": {
+        "effective": 73.81818181818181,
+        "raw": 75.81818181818181,
+        "stars": 2
+      },
+      "squadAverage": 67.63888888888889,
+      "overall": {
+        "games": 38,
+        "wins": 19,
+        "draws": 13,
+        "losses": 6,
+        "winRate": 50,
+        "drawRate": 34.21052631578947,
+        "lossRate": 15.789473684210526
+      },
+      "home": {
+        "games": 19,
+        "wins": 14,
+        "draws": 4,
+        "losses": 1,
+        "winRate": 73.68421052631578,
+        "drawRate": 21.052631578947366,
+        "lossRate": 5.263157894736842
+      },
+      "away": {
+        "games": 19,
+        "wins": 5,
+        "draws": 9,
+        "losses": 5,
+        "winRate": 26.31578947368421,
+        "drawRate": 47.368421052631575,
+        "lossRate": 26.31578947368421
+      }
+    },
+    {
+      "id": "0000001f-0000-4000-8000-f828f11c37ac",
+      "played": 38,
+      "points": 64,
+      "wins": 19,
+      "draws": 7,
+      "losses": 12,
+      "goalsFor": 64,
+      "goalsAgainst": 51,
+      "goalDifference": 13,
+      "rank": 2,
+      "name": "Fluminense",
+      "formation": "4-3-3",
+      "initialStrength": {
+        "effective": 72.45454545454545,
+        "raw": 73.45454545454545,
+        "stars": 0
+      },
+      "squadAverage": 66.78947368421052,
+      "overall": {
+        "games": 38,
+        "wins": 19,
+        "draws": 7,
+        "losses": 12,
+        "winRate": 50,
+        "drawRate": 18.421052631578945,
+        "lossRate": 31.57894736842105
+      },
+      "home": {
+        "games": 19,
+        "wins": 12,
+        "draws": 2,
+        "losses": 5,
+        "winRate": 63.1578947368421,
+        "drawRate": 10.526315789473683,
+        "lossRate": 26.31578947368421
+      },
+      "away": {
+        "games": 19,
+        "wins": 7,
+        "draws": 5,
+        "losses": 7,
+        "winRate": 36.84210526315789,
+        "drawRate": 26.31578947368421,
+        "lossRate": 36.84210526315789
+      }
+    },
+    {
+      "id": "0000001f-0000-4000-8000-8f7f2f7ccd3f",
+      "played": 38,
+      "points": 61,
+      "wins": 17,
+      "draws": 10,
+      "losses": 11,
+      "goalsFor": 53,
+      "goalsAgainst": 44,
+      "goalDifference": 9,
+      "rank": 3,
+      "name": "São Paulo",
+      "formation": "4-3-3",
+      "initialStrength": {
+        "effective": 70.27272727272727,
+        "raw": 71.27272727272727,
+        "stars": 0
+      },
+      "squadAverage": 64.53333333333333,
+      "overall": {
+        "games": 38,
+        "wins": 17,
+        "draws": 10,
+        "losses": 11,
+        "winRate": 44.73684210526316,
+        "drawRate": 26.31578947368421,
+        "lossRate": 28.947368421052634
+      },
+      "home": {
+        "games": 19,
+        "wins": 13,
+        "draws": 4,
+        "losses": 2,
+        "winRate": 68.42105263157895,
+        "drawRate": 21.052631578947366,
+        "lossRate": 10.526315789473683
+      },
+      "away": {
+        "games": 19,
+        "wins": 4,
+        "draws": 6,
+        "losses": 9,
+        "winRate": 21.052631578947366,
+        "drawRate": 31.57894736842105,
+        "lossRate": 47.368421052631575
+      }
+    },
+    {
+      "id": "0000001f-0000-4000-8000-d58d736c7a96",
+      "played": 38,
+      "points": 61,
+      "wins": 16,
+      "draws": 13,
+      "losses": 9,
+      "goalsFor": 62,
+      "goalsAgainst": 43,
+      "goalDifference": 19,
+      "rank": 4,
+      "name": "Flamengo",
+      "formation": "3-2-4-1",
+      "initialStrength": {
+        "effective": 77.72727272727273,
+        "raw": 79.72727272727273,
+        "stars": 6
+      },
+      "squadAverage": 73.82142857142857,
+      "overall": {
+        "games": 38,
+        "wins": 16,
+        "draws": 13,
+        "losses": 9,
+        "winRate": 42.10526315789473,
+        "drawRate": 34.21052631578947,
+        "lossRate": 23.684210526315788
+      },
+      "home": {
+        "games": 19,
+        "wins": 9,
+        "draws": 5,
+        "losses": 5,
+        "winRate": 47.368421052631575,
+        "drawRate": 26.31578947368421,
+        "lossRate": 26.31578947368421
+      },
+      "away": {
+        "games": 19,
+        "wins": 7,
+        "draws": 8,
+        "losses": 4,
+        "winRate": 36.84210526315789,
+        "drawRate": 42.10526315789473,
+        "lossRate": 21.052631578947366
+      }
+    },
+    {
+      "id": "0000001f-0000-4000-8000-8d294eb556df",
+      "played": 38,
+      "points": 59,
+      "wins": 16,
+      "draws": 11,
+      "losses": 11,
+      "goalsFor": 50,
+      "goalsAgainst": 39,
+      "goalDifference": 11,
+      "rank": 5,
+      "name": "Internacional",
+      "formation": "4-3-3",
+      "initialStrength": {
+        "effective": 71.36363636363636,
+        "raw": 72.36363636363636,
+        "stars": 0
+      },
+      "squadAverage": 67.11764705882354,
+      "overall": {
+        "games": 38,
+        "wins": 16,
+        "draws": 11,
+        "losses": 11,
+        "winRate": 42.10526315789473,
+        "drawRate": 28.947368421052634,
+        "lossRate": 28.947368421052634
+      },
+      "home": {
+        "games": 19,
+        "wins": 11,
+        "draws": 7,
+        "losses": 1,
+        "winRate": 57.89473684210527,
+        "drawRate": 36.84210526315789,
+        "lossRate": 5.263157894736842
+      },
+      "away": {
+        "games": 19,
+        "wins": 5,
+        "draws": 4,
+        "losses": 10,
+        "winRate": 26.31578947368421,
+        "drawRate": 21.052631578947366,
+        "lossRate": 52.63157894736842
+      }
+    },
+    {
+      "id": "0000001f-0000-4000-8000-a673e8791149",
+      "played": 38,
+      "points": 59,
+      "wins": 15,
+      "draws": 14,
+      "losses": 9,
+      "goalsFor": 56,
+      "goalsAgainst": 38,
+      "goalDifference": 18,
+      "rank": 6,
+      "name": "Cruzeiro",
+      "formation": "4-3-3",
+      "initialStrength": {
+        "effective": 75.72727272727273,
+        "raw": 76.72727272727273,
+        "stars": 4
+      },
+      "squadAverage": 70.23529411764706,
+      "overall": {
+        "games": 38,
+        "wins": 15,
+        "draws": 14,
+        "losses": 9,
+        "winRate": 39.473684210526315,
+        "drawRate": 36.84210526315789,
+        "lossRate": 23.684210526315788
+      },
+      "home": {
+        "games": 19,
+        "wins": 9,
+        "draws": 6,
+        "losses": 4,
+        "winRate": 47.368421052631575,
+        "drawRate": 31.57894736842105,
+        "lossRate": 21.052631578947366
+      },
+      "away": {
+        "games": 19,
+        "wins": 6,
+        "draws": 8,
+        "losses": 5,
+        "winRate": 31.57894736842105,
+        "drawRate": 42.10526315789473,
+        "lossRate": 26.31578947368421
+      }
+    },
+    {
+      "id": "0000001f-0000-4000-8000-6e10390574fe",
+      "played": 38,
+      "points": 58,
+      "wins": 17,
+      "draws": 7,
+      "losses": 14,
+      "goalsFor": 50,
+      "goalsAgainst": 45,
+      "goalDifference": 5,
+      "rank": 7,
+      "name": "Vasco",
+      "formation": "4-3-3",
+      "initialStrength": {
+        "effective": 74.36363636363636,
+        "raw": 75.36363636363636,
+        "stars": 0
+      },
+      "squadAverage": 67.25641025641026,
+      "overall": {
+        "games": 38,
+        "wins": 17,
+        "draws": 7,
+        "losses": 14,
+        "winRate": 44.73684210526316,
+        "drawRate": 18.421052631578945,
+        "lossRate": 36.84210526315789
+      },
+      "home": {
+        "games": 19,
+        "wins": 12,
+        "draws": 4,
+        "losses": 3,
+        "winRate": 63.1578947368421,
+        "drawRate": 21.052631578947366,
+        "lossRate": 15.789473684210526
+      },
+      "away": {
+        "games": 19,
+        "wins": 5,
+        "draws": 3,
+        "losses": 11,
+        "winRate": 26.31578947368421,
+        "drawRate": 15.789473684210526,
+        "lossRate": 57.89473684210527
+      }
+    },
+    {
+      "id": "0000001f-0000-4000-8000-327d72559aff",
+      "played": 38,
+      "points": 58,
+      "wins": 16,
+      "draws": 10,
+      "losses": 12,
+      "goalsFor": 54,
+      "goalsAgainst": 46,
+      "goalDifference": 8,
+      "rank": 8,
+      "name": "Atlético-MG",
+      "formation": "4-3-3",
+      "initialStrength": {
+        "effective": 72.9090909090909,
+        "raw": 73.9090909090909,
+        "stars": 0
+      },
+      "squadAverage": 66.68571428571428,
+      "overall": {
+        "games": 38,
+        "wins": 16,
+        "draws": 10,
+        "losses": 12,
+        "winRate": 42.10526315789473,
+        "drawRate": 26.31578947368421,
+        "lossRate": 31.57894736842105
+      },
+      "home": {
+        "games": 19,
+        "wins": 12,
+        "draws": 5,
+        "losses": 2,
+        "winRate": 63.1578947368421,
+        "drawRate": 26.31578947368421,
+        "lossRate": 10.526315789473683
+      },
+      "away": {
+        "games": 19,
+        "wins": 4,
+        "draws": 5,
+        "losses": 10,
+        "winRate": 21.052631578947366,
+        "drawRate": 26.31578947368421,
+        "lossRate": 52.63157894736842
+      }
+    },
+    {
+      "id": "0000001f-0000-4000-8000-d11ede0b1441",
+      "played": 38,
+      "points": 57,
+      "wins": 17,
+      "draws": 6,
+      "losses": 15,
+      "goalsFor": 51,
+      "goalsAgainst": 46,
+      "goalDifference": 5,
+      "rank": 9,
+      "name": "Grêmio",
+      "formation": "4-3-3",
+      "initialStrength": {
+        "effective": 71.81818181818181,
+        "raw": 72.81818181818181,
+        "stars": 0
+      },
+      "squadAverage": 67.72972972972973,
+      "overall": {
+        "games": 38,
+        "wins": 17,
+        "draws": 6,
+        "losses": 15,
+        "winRate": 44.73684210526316,
+        "drawRate": 15.789473684210526,
+        "lossRate": 39.473684210526315
+      },
+      "home": {
+        "games": 19,
+        "wins": 14,
+        "draws": 3,
+        "losses": 2,
+        "winRate": 73.68421052631578,
+        "drawRate": 15.789473684210526,
+        "lossRate": 10.526315789473683
+      },
+      "away": {
+        "games": 19,
+        "wins": 3,
+        "draws": 3,
+        "losses": 13,
+        "winRate": 15.789473684210526,
+        "drawRate": 15.789473684210526,
+        "lossRate": 68.42105263157895
+      }
+    },
+    {
+      "id": "0000001f-0000-4000-8000-2ac4296d076e",
+      "played": 38,
+      "points": 55,
+      "wins": 15,
+      "draws": 10,
+      "losses": 13,
+      "goalsFor": 44,
+      "goalsAgainst": 42,
+      "goalDifference": 2,
+      "rank": 10,
+      "name": "Palmeiras",
+      "formation": "4-3-3",
+      "initialStrength": {
+        "effective": 76.54545454545455,
+        "raw": 77.54545454545455,
+        "stars": 4
+      },
+      "squadAverage": 71.67857142857143,
+      "overall": {
+        "games": 38,
+        "wins": 15,
+        "draws": 10,
+        "losses": 13,
+        "winRate": 39.473684210526315,
+        "drawRate": 26.31578947368421,
+        "lossRate": 34.21052631578947
+      },
+      "home": {
+        "games": 19,
+        "wins": 12,
+        "draws": 4,
+        "losses": 3,
+        "winRate": 63.1578947368421,
+        "drawRate": 21.052631578947366,
+        "lossRate": 15.789473684210526
+      },
+      "away": {
+        "games": 19,
+        "wins": 3,
+        "draws": 6,
+        "losses": 10,
+        "winRate": 15.789473684210526,
+        "drawRate": 31.57894736842105,
+        "lossRate": 52.63157894736842
+      }
+    },
+    {
+      "id": "0000001f-0000-4000-8000-6334dee52524",
+      "played": 38,
+      "points": 53,
+      "wins": 14,
+      "draws": 11,
+      "losses": 13,
+      "goalsFor": 50,
+      "goalsAgainst": 49,
+      "goalDifference": 1,
+      "rank": 11,
+      "name": "Bahia",
+      "formation": "4-3-3",
+      "initialStrength": {
+        "effective": 71.63636363636364,
+        "raw": 73.72727272727273,
+        "stars": 1
+      },
+      "squadAverage": 66.73529411764706,
+      "overall": {
+        "games": 38,
+        "wins": 14,
+        "draws": 11,
+        "losses": 13,
+        "winRate": 36.84210526315789,
+        "drawRate": 28.947368421052634,
+        "lossRate": 34.21052631578947
+      },
+      "home": {
+        "games": 19,
+        "wins": 7,
+        "draws": 7,
+        "losses": 5,
+        "winRate": 36.84210526315789,
+        "drawRate": 36.84210526315789,
+        "lossRate": 26.31578947368421
+      },
+      "away": {
+        "games": 19,
+        "wins": 7,
+        "draws": 4,
+        "losses": 8,
+        "winRate": 36.84210526315789,
+        "drawRate": 21.052631578947366,
+        "lossRate": 42.10526315789473
+      }
+    },
+    {
+      "id": "0000001f-0000-4000-8000-ded6a6875142",
+      "played": 38,
+      "points": 53,
+      "wins": 13,
+      "draws": 14,
+      "losses": 11,
+      "goalsFor": 49,
+      "goalsAgainst": 47,
+      "goalDifference": 2,
+      "rank": 12,
+      "name": "Botafogo",
+      "formation": "4-3-3",
+      "initialStrength": {
+        "effective": 73,
+        "raw": 74,
+        "stars": 1
+      },
+      "squadAverage": 67.42105263157895,
+      "overall": {
+        "games": 38,
+        "wins": 13,
+        "draws": 14,
+        "losses": 11,
+        "winRate": 34.21052631578947,
+        "drawRate": 36.84210526315789,
+        "lossRate": 28.947368421052634
+      },
+      "home": {
+        "games": 19,
+        "wins": 11,
+        "draws": 5,
+        "losses": 3,
+        "winRate": 57.89473684210527,
+        "drawRate": 26.31578947368421,
+        "lossRate": 15.789473684210526
+      },
+      "away": {
+        "games": 19,
+        "wins": 2,
+        "draws": 9,
+        "losses": 8,
+        "winRate": 10.526315789473683,
+        "drawRate": 47.368421052631575,
+        "lossRate": 42.10526315789473
+      }
+    },
+    {
+      "id": "0000001f-0000-4000-8000-b40a5dab6649",
+      "played": 38,
+      "points": 52,
+      "wins": 13,
+      "draws": 13,
+      "losses": 12,
+      "goalsFor": 50,
+      "goalsAgainst": 44,
+      "goalDifference": 6,
+      "rank": 13,
+      "name": "Bragantino",
+      "formation": "4-3-3",
+      "initialStrength": {
+        "effective": 71.9090909090909,
+        "raw": 72.9090909090909,
+        "stars": 0
+      },
+      "squadAverage": 66.1842105263158,
+      "overall": {
+        "games": 38,
+        "wins": 13,
+        "draws": 13,
+        "losses": 12,
+        "winRate": 34.21052631578947,
+        "drawRate": 34.21052631578947,
+        "lossRate": 31.57894736842105
+      },
+      "home": {
+        "games": 19,
+        "wins": 8,
+        "draws": 7,
+        "losses": 4,
+        "winRate": 42.10526315789473,
+        "drawRate": 36.84210526315789,
+        "lossRate": 21.052631578947366
+      },
+      "away": {
+        "games": 19,
+        "wins": 5,
+        "draws": 6,
+        "losses": 8,
+        "winRate": 26.31578947368421,
+        "drawRate": 31.57894736842105,
+        "lossRate": 42.10526315789473
+      }
+    },
+    {
+      "id": "0000001f-0000-4000-8000-f04e8efb46e2",
+      "played": 38,
+      "points": 47,
+      "wins": 13,
+      "draws": 8,
+      "losses": 17,
+      "goalsFor": 48,
+      "goalsAgainst": 56,
+      "goalDifference": -8,
+      "rank": 14,
+      "name": "Remo",
+      "formation": "4-3-3",
+      "initialStrength": {
+        "effective": 65.81818181818181,
+        "raw": 66.81818181818181,
+        "stars": 0
+      },
+      "squadAverage": 60.6578947368421,
+      "overall": {
+        "games": 38,
+        "wins": 13,
+        "draws": 8,
+        "losses": 17,
+        "winRate": 34.21052631578947,
+        "drawRate": 21.052631578947366,
+        "lossRate": 44.73684210526316
+      },
+      "home": {
+        "games": 19,
+        "wins": 10,
+        "draws": 3,
+        "losses": 6,
+        "winRate": 52.63157894736842,
+        "drawRate": 15.789473684210526,
+        "lossRate": 31.57894736842105
+      },
+      "away": {
+        "games": 19,
+        "wins": 3,
+        "draws": 5,
+        "losses": 11,
+        "winRate": 15.789473684210526,
+        "drawRate": 26.31578947368421,
+        "lossRate": 57.89473684210527
+      }
+    },
+    {
+      "id": "0000001f-0000-4000-8000-0df2b318462f",
+      "played": 38,
+      "points": 46,
+      "wins": 12,
+      "draws": 10,
+      "losses": 16,
+      "goalsFor": 46,
+      "goalsAgainst": 52,
+      "goalDifference": -6,
+      "rank": 15,
+      "name": "Santos",
+      "formation": "4-3-3",
+      "initialStrength": {
+        "effective": 72.27272727272727,
+        "raw": 74.36363636363636,
+        "stars": 1
+      },
+      "squadAverage": 65.83333333333333,
+      "overall": {
+        "games": 38,
+        "wins": 12,
+        "draws": 10,
+        "losses": 16,
+        "winRate": 31.57894736842105,
+        "drawRate": 26.31578947368421,
+        "lossRate": 42.10526315789473
+      },
+      "home": {
+        "games": 19,
+        "wins": 6,
+        "draws": 9,
+        "losses": 4,
+        "winRate": 31.57894736842105,
+        "drawRate": 47.368421052631575,
+        "lossRate": 21.052631578947366
+      },
+      "away": {
+        "games": 19,
+        "wins": 6,
+        "draws": 1,
+        "losses": 12,
+        "winRate": 31.57894736842105,
+        "drawRate": 5.263157894736842,
+        "lossRate": 63.1578947368421
+      }
+    },
+    {
+      "id": "0000001f-0000-4000-8000-db38873e2f6c",
+      "played": 38,
+      "points": 44,
+      "wins": 11,
+      "draws": 11,
+      "losses": 16,
+      "goalsFor": 43,
+      "goalsAgainst": 50,
+      "goalDifference": -7,
+      "rank": 16,
+      "name": "Athletico-PR",
+      "formation": "4-3-3",
+      "initialStrength": {
+        "effective": 69.9090909090909,
+        "raw": 70.9090909090909,
+        "stars": 0
+      },
+      "squadAverage": 66.22857142857143,
+      "overall": {
+        "games": 38,
+        "wins": 11,
+        "draws": 11,
+        "losses": 16,
+        "winRate": 28.947368421052634,
+        "drawRate": 28.947368421052634,
+        "lossRate": 42.10526315789473
+      },
+      "home": {
+        "games": 19,
+        "wins": 7,
+        "draws": 8,
+        "losses": 4,
+        "winRate": 36.84210526315789,
+        "drawRate": 42.10526315789473,
+        "lossRate": 21.052631578947366
+      },
+      "away": {
+        "games": 19,
+        "wins": 4,
+        "draws": 3,
+        "losses": 12,
+        "winRate": 21.052631578947366,
+        "drawRate": 15.789473684210526,
+        "lossRate": 63.1578947368421
+      }
+    },
+    {
+      "id": "0000001f-0000-4000-8000-cf07a92378cb",
+      "played": 38,
+      "points": 43,
+      "wins": 11,
+      "draws": 10,
+      "losses": 17,
+      "goalsFor": 38,
+      "goalsAgainst": 57,
+      "goalDifference": -19,
+      "rank": 17,
+      "name": "Mirassol",
+      "formation": "4-3-3",
+      "initialStrength": {
+        "effective": 66.81818181818181,
+        "raw": 67.81818181818181,
+        "stars": 0
+      },
+      "squadAverage": 62.8,
+      "overall": {
+        "games": 38,
+        "wins": 11,
+        "draws": 10,
+        "losses": 17,
+        "winRate": 28.947368421052634,
+        "drawRate": 26.31578947368421,
+        "lossRate": 44.73684210526316
+      },
+      "home": {
+        "games": 19,
+        "wins": 9,
+        "draws": 4,
+        "losses": 6,
+        "winRate": 47.368421052631575,
+        "drawRate": 21.052631578947366,
+        "lossRate": 31.57894736842105
+      },
+      "away": {
+        "games": 19,
+        "wins": 2,
+        "draws": 6,
+        "losses": 11,
+        "winRate": 10.526315789473683,
+        "drawRate": 31.57894736842105,
+        "lossRate": 57.89473684210527
+      }
+    },
+    {
+      "id": "0000001f-0000-4000-8000-f104b0fa29cb",
+      "played": 38,
+      "points": 35,
+      "wins": 9,
+      "draws": 8,
+      "losses": 21,
+      "goalsFor": 36,
+      "goalsAgainst": 66,
+      "goalDifference": -30,
+      "rank": 18,
+      "name": "Chapecoense",
+      "formation": "4-3-3",
+      "initialStrength": {
+        "effective": 62.72727272727273,
+        "raw": 63.72727272727273,
+        "stars": 0
+      },
+      "squadAverage": 59.41860465116279,
+      "overall": {
+        "games": 38,
+        "wins": 9,
+        "draws": 8,
+        "losses": 21,
+        "winRate": 23.684210526315788,
+        "drawRate": 21.052631578947366,
+        "lossRate": 55.26315789473685
+      },
+      "home": {
+        "games": 19,
+        "wins": 6,
+        "draws": 4,
+        "losses": 9,
+        "winRate": 31.57894736842105,
+        "drawRate": 21.052631578947366,
+        "lossRate": 47.368421052631575
+      },
+      "away": {
+        "games": 19,
+        "wins": 3,
+        "draws": 4,
+        "losses": 12,
+        "winRate": 15.789473684210526,
+        "drawRate": 21.052631578947366,
+        "lossRate": 63.1578947368421
+      }
+    },
+    {
+      "id": "0000001f-0000-4000-8000-a5f3cf1c18f9",
+      "played": 38,
+      "points": 33,
+      "wins": 7,
+      "draws": 12,
+      "losses": 19,
+      "goalsFor": 40,
+      "goalsAgainst": 59,
+      "goalDifference": -19,
+      "rank": 19,
+      "name": "Vitória",
+      "formation": "4-3-3",
+      "initialStrength": {
+        "effective": 66.45454545454545,
+        "raw": 68.45454545454545,
+        "stars": 0
+      },
+      "squadAverage": 62.65853658536585,
+      "overall": {
+        "games": 38,
+        "wins": 7,
+        "draws": 12,
+        "losses": 19,
+        "winRate": 18.421052631578945,
+        "drawRate": 31.57894736842105,
+        "lossRate": 50
+      },
+      "home": {
+        "games": 19,
+        "wins": 6,
+        "draws": 6,
+        "losses": 7,
+        "winRate": 31.57894736842105,
+        "drawRate": 31.57894736842105,
+        "lossRate": 36.84210526315789
+      },
+      "away": {
+        "games": 19,
+        "wins": 1,
+        "draws": 6,
+        "losses": 12,
+        "winRate": 5.263157894736842,
+        "drawRate": 31.57894736842105,
+        "lossRate": 63.1578947368421
+      }
+    },
+    {
+      "id": "0000001f-0000-4000-8000-fa1d5838ef24",
+      "played": 38,
+      "points": 28,
+      "wins": 6,
+      "draws": 10,
+      "losses": 22,
+      "goalsFor": 30,
+      "goalsAgainst": 64,
+      "goalDifference": -34,
+      "rank": 20,
+      "name": "Coritiba",
+      "formation": "4-3-3",
+      "initialStrength": {
+        "effective": 67.9090909090909,
+        "raw": 68.9090909090909,
+        "stars": 0
+      },
+      "squadAverage": 63.371428571428574,
+      "overall": {
+        "games": 38,
+        "wins": 6,
+        "draws": 10,
+        "losses": 22,
+        "winRate": 15.789473684210526,
+        "drawRate": 26.31578947368421,
+        "lossRate": 57.89473684210527
+      },
+      "home": {
+        "games": 19,
+        "wins": 3,
+        "draws": 7,
+        "losses": 9,
+        "winRate": 15.789473684210526,
+        "drawRate": 36.84210526315789,
+        "lossRate": 47.368421052631575
+      },
+      "away": {
+        "games": 19,
+        "wins": 3,
+        "draws": 3,
+        "losses": 13,
+        "winRate": 15.789473684210526,
+        "drawRate": 15.789473684210526,
+        "lossRate": 68.42105263157895
+      }
+    }
+  ]
+}

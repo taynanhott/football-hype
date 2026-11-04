@@ -95,7 +95,7 @@ export function CenterManagement({
   const treatment = medical || sector === 'fitness';
   const active = medical ? (ops?.medical ?? []) : (ops?.fitness ?? []);
   const slots = treatment ? Math.max(0, level - 2) : Math.min(3, level);
-  const cost = treatment ? (medical ? 5000000 : 2500000) : 10000000;
+  const cost = treatment ? (medical ? 50000 : 25000) : 100000;
   const eligible = players.filter((p) =>
     treatment
       ? !active.includes(p.id) && (medical ? (state.injuries[p.id] ?? 0) > 0 : p.fitness < 100)
@@ -245,11 +245,11 @@ export function CenterManagement({
                 <button
                   className="secondary full"
                   disabled={
-                    busy || !!ops?.syringe || !!ops?.clearance || club.balance.cents < 15000000
+                    busy || !!ops?.syringe || !!ops?.clearance || club.balance.cents < 150000
                   }
                   onClick={() => act('buy-syringe')}
                 >
-                  Comprar seringa · {currency(15000000)}
+                  Comprar seringa · {currency(150000)}
                 </button>
                 {ops?.syringe && (
                   <>

@@ -1,3 +1,4 @@
+import { initializeStartingChemistry } from './tactics.js';
 import { isSerieC2026, type ClubSnapshot, type WorldState } from '@football/shared';
 import { seasonSchedule } from './world-factory.js';
 
@@ -49,7 +50,7 @@ export function resetSeasonCompetitions(state: WorldState, now: number): WorldSt
     ratingHistory: state.ratingHistory.filter((row) => row.season !== state.season),
     trophies: state.trophies.filter((row) => row.season !== state.season),
     workload: {},
-    chemistry: {},
+    chemistry: initializeStartingChemistry(state).chemistry,
     injuries: state.injuries,
   };
 }
