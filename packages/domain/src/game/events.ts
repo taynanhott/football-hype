@@ -18,7 +18,11 @@ export function recordEvent(
   next = recordFinancialHistory(previous, next);
   // Unchanged branches already passed validation when the world was loaded.
   // Validate the event's changed branches instead of cloning the entire world.
-  return parseBoundary(gameEventSchema, {
+  const appendedResults =
+    next.results !== previous.results &&
+    next.results.length >= previous.results.length &&
+    previous.results.every((result, index) => next.results[index] === result);
+  const recorded = parseBoundary(gameEventSchema, {
     ...metadata,
     gameOccurredAt: next.lastProcessedAt,
     balances: Object.fromEntries(
@@ -39,8 +43,17 @@ export function recordEvent(
         ),
       ),
       revision: previous.revision + 1,
+      ...(appendedResults ? { results: next.results.slice(previous.results.length) } : {}),
     },
   });
+  return mapResult(recorded, (event) =>
+    appendedResults
+      ? {
+          ...event,
+          patch: { ...event.patch, results: [...previous.results, ...event.patch.results!] },
+        }
+      : event,
+  );
 }
 export function applyEvent(state: WorldState, event: GameEvent): Result<WorldState> {
   if (event.sequence !== state.revision + 1) return parseBoundary(worldStateSchema, null);

@@ -81,6 +81,29 @@ it('pede os dados completos quando a conexão abre sem carregar a carreira', asy
   await vi.advanceTimersByTimeAsync(20000);
   expect(fake.leave).not.toHaveBeenCalled();
 });
+it('encerra o loading se a confirmação chega mas a revisão salva não é recebida', async () => {
+  const { useGameStore } = await import('../src/store/game-store');
+  const state = unwrap(
+    createWorld({
+      id: crypto.randomUUID(),
+      userId: 'host',
+      name: 'Avanço',
+      mode: 'offline',
+      now: 1,
+    }),
+  );
+  await useGameStore.getState().connect(state.id);
+  fake.handlers.get('snapshot')!({ state, tables: {}, roomId: 'test', ledger: [], serverTime: 1 });
+  const requestId = useGameStore.getState().send({ type: 'advance' });
+  fake.handlers.get('ack')!({ requestId, revision: state.revision + 1 });
+  await vi.advanceTimersByTimeAsync(5000);
+  expect(fake.send).toHaveBeenCalledWith('sync');
+  await vi.advanceTimersByTimeAsync(15000);
+  expect(useGameStore.getState().busy).toBe(false);
+  expect(useGameStore.getState().connected).toBe(false);
+  expect(useGameStore.getState().snapshot?.state).toEqual(state);
+  expect(useGameStore.getState().error).toContain('avanço foi confirmado');
+});
 it('libera a tela com erro e preserva a carreira se o servidor não entregar dados', async () => {
   const { useGameStore } = await import('../src/store/game-store');
   await useGameStore.getState().connect(crypto.randomUUID());

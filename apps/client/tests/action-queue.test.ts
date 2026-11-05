@@ -102,6 +102,16 @@ describe('fila de ações com resposta local', () => {
     expect(view().snapshot.state.round).toBe(initial.round);
     expect(() => queue.enqueue(price(10000), randomUUID(), 1)).toThrow('rodada');
   });
+  it('libera a rodada quando o histórico confirma o avanço mesmo sem ack', () => {
+    const { queue, view, send } = setup();
+    const id = randomUUID();
+    queue.enqueue({ type: 'advance' }, id, 1);
+    const confirmed = applied(initial, { type: 'advance' }, id);
+    queue.accept(snapshot(confirmed.state, confirmed.event));
+    expect(view().busy).toBe(false);
+    expect(view().pendingActions).toBe(0);
+    expect(send).toHaveBeenCalledTimes(1);
+  });
   it.each(['snapshot', 'ack'])(
     'recupera uma confirmação atrasada por %s sem ficar preso em processamento',
     (trigger) => {

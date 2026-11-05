@@ -1,4 +1,25 @@
-function* jsonParts(value: unknown): Generator<string> {
+function smallJsonTree(value: unknown): boolean {
+  const pending = [value];
+  let nodes = 0,
+    characters = 0;
+  while (pending.length) {
+    if (++nodes > 256) return false;
+    const item = pending.pop();
+    if (typeof item === 'string') characters += item.length;
+    else if (item && typeof item === 'object') {
+      const children = Object.values(item);
+      if (children.length + pending.length > 256) return false;
+      pending.push(...children);
+    }
+    if (characters > 16384) return false;
+  }
+  return true;
+}
+function* jsonParts(value: unknown, depth = 0): Generator<string> {
+  if (depth >= 3 && value && typeof value === 'object' && smallJsonTree(value)) {
+    yield JSON.stringify(value);
+    return;
+  }
   if (!value || typeof value !== 'object') {
     yield JSON.stringify(value) ?? 'null';
   } else if (Array.isArray(value)) {
@@ -9,7 +30,7 @@ function* jsonParts(value: unknown): Generator<string> {
     yield '[';
     for (let index = 0; index < value.length; index++) {
       if (index) yield ',';
-      yield* jsonParts(value[index] ?? null);
+      yield* jsonParts(value[index] ?? null, depth + 1);
     }
     yield ']';
   } else {
@@ -20,7 +41,7 @@ function* jsonParts(value: unknown): Generator<string> {
       if (!first) yield ',';
       first = false;
       yield JSON.stringify(key) + ':';
-      yield* jsonParts(child);
+      yield* jsonParts(child, depth + 1);
     }
     yield '}';
   }

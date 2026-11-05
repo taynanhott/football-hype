@@ -121,6 +121,15 @@ export class ActionQueue {
   }
   private complete() {
     if (
+      this.active &&
+      barrier(this.active.command) &&
+      this.confirmed?.ledger.some((event) => event.id === this.active!.id)
+    ) {
+      this.actions = this.actions.filter((action) => action !== this.active);
+      this.active = undefined;
+      return;
+    }
+    if (
       this.active?.revision === undefined ||
       !this.confirmed ||
       this.confirmed.state.revision < this.active.revision

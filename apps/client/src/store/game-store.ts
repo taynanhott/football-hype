@@ -254,6 +254,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         if (import.meta.env.VITE_GAME_TRANSPORT === 'cloudflare')
           snapshot = { ...snapshot, tables: localTables(snapshot.state) };
         const recovered = queue.accept(snapshot);
+        if (!get().pendingActions) clearTimeout(pending);
         clearTimeout(resumeTimer);
         confirmed = snapshot;
         clearTimeout(initialSnapshotTimer);
@@ -387,7 +388,16 @@ export const useGameStore = create<GameStore>((set, get) => ({
         set({ confirmedActionId: parsed.data.requestId });
         if (queue.waitingForSnapshot)
           pending = setTimeout(() => {
-            if (get().room === room && queue.waitingForSnapshot) room.send('sync');
+            if (get().room !== room || !queue.waitingForSnapshot) return;
+            room.send('sync');
+            pending = setTimeout(() => {
+              if (get().room !== room || !queue.waitingForSnapshot) return;
+              queue.stop(
+                'O avanço foi confirmado, mas a atualização da carreira não chegou. Reconectando para recuperar os dados salvos.',
+              );
+              set({ connected: false, busy: false });
+              scheduleRecovery();
+            }, 15000);
           }, 5000);
       });
       room.onError(() => {
