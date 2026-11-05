@@ -67,9 +67,13 @@ export function NegotiationChat({
     (n) => n.playerId === player.id && n.buyerId === club.id,
   );
   const last = history.at(-1);
-  const rival = snapshot.state.negotiations
-    .filter((n) => n.playerId === player.id && n.buyerId !== club.id && n.status === 'review')
-    .sort((a, b) => b.fee - a.fee)[0];
+  const rival = snapshot.state.negotiations.find(
+    (n) =>
+      n.playerId === player.id &&
+      n.buyerId !== club.id &&
+      !n.withdrawn &&
+      (n.status === 'review' || n.status === 'salary'),
+  );
   const currentOffer = history.find((n) => n.status === 'review');
   const [introCount, setIntroCount] = useState(history.length ? 3 : 0);
   const [budgetVisible, setBudgetVisible] = useState(history.length > 0);
@@ -239,10 +243,9 @@ export function NegotiationChat({
                 )}
               </div>
             ))}
-            {currentOffer && rival && rival.fee > currentOffer.fee && (
+            {currentOffer && rival && (
               <div className="chat-bubble incoming">
-                Recebemos uma oferta melhor de {currency(rival.fee)} pelo jogador. Qual sua
-                contraproposta?
+                Outro clube também está negociando com o jogador.
               </div>
             )}
             {context.blocked && dealType === 'buy' && (

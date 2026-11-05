@@ -72,16 +72,15 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
   const reviewingOffers = snapshot.state.negotiations.filter(
     (n) => n.buyerId === club.id && n.status === 'review',
   );
-  const higherOffer = (offer: (typeof reviewingOffers)[number]) =>
-    Math.max(
-      0,
-      ...snapshot.state.negotiations
-        .filter(
-          (n) => n.playerId === offer.playerId && n.buyerId !== club.id && n.status === 'review',
-        )
-        .map((n) => n.fee),
+  const hasCompetingOffer = (offer: (typeof reviewingOffers)[number]) =>
+    snapshot.state.negotiations.some(
+      (entry) =>
+        entry.playerId === offer.playerId &&
+        entry.buyerId !== club.id &&
+        !entry.withdrawn &&
+        (entry.status === 'review' || entry.status === 'salary'),
     );
-  const hasHigherOffer = reviewingOffers.some((offer) => higherOffer(offer) > offer.fee);
+  const hasCompetingOffers = reviewingOffers.some(hasCompetingOffer);
   const [searchQuery, setSearchQuery] = useState('');
   const appliedSearchQuery = useRef('');
   const [searchSeed, setSearchSeed] = useState('');
@@ -598,10 +597,10 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
               }}
             >
               {['A', 'B', 'C'].includes(value) ? 'Série ' + value : value}
-              {value === 'Pendente' && hasHigherOffer && (
+              {value === 'Pendente' && hasCompetingOffers && (
                 <span
                   className="offer-notification-dot"
-                  aria-label="Há uma oferta concorrente maior"
+                  aria-label="Outro clube está negociando com o jogador"
                 />
               )}
               {value === 'Pendente' && (
@@ -804,8 +803,11 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
                       <Icon name="handshake" size={26} />
                       <strong>{seller?.name ?? 'Clube vendedor'}</strong>
                       <span className="offer-status">
-                        {higherOffer(offer) > offer.fee && (
-                          <span className="offer-notification-dot" aria-label="Oferta superada" />
+                        {hasCompetingOffer(offer) && (
+                          <span
+                            className="offer-notification-dot"
+                            aria-label="Outro clube está negociando com o jogador"
+                          />
                         )}
                         Pendente
                       </span>
@@ -863,9 +865,9 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
                               {transferMoney(offer.fee + (offer.exchangeValue ?? 0))}
                             </p>
                           )}
-                          {higherOffer(offer) > offer.fee && (
+                          {hasCompetingOffer(offer) && (
                             <p className="negative">
-                              Oferta concorrente: <b>{transferMoney(higherOffer(offer))}</b>
+                              Outro clube também está negociando com o jogador.
                             </p>
                           )}
                         </div>
@@ -1055,7 +1057,7 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
                         className="offer-status market-overall-badge"
                         data-tier={report(player).tier}
                       >
-                        {report(player).overall} OVR
+                        {report(player).hidden ? '?' : `${report(player).overall} OVR`}
                       </span>
                     </header>
                     <div className="offer-body">

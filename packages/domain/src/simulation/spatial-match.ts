@@ -76,6 +76,7 @@ export function spatialMatch(
     | 'interception'
     | 'free-kick'
     | 'cross'
+    | 'set-piece-pass'
     | 'set-piece-shot' = 'kickoff';
   let setup = false,
     hold = 0;
@@ -85,6 +86,8 @@ export function spatialMatch(
   let crossTarget: PlayerSnapshot | undefined;
   let lastDive: Pick<Action, 'keeperId' | 'keeperDive'> = {};
   let passesInAttack = 0;
+  const recentPasses: { from: string; to: string; step: number }[] = [];
+  let closingRestart = false;
   let assist: { id: string; receiver: string; side: Side; step: number } | undefined;
   for (const team of ['home', 'away'] as const) {
     const counts: Record<string, number> = {};
@@ -134,7 +137,7 @@ export function spatialMatch(
     return player.position === 'GK'
       ? round({
           x: clamp(point.x, -6, 6),
-          z: clamp(point.z * direction(team), -48, -42) * direction(team),
+          z: clamp(point.z * direction(team), -49.5, -42) * direction(team),
         })
       : round({ x: clamp(point.x, -31.5, 31.5), z: clamp(point.z, -49.5, 49.5) });
   };
@@ -205,6 +208,7 @@ export function spatialMatch(
     to: Point,
     extra: Partial<Action> = {},
   ) => {
+    if (minute >= 90 && (type === 'shot' || type === 'pass')) closingRestart = false;
     if ((type === 'penalty' || type === 'shot') && extra.setPiece === 'penalty') {
       Object.assign(
         poses,
@@ -263,7 +267,16 @@ export function spatialMatch(
     dismissalTimes.set(player.id, minute);
     management.dismiss(player.id, minute);
   };
-  for (let step = 0; step < 180; step++) {
+  for (let step = 0; step < 196; step++) {
+    if (step === 180)
+      closingRestart = [
+        'free-kick',
+        'corner',
+        'cross',
+        'set-piece-shot',
+        'set-piece-pass',
+      ].includes(phase);
+    if (step >= 180 && !closingRestart) break;
     const minute = (step * 90) / 180;
     for (const event of options.scenarioDismissals ?? []) {
       const player = teams[event.side].find((p) => p.id === event.playerId);
@@ -312,7 +325,7 @@ export function spatialMatch(
     const liveStrength = dismissed.size
       ? strength - removedStrength('home') + removedStrength('away')
       : strength;
-    management.update(minute, homeGoals, awayGoals);
+    management.update(Math.min(90, minute), homeGoals, awayGoals);
     const opposite: Side = side === 'home' ? 'away' : 'home';
     const dir = direction(side);
     statistics[side].possession++;
@@ -385,7 +398,7 @@ export function spatialMatch(
           carrier = field(side).sort((a, b) => b.overall - a.overall)[0];
           const length = Math.hypot(ball.x, 51 - ball.z * dir);
           wallIds =
-            !penalty && length <= 34
+            !penalty && length <= 34 && Math.abs(ball.x) < 23
               ? field(opposite)
                   .slice(0, 4)
                   .map((p) => p.id)
@@ -403,6 +416,9 @@ export function spatialMatch(
           });
           hold = wallIds.length || penalty ? 3 : 1;
         }
+        const defendingKeeper = keeper(opposite);
+        if (defendingKeeper)
+          poses[defendingKeeper.id] = { x: clamp(ball.x * 0.08, -2, 2), z: dir * 49.3 };
         if (carrier) poses[carrier.id] = { ...ball };
         separate(carrier?.id);
         emit(
@@ -423,7 +439,7 @@ export function spatialMatch(
           ? 'cross'
           : wallIds.length || setPiece === 'penalty'
             ? 'set-piece-shot'
-            : 'play';
+            : 'set-piece-pass';
       continue;
     }
     if (phase === 'cross' && carrier && crossTarget && !dismissed.has(crossTarget.id)) {
@@ -463,7 +479,8 @@ export function spatialMatch(
       continue;
     }
     const forceShot: boolean = phase === 'set-piece-shot';
-    if (forceShot) phase = 'play';
+    const forcePass: boolean = phase === 'set-piece-pass';
+    if (forceShot || forcePass) phase = 'play';
     if (!carrier || dismissed.has(carrier.id))
       carrier = field(side).sort(
         (a, b) => distance(poses[a.id]!, ball) - distance(poses[b.id]!, ball),
@@ -485,6 +502,10 @@ export function spatialMatch(
         const d = direction(team),
           base = bases[p.id]!;
         if (p.position === 'GK') {
+          if (forceShot && team === opposite) {
+            poses[p.id] = { x: clamp(ball.x * 0.08, -2, 2), z: dir * 49.3 };
+            continue;
+          }
           poses[p.id] = move(
             poses[p.id]!,
             {
@@ -523,6 +544,8 @@ export function spatialMatch(
     const pressure = presser ? distance(poses[presser.id]!, ball) : 100;
     if (
       !forceShot &&
+      !forcePass &&
+      minute < 90 &&
       presser &&
       pressure <
         (styles[opposite] === 'all-out-press'
@@ -576,8 +599,13 @@ export function spatialMatch(
       goalDistance <= (forceShot && setPiece === 'free-kick' ? 34 : 26);
     if (
       canShoot &&
-      (forceShot || ((passesInAttack >= 2 || goalDistance < 14) && random() < 0.28))
+      !forcePass &&
+      (forceShot ||
+        ((passesInAttack >= 2 || goalDistance < 14) &&
+          random() <
+            (goalDistance < 14 ? (pressure > 3 ? 0.88 : 0.62) : goalDistance < 20 ? 0.36 : 0.18)))
     ) {
+      // More decisive attacks produce more shots; keep the calibrated match scoring volume.
       const xg: number =
         forceShot && setPiece === 'penalty'
           ? 0.76
@@ -589,7 +617,7 @@ export function spatialMatch(
                     venueAdvantage * GAMEPLAY.shotVenueWeight),
               0.025,
               0.58,
-            );
+            ) * 0.6;
       const goalkeeper = keeper(opposite);
       const scoreDifference = side === 'home' ? homeGoals - awayGoals : awayGoals - homeGoals;
       // Chasing teams commit more players; leading teams protect their advantage.
@@ -603,9 +631,13 @@ export function spatialMatch(
         goalkeeper ? actionQuality(goalkeeper, 'keeping') : 35,
       );
       const goal: boolean = random() < goalChance;
+      const blockingDefender = challengers.find((p) => {
+        const lane = projection(poses[p.id]!, ball, { x: 0, z: dir * 51 });
+        return lane.t > 0.06 && lane.t < 0.94 && lane.gap < 2.8;
+      });
       const outcome: Action['outcome'] = goal
         ? 'goal'
-        : random() < 0.28
+        : blockingDefender && random() < 0.28
           ? 'blocked'
           : random() < actionChance(0.6, goalkeeper ? actionQuality(goalkeeper, 'keeping') : 35)
             ? 'saved'
@@ -635,8 +667,21 @@ export function spatialMatch(
         startHeight: forceShot && setPiece === 'corner' ? 2.7 : 0.45,
         endHeight: outcome === 'saved' ? 1.5 : goal ? 0.9 : 0.45,
         arc: outcome === 'saved' ? 0.6 : goal ? 0.6 : 0.8,
+        ...(outcome === 'blocked' && blockingDefender
+          ? { interceptorId: blockingDefender.id }
+          : {}),
       };
-      emit(minute, 'shot', carrier, ball, endpoint, shotMeta);
+      const contact =
+        outcome === 'blocked' && blockingDefender ? { ...poses[blockingDefender.id]! } : endpoint;
+      emit(minute, 'shot', carrier, ball, contact, shotMeta);
+      if (outcome === 'blocked' && blockingDefender)
+        emit(minute + 0.15, 'interception', blockingDefender, contact, endpoint, {
+          side: opposite,
+          outcome: 'blocked',
+          startHeight: 0.6,
+          endHeight: 0.3,
+          arc: 0.8,
+        });
       if (goal) {
         const assistId =
           assist?.side === side &&
@@ -693,25 +738,65 @@ export function spatialMatch(
           (styles[side] === 'counter' ? clamp(progression, 0, 20) * 0.04 : 0) +
           (styles[side] === 'possession' ? -Math.abs(length - 10) * 0.035 : 0) +
           openness * 0.18 +
-          clamp(progression, -12, 20) * 0.08 -
+          clamp(progression, -12, 20) * 0.18 -
           Math.abs(length - 13) * 0.065 +
-          (random() - 0.5) * 0.5;
+          (random() - 0.5) * 1.1 -
+          recentPasses.filter(
+            (pass) =>
+              step - pass.step < 12 &&
+              ((pass.from === p.id && pass.to === carrier!.id) ||
+                (pass.from === carrier!.id && pass.to === p.id)),
+          ).length *
+            2.8 +
+          (Math.abs(ball.x) > 18 &&
+          ball.z * dir > 18 &&
+          Math.abs(point.x) < 14 &&
+          point.z * dir > 28
+            ? 3
+            : 0);
         return { player: p, point, length, score };
       })
-      .filter((c) => c.length >= 3 && c.length < 31)
+      .filter((c) => c.length >= 3 && c.length < 48)
       .sort((a, b) => b.score - a.score);
     const target = candidates[0];
     const passerId = carrier.id;
     if (
       target &&
-      (carrier.position === 'GK' ||
-        pressure < 5 ||
+      (forcePass ||
+        carrier.position === 'GK' ||
+        (pressure < 5 && goalDistance >= 14) ||
         random() <
-          (styles[side] === 'possession' ? 0.78 : styles[side] === 'counter' ? 0.55 : 0.62))
+          (goalDistance < 14
+            ? 0.15
+            : styles[side] === 'possession'
+              ? 0.78
+              : styles[side] === 'counter'
+                ? 0.55
+                : 0.62))
     ) {
+      const crossing =
+        Math.abs(ball.x) > 18 &&
+        ball.z * dir > 18 &&
+        Math.abs(target.point.x) < 14 &&
+        target.point.z * dir > 28;
+      const through =
+        !crossing &&
+        target.player.position !== 'GK' &&
+        (target.point.z - ball.z) * dir > 8 &&
+        random() < 0.35;
+      if (through) {
+        target.point = move(
+          target.point,
+          { x: target.point.x, z: clamp(target.point.z + dir * 4, -45, 45) },
+          4,
+        );
+        poses[target.player.id] = { ...target.point };
+      }
+      const lofted = crossing || (target.length > 25 && random() < 0.65);
+      const arc = crossing ? 5.5 : lofted ? Math.min(5, target.length * 0.1) : through ? 0.45 : 0.2;
       const opponents = field(opposite)
         .map((p) => ({ player: p, ...projection(poses[p.id]!, ball, target.point) }))
-        .filter((item) => item.t > 0.12 && item.t < 0.88 && item.gap < 2.4)
+        .filter((item) => item.t > 0.12 && item.t < 0.88 && item.gap < (lofted ? 0.8 : 2.4))
         .sort((a, b) => a.gap - b.gap);
       const interception = opponents[0];
       const intercepted = Boolean(
@@ -735,22 +820,27 @@ export function spatialMatch(
           targetId: target.player.id,
           interceptorId: interception.player.id,
           outcome: 'intercepted',
+          arc,
         });
         incoming = { player: interception.player, side: opposite };
         ball = endpoint;
         phase = 'interception';
         assist = undefined;
       } else {
-        emit(minute, 'pass', carrier, ball, target.point, {
+        emit(minute, crossing ? 'cross' : 'pass', carrier, ball, target.point, {
           targetId: target.player.id,
           outcome: 'complete',
+          arc,
         });
+        recentPasses.push({ from: carrier.id, to: target.player.id, step });
+        if (recentPasses.length > 8) recentPasses.shift();
         assist = { id: carrier.id, receiver: target.player.id, side, step };
         carrier = target.player;
         ball = { ...target.point };
         passesInAttack++;
       }
       statistics[side].passes++;
+      if (forcePass) setPiece = undefined;
       ratings[passerId] = (ratings[passerId] ?? 6) + (intercepted ? -0.03 : 0.008);
     } else if (carrier.position === 'GK') {
       // A goalkeeper distributes or waits in the area; never dribbles upfield.
@@ -773,6 +863,17 @@ export function spatialMatch(
       emit(minute, 'dribble', carrier, ball, endpoint);
       ball = endpoint;
     }
+  }
+  // Finish an awarded restart, then fit that final sequence into the existing match clock.
+  const lastMinute = actions.at(-1)?.minute ?? 0;
+  if (lastMinute > 89.5) {
+    const adjusted = (minute: number) =>
+      minute <= 84 ? minute : 84 + ((minute - 84) * 5.5) / (lastMinute - 84);
+    for (const action of actions) action.minute = adjusted(action.minute);
+    for (const scorer of scorers)
+      scorer.minute = Math.max(1, Math.min(90, Math.ceil(adjusted(scorer.minute))));
+    for (const substitution of management.substitutions)
+      substitution.minute = adjusted(substitution.minute);
   }
   const possession = statistics.home.possession + statistics.away.possession;
   statistics.home.possession = Math.round(

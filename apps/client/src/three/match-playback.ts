@@ -286,7 +286,7 @@ export function separatePositions(
     const end = keeperEnds[id];
     return {
       x: Math.max(end ? -6 : -31.5, Math.min(end ? 6 : 31.5, p.x)),
-      z: end ? Math.max(42, Math.min(48, p.z * end)) * end : Math.max(-49.5, Math.min(49.5, p.z)),
+      z: end ? Math.max(42, Math.min(49.5, p.z * end)) * end : Math.max(-49.5, Math.min(49.5, p.z)),
     };
   };
   for (let iteration = 0; iteration < 10; iteration++) {

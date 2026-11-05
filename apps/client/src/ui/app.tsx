@@ -1,5 +1,6 @@
 import { GameLoading } from './game-loading';
-import { renewalTerms } from '@football/domain';
+import { useSimulationNavigationLock } from './use-simulation-navigation-lock';
+import { useNavigationNotifications } from './use-navigation-notifications';
 import { TransferNews } from '../features/market/transfer-news';
 import { request } from '../features/leagues/api';
 import { CoachAvatar, CoachEditor } from './coach-profile';
@@ -7,14 +8,12 @@ import { readCoach } from './coach-profile-storage';
 import { useSession } from '../features/auth/session';
 import { AdvanceRoundButton } from '../features/leagues/advance-round-button';
 import { BrandMark } from './brand-mark';
-import { MATCH_DURATION_MS } from '@football/shared';
 import { useEffect, useLayoutEffect, useState, useSyncExternalStore } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useGameStore } from '../store/game-store';
 import { Lobby } from '../features/leagues/lobby';
 import { Dashboard } from '../features/dashboard/dashboard';
 import { LineupEditor } from '../features/players/lineup';
-import { clubUnavailablePlayers } from '../features/players/player-availability';
 import { Squad } from '../features/players/squad';
 import { Market } from '../features/market/market';
 import { Facilities } from '../features/facilities/facilities';
@@ -57,7 +56,7 @@ function scrollPageToTop() {
 }
 
 function GameApp() {
-  const route = useSyncExternalStore(subscribe, currentRoute);
+  const requestedRoute = useSyncExternalStore(subscribe, currentRoute);
   const { user } = useSession();
   const profileKey = `football.coach.${user?.uid ?? useGameStore.getState().userId}`;
   const [coach, setCoach] = useState(() => readCoach(profileKey));
@@ -69,9 +68,9 @@ function GameApp() {
 
   useLayoutEffect(() => {
     scrollPageToTop();
-  }, [route]);
+  }, [requestedRoute]);
 
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [menuRequested, setMenuOpen] = useState(false);
   useEffect(() => {
     const close = (event: KeyboardEvent) => {
       if (event.key === 'Escape') setMenuOpen(false);
@@ -112,13 +111,14 @@ function GameApp() {
         r.awayId === snapshot.state.participants.find((p) => p.userId === userId)?.clubId,
     )
     .at(-1);
+  const clockOffset = useGameStore((s) => s.clockOffset);
+  const navigationLocked = useSimulationNavigationLock(latestMatch?.startedAt, clockOffset);
+  const notifications = useNavigationNotifications(snapshot?.state, userId, navigationLocked);
+  const menuOpen = menuRequested && !navigationLocked;
+  const route = navigationLocked ? 'matches' : requestedRoute;
   useEffect(() => {
-    if (
-      latestMatch?.startedAt &&
-      Date.now() + useGameStore.getState().clockOffset - latestMatch.startedAt < MATCH_DURATION_MS
-    )
-      location.hash = '/matches';
-  }, [latestMatch?.startedAt]);
+    if (navigationLocked && requestedRoute !== 'matches') location.hash = '/matches';
+  }, [navigationLocked, requestedRoute]);
   if (!snapshot)
     return (
       <>
@@ -146,11 +146,8 @@ function GameApp() {
       </div>
     );
   const props = { snapshot, club, stadium, center };
-  const hasRenewalRequests = club.playerIds.some((id) => {
-    const player = state.players.byId[id];
-    return player && renewalTerms(state, player).demand;
-  });
-  const hasUnavailablePlayers = clubUnavailablePlayers(state, club).length > 0;
+  const hasRenewalRequests = notifications.renewal;
+  const hasUnavailablePlayers = notifications.unavailable;
   const ready = state.participants.filter((member) => member.ready).length;
   const view =
     route === 'coach' ? (
@@ -203,6 +200,9 @@ function GameApp() {
       )}
       <aside
         id="main-navigation"
+        inert={navigationLocked}
+        aria-disabled={navigationLocked}
+        data-simulation-locked={navigationLocked}
         onClick={(event) => {
           if (
             event.target instanceof Element &&
@@ -245,19 +245,12 @@ function GameApp() {
                 {item.id === 'lineup' && hasUnavailablePlayers && (
                   <span className="transfer-alert-dot" aria-label="Há jogadores indisponíveis" />
                 )}
-                {item.id === 'market' &&
-                  ((state.management?.offers?.some(
-                    (offer) => offer.sellerId === club.id && offer.status === 'pending',
-                  ) ??
-                    false) ||
-                    state.negotiations.some(
-                      (offer) => offer.buyerId === club.id && offer.status === 'review',
-                    )) && (
-                    <span
-                      className="transfer-alert-dot"
-                      aria-label="Há propostas recebidas ou negociações em análise"
-                    />
-                  )}
+                {item.id === 'market' && notifications.market && (
+                  <span
+                    className="transfer-alert-dot"
+                    aria-label="Há propostas recebidas ou negociações em análise"
+                  />
+                )}
               </a>
             ),
           )}
@@ -351,7 +344,13 @@ function GameApp() {
           </div>
         )}
       </div>
-      <nav className="mobile-bottom-nav" aria-label="Atalhos de navegação">
+      <nav
+        className="mobile-bottom-nav"
+        aria-label="Atalhos de navegação"
+        inert={navigationLocked}
+        aria-disabled={navigationLocked}
+        data-simulation-locked={navigationLocked}
+      >
         <button
           aria-label="Menu"
           aria-expanded={menuOpen}

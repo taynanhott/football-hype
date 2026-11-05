@@ -2,7 +2,6 @@ import { useGameStore } from '../../store/game-store';
 import { useState } from 'react';
 import type { WorldState, Negotiation } from '@football/shared';
 import { PersonAvatar, type PersonAppearance } from '../../ui/person-avatar';
-import { currency } from '../../ui/format';
 
 const REPORTERS: PersonAppearance[] = [
   {
@@ -136,40 +135,28 @@ export function TransferNews({ state }: { state: WorldState }) {
       const rival = others.at(-1);
       const rivalName = rival ? (state.clubs.byId[rival.buyerId]?.name ?? 'outro clube') : '';
       let title = OFFER_HEADLINES[index % OFFER_HEADLINES.length]!(buyer, player);
-      let body = 'A oferta de ' + currency(offer.fee) + ' foi enviada ao ' + seller + '.';
+      let body = buyer + ' está negociando com ' + seller + ' pela contratação do jogador.';
       if (rival) {
         title =
           buyer + ' ' + COMPETITION_HEADLINES[index % COMPETITION_HEADLINES.length] + ' ' + player;
         body =
           buyer +
-          ' ofereceu ' +
-          currency(offer.fee) +
-          '. O ' +
+          ' está negociando com o jogador. O ' +
           rivalName +
-          ' também apresentou proposta, de ' +
-          currency(rival.fee) +
-          '.';
+          ' também está negociando com o jogador.';
       }
       if (offer.revised) {
         title = buyer + ' muda a oferta por ' + player;
-        body = 'O novo valor apresentado é de ' + currency(offer.fee) + '.';
+        body = 'O clube atualizou sua proposta e segue negociando com o jogador.';
       }
       if (offer.status === 'review') body += ' A diretoria está analisando a proposta.';
       if (offer.status === 'salary') {
         title = seller + ' libera conversa com ' + player;
-        body =
-          'A proposta do ' +
-          buyer +
-          ', de ' +
-          currency(offer.fee) +
-          ', foi aceita pelo clube. Falta o acerto com o atleta.';
+        body = 'A proposta do ' + buyer + ' foi aceita pelo clube. Falta o acerto com o atleta.';
       }
       if (offer.status === 'completed') {
         title = 'Fechado: ' + player + ' vai para o ' + buyer;
-        body =
-          'Transferência concluída por ' +
-          currency(offer.fee) +
-          ', com contrato acertado entre clube e jogador.';
+        body = 'Transferência concluída, com contrato acertado entre clube e jogador.';
       }
       const loan = state.management?.offers?.find((o) => o.id === offer.id && o.kind === 'loan');
       if (loan) {
@@ -180,13 +167,7 @@ export function TransferNews({ state }: { state: WorldState }) {
           buyer;
         body =
           buyer +
-          ' oferece ' +
-          loan.months +
-          ' meses e paga ' +
-          loan.salaryPercent +
-          '% do salário (' +
-          currency(loan.salary) +
-          '/mês). O atleta retorna ao ' +
+          ' negocia o empréstimo do jogador. O atleta retorna ao ' +
           seller +
           ' ao fim do contrato de empréstimo.';
       }

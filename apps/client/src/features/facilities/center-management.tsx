@@ -10,6 +10,32 @@ import { currency } from '../../ui/format';
 import { Select, Option } from '../../ui/select';
 
 import { SECTORS, MARKETING_BENEFITS } from './center-sectors';
+function FacilityLevelLock({
+  level,
+  required,
+  detail,
+}: {
+  level: number;
+  required: number;
+  detail?: string;
+}) {
+  return (
+    <div className="locked-feature facility-level-lock" role="note">
+      <span className="facility-level-lock-icon" aria-hidden="true">
+        <Icon name="lock" size={22} />
+      </span>
+      <div>
+        <strong>Disponível no nível {required}</strong>
+        <span>
+          Seu setor está no nível {level}.{detail ? ` ${detail}` : ''}
+        </span>
+      </div>
+      <span className="facility-level-lock-badge" aria-hidden="true">
+        NV. {required}
+      </span>
+    </div>
+  );
+}
 export function SectorGuide({ sector, rules = false }: { sector: string; rules?: boolean }) {
   const [rulesExpanded, setRulesExpanded] = useState(false);
   const info = SECTORS[sector];
@@ -160,9 +186,11 @@ export function CenterManagement({
                 </p>
               )}
               {sector === 'coaching' ? null : slots === 0 ? (
-                <div className="locked-feature">
-                  🔒 Disponível no nível 3. Níveis 4 e 5 liberam mais uma vaga cada.
-                </div>
+                <FacilityLevelLock
+                  level={level}
+                  required={3}
+                  detail="Níveis 4 e 5 liberam mais uma vaga cada."
+                />
               ) : (
                 <>
                   <label>
@@ -247,7 +275,7 @@ export function CenterManagement({
               </span>
             </p>
             {level < 5 ? (
-              <div className="locked-feature">🔒 Disponível no nível 5</div>
+              <FacilityLevelLock level={level} required={5} />
             ) : (
               <>
                 <p>Estoque: {ops?.syringe ? '1 / 1' : '0 / 1'}</p>
@@ -308,16 +336,21 @@ export function CenterManagement({
           <>
             <ol className="marketing-benefits">
               {MARKETING_BENEFITS.map((benefit, i) => (
-                <li key={benefit} className={level > i ? 'unlocked' : ''}>
+                <li key={benefit} className={level > i ? 'unlocked' : 'marketing-benefit-locked'}>
                   <div className="marketing-benefit-icon">
                     <Icon name={['shirt', 'shorts', 'squad', 'finance', 'stadium'][i]!} size={24} />
                   </div>
                   <div className="marketing-benefit-copy">
                     <span>
-                      {level > i ? '✓' : '🔒'} Nível {i + 1}
+                      {level > i ? '✓ Liberado' : 'Disponível'} no nível {i + 1}
                     </span>
                     <strong>{benefit}</strong>
                   </div>
+                  {level <= i && (
+                    <span className="marketing-benefit-lock" aria-label="Bloqueado">
+                      <Icon name="lock" size={18} />
+                    </span>
+                  )}
                 </li>
               ))}
             </ol>

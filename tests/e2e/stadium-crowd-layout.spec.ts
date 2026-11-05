@@ -8,7 +8,7 @@ test('renderiza a torcida nos estádios reais', async ({ page }) => {
   await page.getByRole('button', { name: /Nova carreira solo/ }).click();
   await page.getByRole('button', { name: 'Iniciar carreira', exact: true }).click();
   await expect(page.locator('.club-calendar')).toBeVisible();
-  await page.evaluate(async () => {
+  await page.evaluate(async (live) => {
     const path = '/src/store/game-store.ts';
     const { useGameStore } = await import(path);
     const store = useGameStore.getState();
@@ -30,7 +30,7 @@ test('renderiza a torcida nos estádios reais', async ({ page }) => {
       status: 'finished',
       homeGoals: 0,
       awayGoals: 0,
-      startedAt: Date.now() + store.clockOffset - 100000,
+      startedAt: Date.now() + store.clockOffset - (live ? 30000 : 100000),
       attendance: 100000,
       revenue: 1000000,
       seed: 1,
@@ -62,14 +62,24 @@ test('renderiza a torcida nos estádios reais', async ({ page }) => {
       },
     });
     location.hash = '/matches';
-  });
+  }, process.env.E2E_CROWD_CLOSE === 'true');
   await expect(page.locator('.match-scene .scene-root')).toHaveAttribute(
     'data-scene-ready',
     'true',
     { timeout: 60000 },
   );
   await page.addStyleTag({ content: '.match-end-overlay{display:none!important}' });
-  for (const skin of [
+  if (process.env.E2E_CROWD_CLOSE === 'true') {
+    await expect(page.locator('.sidebar')).toHaveAttribute('inert', '');
+    await expect(page.locator('.sidebar')).toHaveCSS('opacity', '1');
+    await page.setViewportSize({ width: 390, height: 844 });
+    await expect(page.locator('.mobile-bottom-nav')).toHaveAttribute('inert', '');
+    await page
+      .locator('.mobile-bottom-nav')
+      .screenshot({ path: 'test-results/simulation-disabled-mobile-nav.png' });
+    await page.setViewportSize({ width: 1280, height: 800 });
+  }
+  for (const skin of process.env.E2E_CROWD_SKINS?.split(',') ?? [
     'palmeiras-park',
     'morumbi',
     'vila-belmiro',

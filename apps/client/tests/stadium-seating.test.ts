@@ -1,8 +1,25 @@
 import { describe, expect, it } from 'vitest';
-import { realStadiumSeats } from '../src/three/stadium-seating';
+import { realStadiumSeats, occupiedCrowdSeats } from '../src/three/stadium-seating';
 import { STADIUM_SKINS } from '../src/three/stadium-catalog';
 
 describe('torcida nas arquibancadas de cada estádio', () => {
+  it('dispersa a ocupação sem faixas periódicas e preserva o público solicitado', () => {
+    const seats = realStadiumSeats('arena-baixada');
+    for (const occupancy of [0, 0.18, 0.44, 0.73, 0.97, 1]) {
+      const occupied = occupiedCrowdSeats(seats, occupancy);
+      expect(occupied.reduce((sum, value) => sum + value, 0)).toBe(
+        Math.floor(seats.length * occupancy),
+      );
+      expect(occupiedCrowdSeats(seats, occupancy)).toEqual(occupied);
+    }
+    const occupied = occupiedCrowdSeats(seats, 0.5);
+    let changes = 0;
+    for (let i = 1; i < occupied.length; i++) if (occupied[i] !== occupied[i - 1]) changes++;
+    expect(changes).toBeGreaterThan(seats.length * 0.25);
+    expect(occupiedCrowdSeats(seats, 0.73).every((value, i) => !occupied[i] || value === 1)).toBe(
+      true,
+    );
+  });
   it.each(STADIUM_SKINS)(
     '%s tem assentos fora do campo e respeita o limite de instâncias',
     (skin) => {

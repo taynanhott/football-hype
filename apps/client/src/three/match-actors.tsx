@@ -1,5 +1,6 @@
 /* eslint-disable react-hooks/immutability -- Three.js animation buffers are updated in place each frame. */
 import type { OrbitControls } from 'three-stdlib';
+import { runnerMotion } from './runner-motion';
 import { useFrame, useThree } from '@react-three/fiber';
 import { useEffect, useLayoutEffect, useMemo, useRef, type RefObject } from 'react';
 import {
@@ -270,16 +271,41 @@ function Runner({
   jump: number;
 }) {
   const group = useRef<Group>(null);
-  const leg = useRef<Mesh>(null);
+  const leftLeg = useRef<Group>(null);
+  const rightLeg = useRef<Group>(null);
+  const leftKnee = useRef<Group>(null);
+  const rightKnee = useRef<Group>(null);
+  const leftArm = useRef<Group>(null);
+  const rightArm = useRef<Group>(null);
+  const stride = useRef(slot);
   const body = useRef<Group>(null);
-  useFrame(({ clock }) => {
+  useFrame((_, delta) => {
     if (!group.current) return;
     const point = renderedView.current.positions[playerId];
     const nextX = point?.x ?? x;
     const nextZ = point?.z ?? z;
     const distance = Math.hypot(nextX - group.current.position.x, nextZ - group.current.position.z);
     group.current.position.set(nextX, Math.abs(dive) * 0.85 + jump, nextZ);
-    if (body.current) body.current.rotation.z = -dive * (side === 'home' ? 1 : -1) * 1.2;
+    const playback = renderedView.current;
+    const action = playback.frame?.action;
+    const takingKick =
+      action?.playerId === playerId &&
+      ['pass', 'cross', 'shot'].includes(action.type) &&
+      !action.header;
+    const running = stopped ? 0 : Math.min(1, distance / Math.max(0.001, delta) / 8);
+    if (distance < 2) stride.current += distance * 2.6;
+    const motion = runnerMotion(
+      stride.current,
+      moving || running > 0.05 ? running : 0,
+      takingKick && !stopped
+        ? { progress: playback.progress, shot: action?.type === 'shot' }
+        : undefined,
+    );
+    if (body.current) {
+      body.current.rotation.z = -dive * (side === 'home' ? 1 : -1) * 1.2;
+      body.current.rotation.x = motion.lean;
+      body.current.position.y = 1.05 + motion.bounce;
+    }
     if (distance > 0.02)
       group.current.rotation.y = Math.atan2(
         nextX - (group.current.userData.lastX ?? nextX),
@@ -288,13 +314,16 @@ function Runner({
     group.current.userData.lastX = nextX;
     group.current.userData.lastZ = nextZ;
     if (Math.abs(dive) > 0.01) group.current.rotation.y = side === 'home' ? 0 : Math.PI;
-    if (kicking) group.current.rotation.y = facing;
-    if (leg.current)
-      leg.current.rotation.x = kicking
-        ? -1.1
-        : stopped || !moving
-          ? 0
-          : Math.sin(clock.elapsedTime * 7 + slot) * 0.35;
+    if (takingKick || kicking)
+      group.current.rotation.y = action
+        ? Math.atan2((action.endX ?? action.x) - action.x, (action.endZ ?? action.z) - action.z)
+        : facing;
+    if (leftLeg.current) leftLeg.current.rotation.x = motion.leftLeg;
+    if (rightLeg.current) rightLeg.current.rotation.x = motion.rightLeg;
+    if (leftKnee.current) leftKnee.current.rotation.x = motion.leftKnee;
+    if (rightKnee.current) rightKnee.current.rotation.x = motion.rightKnee;
+    if (leftArm.current) leftArm.current.rotation.x = motion.leftArm;
+    if (rightArm.current) rightArm.current.rotation.x = motion.rightArm;
   });
   const primary = kit.primary;
   const secondary = kit.secondary;
@@ -350,23 +379,36 @@ function Runner({
               </mesh>
             ))}
           {[-1, 1].map((arm) => (
-            <mesh
+            <group
               key={arm}
-              position={[arm * 0.82, 1.9, 0]}
+              ref={arm < 0 ? leftArm : rightArm}
+              position={[arm * 0.82, 2.4, 0]}
               rotation={[0, 0, arm * (Math.abs(dive) > 0.1 ? 0.8 : 0.15)]}
             >
-              <boxGeometry args={[0.28, 1, 0.35]} />
-              <meshStandardMaterial color={jersey} />
-            </mesh>
+              <mesh position={[0, -0.5, 0]}>
+                <boxGeometry args={[0.28, 1, 0.35]} />
+                <meshStandardMaterial color={jersey} />
+              </mesh>
+            </group>
           ))}
-          <mesh ref={leg} position={[-0.32, 0.65, 0]}>
-            <boxGeometry args={[0.35, 1.2, 0.4]} />
-            <meshStandardMaterial color={secondary} />
-          </mesh>
-          <mesh position={[0.32, 0.65, 0]}>
-            <boxGeometry args={[0.35, 1.2, 0.4]} />
-            <meshStandardMaterial color={secondary} />
-          </mesh>
+          {[-1, 1].map((leg) => (
+            <group key={leg} ref={leg < 0 ? leftLeg : rightLeg} position={[leg * 0.32, 1.25, 0]}>
+              <mesh position={[0, -0.3, 0]}>
+                <boxGeometry args={[0.35, 0.6, 0.4]} />
+                <meshStandardMaterial color={secondary} />
+              </mesh>
+              <group ref={leg < 0 ? leftKnee : rightKnee} position={[0, -0.6, 0]}>
+                <mesh position={[0, -0.3, 0]}>
+                  <boxGeometry args={[0.3, 0.6, 0.34]} />
+                  <meshStandardMaterial color={secondary} />
+                </mesh>
+                <mesh position={[0, -0.57, 0.12]}>
+                  <boxGeometry args={[0.35, 0.18, 0.58]} />
+                  <meshStandardMaterial color="#182323" />
+                </mesh>
+              </group>
+            </group>
+          ))}
         </group>
       </group>
     </group>

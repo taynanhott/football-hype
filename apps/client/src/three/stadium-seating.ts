@@ -1,5 +1,32 @@
 export type CrowdSeat = { x: number; y: number; z: number; rotation: number };
 
+export function crowdNoise(seed: number): number {
+  let n = Math.imul(seed ^ 0x9e3779b9, 0x85ebca6b);
+  n = Math.imul(n ^ (n >>> 13), 0xc2b2ae35);
+  return ((n ^ (n >>> 16)) >>> 0) / 4294967296;
+}
+
+/** Stable small groups, with an exact attendance count and no modular stripes. */
+export function occupiedCrowdSeats(seats: readonly CrowdSeat[], occupancy: number): Uint8Array {
+  const count = Math.floor(
+    seats.length * (Number.isFinite(occupancy) ? Math.max(0, Math.min(1, occupancy)) : 0),
+  );
+  const result = new Uint8Array(seats.length);
+  if (count === 0) return result;
+  if (count === seats.length) return result.fill(1);
+  const ranked = seats
+    .map((seat, index) => {
+      const group =
+        Math.imul(Math.floor(seat.x / 7), 73856093) ^
+        Math.imul(Math.floor(seat.z / 7), 19349663) ^
+        Math.imul(Math.floor(seat.y / 3), 83492791);
+      return { index, rank: crowdNoise(group) * 0.35 + crowdNoise(index + 17) * 0.65 };
+    })
+    .sort((a, b) => a.rank - b.rank || a.index - b.index);
+  for (let i = 0; i < count; i++) result[ranked[i]!.index] = 1;
+  return result;
+}
+
 /** Sample the actual tread surfaces, including the 64 flat segments of each Ribbon.
  * Keep this map in stadium coordinates, independently of facility upgrade level. */
 export function realStadiumSeats(skin: string): CrowdSeat[] {
@@ -8,10 +35,10 @@ export function realStadiumSeats(skin: string): CrowdSeat[] {
     seats.push({ x, y: surface + 0.425, z, rotation: Math.atan2(-x, -z) });
   };
   const straight = (side: number, radius: number, surface: number, length: number, end = false) => {
-    const count = Math.floor(length / 1.8);
+    const count = Math.floor(length / 1.35);
     for (let i = 0; i < count; i++) {
       if (i % 24 === 0) continue;
-      const along = ((i + 0.5) / count - 0.5) * length;
+      const along = ((i + 0.5) / count - 0.5) * length + Math.sin(surface * 17.3) * 0.3;
       add(end ? along : side * radius, surface, end ? side * radius : along);
     }
   };
@@ -23,7 +50,10 @@ export function realStadiumSeats(skin: string): CrowdSeat[] {
     for (let block = 0; block < 64; block++) {
       const a = point(start + (block / 64) * (end - start));
       const b = point(start + ((block + 1) / 64) * (end - start));
-      const count = Math.max(1, Math.floor(Math.hypot(b[0] - a[0], b[1] - a[1]) / 2.2));
+      const count = Math.max(
+        1,
+        Math.floor(Math.hypot(b[0] - a[0], b[1] - a[1]) / (skin === 'morumbi' ? 1.95 : 1.7)),
+      );
       for (let i = 0; i < count; i++) {
         const f = (i + 0.5) / count;
         add(a[0] + (b[0] - a[0]) * f, y, a[1] + (b[1] - a[1]) * f);

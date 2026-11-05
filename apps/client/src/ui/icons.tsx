@@ -1,6 +1,7 @@
 import { PixelBadge } from './pixel-badge';
 import { type ClubKit } from '@football/shared';
 const PATHS: Record<string, string> = {
+  lock: 'M7 10V7a5 5 0 0 1 10 0v3M5 10h14v11H5zM12 14v3',
   'salary-demand': 'M12 2v20M17 6H9a4 4 0 0 0 0 8h6a4 4 0 0 0 0-8H9M7 18h8a4 4 0 0 0 0-8',
   flag: 'M5 21V3M5 4c4-3 10 3 14 0v10c-4 3-10-3-14 0',
   'chevron-down': 'M6 9l6 6 6-6',

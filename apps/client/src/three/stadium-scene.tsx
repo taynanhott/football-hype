@@ -23,7 +23,7 @@ import { GroundMist } from './ground-mist';
 import { Pitch } from './pitch';
 import { RealStadium } from './real-stadiums';
 import { stadiumSkin } from './stadium-catalog';
-import { realStadiumSeats } from './stadium-seating';
+import { realStadiumSeats, occupiedCrowdSeats, crowdNoise } from './stadium-seating';
 import { ModernArena, TraditionalDetails } from './stadium-architecture';
 
 type Position = [number, number, number];
@@ -124,9 +124,14 @@ function Crowd({
     mappedSeats?.length ??
     (level >= 4 ? (level === 5 ? 3 * 13 : 2 * 10) * 384 : 4 * (5 + level * 2) * 100);
   const dummy = useMemo(() => new Object3D(), []);
+  const occupiedSeats = useMemo(
+    () => (mappedSeats ? occupiedCrowdSeats(mappedSeats, occupancy) : null),
+    [mappedSeats, occupancy],
+  );
   useLayoutEffect(() => {
     if (!mesh.current || !heads.current || !shirts.current) return;
     const skin = ['#e2ac80', '#b77b51', '#754a36', '#f0c8a0'];
+    const neutral = ['#d7d8cd', '#49534c', '#a4aaa3', '#38434b'];
     for (let index = 0; index < count; index++) {
       const side = index % 4;
       const row = Math.floor(index / 4) % (5 + level * 2);
@@ -163,7 +168,11 @@ function Crowd({
         dummy.position.set(mapped.x, mapped.y, mapped.z);
         dummy.rotation.set(0, mapped.rotation, 0);
       }
-      const occupied = ((index * 7919) % count) / count < Math.min(1, Math.max(0, occupancy));
+      const occupied = occupiedSeats
+        ? occupiedSeats[index] === 1
+        : crowdNoise(index + 17) < Math.min(1, Math.max(0, occupancy));
+      const variation = crowdNoise(index + 29);
+      const stature = 0.94 + crowdNoise(index + 53) * 0.12;
       const visitor = mapped
         ? (Math.atan2(mapped.z, mapped.x) + Math.PI) / (2 * Math.PI) < 0.3
         : level >= 4
@@ -174,19 +183,44 @@ function Crowd({
         secondary: visitor ? awayKit.secondary : homeKit.secondary,
       };
       if (!mapped && level < 4) dummy.rotation.set(0, side < 2 ? 0 : Math.PI / 2, 0);
-      dummy.scale.set(occupied ? 0.65 : 0, occupied ? 0.85 : 0, occupied ? 0.45 : 0);
+      // Jitter along the tread, never through the step or into the next row.
+      const tangentX = Math.cos(dummy.rotation.y),
+        tangentZ = -Math.sin(dummy.rotation.y);
+      const jitter = (crowdNoise(index + 71) - 0.5) * 0.18;
+      dummy.position.x += tangentX * jitter;
+      dummy.position.z += tangentZ * jitter;
+      dummy.position.y -= 0.425 - 0.36 * stature;
+      dummy.rotation.y += (variation - 0.5) * 0.12;
+      const shirtColor =
+        variation < 0.14
+          ? neutral[Math.floor(crowdNoise(index + 31) * neutral.length)]!
+          : variation < 0.35
+            ? kit.secondary
+            : kit.primary;
+      dummy.scale.set(
+        occupied ? 0.62 * stature : 0,
+        occupied ? 0.72 * stature : 0,
+        occupied ? 0.4 : 0,
+      );
       dummy.updateMatrix();
       mesh.current.setMatrixAt(index, dummy.matrix);
-      mesh.current.setColorAt(index, new Color(kit.primary));
-      dummy.scale.set(occupied ? 0.18 : 0, occupied ? 0.85 : 0, occupied ? 0.47 : 0);
+      mesh.current.setColorAt(index, new Color(shirtColor));
+      dummy.scale.set(
+        occupied ? 0.15 * stature : 0,
+        occupied ? 0.72 * stature : 0,
+        occupied ? 0.42 : 0,
+      );
       dummy.updateMatrix();
       shirts.current.setMatrixAt(index, dummy.matrix);
       shirts.current.setColorAt(index, new Color(kit.secondary));
-      dummy.position.y += 0.63;
-      dummy.scale.setScalar(occupied ? 0.28 : 0);
+      dummy.position.y += 0.56 * stature;
+      dummy.scale.setScalar(occupied ? 0.23 * stature : 0);
       dummy.updateMatrix();
       heads.current.setMatrixAt(index, dummy.matrix);
-      heads.current.setColorAt(index, new Color(skin[index % skin.length]));
+      heads.current.setColorAt(
+        index,
+        new Color(skin[Math.floor(crowdNoise(index + 97) * skin.length)]),
+      );
     }
     mesh.current.instanceMatrix.needsUpdate = true;
     if (mesh.current.instanceColor) mesh.current.instanceColor.needsUpdate = true;
@@ -204,12 +238,8 @@ function Crowd({
     awayKit.primary,
     awayKit.secondary,
     mappedSeats,
+    occupiedSeats,
   ]);
-  useFrame(({ clock }) => {
-    const bounce = Math.sin(clock.elapsedTime * 5) * occupancy * 0.09;
-    for (const part of [mesh.current, heads.current, shirts.current])
-      if (part) part.position.y = bounce;
-  });
   return (
     <group name={skin ? `Torcida: ${skin}` : 'Torcida: arquibancada padrão'}>
       <instancedMesh ref={mesh} args={[undefined, undefined, count]}>
