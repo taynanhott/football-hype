@@ -1,3 +1,4 @@
+import { clubResults, playerRatings } from './history-index.js';
 import { ceilMoney, MONEY_STEPS, type PlayerSnapshot, type WorldState } from '@football/shared';
 const DAY = 86400000;
 export function signingSalary(base: number, years: number): number {
@@ -32,9 +33,7 @@ export function renewalPatience(player: PlayerSnapshot) {
   return { refusals: 2 + (seed % 2), retryDays: seed % 2 ? 14 : 7 };
 }
 export function refusesForPlayingTime(state: WorldState, player: PlayerSnapshot) {
-  const games = state.results.filter(
-    (game) => game.homeId === player.clubId || game.awayId === player.clubId,
-  );
+  const games = player.clubId ? clubResults(state, player.clubId) : [];
   const baseline = state.management?.contractHistory?.[player.id]?.effectsClubGames ?? 0;
   const recent = games
     .slice(baseline)
@@ -91,14 +90,12 @@ function renewalRequest(state: WorldState, player: PlayerSnapshot) {
 export function renewalTerms(state: WorldState, player: PlayerSnapshot, years = 1) {
   const record = state.management?.contractHistory?.[player.id];
   const remaining = Math.ceil((contractExpires(state, player) - state.lastProcessedAt) / DAY);
-  const history = state.results
-    .filter((r) => r.homeId === player.clubId || r.awayId === player.clubId)
-    .slice(-5);
+  const history = (player.clubId ? clubResults(state, player.clubId) : []).slice(-5);
   const team = history.reduce((sum, r) => {
     const diff = r.homeId === player.clubId ? r.homeGoals - r.awayGoals : r.awayGoals - r.homeGoals;
     return sum + (diff > 0 ? 2 : diff < 0 ? -2 : -1);
   }, 0);
-  const ratings = state.ratingHistory.filter((r) => r.playerId === player.id).slice(-5);
+  const ratings = playerRatings(state, player.id).slice(-5);
   const individual = ratings.length
     ? (ratings.reduce((s, r) => s + r.rating, 0) / ratings.length - 6.5) * 4
     : 0;

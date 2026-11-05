@@ -40,7 +40,28 @@ export const TICKET_TIERS = [
 ] as const;
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
 
-export function matchDemand(state: WorldState, fixture: Fixture, priceOverride?: number) {
+/** Group by the scheduled fixture, including older results without club IDs. */
+export function indexDemandResults(state: WorldState, fixtures: ReadonlyMap<string, Fixture>) {
+  const clubs = new Map<string, WorldState['results'][number][]>();
+  for (const result of state.results) {
+    const game = fixtures.get(result.fixtureId);
+    if (!game) continue;
+    for (const id of new Set([game.homeId, game.awayId])) {
+      const history = clubs.get(id) ?? [];
+      history.push(result);
+      clubs.set(id, history);
+    }
+  }
+  return clubs;
+}
+
+export function matchDemand(
+  state: WorldState,
+  fixture: Fixture,
+  priceOverride?: number,
+  fixtureIndex?: ReadonlyMap<string, Fixture>,
+  resultsByClub?: ReturnType<typeof indexDemandResults>,
+) {
   const home = state.clubs.byId[fixture.homeId];
   const stadium = state.stadiums.byId[fixture.stadiumId ?? home?.stadiumId ?? ''];
   const capacity = stadium?.sectors.reduce((sum, sector) => sum + sector.capacity, 0) ?? 0;
@@ -53,8 +74,8 @@ export function matchDemand(state: WorldState, fixture: Fixture, priceOverride?:
   const morale = players.length
     ? players.reduce((sum, player) => sum + player.morale, 0) / players.length
     : 50;
-  const fixtures = new Map(scheduledFixtures(state).map((item) => [item.id, item]));
-  const recent = state.results
+  const fixtures = fixtureIndex ?? new Map(scheduledFixtures(state).map((item) => [item.id, item]));
+  const recent = (resultsByClub?.get(fixture.homeId) ?? (resultsByClub ? [] : state.results))
     .filter((result) => {
       const game = fixtures.get(result.fixtureId);
       return (

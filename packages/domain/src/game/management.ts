@@ -1,3 +1,4 @@
+import { clubResults, playerRatings } from './history-index.js';
 import { formatMoney } from '@football/shared';
 import {
   averageMonthlySalary,
@@ -240,9 +241,9 @@ export function maintenanceBreakdown(state: WorldState, club: ClubSnapshot) {
 export function temporaryModifiers(state: WorldState, player: PlayerSnapshot) {
   if (!player.clubId) return [];
   const clubId = player.clubId;
-  const games = state.results
-    .filter((r) => r.homeId === clubId || r.awayId === clubId)
-    .slice(state.management?.contractHistory?.[player.id]?.effectsClubGames ?? 0);
+  const games = clubResults(state, clubId).slice(
+    state.management?.contractHistory?.[player.id]?.effectsClubGames ?? 0,
+  );
   const won = (r: (typeof games)[number]) =>
     r.homeId === clubId ? r.homeGoals > r.awayGoals : r.awayGoals > r.homeGoals;
   let streak = 0;
@@ -302,9 +303,9 @@ export function temporaryModifiers(state: WorldState, player: PlayerSnapshot) {
   for (let i = games.length - 1; i >= 0 && !won(games[i]!); i--) winless++;
   if (winless >= 3)
     effects.push({ label: 'Má fase do time', value: -1, until: 'Até a próxima vitória' });
-  const ratings = state.ratingHistory
-    .filter((entry) => entry.playerId === player.id)
-    .slice(state.management?.contractHistory?.[player.id]?.effectsRatingCount ?? 0);
+  const ratings = playerRatings(state, player.id).slice(
+    state.management?.contractHistory?.[player.id]?.effectsRatingCount ?? 0,
+  );
   const averageRating = ratings.length
     ? ratings.reduce((sum, entry) => sum + entry.rating, 0) / ratings.length
     : null;

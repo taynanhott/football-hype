@@ -32,6 +32,7 @@ type Session = {
   deltaProtocol?: boolean;
   cache?: SnapshotCacheManifest;
   sentSnapshot?: boolean;
+  snapshotRevision?: number;
   compressedSnapshots?: boolean;
 };
 const messageSchema = z.object({ type: z.string().max(32), data: z.unknown().optional() });
@@ -42,6 +43,7 @@ export class GameHubV2 extends DurableObject<Env> {
   private readonly repository: DurableLeagueRepository;
   private readonly service: LeagueService;
   private readonly pending = new Map<string, Promise<unknown>>();
+  private readonly commandSockets = new Set<WebSocket>();
   private readonly meter: UsageMeter;
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env);
@@ -80,7 +82,8 @@ export class GameHubV2 extends DurableObject<Env> {
     this.service.updates.subscribe((id) => {
       for (const ws of this.ctx.getWebSockets()) {
         const session = ws.deserializeAttachment() as Session | null;
-        if (session?.leagueId === id) this.queueSnapshot(ws, session);
+        if (session?.leagueId === id && !this.commandSockets.has(ws))
+          this.queueSnapshot(ws, session);
       }
     });
   }
@@ -268,6 +271,11 @@ export class GameHubV2 extends DurableObject<Env> {
         !session.localTables,
       );
       const previous = this.sent.get(ws);
+      if (
+        previous?.state.revision === snapshot.state.revision &&
+        JSON.stringify(previous.state.participants) === JSON.stringify(snapshot.state.participants)
+      )
+        return;
       const sharedKey =
         previous && session.deltaProtocol
           ? JSON.stringify([
@@ -291,6 +299,9 @@ export class GameHubV2 extends DurableObject<Env> {
               ? new TextEncoder().encode(prepared.payload).byteLength
               : prepared.payload.byteLength;
           this.sent.set(ws, prepared.snapshot);
+          session.snapshotRevision = prepared.snapshot.state.revision;
+          session.sentSnapshot = true;
+          ws.serializeAttachment(session);
         }
         return;
       }
@@ -367,6 +378,7 @@ export class GameHubV2 extends DurableObject<Env> {
       } else await this.sendSnapshot(ws, session, 'snapshot', snapshot);
       delete session.cache;
       session.sentSnapshot = true;
+      session.snapshotRevision = snapshot.state.revision;
       ws.serializeAttachment(session);
       this.sent.set(ws, snapshot);
     } catch (error) {
@@ -428,9 +440,26 @@ export class GameHubV2 extends DurableObject<Env> {
               return;
             }
             if (type === 'command') {
+              this.commandSockets.add(ws);
               this.meter.totals.commands++;
               const envelope = z.object({ requestId: z.uuid(), command: z.unknown() }).parse(data);
               requestId = envelope.requestId;
+              // Hibernation drops the in-memory base. Before changing the world,
+              // recover it only when it is exactly the revision sent to this socket.
+              // A stale client still follows the normal cache/sync recovery path.
+              if (
+                session.deltaProtocol &&
+                !this.sent.has(ws) &&
+                session.snapshotRevision !== undefined
+              ) {
+                const base = await this.service.snapshot(
+                  session.leagueId,
+                  session.identity.userId,
+                  'cloudflare',
+                  !session.localTables,
+                );
+                if (base.state.revision === session.snapshotRevision) this.sent.set(ws, base);
+              }
               const revision = await this.service.command(
                 session.leagueId,
                 session.identity.userId,
@@ -438,8 +467,13 @@ export class GameHubV2 extends DurableObject<Env> {
                 false,
                 requestId,
               );
+              // Commit the SQLite write buffer before acknowledging or starting
+              // snapshot preparation, so a reset cannot replay an unsaved advance.
+              await this.ctx.storage.sync();
               this.send(ws, 'ack', { ok: true, requestId, revision });
-              this.queueSnapshot(ws, session);
+              // Keep delivery in the command's lifetime instead of leaving the
+              // sender waiting for an independent background flush after its ack.
+              await this.snapshot(ws, session);
             } else if (type === 'cache-offer') {
               const manifest = snapshotCacheSchema.parse(data);
               if (!this.sent.has(ws)) {
@@ -465,6 +499,8 @@ export class GameHubV2 extends DurableObject<Env> {
             ...(requestId ? { requestId } : {}),
           });
           if (!ws.deserializeAttachment()) ws.close(1008, 'Autenticação inválida');
+        } finally {
+          this.commandSockets.delete(ws);
         }
       },
       'websocket',

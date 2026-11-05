@@ -1,4 +1,9 @@
-import { pendingFixtures, scheduledBatches } from '@football/domain';
+import {
+  pendingFixtures,
+  scheduledBatches,
+  clubCalendarRoutine,
+  gameDayStart,
+} from '@football/domain';
 import { create } from 'zustand';
 import { z } from 'zod';
 import { Client } from 'colyseus.js';
@@ -34,7 +39,7 @@ type GameStore = {
   connected: boolean;
   busy: boolean;
   loadingMessage: string | null;
-  loadingActivity: 'travel' | 'training' | null;
+  loadingActivity: 'travel' | 'training' | 'calendar' | null;
   pendingActions: number;
   confirmedActionId: string | null;
   error: string | null;
@@ -504,7 +509,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
             (fixture) => fixture.homeId === clubId || fixture.awayId === clubId,
           )
             ? 'travel'
-            : 'training',
+            : clubId &&
+                batch[0] &&
+                gameDayStart(batch[0].scheduledAt) > gameDayStart(state.lastProcessedAt) &&
+                clubCalendarRoutine(state, clubId, batch[0].scheduledAt) === 'training'
+              ? 'training'
+              : 'calendar',
         });
       }
       actions.enqueue(commandSchema.parse(command), requestId, Date.now() + get().clockOffset);

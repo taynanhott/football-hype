@@ -1,3 +1,4 @@
+import { markNotificationsSeen } from '../../ui/use-navigation-notifications';
 import { useState } from 'react';
 import {
   clubKit,
@@ -34,7 +35,12 @@ export function UnavailablePlayers({ state, club }: { state: WorldState; club: C
   const unavailable = clubUnavailablePlayers(state, club);
   const returns = clubAvailabilityReturns(state, club);
   return (
-    <details className="match-instructions unavailable-players">
+    <details
+      className="match-instructions unavailable-players"
+      onToggle={(event) => {
+        if (event.currentTarget.open) markNotificationsSeen(state, club.id, 'unavailable');
+      }}
+    >
       <summary>
         <span>
           <Icon name="recovery" size={16} /> Indisponíveis

@@ -1,26 +1,26 @@
 {
   "scope": "Local mocked socket test, generated dataset, ten clients; NOT Cloudflare billing. Includes authentication, broadcast, repeated request and full sync recovery.",
   "httpRequests": 0,
-  "webSocketMessages": 17,
-  "commands": 3,
+  "webSocketMessages": 18,
+  "commands": 4,
   "authentications": 11,
   "alarms": 0,
   "errors": 0,
-  "receivedBytes": 8330,
-  "sqlStatements": 460,
-  "rowsRead": 281,
-  "rowsWritten": 129,
+  "receivedBytes": 8466,
+  "sqlStatements": 519,
+  "rowsRead": 288,
+  "rowsWritten": 140,
   "sentMessages": 127,
-  "sentBytes": 19595872,
+  "sentBytes": 21567469,
   "fullSnapshots": 12,
-  "deltaSnapshots": 100,
+  "deltaSnapshots": 99,
   "alarmWrites": 2,
   "cacheResume": {
-    "fullSnapshotBytes": 1608765,
-    "resumeBytes": 2570
+    "fullSnapshotBytes": 1771158,
+    "resumeBytes": 2564
   },
-  "usageLogEvents": 37,
-  "queueWaitMs": 2.240899999999556,
-  "maxQueueWaitMs": 0.3528999999999769,
-  "payloadBytes": 3397913
+  "usageLogEvents": 56,
+  "queueWaitMs": 3.086999999999989,
+  "maxQueueWaitMs": 0.6415999999999258,
+  "payloadBytes": 3743736
 }

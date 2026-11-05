@@ -15,6 +15,7 @@ test-results/
 data/.backups/
 
 .test-temp/
+tmp/calendar-advance-*.json
 *.log
 *service-account*.json
 *.pem

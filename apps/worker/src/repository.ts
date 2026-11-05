@@ -1,6 +1,7 @@
 import {
   gameEventSchema,
   worldStateSchema,
+  matchResultSchema,
   type GameEvent,
   type WorldState,
 } from '@football/shared';
@@ -11,6 +12,7 @@ import type {
   SavedLeague,
 } from '../../server/src/repositories/league-repository.js';
 import { leagueWakePlan, nextPlannedWake } from './wake-policy.js';
+import { jsonObjectArray } from './json-object-array.js';
 
 type SqlStorageValue = string | number | null | ArrayBuffer;
 type Mode = 'offline' | 'multiplayer';
@@ -22,6 +24,10 @@ export interface SqlStore {
 }
 /** Chunked branches stay below SQLite's row limit, even for large seasons. */
 export class DurableLeagueRepository implements LeagueRepository {
+  private readonly replayActions = new Map<
+    WorldState['results'][number],
+    NonNullable<WorldState['results'][number]['actions']>
+  >();
   private cached: SavedLeague | undefined;
   private metadataCache: SavedLeague | undefined;
   constructor(
@@ -53,32 +59,25 @@ export class DurableLeagueRepository implements LeagueRepository {
       this.sql.exec('DELETE FROM chunks WHERE league_id=? AND branch=?', id, branch);
       return;
     }
-    const old = [
-      ...this.sql.exec<{ part: number; value: string }>(
-        'SELECT part,value FROM chunks WHERE league_id=? AND branch=? ORDER BY part',
-        id,
-        branch,
-      ),
-    ];
+    // Compare inside SQLite instead of materializing the entire old branch in
+    // JS alongside the old world, new world and serialized replacement.
     const count = Math.ceil(json.length / 32768);
     for (let part = 0; part < count; part++) {
       const value = json.slice(part * 32768, (part + 1) * 32768);
-      if (old[part]?.part === part && old[part]?.value === value) continue;
       this.sql.exec(
-        'INSERT INTO chunks VALUES (?,?,?,?) ON CONFLICT(league_id,branch,part) DO UPDATE SET value=excluded.value',
+        'INSERT INTO chunks VALUES (?,?,?,?) ON CONFLICT(league_id,branch,part) DO UPDATE SET value=excluded.value WHERE chunks.value<>excluded.value',
         id,
         branch,
         part,
         value,
       );
     }
-    if (old.length > count)
-      this.sql.exec(
-        'DELETE FROM chunks WHERE league_id=? AND branch=? AND part>=?',
-        id,
-        branch,
-        count,
-      );
+    this.sql.exec(
+      'DELETE FROM chunks WHERE league_id=? AND branch=? AND part>=?',
+      id,
+      branch,
+      count,
+    );
   }
   private read(id: string, branch: string): unknown {
     const parts = [
@@ -89,6 +88,75 @@ export class DurableLeagueRepository implements LeagueRepository {
       ),
     ];
     return JSON.parse(parts.map((p) => p.value).join('')) as unknown;
+  }
+  private readResults(id: string): WorldState['results'] {
+    const rows = this.sql.exec<{ value: string }>(
+      'SELECT value FROM chunks WHERE league_id=? AND branch=? ORDER BY part',
+      id,
+      'results',
+    );
+    function* chunks() {
+      for (const row of rows) yield row.value;
+    }
+    const results: WorldState['results'] = [];
+    for (const value of jsonObjectArray(chunks())) {
+      const result = matchResultSchema.parse(value);
+      if (result.actions?.length) {
+        const json = JSON.stringify(result.actions);
+        Object.defineProperty(result, 'actions', {
+          enumerable: true,
+          get: () => {
+            let actions = this.replayActions.get(result);
+            if (!actions) actions = JSON.parse(json) as NonNullable<typeof result.actions>;
+            this.replayActions.delete(result);
+            this.replayActions.set(result, actions);
+            if (this.replayActions.size > 8)
+              this.replayActions.delete(this.replayActions.keys().next().value!);
+            return actions;
+          },
+        });
+      }
+      results.push(result);
+    }
+    return results;
+  }
+  private appendResults(id: string, revision: number, next: WorldState['results']): boolean {
+    const previous = this.cached?.state;
+    if (
+      previous?.id !== id ||
+      previous.revision !== revision ||
+      next.length < previous.results.length ||
+      !previous.results.every((result, index) => result === next[index])
+    )
+      return false;
+    if (next.length === previous.results.length) return true;
+    const tail = [
+      ...this.sql.exec<{ part: number; value: string }>(
+        'SELECT part,value FROM chunks WHERE league_id=? AND branch=? ORDER BY part DESC LIMIT 1',
+        id,
+        'results',
+      ),
+    ][0];
+    if (!tail?.value.endsWith(']')) return false;
+    let part = tail.part;
+    let buffer = tail.value.slice(0, -1);
+    const flush = () => {
+      this.sql.exec(
+        'INSERT INTO chunks VALUES (?,?,?,?) ON CONFLICT(league_id,branch,part) DO UPDATE SET value=excluded.value WHERE chunks.value<>excluded.value',
+        id,
+        'results',
+        part++,
+        buffer.slice(0, 32768),
+      );
+      buffer = buffer.slice(32768);
+    };
+    for (let index = previous.results.length; index < next.length; index++) {
+      buffer += (index ? ',' : '') + JSON.stringify(next[index]);
+      while (buffer.length >= 32768) flush();
+    }
+    buffer += ']';
+    while (buffer.length) flush();
+    return true;
   }
   private check(user: string, mode: Mode, except = '') {
     const rows = [
@@ -181,7 +249,9 @@ export class DurableLeagueRepository implements LeagueRepository {
       state = Object.fromEntries(
         Object.entries(worldStateSchema.shape).map(([branch, schema]) => [
           branch,
-          schema.parse(stored.has(branch) ? this.read(id, branch) : undefined),
+          branch === 'results' && stored.has(branch)
+            ? this.readResults(id)
+            : schema.parse(stored.has(branch) ? this.read(id, branch) : undefined),
         ]),
       ) as WorldState;
     }
@@ -231,8 +301,10 @@ export class DurableLeagueRepository implements LeagueRepository {
       )
         throw new Error('A liga mudou. Atualize e tente novamente');
       for (const member of state.participants) this.check(member.userId, state.mode, id);
-      for (const [branch, value] of Object.entries({ ...event.patch, revision: state.revision }))
+      for (const [branch, value] of Object.entries({ ...event.patch, revision: state.revision })) {
+        if (branch === 'results' && this.appendResults(id, revision, state.results)) continue;
         this.write(id, branch, value);
+      }
       const { patch, ...metadata } = event;
       // Runtime recovery uses the current branches. The ledger needs metadata and
       // request ids, not another full copy of every changed player/management branch.

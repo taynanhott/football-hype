@@ -1,0 +1,21 @@
+{
+  "date": "2026-11-05",
+  "scope": "Correctness comparison only. Local timings intentionally excluded because the benchmark ran alongside the domain suite.",
+  "beforeDomainTestsFailed": 57,
+  "afterDomainTestsFailed": 57,
+  "identicalFailureNames": true,
+  "comparisons": [
+    {
+      "mode": "offline",
+      "beforeHash": "ae3d2836929ac198fc0deea7cf4ef03c460701d2b1622f4f19f2c9501c912d79",
+      "afterHash": "ae3d2836929ac198fc0deea7cf4ef03c460701d2b1622f4f19f2c9501c912d79",
+      "identicalFinalState": true
+    },
+    {
+      "mode": "multiplayer",
+      "beforeHash": "3e5c6509430bd0b4f3973c37f6a2b666ae2f3e313f7eaa23437dd25d2a2200e9",
+      "afterHash": "3e5c6509430bd0b4f3973c37f6a2b666ae2f3e313f7eaa23437dd25d2a2200e9",
+      "identicalFinalState": true
+    }
+  ]
+}

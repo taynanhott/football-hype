@@ -71,6 +71,7 @@ describe('sincronização do Worker com dez conexões', () => {
       setWebSocketAutoResponse: auto,
       waitUntil: (p: Promise<unknown>) => tasks.push(p),
       storage: {
+        sync: vi.fn(async () => undefined),
         sql: {
           exec(query: string, ...bindings: (string | number | null)[]) {
             const before = Number(db.prepare('SELECT total_changes() AS n').get()!.n);
@@ -270,6 +271,31 @@ describe('sincronização do Worker com dez conexões', () => {
         resumed.messages.find((m) => m.type === 'snapshot-delta')!.data,
       );
       expect(applyStateChanges(afterIncremental, wakeDelta.changes).homeTicketPrices).toEqual(
+        (await service.snapshot(created.value.id, 'coach-0')).state.homeTicketPrices,
+      );
+      // A command immediately after hibernation recovers the exact sent revision
+      // before applying it, avoiding cache hashing and a full snapshot round trip.
+      const beforeWakeCommand = applyStateChanges(afterIncremental, wakeDelta.changes);
+      (hub as unknown as { sent: WeakMap<object, GameSnapshot> }).sent.delete(resumed);
+      resumed.messages.length = 0;
+      await hub.webSocketMessage(
+        resumed as never,
+        JSON.stringify({
+          type: 'command',
+          data: {
+            requestId: randomUUID(),
+            command: { type: 'home-ticket-price', priceCents: 30000 },
+          },
+        }),
+      );
+      await drain();
+      expect(resumed.messages.filter((m) => m.type === 'cache-request')).toHaveLength(0);
+      expect(resumed.messages.filter((m) => m.type === 'snapshot')).toHaveLength(0);
+      const commandDelta = snapshotDeltaSchema.parse(
+        resumed.messages.find((m) => m.type === 'snapshot-delta')!.data,
+      );
+      expect(commandDelta.baseRevision).toBe(beforeWakeCommand.revision);
+      expect(applyStateChanges(beforeWakeCommand, commandDelta.changes).homeTicketPrices).toEqual(
         (await service.snapshot(created.value.id, 'coach-0')).state.homeTicketPrices,
       );
       // Missing local data can always request a full state, without changing the world.

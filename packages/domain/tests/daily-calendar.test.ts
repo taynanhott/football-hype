@@ -85,7 +85,7 @@ describe('dias da temporada', () => {
     expect(next.clubs).toBe(state.clubs);
     expect(advanceGameDays(next, expiry)).toBe(next);
   });
-  it('treina no dia de sorteio com a carga e o plano individual selecionados, uma única vez', () => {
+  it('preserva a rotina no dia de sorteio com a carga e o plano individual selecionados, uma única vez', () => {
     const { state, club, player } = world();
     state.competitionDraws = [
       {
@@ -117,7 +117,7 @@ describe('dias da temporada', () => {
       },
     };
     const trained = advanceGameDays(state, at(12));
-    expect(trained.development[player.id]).toBeGreaterThan(state.development[player.id] ?? 0);
+    expect(trained.development[player.id] ?? 0).toBe(state.development[player.id] ?? 0);
     const operations = state.centers.byId[center.id]!.operations!;
     const noIndividual = advanceGameDays(
       {
@@ -151,8 +151,8 @@ describe('dias da temporada', () => {
       },
       at(12),
     );
-    expect(trained.development[player.id]).toBeGreaterThan(noIndividual.development[player.id]!);
-    expect(trained.development[player.id]).toBeGreaterThan(moderate.development[player.id]!);
+    expect(trained.development[player.id]).toEqual(noIndividual.development[player.id]);
+    expect(trained.development[player.id]).toEqual(moderate.development[player.id]);
     expect(trained.centers.byId[center.id]!.operations?.trainingHistory?.[player.id]?.days).toBe(1);
     expect(advanceGameDays(trained, at(12))).toBe(trained);
   });

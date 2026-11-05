@@ -129,19 +129,19 @@ describe('orçamento de rede: dez jogadores', () => {
         queue.accept(snap(server));
         for (let edit = 0; edit < 100; edit++)
           queue.enqueue(
-            { type: 'home-ticket-price', priceCents: 10000 + (edit % 5) * 10000 },
+            { type: 'home-ticket-price', priceCents: 100 + (edit % 5) * 100 },
             randomUUID(),
             now,
           );
         expect(envelope).toBeUndefined();
-        expect(projected.state.homeTicketPrices?.[initial.participants[i]!.clubId]).toBe(50000);
+        expect(projected.state.homeTicketPrices?.[initial.participants[i]!.clubId]).toBe(500);
         vi.advanceTimersByTime(30000);
         const { id, command } = envelope!;
         const event = unwrap(executeCommand(server, command, `coach-${i}`, now, id));
         server = unwrap(applyEvent(server, event));
         queue.acknowledge(id, server.revision);
         queue.accept({ ...snap(server), ledger: [event] });
-        expect(projected.state.homeTicketPrices?.[initial.participants[i]!.clubId]).toBe(50000);
+        expect(projected.state.homeTicketPrices?.[initial.participants[i]!.clubId]).toBe(500);
         expect(projected.state.revision).toBe(server.revision);
         queue.stop();
       }

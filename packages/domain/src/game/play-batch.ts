@@ -24,7 +24,7 @@ import {
 } from '../competitions/season-finale.js';
 import { standings } from '../competitions/standings.js';
 import { simulateMatch } from '../simulation/match.js';
-import { matchDemand } from '../finance/match-demand.js';
+import { matchDemand, indexDemandResults } from '../finance/match-demand.js';
 import { shareMatchRevenue } from '../finance/gate-sharing.js';
 import { redCardFatigueFactor } from '../simulation/red-card-effects.js';
 import { hashSeed, mulberry32 } from '../simulation/random.js';
@@ -44,16 +44,20 @@ import { nextSeasonState } from '../multiplayer/machines.js';
 export function pendingFixtures(state: WorldState): Fixture[] {
   const completed = new Set(state.results.map((result) => result.fixtureId));
   const all = scheduledFixtures(state);
+  const fixtureIds = new Set(all.map((fixture) => fixture.id));
+  const cupByFixture = new Map<string, WorldState['cups'][number]>();
+  for (const node of state.cups) {
+    if (!cupByFixture.has(node.id)) cupByFixture.set(node.id, node);
+    if (!cupByFixture.has(`${node.id}:first`)) cupByFixture.set(`${node.id}:first`, node);
+  }
   return all.filter((fixture) => {
     if (completed.has(fixture.id)) return false;
-    const node = state.cups.find(
-      (node) => node.id === fixture.id || `${node.id}:first` === fixture.id,
-    );
+    const node = cupByFixture.get(fixture.id);
     return (
       !node ||
       (!node.winnerId &&
         (fixture.id.endsWith(':first') ||
-          !all.some((first) => first.id === `${node.id}:first`) ||
+          !fixtureIds.has(`${node.id}:first`) ||
           completed.has(`${node.id}:first`)))
     );
   });
@@ -85,6 +89,9 @@ export function playNextBatch(state: WorldState, processedAt: number): Result<Wo
   const batch = state.seasonClock
     ? scheduledBatches(pending)[0]!
     : pending.filter((fixture) => fixture.scheduledAt === pending[0]!.scheduledAt);
+  // The calendar stays fixed throughout this batch; share its index across matches.
+  const fixtureIndex = new Map(scheduledFixtures(state).map((fixture) => [fixture.id, fixture]));
+  const demandResults = indexDemandResults(state, fixtureIndex);
   const centers = { ...state.centers.byId };
   const players = { ...state.players.byId };
   const clubs = { ...state.clubs.byId };
@@ -227,7 +234,7 @@ export function playNextBatch(state: WorldState, processedAt: number): Result<Wo
         ...p,
         overall: Math.max(1, Math.min(99, p.overall + bonus)),
       }));
-    const demand = matchDemand(state, fixture);
+    const demand = matchDemand(state, fixture, undefined, fixtureIndex, demandResults);
     const result = simulateMatch(
       fixture,
       adjusted(homeSelection, homeBonus + lineupTacticalBonus(homeSelection)),

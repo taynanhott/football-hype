@@ -17,8 +17,35 @@ import {
   stableId,
 } from '../src/index.js';
 import { IDS, unwrap } from '../../../tests/fixtures/domain.js';
+import { indexDemandResults } from '../src/finance/match-demand.js';
 
 const NOW = Date.parse('2026-10-26T15:00:00Z');
+it('preserva público e receita ao compartilhar o índice da rodada', () => {
+  const state = unwrap(
+    createWorld({ id: IDS.league, userId: IDS.user, name: 'Índice', mode: 'offline', now: NOW }),
+  );
+  const fixtures = scheduledFixtures(state);
+  const index = new Map(fixtures.map((game) => [game.id, game]));
+  for (const game of fixtures.slice(0, 30)) {
+    expect(matchDemand(state, game, undefined, index)).toEqual(matchDemand(state, game));
+  }
+});
+it('preserva a procura com histórico ao agrupar resultados por clube', () => {
+  let state = unwrap(
+    createWorld({ id: IDS.league, userId: IDS.user, name: 'Histórico', mode: 'offline', now: NOW }),
+  );
+  for (let round = 0; round < 4; round++) {
+    state = unwrap(playNextBatch(state, NOW + round * 86400000));
+    const fixtures = scheduledFixtures(state);
+    const index = new Map(fixtures.map((game) => [game.id, game]));
+    const results = indexDemandResults(state, index);
+    for (const game of fixtures
+      .filter((game) => game.scheduledAt >= state.lastProcessedAt)
+      .slice(0, 60)) {
+      expect(matchDemand(state, game, undefined, index, results)).toEqual(matchDemand(state, game));
+    }
+  }
+});
 let initial: WorldState;
 let fixture: Fixture;
 beforeAll(() => {

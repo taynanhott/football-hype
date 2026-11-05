@@ -1,0 +1,17 @@
+{
+  "date": "2026-11-05",
+  "url": "https://football-hype.taynanzhott.workers.dev/",
+  "scope": "Single production UI observation, from confirming advance until the loading screen was observed dismissed. Includes browser automation overhead; no server stage timing available.",
+  "career": "Mirassol",
+  "mode": "offline",
+  "globalRoundsBefore": 28,
+  "globalRoundsAfter": 29,
+  "loadingStillVisibleAtMs": 55749,
+  "loadingObservedDismissedAtMs": 60239,
+  "loadingText": "Time em treinamento…",
+  "capturedWarningOrErrorLogs": [],
+  "samples": 1,
+  "deployedVersionVerified": false,
+  "productionImprovementVerified": false,
+  "notes": "Local domain benchmark results cannot be used as production click-to-ready latency. This observation establishes a production baseline only. The same career state was not replayed before and after a deployment."
+}

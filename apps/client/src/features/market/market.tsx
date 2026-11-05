@@ -1,3 +1,4 @@
+import { markNotificationsSeen } from '../../ui/use-navigation-notifications';
 import { useScoutingReport } from '../players/use-scouting-report';
 import { countryContinent } from './market-filters';
 import { CountryFlag } from '../../ui/country-flag';
@@ -93,6 +94,13 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
       ? 'Propostas'
       : 'Todos',
   );
+  useEffect(() => {
+    if (tab === 'Propostas') {
+      markNotificationsSeen(snapshot.state, club.id, 'market');
+      markNotificationsSeen(snapshot.state, club.id, 'renewal');
+    }
+    if (tab === 'Pendente') markNotificationsSeen(snapshot.state, club.id, 'pending');
+  }, [tab, snapshot.state, club.id]);
   const [prospects, setProspects] = useState(false);
   const [sector, setSector] = useState('ALL');
   const [affordable, setAffordable] = useState(false);

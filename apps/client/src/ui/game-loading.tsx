@@ -28,7 +28,7 @@ export function GameLoading() {
       : fixtures.filter((fixture) => fixture.scheduledAt === fixtures[0]?.scheduledAt);
     return batch.some((fixture) => fixture.homeId === clubId || fixture.awayId === clubId)
       ? 'travel'
-      : 'training';
+      : 'calendar';
   });
   const training = moving && activity === 'training';
   const message = useGameStore((state) => state.loadingMessage);
@@ -150,7 +150,9 @@ export function GameLoading() {
           {moving
             ? training
               ? 'Time em treinamento…'
-              : 'Time em movimento…'
+              : activity === 'travel'
+                ? 'Time em movimento…'
+                : 'Avançando calendário…'
             : (message ?? 'Carregando carreira…')}
         </strong>
       </div>

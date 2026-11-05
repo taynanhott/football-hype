@@ -16,6 +16,35 @@ export function recordEvent(
 ): Result<GameEvent> {
   next = resetTransferredEffects(previous, next);
   next = recordFinancialHistory(previous, next);
+  let validatedPlayers: WorldState['players'] | undefined;
+  if (next.players !== previous.players) {
+    // Unchanged frozen entities were validated on load. Validate every changed
+    // player, retaining full validation when the collection's index changes.
+    const sameIndex =
+      next.players.ids === previous.players.ids &&
+      Object.keys(next.players).every((key) => key === 'ids' || key === 'byId') &&
+      Object.keys(next.players.byId).length === previous.players.ids.length &&
+      previous.players.ids.every((id) => Object.hasOwn(next.players.byId, id));
+    const changedIds = sameIndex
+      ? next.players.ids.filter((id) => next.players.byId[id] !== previous.players.byId[id])
+      : next.players.ids;
+    const parsed = parseBoundary(
+      worldStateSchema.shape.players,
+      sameIndex
+        ? {
+            ids: changedIds,
+            byId: Object.fromEntries(changedIds.map((id) => [id, next.players.byId[id]])),
+          }
+        : next.players,
+    );
+    if (!parsed.ok) return parsed;
+    validatedPlayers = sameIndex
+      ? Object.freeze({
+          ids: previous.players.ids,
+          byId: Object.freeze({ ...previous.players.byId, ...parsed.value.byId }),
+        })
+      : parsed.value;
+  }
   // Unchanged branches already passed validation when the world was loaded.
   // Validate the event's changed branches instead of cloning the entire world.
   const appendedResults =
@@ -39,6 +68,7 @@ export function recordEvent(
         Object.entries(next).filter(
           ([key]) =>
             key !== 'revision' &&
+            key !== 'players' &&
             previous[key as keyof WorldState] !== next[key as keyof WorldState],
         ),
       ),
@@ -46,14 +76,14 @@ export function recordEvent(
       ...(appendedResults ? { results: next.results.slice(previous.results.length) } : {}),
     },
   });
-  return mapResult(recorded, (event) =>
-    appendedResults
-      ? {
-          ...event,
-          patch: { ...event.patch, results: [...previous.results, ...event.patch.results!] },
-        }
-      : event,
-  );
+  return mapResult(recorded, (event) => ({
+    ...event,
+    patch: {
+      ...event.patch,
+      ...(validatedPlayers ? { players: validatedPlayers } : {}),
+      ...(appendedResults ? { results: [...previous.results, ...event.patch.results!] } : {}),
+    },
+  }));
 }
 export function applyEvent(state: WorldState, event: GameEvent): Result<WorldState> {
   if (event.sequence !== state.revision + 1) return parseBoundary(worldStateSchema, null);

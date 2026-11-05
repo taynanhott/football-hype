@@ -1,0 +1,42 @@
+{
+  "date": "2026-11-05",
+  "frontendVersion": "975cf0b1-b356-4530-b4e3-9c2a1a8144c4",
+  "backendVersion": "4cbbe7e3-d11f-4f70-9f57-281b13b5e95b",
+  "scope": "Observed production browser latency. Different sequential rounds, not a replay of an identical saved state. Includes browser automation overhead. No billing or zero-cost guarantee.",
+  "baseline": {
+    "roundBefore": 28,
+    "roundAfter": 29,
+    "stillLoadingAtMs": 55749,
+    "observedReadyAtMs": 60239
+  },
+  "intermediateSuccessfulObservationsMs": [17077, 18179, 24922],
+  "finalObservation": {
+    "roundBefore": 35,
+    "roundAfter": 36,
+    "clickToMatchViewMs": 19594,
+    "careerLoadedSuccessfully": true,
+    "reconnectionObservedDuringAdvance": false,
+    "note": "The normal live match display then runs for its configured duration. This is not a claim that navigation was unlocked during the live match."
+  },
+  "changes": [
+    "Recover an exact socket revision after hibernation before applying commands",
+    "Suppress duplicate snapshots and deliver sender updates within command lifetime",
+    "Flush SQLite writes before acknowledgement",
+    "Compare stored chunks inside SQLite without materializing the old branch in JS",
+    "Append new results without serializing and rewriting historical results",
+    "Read and validate stored results one at a time",
+    "Keep validated replay data as JSON in memory with at most eight expanded replay arrays",
+    "Validate changed players while reusing unchanged previously validated frozen entities"
+  ],
+  "validation": {
+    "targetedTestsPassed": 44,
+    "optionalDiagnosticsSkipped": 2,
+    "typesPassed": true,
+    "lintPassed": true,
+    "domainFailuresBefore": 57,
+    "domainFailuresAfter": 57,
+    "identicalDomainFailureNames": true,
+    "identicalFinalStateHashesAcrossTwentyAdvancesInBothModes": true
+  },
+  "remainingLimitation": "Production latency remains high. No equivalent Treineiros benchmark exists, and these observations do not establish a controlled percentage reduction against the user's reported 24 seconds."
+}

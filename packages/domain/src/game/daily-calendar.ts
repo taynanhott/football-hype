@@ -19,6 +19,10 @@ export const gameDayStart = (at: number) =>
   Math.floor((at - OFFSET) / GAME_DAY_MS) * GAME_DAY_MS + OFFSET;
 export type DayRoutine = 'match' | 'training' | 'recovery' | 'rest' | 'eve';
 
+export function clubCalendarRoutine(state: WorldState, clubId: string, at: number): DayRoutine {
+  return clubDayRoutine(scheduledFixtures(state), clubId, at);
+}
+
 export function clubDayRoutine(
   fixtures: readonly Fixture[],
   clubId: string,
@@ -62,9 +66,6 @@ function advanceGameDaysInternal(state: WorldState, target: number): WorldState 
   const centers = { ...state.centers.byId };
   const injuries = { ...state.injuries };
   const development = { ...state.development };
-  const drawDays = new Set(
-    (state.competitionDraws ?? []).map((draw) => gameDayStart(draw.scheduledAt)),
-  );
   const attemptedDraws = new Set<string>();
   for (let day = start; day < end; day += GAME_DAY_MS) {
     // A long advance must use the calendar known on each completed day, not
@@ -87,13 +88,9 @@ function advanceGameDaysInternal(state: WorldState, target: number): WorldState 
         drawn.roundDates !== state.roundDates;
       state = drawn;
       if (changed) refreshDates();
-      drawDays.clear();
-      for (const draw of state.competitionDraws ?? []) drawDays.add(gameDayStart(draw.scheduledAt));
     }
     for (const center of Object.values(centers)) {
-      const scheduledRoutine = routineAt(dates.get(center.clubId) ?? new Set(), day);
-      const routine =
-        drawDays.has(day) && scheduledRoutine !== 'match' ? 'training' : scheduledRoutine;
+      const routine = routineAt(dates.get(center.clubId) ?? new Set(), day);
       const ops = center.operations ?? {
         load: 'moderate' as const,
         fitness: [],
@@ -274,7 +271,10 @@ function advanceGameDaysInternal(state: WorldState, target: number): WorldState 
     if (
       previous &&
       players[id] !== previous &&
-      JSON.stringify(players[id]) === JSON.stringify(previous)
+      Object.keys(players[id]!).every(
+        (key) =>
+          players[id]![key as keyof typeof previous] === previous[key as keyof typeof previous],
+      )
     )
       players[id] = previous;
   }
