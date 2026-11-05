@@ -1,0 +1,605 @@
+{
+  "scope": "Local Node + SQLite in memory, real dataset, 10 connections, 3 sequential samples per scenario. No network, mobile render, Cloudflare CPU/billing or production latency measurement.",
+  "measurements": {
+    "daily.domain": {
+      "medianMs": 135.46,
+      "samplesMs": [149.54, 81.66, 135.46]
+    },
+    "daily.recordValidate": {
+      "medianMs": 28.32,
+      "samplesMs": [44.19, 28.32, 28.17]
+    },
+    "daily.persist": {
+      "medianMs": 18.3,
+      "samplesMs": [20.08, 16.28, 18.3]
+    },
+    "daily.snapshot10": {
+      "medianMs": 8.85,
+      "samplesMs": [8.85, 7.57, 12.14]
+    },
+    "daily.coldLoad": {
+      "medianMs": 168.63,
+      "samplesMs": [177.06, 168.63, 159.85]
+    },
+    "daily.cacheClone": {
+      "medianMs": 79.93,
+      "samplesMs": [79.93, 80.81, 78.47]
+    },
+    "daily.cacheManifest": {
+      "medianMs": 349.26,
+      "samplesMs": [339.69, 352.1, 349.26]
+    },
+    "daily.diff": {
+      "medianMs": 35.19,
+      "samplesMs": [18.89, 37.16, 35.19]
+    },
+    "daily.encode": {
+      "medianMs": 62.45,
+      "samplesMs": [166.78, 53.21, 62.45]
+    },
+    "daily.fanout10": {
+      "medianMs": 965.13,
+      "samplesMs": [1657.8, 863.64, 965.13]
+    },
+    "daily.fanout10SharedPreparation": {
+      "medianMs": 101.87,
+      "samplesMs": [186.14, 81.48, 101.87]
+    },
+    "daily.clientDecompress": {
+      "medianMs": 8.74,
+      "samplesMs": [14.88, 8.42, 8.74]
+    },
+    "daily.clientJson": {
+      "medianMs": 6.44,
+      "samplesMs": [16.04, 6.08, 6.44]
+    },
+    "daily.clientValidateDelta": {
+      "medianMs": 14.01,
+      "samplesMs": [1.71, 14.5, 14.01]
+    },
+    "daily.clientApply": {
+      "medianMs": 12.59,
+      "samplesMs": [1.45, 12.59, 18.9]
+    },
+    "daily.clientLedger": {
+      "medianMs": 0.09,
+      "samplesMs": [0.35, 0.07, 0.09]
+    },
+    "daily.clientTables": {
+      "medianMs": 2.68,
+      "samplesMs": [2.68, 3.83, 2.5]
+    },
+    "daily.fullSnapshotValidate": {
+      "medianMs": 113.39,
+      "samplesMs": [128.1, 113.39, 112.4]
+    },
+    "advance.domain": {
+      "medianMs": 360.99,
+      "samplesMs": [413.85, 354.45, 360.99]
+    },
+    "advance.recordValidate": {
+      "medianMs": 185.18,
+      "samplesMs": [175.93, 186.74, 185.18]
+    },
+    "advance.persist": {
+      "medianMs": 80.33,
+      "samplesMs": [80.33, 79.83, 93.39]
+    },
+    "advance.snapshot10": {
+      "medianMs": 10.32,
+      "samplesMs": [9.53, 10.38, 10.32]
+    },
+    "advance.coldLoad": {
+      "medianMs": 238.59,
+      "samplesMs": [224.52, 241.05, 238.59]
+    },
+    "advance.cacheClone": {
+      "medianMs": 121.94,
+      "samplesMs": [116.17, 124.43, 121.94]
+    },
+    "advance.cacheManifest": {
+      "medianMs": 460.29,
+      "samplesMs": [454.14, 460.29, 502.81]
+    },
+    "advance.diff": {
+      "medianMs": 116.1,
+      "samplesMs": [92.89, 117.06, 116.1]
+    },
+    "advance.encode": {
+      "medianMs": 77.21,
+      "samplesMs": [111.28, 74.78, 77.21]
+    },
+    "advance.fanout10": {
+      "medianMs": 1830.93,
+      "samplesMs": [2041.99, 1830.93, 1826.85]
+    },
+    "advance.fanout10SharedPreparation": {
+      "medianMs": 183.07,
+      "samplesMs": [226.27, 182.94, 183.07]
+    },
+    "advance.clientDecompress": {
+      "medianMs": 11.05,
+      "samplesMs": [16.1, 11.05, 10.81]
+    },
+    "advance.clientJson": {
+      "medianMs": 7.94,
+      "samplesMs": [10.83, 7.94, 7.84]
+    },
+    "advance.clientValidateDelta": {
+      "medianMs": 16.44,
+      "samplesMs": [26.47, 16.44, 16.06]
+    },
+    "advance.clientApply": {
+      "medianMs": 20.9,
+      "samplesMs": [20.62, 24.7, 20.9]
+    },
+    "advance.clientLedger": {
+      "medianMs": 0.14,
+      "samplesMs": [0.14, 0.15, 0.13]
+    },
+    "advance.clientTables": {
+      "medianMs": 2.99,
+      "samplesMs": [2.99, 3.73, 2.93]
+    },
+    "advance.fullSnapshotValidate": {
+      "medianMs": 174.68,
+      "samplesMs": [161.11, 174.68, 186.39]
+    }
+  },
+  "payloads": [
+    {
+      "scenario": "daily",
+      "repeat": 0,
+      "players": 14012,
+      "clubs": 697,
+      "results": 0,
+      "sqlStatements": 198,
+      "chunkWrittenBytes": 5384828,
+      "sqliteMs": 4.527199999995446,
+      "changedBranches": {
+        "revision": 1,
+        "centers": 3116701,
+        "fixtures": 494956,
+        "cups": 7474,
+        "injuries": 206,
+        "development": 620995,
+        "lastProcessedAt": 13,
+        "roundDates": 8889,
+        "competitionDraws": 5593,
+        "management": 1530690
+      },
+      "deltaBranches": {
+        "revision": {
+          "changes": 1,
+          "bytes": 31
+        },
+        "centers": {
+          "changes": 697,
+          "bytes": 2996102
+        },
+        "fixtures": {
+          "changes": 1,
+          "bytes": 494986
+        },
+        "injuries": {
+          "changes": 5,
+          "bytes": 350
+        },
+        "development": {
+          "changes": 1,
+          "bytes": 621028
+        },
+        "lastProcessedAt": {
+          "changes": 1,
+          "bytes": 50
+        },
+        "competitionDraws": {
+          "changes": 1,
+          "bytes": 5631
+        },
+        "roundDates": {
+          "changes": 23,
+          "bytes": 1654
+        },
+        "management": {
+          "changes": 1,
+          "bytes": 1530722
+        }
+      },
+      "deltaChanges": 731,
+      "deltaJsonBytes": 5651689,
+      "wireBytes": 418540
+    },
+    {
+      "scenario": "daily",
+      "repeat": 1,
+      "players": 14012,
+      "clubs": 697,
+      "results": 0,
+      "sqlStatements": 140,
+      "chunkWrittenBytes": 3725190,
+      "sqliteMs": 4.34559999999783,
+      "changedBranches": {
+        "revision": 1,
+        "centers": 3111465,
+        "injuries": 411,
+        "development": 613300,
+        "lastProcessedAt": 13
+      },
+      "deltaBranches": {
+        "revision": {
+          "changes": 1,
+          "bytes": 31
+        },
+        "centers": {
+          "changes": 13119,
+          "bytes": 2488140
+        },
+        "injuries": {
+          "changes": 5,
+          "bytes": 350
+        },
+        "development": {
+          "changes": 1,
+          "bytes": 613333
+        },
+        "lastProcessedAt": {
+          "changes": 1,
+          "bytes": 50
+        }
+      },
+      "deltaChanges": 13127,
+      "deltaJsonBytes": 3115641,
+      "wireBytes": 188511
+    },
+    {
+      "scenario": "daily",
+      "repeat": 2,
+      "players": 14012,
+      "clubs": 697,
+      "results": 0,
+      "sqlStatements": 150,
+      "chunkWrittenBytes": 3882481,
+      "sqliteMs": 4.518200000004072,
+      "changedBranches": {
+        "revision": 1,
+        "centers": 3128694,
+        "fixtures": 494956,
+        "cups": 7474,
+        "injuries": 698,
+        "development": 640261,
+        "lastProcessedAt": 13,
+        "roundDates": 8889,
+        "competitionDraws": 5621
+      },
+      "deltaBranches": {
+        "revision": {
+          "changes": 1,
+          "bytes": 31
+        },
+        "centers": {
+          "changes": 13119,
+          "bytes": 2505369
+        },
+        "fixtures": {
+          "changes": 1,
+          "bytes": 494986
+        },
+        "injuries": {
+          "changes": 7,
+          "bytes": 490
+        },
+        "development": {
+          "changes": 1,
+          "bytes": 640294
+        },
+        "lastProcessedAt": {
+          "changes": 1,
+          "bytes": 50
+        },
+        "competitionDraws": {
+          "changes": 1,
+          "bytes": 5659
+        },
+        "roundDates": {
+          "changes": 23,
+          "bytes": 1654
+        }
+      },
+      "deltaChanges": 13154,
+      "deltaJsonBytes": 3662503,
+      "wireBytes": 222108
+    },
+    {
+      "scenario": "advance",
+      "repeat": 0,
+      "players": 14012,
+      "clubs": 697,
+      "results": 27,
+      "sqlStatements": 448,
+      "chunkWrittenBytes": 13185132,
+      "sqliteMs": 20.624199999998382,
+      "changedBranches": {
+        "round": 1,
+        "positionExperience": 28417,
+        "revision": 1,
+        "clubs": 791527,
+        "players": 7235352,
+        "centers": 3158473,
+        "participants": 1119,
+        "trophies": 2,
+        "ratingHistory": 92314,
+        "results": 1914849,
+        "cups": 7474,
+        "negotiations": 2,
+        "chemistry": 546427,
+        "workload": 57475,
+        "injuries": 1805,
+        "development": 628636,
+        "debts": 2,
+        "lastProcessedAt": 13,
+        "calendarAnchor": 47,
+        "management": 1537572
+      },
+      "deltaBranches": {
+        "round": {
+          "changes": 1,
+          "bytes": 28
+        },
+        "revision": {
+          "changes": 1,
+          "bytes": 31
+        },
+        "clubs": {
+          "changes": 54,
+          "bytes": 5316
+        },
+        "players": {
+          "changes": 1685,
+          "bytes": 148000
+        },
+        "centers": {
+          "changes": 13446,
+          "bytes": 2595755
+        },
+        "ratingHistory": {
+          "changes": 1,
+          "bytes": 92364
+        },
+        "results": {
+          "changes": 1,
+          "bytes": 1914893
+        },
+        "chemistry": {
+          "changes": 618,
+          "bytes": 69216
+        },
+        "workload": {
+          "changes": 618,
+          "bytes": 75396
+        },
+        "injuries": {
+          "changes": 31,
+          "bytes": 2170
+        },
+        "development": {
+          "changes": 1,
+          "bytes": 628669
+        },
+        "lastProcessedAt": {
+          "changes": 1,
+          "bytes": 50
+        },
+        "calendarAnchor": {
+          "changes": 1,
+          "bytes": 58
+        },
+        "management": {
+          "changes": 3,
+          "bytes": 6975
+        },
+        "positionExperience": {
+          "changes": 1,
+          "bytes": 28457
+        }
+      },
+      "deltaChanges": 16463,
+      "deltaJsonBytes": 5587362,
+      "wireBytes": 612527
+    },
+    {
+      "scenario": "advance",
+      "repeat": 1,
+      "players": 14012,
+      "clubs": 697,
+      "results": 38,
+      "sqlStatements": 410,
+      "chunkWrittenBytes": 11929913,
+      "sqliteMs": 20.805599999999686,
+      "changedBranches": {
+        "round": 1,
+        "positionExperience": 29425,
+        "revision": 1,
+        "clubs": 791532,
+        "players": 7235716,
+        "centers": 3158752,
+        "participants": 1119,
+        "trophies": 2,
+        "ratingHistory": 131206,
+        "results": 2700715,
+        "cups": 7474,
+        "negotiations": 2,
+        "chemistry": 546427,
+        "workload": 60451,
+        "injuries": 3035,
+        "development": 639844,
+        "debts": 2,
+        "lastProcessedAt": 13,
+        "calendarAnchor": 47,
+        "management": 1537698
+      },
+      "deltaBranches": {
+        "round": {
+          "changes": 1,
+          "bytes": 28
+        },
+        "revision": {
+          "changes": 1,
+          "bytes": 31
+        },
+        "clubs": {
+          "changes": 22,
+          "bytes": 2156
+        },
+        "players": {
+          "changes": 867,
+          "bytes": 76422
+        },
+        "centers": {
+          "changes": 13473,
+          "bytes": 2510787
+        },
+        "ratingHistory": {
+          "changes": 1,
+          "bytes": 38945
+        },
+        "results": {
+          "changes": 1,
+          "bytes": 785912
+        },
+        "chemistry": {
+          "changes": 254,
+          "bytes": 28448
+        },
+        "workload": {
+          "changes": 494,
+          "bytes": 47278
+        },
+        "injuries": {
+          "changes": 46,
+          "bytes": 3220
+        },
+        "development": {
+          "changes": 1,
+          "bytes": 639877
+        },
+        "lastProcessedAt": {
+          "changes": 1,
+          "bytes": 50
+        },
+        "calendarAnchor": {
+          "changes": 1,
+          "bytes": 58
+        },
+        "management": {
+          "changes": 1,
+          "bytes": 6998
+        },
+        "positionExperience": {
+          "changes": 242,
+          "bytes": 20612
+        }
+      },
+      "deltaChanges": 15406,
+      "deltaJsonBytes": 4180966,
+      "wireBytes": 368464
+    },
+    {
+      "scenario": "advance",
+      "repeat": 2,
+      "players": 14012,
+      "clubs": 697,
+      "results": 49,
+      "sqlStatements": 391,
+      "chunkWrittenBytes": 11357407,
+      "sqliteMs": 20.92189999996117,
+      "changedBranches": {
+        "round": 1,
+        "positionExperience": 30104,
+        "revision": 1,
+        "clubs": 791532,
+        "players": 7235706,
+        "centers": 3204505,
+        "participants": 1119,
+        "trophies": 2,
+        "ratingHistory": 171639,
+        "results": 3462932,
+        "cups": 7474,
+        "negotiations": 2,
+        "chemistry": 546427,
+        "workload": 63148,
+        "injuries": 4224,
+        "development": 694250,
+        "debts": 2,
+        "lastProcessedAt": 13,
+        "calendarAnchor": 47,
+        "management": 1537699
+      },
+      "deltaBranches": {
+        "round": {
+          "changes": 1,
+          "bytes": 28
+        },
+        "revision": {
+          "changes": 1,
+          "bytes": 31
+        },
+        "clubs": {
+          "changes": 22,
+          "bytes": 2156
+        },
+        "players": {
+          "changes": 726,
+          "bytes": 63818
+        },
+        "centers": {
+          "changes": 13495,
+          "bytes": 2588544
+        },
+        "ratingHistory": {
+          "changes": 1,
+          "bytes": 40486
+        },
+        "results": {
+          "changes": 1,
+          "bytes": 762263
+        },
+        "chemistry": {
+          "changes": 264,
+          "bytes": 29568
+        },
+        "workload": {
+          "changes": 525,
+          "bytes": 50084
+        },
+        "injuries": {
+          "changes": 56,
+          "bytes": 3920
+        },
+        "development": {
+          "changes": 1,
+          "bytes": 694283
+        },
+        "lastProcessedAt": {
+          "changes": 1,
+          "bytes": 50
+        },
+        "calendarAnchor": {
+          "changes": 1,
+          "bytes": 58
+        },
+        "management": {
+          "changes": 1,
+          "bytes": 6999
+        },
+        "positionExperience": {
+          "changes": 242,
+          "bytes": 20598
+        }
+      },
+      "deltaChanges": 15338,
+      "deltaJsonBytes": 4284179,
+      "wireBytes": 370969
+    }
+  ]
+}

@@ -1136,6 +1136,9 @@ export function manageClub({
 }
 
 export function settleMonthly(state: WorldState, at: number): WorldState {
+  const currentDate = new Date(state.lastProcessedAt - 10800000);
+  if (at < Date.UTC(currentDate.getUTCFullYear(), currentDate.getUTCMonth() + 1, 1, 3))
+    return state;
   const management = { ...state.management };
   const charges = [...(management.charges ?? [])];
   let clubs = { ...state.clubs.byId };

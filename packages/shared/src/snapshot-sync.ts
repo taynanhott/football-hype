@@ -50,11 +50,20 @@ function* jsonTokens(value: unknown): Generator<string> {
 export async function snapshotManifest(
   snapshot: GameSnapshot,
   hash: (value: string) => Promise<string>,
+  previous?: { snapshot: GameSnapshot; manifest: SnapshotCacheManifest },
 ): Promise<SnapshotCacheManifest> {
   const hashes: Record<string, string> = {};
   // Sequential hashing bounds temporary memory for large branches.
   for (const [key, value] of Object.entries(snapshot.state)) {
     if (value === undefined) continue;
+    if (
+      previous &&
+      previous.snapshot.state[key as keyof WorldState] === value &&
+      previous.manifest.hashes[key]
+    ) {
+      hashes[key] = previous.manifest.hashes[key]!;
+      continue;
+    }
     const chunks: string[] = [];
     let buffer = '';
     for (const token of jsonTokens(value)) {
@@ -88,10 +97,19 @@ export function stateChanges(previous: WorldState, next: WorldState): StateChang
     ) {
       const old = a as Record<string, unknown>,
         current = b as Record<string, unknown>;
+      const start = changes.length;
       for (const key of new Set([...Object.keys(old), ...Object.keys(current)])) {
         if (forbidden.has(key)) throw new Error('Invalid state key');
         if (!(key in current)) changes.push({ path: [...path, key], remove: true });
         else visit(old[key], current[key], [...path, key]);
+      }
+      if (
+        (path.length === 6 || (path.length === 1 && path[0] === 'development')) &&
+        changes.length - start > 1
+      ) {
+        const replacement = { path, value: b };
+        if (JSON.stringify(replacement).length < JSON.stringify(changes.slice(start)).length)
+          changes.splice(start, changes.length - start, replacement);
       }
     } else if (Array.isArray(a) && Array.isArray(b)) {
       const prefix =

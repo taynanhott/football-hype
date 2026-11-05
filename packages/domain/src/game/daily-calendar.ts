@@ -249,7 +249,7 @@ function advanceGameDaysInternal(state: WorldState, target: number): WorldState 
       };
     }
     for (const player of Object.values(players)) {
-      if (player.clubId) continue;
+      if (player.clubId || player.fitness >= 100) continue;
       players[player.id] = {
         ...player,
         fitness: Math.min(100, player.fitness + GAMEPLAY.fitnessRecovery),
@@ -269,10 +269,22 @@ function advanceGameDaysInternal(state: WorldState, target: number): WorldState 
         players[id] = { ...players[id]!, clubId: updated.clubId };
     }
   }
+  for (const id of Object.keys(players)) {
+    const previous = state.players.byId[id];
+    if (
+      previous &&
+      players[id] !== previous &&
+      JSON.stringify(players[id]) === JSON.stringify(previous)
+    )
+      players[id] = previous;
+  }
+  const unchangedPlayers =
+    Object.keys(players).length === state.players.ids.length &&
+    state.players.ids.every((id) => players[id] === state.players.byId[id]);
   return finishIndividualCycles(
     {
       ...state,
-      players: { ...state.players, byId: players },
+      players: unchangedPlayers ? state.players : { ...state.players, byId: players },
       centers: { ...state.centers, byId: centers },
       injuries,
       development,

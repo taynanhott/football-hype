@@ -66,6 +66,9 @@ describe('dias da temporada', () => {
       ...state.management,
       offers: [
         {
+          id: IDS.player,
+          sellerId: club.id,
+          salary: 1000,
           playerId: player.id,
           buyerId: club.id,
           fee: 10000,

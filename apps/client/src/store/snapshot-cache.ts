@@ -10,6 +10,7 @@ function request(
   type: 'load' | 'save' | 'manifest',
   key: string,
   snapshot?: GameSnapshot,
+  baseRevision?: number,
 ): Promise<unknown> {
   try {
     worker ??= new Worker(new URL('./snapshot-cache.worker.ts', import.meta.url), {
@@ -28,7 +29,7 @@ function request(
     return new Promise((resolve) => {
       const requestId = ++id;
       pending.set(requestId, resolve);
-      worker!.postMessage({ id: requestId, type, key, snapshot });
+      worker!.postMessage({ id: requestId, type, key, snapshot, baseRevision });
       setTimeout(
         () => {
           if (pending.delete(requestId)) resolve(null);
@@ -59,10 +60,44 @@ export async function prepareSnapshotManifest(
   return result.success ? result.data : null;
 }
 let timer: ReturnType<typeof setTimeout> | undefined;
+let saving = false;
+let checkpoint: { key: string; snapshot: GameSnapshot } | undefined;
+let latest: { key: string; snapshot: GameSnapshot } | undefined;
+async function flushLatestCache() {
+  if (saving || !latest) return;
+  const item = latest;
+  latest = undefined;
+  saving = true;
+  try {
+    const snapshot = { ...item.snapshot, tables: {} };
+    const base = checkpoint?.key === item.key ? checkpoint.snapshot : undefined;
+    const patch = base
+      ? {
+          ...snapshot,
+          state: Object.fromEntries(
+            Object.keys({ ...base.state, ...snapshot.state })
+              .filter(
+                (key) =>
+                  base.state[key as keyof typeof base.state] !==
+                  snapshot.state[key as keyof typeof snapshot.state],
+              )
+              .map((key) => [key, snapshot.state[key as keyof typeof snapshot.state]]),
+          ) as GameSnapshot['state'],
+        }
+      : snapshot;
+    let saved = await request('save', item.key, patch, base?.state.revision);
+    if (!saved && base) saved = await request('save', item.key, snapshot);
+    checkpoint = saved ? { key: item.key, snapshot } : undefined;
+  } finally {
+    saving = false;
+    if (latest) timer = setTimeout(() => void flushLatestCache(), 1500);
+  }
+}
 export function saveSnapshotCache(key: string, snapshot: GameSnapshot) {
   clearTimeout(timer);
+  latest = { key, snapshot };
   // Bound hashing/persistence frequency; never checkpoint optimistic projections.
   timer = setTimeout(() => {
-    void request('save', key, { ...snapshot, tables: {} });
+    void flushLatestCache();
   }, 1500);
 }

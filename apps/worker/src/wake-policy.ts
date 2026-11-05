@@ -30,6 +30,7 @@ export function nextPlannedWake(
   now: number,
 ): number | undefined {
   if (!state.active) return undefined;
+  if (state.playingUntil > now) return state.playingUntil;
   let next = state.nextScheduledAt;
   if (next <= now) return Math.max(now + 1000, state.playingUntil);
   const matchAt = next;

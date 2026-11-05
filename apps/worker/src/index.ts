@@ -41,7 +41,7 @@ function errorText(error: unknown) {
 export class GameHubV2 extends DurableObject<Env> {
   private readonly repository: DurableLeagueRepository;
   private readonly service: LeagueService;
-  private pending: Promise<unknown> = Promise.resolve();
+  private readonly pending = new Map<string, Promise<unknown>>();
   private readonly meter: UsageMeter;
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env);
@@ -84,9 +84,9 @@ export class GameHubV2 extends DurableObject<Env> {
       }
     });
   }
-  private serial<T>(fn: () => Promise<T>, kind = 'operation'): Promise<T> {
+  private serial<T>(fn: () => Promise<T>, kind = 'operation', lane = 'global'): Promise<T> {
     const queuedAt = performance.now();
-    const current = this.pending
+    const current = (this.pending.get(lane) ?? Promise.resolve())
       .catch(() => undefined)
       .then(async () => {
         const before = this.meter.start();
@@ -100,7 +100,12 @@ export class GameHubV2 extends DurableObject<Env> {
           this.meter.finish(kind, before, this.ctx.storage.sql.databaseSize, queueWaitMs);
         }
       });
-    this.pending = current;
+    this.pending.set(lane, current);
+    void current
+      .finally(() => {
+        if (this.pending.get(lane) === current) this.pending.delete(lane);
+      })
+      .catch(() => undefined);
     return current;
   }
   override async fetch(request: Request): Promise<Response> {
@@ -209,6 +214,10 @@ export class GameHubV2 extends DurableObject<Env> {
   private readonly dirtySockets = new Map<WebSocket, Session>();
   private readonly sent = new WeakMap<WebSocket, GameSnapshot>();
   private flushing = false;
+  private readonly prepared = new Map<
+    string,
+    { snapshot: GameSnapshot; payload: string | ArrayBuffer }
+  >();
   private queueSnapshot(ws: WebSocket, session: Session) {
     this.dirtySockets.set(ws, session);
     if (this.flushing) return;
@@ -220,6 +229,7 @@ export class GameHubV2 extends DurableObject<Env> {
           this.dirtySockets.clear();
           for (const [socket, identity] of dirty) await this.snapshot(socket, identity);
         } finally {
+          this.prepared.clear();
           this.flushing = false;
           const remaining = this.dirtySockets.entries().next().value;
           if (remaining) this.queueSnapshot(remaining[0], remaining[1]);
@@ -258,6 +268,32 @@ export class GameHubV2 extends DurableObject<Env> {
         !session.localTables,
       );
       const previous = this.sent.get(ws);
+      const sharedKey =
+        previous && session.deltaProtocol
+          ? JSON.stringify([
+              session.leagueId,
+              previous.state.revision,
+              snapshot.state.revision,
+              previous.state.participants,
+              snapshot.state.participants,
+              session.localTables,
+              session.compressedSnapshots,
+            ])
+          : undefined;
+      const prepared = sharedKey ? this.prepared.get(sharedKey) : undefined;
+      if (prepared) {
+        if (ws.readyState !== 2 && ws.readyState !== 3) {
+          ws.send(prepared.payload);
+          this.meter.totals.sentMessages++;
+          this.meter.totals.deltaSnapshots++;
+          this.meter.totals.sentBytes +=
+            typeof prepared.payload === 'string'
+              ? new TextEncoder().encode(prepared.payload).byteLength
+              : prepared.payload.byteLength;
+          this.sent.set(ws, prepared.snapshot);
+        }
+        return;
+      }
       if (session.deltaProtocol && !previous && !session.cache && session.sentSnapshot) {
         this.send(ws, 'cache-request', {});
         return;
@@ -282,7 +318,7 @@ export class GameHubV2 extends DurableObject<Env> {
             if (!Object.hasOwn(snapshot.state, key))
               changes.push({ path: [key], value: undefined });
         }
-        await this.sendSnapshot(ws, session, 'snapshot-delta', {
+        const delta = {
           leagueId: session.leagueId,
           baseRevision: previous?.state.revision ?? session.cache!.revision,
           revision: snapshot.state.revision,
@@ -291,7 +327,24 @@ export class GameHubV2 extends DurableObject<Env> {
           ledger: snapshot.ledger,
           serverTime: snapshot.serverTime,
           roomId: snapshot.roomId,
-        });
+        };
+        if (sharedKey) {
+          const payload = await encodeSnapshotMessage(
+            'snapshot-delta',
+            delta,
+            session.compressedSnapshots === true,
+          );
+          this.prepared.set(sharedKey, { snapshot, payload });
+          if (ws.readyState !== 2 && ws.readyState !== 3) {
+            ws.send(payload);
+            this.meter.totals.sentMessages++;
+            this.meter.totals.deltaSnapshots++;
+            this.meter.totals.sentBytes +=
+              typeof payload === 'string'
+                ? new TextEncoder().encode(payload).byteLength
+                : payload.byteLength;
+          }
+        } else await this.sendSnapshot(ws, session, 'snapshot-delta', delta);
       } else if (previous) {
         const patch = Object.fromEntries(
           Object.entries(snapshot.state).filter(([key, value]) => {
@@ -328,86 +381,95 @@ export class GameHubV2 extends DurableObject<Env> {
     }
   }
   override async webSocketMessage(ws: WebSocket, message: string | ArrayBuffer): Promise<void> {
-    await this.serial(async () => {
-      let requestId: string | undefined;
-      try {
-        this.meter.totals.receivedBytes +=
-          typeof message === 'string'
-            ? new TextEncoder().encode(message).byteLength
-            : message.byteLength;
-        if (typeof message !== 'string' || new TextEncoder().encode(message).length > 16384)
-          throw new Error('Mensagem inválida');
-        const { type, data } = messageSchema.parse(JSON.parse(message));
-        let session = ws.deserializeAttachment() as Session | null;
-        if (!session) {
-          if (type !== 'auth') throw new Error('Autenticação obrigatória');
-          const options = z
-            .object({
-              leagueId: z.uuid(),
-              clubId: z.string().optional(),
-              localTables: z.boolean().optional(),
-              deltaProtocol: z.boolean().optional(),
-              compressedSnapshots: z.boolean().optional(),
-              cache: snapshotCacheSchema.optional(),
-            })
-            .parse(data);
-          const identity = await authenticate(data, this.env.FIREBASE_PROJECT_ID);
-          await this.service.join(options.leagueId, identity, options.clubId);
-          this.meter.totals.authentications++;
-          session = {
-            leagueId: options.leagueId,
-            identity,
-            sessionId: crypto.randomUUID(),
-            expires: Date.now() + 55 * 60000,
-            localTables: options.localTables ?? false,
-            deltaProtocol: options.deltaProtocol ?? false,
-            compressedSnapshots: options.compressedSnapshots ?? false,
-            ...(options.cache ? { cache: options.cache } : {}),
-          };
-          ws.serializeAttachment(session);
-          this.service.setOnline(session.leagueId, identity.userId, session.sessionId, true);
-          this.send(ws, 'ready', {});
-          this.queueSnapshot(ws, session);
-        } else {
-          if (Date.now() > session.expires) {
-            ws.close(1008, 'Renove sua sessão');
-            return;
-          }
-          if (type === 'command') {
-            this.meter.totals.commands++;
-            const envelope = z.object({ requestId: z.uuid(), command: z.unknown() }).parse(data);
-            requestId = envelope.requestId;
-            const revision = await this.service.command(
-              session.leagueId,
-              session.identity.userId,
-              envelope.command,
-              false,
-              requestId,
-            );
-            this.send(ws, 'ack', { ok: true, requestId, revision });
-            this.queueSnapshot(ws, session);
-          } else if (type === 'cache-offer') {
-            const manifest = snapshotCacheSchema.parse(data);
-            if (!this.sent.has(ws)) {
-              session.cache = manifest;
-              this.queueSnapshot(ws, session);
-            }
-          } else if (type === 'sync') {
-            delete session.cache;
-            session.sentSnapshot = false;
+    await this.serial(
+      async () => {
+        let requestId: string | undefined;
+        try {
+          this.meter.totals.receivedBytes +=
+            typeof message === 'string'
+              ? new TextEncoder().encode(message).byteLength
+              : message.byteLength;
+          if (typeof message !== 'string' || new TextEncoder().encode(message).length > 16384)
+            throw new Error('Mensagem inválida');
+          const { type, data } = messageSchema.parse(JSON.parse(message));
+          let session = ws.deserializeAttachment() as Session | null;
+          if (!session) {
+            if (type !== 'auth') throw new Error('Autenticação obrigatória');
+            const options = z
+              .object({
+                leagueId: z.uuid(),
+                clubId: z.string().optional(),
+                localTables: z.boolean().optional(),
+                deltaProtocol: z.boolean().optional(),
+                compressedSnapshots: z.boolean().optional(),
+                cache: snapshotCacheSchema.optional(),
+              })
+              .parse(data);
+            const identity = await authenticate(data, this.env.FIREBASE_PROJECT_ID);
+            await this.service.join(options.leagueId, identity, options.clubId);
+            this.meter.totals.authentications++;
+            session = {
+              leagueId: options.leagueId,
+              identity,
+              sessionId: crypto.randomUUID(),
+              expires: Date.now() + 55 * 60000,
+              localTables: options.localTables ?? false,
+              deltaProtocol: options.deltaProtocol ?? false,
+              compressedSnapshots: options.compressedSnapshots ?? false,
+              ...(options.cache ? { cache: options.cache } : {}),
+            };
             ws.serializeAttachment(session);
-            this.sent.delete(ws);
+            this.service.setOnline(session.leagueId, identity.userId, session.sessionId, true);
+            this.send(ws, 'ready', {});
             this.queueSnapshot(ws, session);
-          } else if (type === 'heartbeat') this.send(ws, 'pong', {});
-          else throw new Error('Mensagem desconhecida');
+          } else {
+            if (Date.now() > session.expires) {
+              ws.close(1008, 'Renove sua sessão');
+              return;
+            }
+            if (type === 'command') {
+              this.meter.totals.commands++;
+              const envelope = z.object({ requestId: z.uuid(), command: z.unknown() }).parse(data);
+              requestId = envelope.requestId;
+              const revision = await this.service.command(
+                session.leagueId,
+                session.identity.userId,
+                envelope.command,
+                false,
+                requestId,
+              );
+              this.send(ws, 'ack', { ok: true, requestId, revision });
+              this.queueSnapshot(ws, session);
+            } else if (type === 'cache-offer') {
+              const manifest = snapshotCacheSchema.parse(data);
+              if (!this.sent.has(ws)) {
+                session.cache = manifest;
+                this.queueSnapshot(ws, session);
+              }
+            } else if (type === 'resume') {
+              this.queueSnapshot(ws, session);
+            } else if (type === 'sync') {
+              delete session.cache;
+              session.sentSnapshot = false;
+              ws.serializeAttachment(session);
+              this.sent.delete(ws);
+              this.queueSnapshot(ws, session);
+            } else if (type === 'heartbeat') this.send(ws, 'pong', {});
+            else throw new Error('Mensagem desconhecida');
+          }
+          await this.schedule();
+        } catch (error) {
+          this.meter.totals.errors++;
+          this.send(ws, 'error', {
+            message: errorText(error),
+            ...(requestId ? { requestId } : {}),
+          });
+          if (!ws.deserializeAttachment()) ws.close(1008, 'Autenticação inválida');
         }
-        await this.schedule();
-      } catch (error) {
-        this.meter.totals.errors++;
-        this.send(ws, 'error', { message: errorText(error), ...(requestId ? { requestId } : {}) });
-        if (!ws.deserializeAttachment()) ws.close(1008, 'Autenticação inválida');
-      }
-    }, 'websocket');
+      },
+      'websocket',
+      (ws.deserializeAttachment() as Session | null)?.leagueId ?? 'global',
+    );
   }
   override async webSocketClose(ws: WebSocket): Promise<void> {
     const session = ws.deserializeAttachment() as Session | null;
@@ -418,7 +480,10 @@ export class GameHubV2 extends DurableObject<Env> {
   override async webSocketError(ws: WebSocket): Promise<void> {
     await this.webSocketClose(ws);
   }
-  private async schedule() {
+  private schedule() {
+    return this.serial(() => this.updateSchedule(), 'schedule', 'scheduler');
+  }
+  private async updateSchedule() {
     const now = Date.now();
     const deadlines = await this.repository.wakeDeadlines(now);
     for (const ws of this.ctx.getWebSockets()) {

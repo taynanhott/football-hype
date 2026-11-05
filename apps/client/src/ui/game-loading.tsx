@@ -3,9 +3,19 @@ import { pendingFixtures, scheduledBatches } from '@football/domain';
 import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useGameStore } from '../store/game-store';
+import { useSimulationNavigationLock } from './use-simulation-navigation-lock';
 
 export function GameLoading() {
-  const busy = useGameStore((state) => state.busy && !state.error);
+  const pending = useGameStore((state) => state.busy && !state.error);
+  const startedAt = useGameStore((store) => {
+    const state = store.snapshot?.state;
+    const clubId = state?.participants.find((p) => p.userId === store.userId)?.clubId;
+    return state?.results.filter((r) => r.homeId === clubId || r.awayId === clubId).at(-1)
+      ?.startedAt;
+  });
+  const clockOffset = useGameStore((store) => store.clockOffset);
+  const playing = useSimulationNavigationLock(startedAt, clockOffset);
+  const busy = pending && !playing;
   const moving = useGameStore((state) => Boolean(state.snapshot));
   const activity = useGameStore((store) => {
     if (store.loadingActivity) return store.loadingActivity;

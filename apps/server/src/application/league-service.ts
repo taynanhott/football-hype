@@ -875,6 +875,13 @@ export class LeagueService {
         !current ||
         current.deletedAt ||
         current.status !== 'active' ||
+        current.results.some(
+          (result) =>
+            (result.startedAt ?? 0) + MATCH_DURATION_MS > this.now() &&
+            current.participants.some(
+              (p) => p.clubId === result.homeId || p.clubId === result.awayId,
+            ),
+        ) ||
         current.nextScheduledAt <= this.now()
       )
         return;

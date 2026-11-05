@@ -440,11 +440,17 @@ export function convertLocalPlayers(
         (squadValues.get(player.clubId) ?? 0) + player.marketValue.cents,
       );
   }
-  for (const club of clubs) {
-    club.balance.cents = Math.max(
-      100000,
-      Math.round(((squadValues.get(club.id) ?? 0) * 0.3 * 0.7) / 100000) * 100000,
-    );
+  for (const [index, club] of clubs.entries()) {
+    clubs[index] = {
+      ...club,
+      balance: {
+        ...club.balance,
+        cents: Math.max(
+          100000,
+          Math.round(((squadValues.get(club.id) ?? 0) * 0.3 * 0.7) / 100000) * 100000,
+        ),
+      },
+    };
   }
   const dataset = worldDatasetSchema.parse({
     clubs: normalized(clubs),

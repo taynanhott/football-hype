@@ -50,6 +50,14 @@ describe('incremental snapshot protocol', () => {
         .homeTicketPrices,
     ).toEqual({ club: 5000 });
   });
+  it('compacts dense development changes without losing removals or mutating the base', () => {
+    const before = { ...fixture(), development: { a: 1, b: 2, c: 3 } };
+    const next = { ...before, development: { a: 2, b: 3, d: 4 }, revision: 2 };
+    const changes = stateChanges(before, next);
+    expect(changes).toContainEqual({ path: ['development'], value: next.development });
+    expect(applyStateChanges(before, changes)).toEqual(next);
+    expect(before.development).toEqual({ a: 1, b: 2, c: 3 });
+  });
   it('fingerprints cached contents, including changes without revision changes', async () => {
     const state = fixture();
     const snapshot = { state } as GameSnapshot;
@@ -60,5 +68,22 @@ describe('incremental snapshot protocol', () => {
     const after = await snapshotManifest(next, hash);
     expect(after.hashes.players).not.toBe(before.hashes.players);
     expect(after.hashes.results).toBe(before.hashes.results);
+  });
+  it('reuses unchanged branch hashes and matches a full manifest after deletions', async () => {
+    const snapshot = { state: fixture() } as GameSnapshot;
+    let calls = 0;
+    const hash = async (text: string) => {
+      calls++;
+      return createHash('sha256').update(text).digest('hex');
+    };
+    const manifest = await snapshotManifest(snapshot, hash);
+    const fullCalls = calls;
+    const next = { ...snapshot, state: { ...snapshot.state, revision: 2 } };
+    delete next.state.management;
+    calls = 0;
+    const incremental = await snapshotManifest(next, hash, { snapshot, manifest });
+    expect(calls).toBeLessThan(fullCalls);
+    expect(incremental).toEqual(await snapshotManifest(next, hash));
+    expect(snapshot.state.management).toBeDefined();
   });
 });

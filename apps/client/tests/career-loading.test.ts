@@ -7,6 +7,7 @@ const fake = vi.hoisted(() => ({
   handlers: new Map<string, (data: unknown) => void>(),
   send: vi.fn(),
   leave: vi.fn(async () => undefined),
+  addEventListener: vi.fn(),
 }));
 vi.mock('../src/features/leagues/api', () => ({
   credentials: async () => ({ userId: 'host', guestId: 'host' }),
@@ -32,7 +33,7 @@ beforeEach(() => {
   vi.useFakeTimers();
   vi.stubEnv('VITE_GAME_TRANSPORT', 'cloudflare');
   vi.stubGlobal('document', {
-    addEventListener: vi.fn(),
+    addEventListener: fake.addEventListener,
     removeEventListener: vi.fn(),
     visibilityState: 'visible',
   });
@@ -43,6 +44,7 @@ beforeEach(() => {
   fake.handlers.clear();
   fake.send.mockClear();
   fake.leave.mockClear();
+  fake.addEventListener.mockClear();
 });
 afterEach(async () => {
   const { useGameStore } = await import('../src/store/game-store');
@@ -70,6 +72,12 @@ it('pede os dados completos quando a conexão abre sem carregar a carreira', asy
   fake.handlers.get('snapshot')!(snapshot);
   expect(useGameStore.getState().snapshot?.state.id).toBe(state.id);
   expect(useGameStore.getState().busy).toBe(false);
+  const listeners = fake.addEventListener.mock.calls;
+  const resume = listeners.filter(([type]) => type === 'visibilitychange').at(-1)![1];
+  fake.send.mockClear();
+  (resume as () => void)();
+  expect(fake.send).toHaveBeenCalledWith('resume');
+  fake.handlers.get('snapshot')!(snapshot);
   await vi.advanceTimersByTimeAsync(20000);
   expect(fake.leave).not.toHaveBeenCalled();
 });

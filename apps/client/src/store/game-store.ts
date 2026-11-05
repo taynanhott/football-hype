@@ -244,6 +244,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         import.meta.env.VITE_GAME_TRANSPORT === 'cloudflare' ? 150 : 0,
       );
       actions = queue;
+      let resumeTimer: ReturnType<typeof setTimeout> | undefined;
       const accept = (snapshot: GameSnapshot) => {
         if (
           get().room !== room ||
@@ -253,6 +254,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         if (import.meta.env.VITE_GAME_TRANSPORT === 'cloudflare')
           snapshot = { ...snapshot, tables: localTables(snapshot.state) };
         const recovered = queue.accept(snapshot);
+        clearTimeout(resumeTimer);
         confirmed = snapshot;
         clearTimeout(initialSnapshotTimer);
         clearTimeout(retry);
@@ -403,9 +405,20 @@ export const useGameStore = create<GameStore>((set, get) => ({
           : setInterval(() => room.send('heartbeat'), 30000);
       const flushDrafts = () => {
         if (document.visibilityState === 'hidden') queue.flush();
+        else if (get().room === room) {
+          room.send(import.meta.env.VITE_GAME_TRANSPORT === 'cloudflare' ? 'resume' : 'sync');
+          clearTimeout(resumeTimer);
+          resumeTimer = setTimeout(() => {
+            if (get().room !== room) return;
+            set({ connected: false });
+            scheduleRecovery();
+          }, 10000);
+          if (!get().connected) scheduleRecovery();
+        }
       };
       document.addEventListener('visibilitychange', flushDrafts);
       room.onLeave(() => {
+        clearTimeout(resumeTimer);
         clearTimeout(initialSnapshotTimer);
         clearInterval(heartbeat);
         document.removeEventListener('visibilitychange', flushDrafts);
