@@ -557,22 +557,12 @@ const individualCommandSchema = z.discriminatedUnion('type', [
   z.strictObject({ type: z.literal('advance') }),
   z.strictObject({
     type: z.literal('home-ticket-price'),
-    priceCents: z
-      .number()
-      .int()
-      .min(2500)
-      .max(50000)
-      .transform((value) => Math.round(value / 2500) * 2500),
+    priceCents: ticketAmountSchema,
   }),
   z.strictObject({
     type: z.literal('ticket-price'),
     fixtureId: z.string().min(1),
-    priceCents: z
-      .number()
-      .int()
-      .min(2500)
-      .max(50000)
-      .transform((value) => Math.round(value / 2500) * 2500),
+    priceCents: ticketAmountSchema,
   }),
   lineupSchema.extend({ type: z.literal('lineup') }),
   z.strictObject({
