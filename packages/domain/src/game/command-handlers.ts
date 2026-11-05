@@ -1,7 +1,7 @@
 import { initializeStartingChemistry } from './tactics.js';
 import { exchangeCandidates } from './player-exchange.js';
 import { formatMoney } from '@football/shared';
-import { maxContractYears, moraleSensitivity } from './player-contracts.js';
+import { maxContractYears, moraleSensitivity, signingSalary } from './player-contracts.js';
 import { seasonStart } from '../competitions/season-calendar.js';
 import { scheduleRegionalQualifiers } from '../competitions/regional-qualifiers.js';
 import { prepareAcademy } from './academy.js';
@@ -12,6 +12,7 @@ import { scheduledFixtures } from '../competitions/fixtures.js';
 import {
   COMPETITIONS,
   MAX_SQUAD_SIZE,
+  MIN_SQUAD_SIZE,
   roundMoney,
   MONEY_STEPS,
   MATCH_DURATION_MS,
@@ -337,7 +338,12 @@ export function handleCommand(input: CommandContext): Result<CommandOutcome> {
       if (existing)
         return handleSalary({
           ...context,
-          command: { type: 'salary', negotiationId: existing.id, salary: command.salary },
+          command: {
+            type: 'salary',
+            negotiationId: existing.id,
+            salary: command.salary,
+            ...(command.years !== undefined ? { years: command.years } : {}),
+          },
         });
       const offered = handleOffer({
         ...context,
@@ -347,7 +353,12 @@ export function handleCommand(input: CommandContext): Result<CommandOutcome> {
       return handleSalary({
         ...context,
         state: offered.value.next,
-        command: { type: 'salary', negotiationId: context.eventId, salary: command.salary },
+        command: {
+          type: 'salary',
+          negotiationId: context.eventId,
+          salary: command.salary,
+          ...(command.years !== undefined ? { years: command.years } : {}),
+        },
       });
     }
     case 'offer':
@@ -447,6 +458,14 @@ function handleOffer({
   if (club.playerIds.length - (command.exchangePlayerIds?.length ?? 0) >= MAX_SQUAD_SIZE)
     return failure(domainError('VALIDATION_ERROR', 'O elenco atingiu o limite de 45 jogadores'));
   const player = state.players.byId[command.playerId];
+  if (
+    !command.withdraw &&
+    player?.clubId &&
+    (state.clubs.byId[player.clubId]?.playerIds.length ?? 0) <= MIN_SQUAD_SIZE
+  )
+    return failure(
+      domainError('VALIDATION_ERROR', 'O clube precisa manter pelo menos 18 jogadores'),
+    );
   if (state.management?.loans?.[command.playerId])
     return failure(domainError('VALIDATION_ERROR', 'Jogador emprestado não pode ser negociado'));
   if (player?.academyClubId && !player.clubId)
@@ -467,6 +486,10 @@ function handleOffer({
   )
     return failure(domainError('VALIDATION_ERROR', 'Jogador indisponível para negociação'));
   const exchangeIds = command.exchangePlayerIds ?? [];
+  if (exchangeIds.length > 0 && club.playerIds.length - exchangeIds.length + 1 < MIN_SQUAD_SIZE)
+    return failure(
+      domainError('VALIDATION_ERROR', 'O clube precisa manter pelo menos 18 jogadores'),
+    );
   const candidates = exchangeCandidates(state, club.id, player.clubId ?? '');
   if (
     new Set(exchangeIds).size !== exchangeIds.length ||
@@ -748,16 +771,21 @@ function handleSalary({
   const player = negotiation ? state.players.byId[negotiation.playerId] : undefined;
   if (!negotiation || !player)
     return failure(domainError('VALIDATION_ERROR', 'Negocie primeiro o valor de transferência'));
+  const contractYears =
+    command.years ?? negotiation.contractYears ?? Math.min(3, maxContractYears(player.age));
   if (state.management?.loans?.[player.id])
     return failure(domainError('VALIDATION_ERROR', 'Jogador emprestado não pode ser negociado'));
   if ((negotiation.expiresAt ?? Infinity) <= state.lastProcessedAt)
     return failure(
       domainError('VALIDATION_ERROR', 'O acordo expirou. Faça uma nova proposta ao clube.'),
     );
-  const minimumSalary = Math.min(
+  const baseMinimumSalary = Math.min(
     player.salary.cents * 3,
-    negotiation.minimumSalary ?? transferContext(state, player, club).minimumSalary,
+    negotiation.baseMinimumSalary ??
+      negotiation.minimumSalary ??
+      transferContext(state, player, club).minimumSalary,
   );
+  const minimumSalary = signingSalary(baseMinimumSalary, contractYears);
   const roll =
     Array.from(negotiation.id + command.salary).reduce(
       (n, c) => (n * 31 + c.charCodeAt(0)) >>> 0,
@@ -774,7 +802,9 @@ function handleSalary({
       next: {
         ...state,
         negotiations: state.negotiations.map((n) =>
-          n.id === negotiation.id ? { ...n, minimumSalary, salaryFirm: true, reply } : n,
+          n.id === negotiation.id
+            ? { ...n, minimumSalary, baseMinimumSalary, salaryFirm: true, reply, contractYears }
+            : n,
         ),
       },
       type: 'transfer.offered',
@@ -784,6 +814,15 @@ function handleSalary({
   }
   const seller = player.clubId ? state.clubs.byId[player.clubId] : undefined;
   const exchangeIds = negotiation.exchangePlayerIds ?? [];
+  if (
+    (seller && seller.playerIds.length <= MIN_SQUAD_SIZE) ||
+    (exchangeIds.length > 0 &&
+      (club.playerIds.length <= MIN_SQUAD_SIZE ||
+        club.playerIds.length - exchangeIds.length + 1 < MIN_SQUAD_SIZE))
+  )
+    return failure(
+      domainError('VALIDATION_ERROR', 'O clube precisa manter pelo menos 18 jogadores'),
+    );
   const offered = exchangeIds.map((id) => state.players.byId[id]);
   if (
     offered.some((p) => !p || p.clubId !== club.id || state.management?.loans?.[p.id]) ||
@@ -836,8 +875,7 @@ function handleSalary({
       },
       contracts: {
         ...state.management?.contracts,
-        [player.id]:
-          state.lastProcessedAt + Math.min(3, maxContractYears(player.age)) * 365 * 86400000,
+        [player.id]: state.lastProcessedAt + contractYears * 365 * 86400000,
       },
     },
     clubs: { ...state.clubs, byId: clubs },
@@ -864,7 +902,7 @@ function handleSalary({
     },
     negotiations: state.negotiations.map((offer) =>
       offer.id === negotiation.id
-        ? { ...offer, status: salaryAcceptedState(), offeredSalary: command.salary }
+        ? { ...offer, status: salaryAcceptedState(), offeredSalary: command.salary, contractYears }
         : offer,
     ),
   };

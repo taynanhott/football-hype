@@ -12,6 +12,8 @@ import { MoneyRange } from '../../ui/money-range';
 import { IncomingOffers } from '../players/player-management';
 import {
   contractEnd,
+  maxContractYears,
+  signingSalary,
   renewalTerms,
   loanTerms,
   transferContext,
@@ -35,6 +37,7 @@ import { currency } from '../../ui/format';
 import { Icon } from '../../ui/icons';
 
 import { Portrait } from '../players/pixel-portrait';
+import { NegotiationRestaurant } from './negotiation-restaurant';
 import { PlayerDetails } from '../players/player-details';
 import { clubKit, roundMoney, ceilMoney, formatMoneyFull, MONEY_STEPS } from '@football/shared';
 
@@ -234,6 +237,7 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
   const [selected, setSelected] = useState<PlayerSnapshot | null>(null);
   const [fee, setFee] = useState('');
   const [salary, setSalary] = useState('');
+  const [contractYears, setContractYears] = useState(3);
   const send = useGameStore((state) => state.send);
   const busy = useGameStore((state) => state.busy);
   const searchIndex = useMemo(() => {
@@ -470,6 +474,12 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
       return;
     }
     setSelected(player);
+    setContractYears(
+      snapshot.state.negotiations.find(
+        (offer) =>
+          offer.playerId === player.id && offer.buyerId === club.id && offer.status === 'salary',
+      )?.contractYears ?? Math.min(3, maxContractYears(player.age)),
+    );
     setMeetingReady(
       snapshot.state.negotiations.some(
         (n) =>
@@ -504,12 +514,21 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
     negotiation?.id,
   );
   const feeMaximum = budgetLimits.transfer;
-  const demandedSalary = Math.min(
-    (selected?.salary.cents ?? 0) * 3,
-    negotiation?.minimumSalary ?? selectedContext?.minimumSalary ?? 0,
+  const demandedSalary = signingSalary(
+    Math.min(
+      (selected?.salary.cents ?? 0) * 3,
+      negotiation?.baseMinimumSalary ??
+        negotiation?.minimumSalary ??
+        selectedContext?.minimumSalary ??
+        0,
+    ),
+    contractYears,
   );
   const salaryStep = MONEY_STEPS.salary;
-  const salaryMaximum = Math.floor(((selected?.salary.cents ?? 0) * 3) / salaryStep) * salaryStep;
+  const salaryMaximum = Math.max(
+    demandedSalary,
+    Math.floor(((selected?.salary.cents ?? 0) * 3) / salaryStep) * salaryStep,
+  );
   const salaryCents = Math.max(0, roundMoney(Number(salary) * 100, salaryStep));
   const transferMinimum = 0;
   const transferMaximum = selected?.clubId
@@ -967,22 +986,24 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
                           aria-label="Interesse do jogador"
                         />
                       </div>
-                      <div>
-                        <span>
-                          Clube ·{' '}
-                          <strong>
-                            {player.clubId ? interestLabel(context.clubInterest) : 'Sem clube'}
-                          </strong>
-                        </span>
-                        {player.clubId && (
-                          <meter
-                            min={0}
-                            max={100}
-                            value={context.clubInterest}
-                            aria-label="Interesse do clube"
-                          />
-                        )}
-                      </div>
+                      {player.clubId && (
+                        <div>
+                          <span>
+                            Clube ·{' '}
+                            <strong>
+                              {player.clubId ? interestLabel(context.clubInterest) : 'Sem clube'}
+                            </strong>
+                          </span>
+                          {player.clubId && (
+                            <meter
+                              min={0}
+                              max={100}
+                              value={context.clubInterest}
+                              aria-label="Interesse do clube"
+                            />
+                          )}
+                        </div>
+                      )}
                     </div>
                     <button
                       className="market-list-negotiate"
@@ -1076,7 +1097,7 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
                           <strong>{marketValue(player.marketValue.cents)}</strong>
                           <small>Salário atual no clube: {currency(player.salary.cents)}/mês</small>
                         </div>
-                        <InterestBars context={context} />
+                        <InterestBars context={context} showClub={Boolean(player.clubId)} />
                       </div>
                     </div>
                     <footer className="offer-actions">
@@ -1159,7 +1180,10 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
         />
       ) : (
         selected && (
-          <div className="modal-backdrop" onClick={() => setSelected(null)}>
+          <div
+            className="modal-backdrop market-negotiation-backdrop"
+            onClick={() => setSelected(null)}
+          >
             <section
               className={`modal negotiation-experience ${salaryStage ? 'contract-folder' : 'negotiation-phone'}`}
               role="dialog"
@@ -1167,6 +1191,7 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
               aria-labelledby="negotiation-title"
               onClick={(event) => event.stopPropagation()}
             >
+              {salaryStage && <NegotiationRestaurant />}
               <button
                 className="close-modal"
                 aria-label="Fechar negociação"
@@ -1201,6 +1226,31 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
                       Salário mensal:{' '}
                       <strong>{currency(negotiation?.offeredSalary ?? salaryCents)}</strong>
                     </p>
+                    {negotiation?.status === 'completed' ? (
+                      <p>
+                        Duração:{' '}
+                        <strong>
+                          {negotiation.contractYears ?? contractYears}{' '}
+                          {(negotiation.contractYears ?? contractYears) === 1 ? 'ano' : 'anos'}
+                        </strong>
+                      </p>
+                    ) : (
+                      <fieldset className="contract-duration-picker" disabled={busy}>
+                        <legend>Duração do contrato</legend>
+                        <div>
+                          {[1, 2, 3, 4, 5].map((years) => (
+                            <button
+                              key={years}
+                              type="button"
+                              aria-pressed={contractYears === years}
+                              onClick={() => setContractYears(years)}
+                            >
+                              {years} {years === 1 ? 'ano' : 'anos'}
+                            </button>
+                          ))}
+                        </div>
+                      </fieldset>
+                    )}
                     <div className="contract-signature-field">
                       {negotiation?.status === 'completed' && (
                         <>
@@ -1231,9 +1281,21 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
                     <small>Negociação de transferência</small>
                   </div>
                 )}
-                {selectedContext && <InterestBars context={selectedContext} />}
+                {salaryStage && (
+                  <figure className="contract-player-seat">
+                    <Portrait player={selected} clubName={club.name} kit={clubKit(club)} />
+                    <figcaption>{selected.name}</figcaption>
+                  </figure>
+                )}
+                {!salaryStage && selectedContext && (
+                  <InterestBars context={selectedContext} showClub={Boolean(selected.clubId)} />
+                )}
                 <div
-                  className={salaryStage ? 'player-speech' : 'phone-notification'}
+                  className={
+                    salaryStage
+                      ? 'renewal-player-speech market-player-speech is-waiting'
+                      : 'phone-notification'
+                  }
                   role="status"
                   aria-live="polite"
                 >
@@ -1244,8 +1306,8 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
                       : (negotiationError ??
                         (salaryStage
                           ? negotiation?.salaryFirm
-                            ? negotiation.reply
-                            : `Para assinar, peço ${currency(negotiation?.minimumSalary ?? selectedContext?.minimumSalary ?? 0)} por mês. Qual é sua oferta?`
+                            ? `Quero ${currency(demandedSalary)} por mês para ${contractYears} ${contractYears === 1 ? 'ano' : 'anos'}. Esse é meu valor final.`
+                            : `Para assinar por ${contractYears} ${contractYears === 1 ? 'ano' : 'anos'}, peço ${currency(demandedSalary)} por mês. Qual é sua oferta?`
                           : lastReply?.status === 'rejected'
                             ? lastReply.reply
                             : 'Estamos ouvindo. Quanto vocês oferecem pelo jogador?'))}
@@ -1327,12 +1389,14 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
                                 type: 'salary',
                                 negotiationId: negotiation.id,
                                 salary: salaryCents,
+                                years: contractYears,
                               });
                             else
                               send({
                                 type: 'sign-free',
                                 playerId: selected.id,
                                 salary: salaryCents,
+                                years: contractYears,
                               });
                           }}
                         >
@@ -1361,12 +1425,14 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
                                 type: 'salary',
                                 negotiationId: negotiation.id,
                                 salary: demandedSalary,
+                                years: contractYears,
                               });
                             else
                               send({
                                 type: 'sign-free',
                                 playerId: selected.id,
                                 salary: demandedSalary,
+                                years: contractYears,
                               });
                           } else send({ type: 'offer', playerId: selected.id, fee: feeCents });
                         }}
@@ -1426,26 +1492,34 @@ function PlayerSearch({
   );
 }
 
-function InterestBars({ context }: { context: ReturnType<typeof transferContext> }) {
+function InterestBars({
+  context,
+  showClub = true,
+}: {
+  context: ReturnType<typeof transferContext>;
+  showClub?: boolean;
+}) {
   return (
     <div className="interest-bars">
       {[
         { label: 'Clube', score: context.clubInterest, player: false },
         { label: 'Jogador', score: context.playerInterest, player: true },
-      ].map((item) => (
-        <div key={item.label}>
-          <span>
-            {item.label} · {interestLabel(item.score)}
-          </span>
-          <meter
-            min="0"
-            max="100"
-            value={item.score}
-            data-interest={item.score < 35 ? 'low' : item.score < 65 ? 'medium' : 'high'}
-            aria-label={'Interesse do ' + item.label.toLowerCase()}
-          />
-        </div>
-      ))}
+      ]
+        .filter((item) => showClub || item.player)
+        .map((item) => (
+          <div key={item.label}>
+            <span>
+              {item.label} · {interestLabel(item.score)}
+            </span>
+            <meter
+              min="0"
+              max="100"
+              value={item.score}
+              data-interest={item.score < 35 ? 'low' : item.score < 65 ? 'medium' : 'high'}
+              aria-label={'Interesse do ' + item.label.toLowerCase()}
+            />
+          </div>
+        ))}
     </div>
   );
 }

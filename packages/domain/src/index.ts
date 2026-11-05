@@ -62,6 +62,7 @@ export * from './competitions/regional-qualifiers.js';
 
 export {
   averageMonthlySalary,
+  signingSalary,
   renewalTerms,
   maxContractYears,
   ageFatigueFactor,

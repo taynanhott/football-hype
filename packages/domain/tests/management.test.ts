@@ -13,6 +13,8 @@ import {
   generateIncomingOffers,
   tacticalBonus,
   contractEnd,
+  signingSalary,
+  maxContractYears,
 } from '../src/index.js';
 import { unwrap } from '../../../tests/fixtures/domain.js';
 const now = Date.parse('2026-01-15T15:00:00Z');
@@ -242,10 +244,35 @@ it('limita a vantagem tática e exige qualidade nos jogadores chave', () => {
 });
 
 describe('contratação direta de jogadores livres', () => {
+  it.each([1, 2, 3, 4, 5])(
+    'aplica contrato escolhido de %i ano(s), inclusive para veteranos',
+    (years) => {
+      const club = own();
+      const original = Object.values(state.players.byId).find((p) => p.clubId === null)!;
+      const player = { ...original, age: 36 };
+      state = {
+        ...state,
+        players: { ...state.players, byId: { ...state.players.byId, [player.id]: player } },
+      };
+      const salary = signingSalary(transferContext(state, player, club).minimumSalary, years);
+      state = act({ type: 'sign-free', playerId: player.id, salary, years });
+      expect(state.management?.contracts?.[player.id]).toBe(
+        state.lastProcessedAt + years * 365 * 86400000,
+      );
+      expect(state.negotiations.at(-1)).toMatchObject({
+        status: 'completed',
+        contractYears: years,
+      });
+      expect(worldStateSchema.safeParse(state).success).toBe(true);
+    },
+  );
   it('assina em uma etapa, sem taxa de transferência nem negociação pendente', () => {
     const club = own(),
       player = Object.values(state.players.byId).find((p) => p.clubId === null)!;
-    const salary = transferContext(state, player, club).minimumSalary;
+    const salary = signingSalary(
+      transferContext(state, player, club).minimumSalary,
+      Math.min(3, maxContractYears(player.age)),
+    );
     const previousBalance = club.balance.cents;
     state = act({ type: 'sign-free', playerId: player.id, salary });
     expect(state.players.byId[player.id]!.clubId).toBe(club.id);
@@ -262,7 +289,10 @@ describe('contratação direta de jogadores livres', () => {
   it('persiste a contraproposta salarial e permite contratação sem caixa', () => {
     const club = own(),
       player = Object.values(state.players.byId).find((p) => p.clubId === null)!;
-    const salary = transferContext(state, player, club).minimumSalary;
+    const salary = signingSalary(
+      transferContext(state, player, club).minimumSalary,
+      Math.min(3, maxContractYears(player.age)),
+    );
     const rejected = executeCommand(
       state,
       { type: 'sign-free', playerId: player.id, salary: 0 },

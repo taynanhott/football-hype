@@ -11,7 +11,9 @@ import { upgradePrice, facilityCosts } from '../finance/facility-costs.js';
 export { upgradePrice, maintenanceForLevel } from '../finance/facility-costs.js';
 import {
   GAMEPLAY,
+  CENTER_SERVICES,
   MAX_SQUAD_SIZE,
+  MIN_SQUAD_SIZE,
   FORMATIONS,
   ceilMoney,
   roundMoney,
@@ -169,10 +171,13 @@ export function transferContext(
   ];
   const blocked = Boolean(
     seller &&
-    human &&
-    ((!policy?.available && !policy?.loanAvailable) || (rival && !policy.rivals)),
+    (seller.playerIds.length <= MIN_SQUAD_SIZE ||
+      (human && ((!policy?.available && !policy?.loanAvailable) || (rival && !policy.rivals)))),
   );
-  if (blocked) clubReasons.push({ label: 'Política do treinador impede a venda', value: -100 });
+  if (seller && seller.playerIds.length <= MIN_SQUAD_SIZE)
+    clubReasons.push({ label: 'Elenco mínimo de 18 jogadores impede a saída', value: -100 });
+  else if (blocked)
+    clubReasons.push({ label: 'Política do treinador impede a venda', value: -100 });
   const playerInterest = Math.max(
     0,
     Math.min(
@@ -197,7 +202,7 @@ export function transferContext(
   return {
     playerInterest,
     clubInterest,
-    blocked: blocked || clubInterest === 0 || playerInterest === 0,
+    blocked: blocked || (Boolean(seller) && clubInterest === 0) || playerInterest === 0,
     playerReasons,
     clubReasons,
     minimumFee: seller
@@ -459,6 +464,8 @@ export function manageClub({
   const done = (next: WorldState, message: string, amount = 0) =>
     success({ next, type: 'club.customized' as const, message, amount });
   if (command.action === 'counter-offer') {
+    if (club.playerIds.length <= MIN_SQUAD_SIZE)
+      return fail('O clube precisa manter pelo menos 18 jogadores');
     const fee = command.fee;
     if (!fee || !Number.isSafeInteger(fee)) return fail('Informe um valor válido');
     const human = state.negotiations.find(
@@ -521,6 +528,8 @@ export function manageClub({
     return done(next, 'O clube aceitou a contraoferta e atualizou o valor da proposta');
   }
   if (command.action === 'accept-transfer' || command.action === 'reject-transfer') {
+    if (command.action === 'accept-transfer' && club.playerIds.length <= MIN_SQUAD_SIZE)
+      return fail('O clube precisa manter pelo menos 18 jogadores');
     const offer = state.negotiations.find(
       (n) => n.id === command.offerId && n.sellerId === club.id && n.status === 'review',
     );
@@ -682,8 +691,11 @@ export function manageClub({
     } else if (target === 'buy-syringe') {
       if (center.levels.medical < 5 || operations.syringe || operations.clearance)
         return fail('Seringa indisponível ou já em estoque');
-      cost = 150000;
+      if ((operations.syringeAvailableAt ?? 0) > state.lastProcessedAt)
+        return fail('Aguarde a liberação da próxima compra de seringa');
+      cost = CENTER_SERVICES.syringe;
       operations.syringe = true;
+      operations.syringeAvailableAt = state.lastProcessedAt + CENTER_SERVICES.syringeCooldown;
     } else {
       if (!player || player.clubId !== club.id) return fail('Escolha um jogador do seu elenco');
       if (target === 'use-syringe') {
@@ -703,11 +715,14 @@ export function manageClub({
         const slots = Math.max(0, center.levels[target] - 2);
         if (operations[target].includes(player.id) || operations[target].length >= slots)
           return fail('Não há vagas disponíveis');
-        if (target === 'medical' && !(state.injuries[player.id] ?? 0))
-          return fail('O jogador não está lesionado');
+        if (target === 'medical' && (state.injuries[player.id] ?? 0) <= 1)
+          return fail('O jogador precisa ter mais de um dia de lesão');
         if (target === 'fitness' && player.fitness >= 100)
           return fail('O jogador já está descansado');
-        cost = target === 'fitness' ? 25000 : 50000;
+        cost =
+          target === 'fitness'
+            ? CENTER_SERVICES.fitness
+            : CENTER_SERVICES.medicalPerDay * (state.injuries[player.id] ?? 0);
         operations[target] = [...operations[target], player.id];
       } else if (target === 'individual') {
         if (
@@ -715,7 +730,7 @@ export function manageClub({
           operations.individual.some((t) => t.playerId === player.id)
         )
           return fail('Treino indisponível para este jogador');
-        cost = 100000;
+        cost = CENTER_SERVICES.individual;
         operations.individual = [
           ...operations.individual,
           {
@@ -1039,6 +1054,8 @@ export function manageClub({
   }
   const sold = state.players.byId[offer.playerId],
     buyer = state.clubs.byId[offer.buyerId];
+  if (club.playerIds.length <= MIN_SQUAD_SIZE)
+    return fail('O clube precisa manter pelo menos 18 jogadores');
   if (!sold || sold.clubId !== club.id || !buyer || buyer.balance.cents < offer.fee + offer.salary)
     return fail('A proposta não pode mais ser concluída');
   if (buyer.playerIds.length >= MAX_SQUAD_SIZE)
@@ -1187,14 +1204,19 @@ export function generateIncomingOffers(state: WorldState): WorldState {
     hash ^= hash >>> 16;
     return (hash >>> 0) / 4294967296;
   };
-  const offers = [...(state.management?.offers ?? [])];
+  const offers = (state.management?.offers ?? []).map((offer) =>
+    offer.status === 'pending' &&
+    (state.clubs.byId[offer.sellerId]?.playerIds.length ?? 0) <= MIN_SQUAD_SIZE
+      ? { ...offer, status: 'rejected' as const }
+      : offer,
+  );
   const humanClubIds = new Set(state.participants.map((p) => p.clubId));
   const buyers = Object.values(state.clubs.byId)
     .filter((b) => !humanClubIds.has(b.id))
     .sort((a, b) => b.balance.cents - a.balance.cents);
   for (const member of state.participants) {
     const seller = state.clubs.byId[member.clubId];
-    if (!seller) continue;
+    if (!seller || seller.playerIds.length <= MIN_SQUAD_SIZE) continue;
     const activity = interest(`activity:${seller.id}`);
     const limit = activity < 0.55 ? 0 : activity < 0.85 ? 1 : activity < 0.97 ? 2 : 3;
     let generated = offers.filter(
@@ -1343,6 +1365,7 @@ function acceptLoan(state: WorldState, offerId: string): WorldState | undefined 
   if (
     !player ||
     !owner ||
+    (owner && owner.playerIds.length <= MIN_SQUAD_SIZE) ||
     !borrower ||
     player.clubId !== owner.id ||
     !loanTerms(state, player, borrower).eligible ||
@@ -1464,6 +1487,7 @@ export function loanTerms(state: WorldState, player: PlayerSnapshot, buyer?: Clu
     sequence < 3;
   const eligible =
     !!seller &&
+    seller.playerIds.length > MIN_SQUAD_SIZE &&
     (humanOwner || aiEligible) &&
     contractEnd(state, player) - state.lastProcessedAt > 180 * 86400000 &&
     !state.management?.loans?.[player.id];

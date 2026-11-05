@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import configuration from './domain-limits.json' with { type: 'json' };
 export const MAX_SQUAD_SIZE = 45;
+export const MIN_SQUAD_SIZE = 18;
 
 const rangeSchema = z
   .strictObject({

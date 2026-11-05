@@ -1,8 +1,9 @@
-import { roundMoney, type WorldState } from '@football/shared';
+import { MIN_SQUAD_SIZE, roundMoney, type WorldState } from '@football/shared';
 export function exchangeCandidates(state: WorldState, buyerId: string, sellerId: string) {
   const buyer = state.clubs.byId[buyerId],
     seller = state.clubs.byId[sellerId];
   if (!buyer || !seller || buyerId === sellerId) return [];
+  if (buyer.playerIds.length <= MIN_SQUAD_SIZE) return [];
   const human = state.participants.some((p) => p.clubId === sellerId);
   return buyer.playerIds.flatMap((id) => {
     const player = state.players.byId[id];

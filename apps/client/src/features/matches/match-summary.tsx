@@ -11,6 +11,7 @@ import {
 import { PixelBadge } from '../../ui/pixel-badge';
 import { Portrait } from '../players/pixel-portrait';
 import { visibleActionMinute } from '../../three/match-playback';
+import { MatchPlayerIcon } from './match-player-icon';
 
 import { liveMatchStatistics, livePlayerRatings, visibleRatingActions } from './live-statistics';
 
@@ -282,9 +283,10 @@ export const PlayerRatings = memo(
                 (id) => state.players.byId[id]?.clubId === clubId,
               );
             const activeIds = [...ids];
-            for (const swap of (result.substitutions ?? []).filter(
-              (s) => s.side === side && s.minute <= minute,
-            )) {
+            const substitutions = (result.substitutions ?? [])
+              .filter((s) => s.side === side && s.minute <= minute)
+              .sort((a, b) => a.minute - b.minute);
+            for (const swap of substitutions) {
               const index = activeIds.indexOf(swap.out);
               if (index >= 0) activeIds[index] = swap.in;
             }
@@ -340,6 +342,10 @@ export const PlayerRatings = memo(
                           (action) => action.playerId === player.id,
                         );
                         const goals = actions.filter((action) => action.type === 'goal').length;
+                        const assists = visibleActions.filter(
+                          (action) => action.type === 'goal' && action.assistId === player.id,
+                        ).length;
+                        const substitution = substitutions.find((swap) => swap.in === player.id);
                         const red = actions.some((action) => action.type === 'red');
                         const yellow = actions.some((action) => action.type === 'yellow');
                         return (
@@ -355,15 +361,43 @@ export const PlayerRatings = memo(
                                 clubName={club?.name}
                                 kit={clubKit(club ?? { name: '' })}
                               />
+                              {substitution && (
+                                <span
+                                  className="rating-substitution"
+                                  aria-label={`Entrou aos ${substitution.minute} minutos`}
+                                  title={`Entrou aos ${substitution.minute}′`}
+                                >
+                                  <MatchPlayerIcon kind="substitution" />
+                                </span>
+                              )}
                               {(red || yellow) && (
                                 <span
                                   className={`rating-card ${red ? 'red' : 'yellow'}`}
                                   aria-label={red ? 'Cartão vermelho' : 'Cartão amarelo'}
                                 />
                               )}
-                              {goals > 0 && (
-                                <span className="rating-goals" aria-label={`${goals} gol(s)`}>
-                                  ⚽{goals > 1 ? goals : ''}
+                              {(goals > 0 || assists > 0) && (
+                                <span className="rating-contributions">
+                                  {goals > 0 && (
+                                    <span
+                                      className="rating-contribution"
+                                      aria-label={`${goals} gol(s)`}
+                                      title={`${goals} gol(s)`}
+                                    >
+                                      <MatchPlayerIcon kind="goal" />
+                                      {goals > 1 ? goals : ''}
+                                    </span>
+                                  )}
+                                  {assists > 0 && (
+                                    <span
+                                      className="rating-contribution"
+                                      aria-label={`${assists} assistência(s)`}
+                                      title={`${assists} assistência(s)`}
+                                    >
+                                      <MatchPlayerIcon kind="assist" />
+                                      {assists > 1 ? assists : ''}
+                                    </span>
+                                  )}
                                 </span>
                               )}
                             </div>

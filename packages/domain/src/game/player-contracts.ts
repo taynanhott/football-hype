@@ -1,5 +1,9 @@
 import { ceilMoney, MONEY_STEPS, type PlayerSnapshot, type WorldState } from '@football/shared';
 const DAY = 86400000;
+export function signingSalary(base: number, years: number): number {
+  const duration = Math.max(1, Math.min(5, Math.floor(years)));
+  return ceilMoney(Math.ceil((base * (100 + (duration - 1) * 5)) / 100), MONEY_STEPS.salary);
+}
 export function contractExpires(state: WorldState, player: PlayerSnapshot) {
   return (
     state.management?.contracts?.[player.id] ??

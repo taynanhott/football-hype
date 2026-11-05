@@ -187,6 +187,7 @@ export const negotiationSchema = z.strictObject({
   revealed: z.boolean().optional(),
   salaryFirm: z.boolean().optional(),
   minimumSalary: z.number().optional(),
+  baseMinimumSalary: z.number().optional(),
   reply: z.string().optional(),
   sellerId: entityIdSchema.optional(),
   id: entityIdSchema,
@@ -196,6 +197,7 @@ export const negotiationSchema = z.strictObject({
   exchangePlayerIds: z.array(entityIdSchema).max(3).optional(),
   exchangeValue: gameAmountSchema.optional(),
   offeredSalary: salaryAmountSchema.nullable(),
+  contractYears: z.number().int().min(1).max(5).optional(),
   interest: z.number().min(0).max(100),
   status: z.enum(['review', 'salary', 'completed', 'rejected']),
 });
@@ -611,11 +613,13 @@ const individualCommandSchema = z.discriminatedUnion('type', [
     type: z.literal('sign-free'),
     playerId: entityIdSchema,
     salary: salaryAmountSchema,
+    years: z.number().int().min(1).max(5).optional(),
   }),
   z.strictObject({
     type: z.literal('salary'),
     negotiationId: entityIdSchema,
     salary: salaryAmountSchema,
+    years: z.number().int().min(1).max(5).optional(),
   }),
   z.strictObject({
     type: z.literal('management'),

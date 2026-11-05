@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { PlayerModal } from '../players/player-modal';
 import { currency } from '../../ui/format';
-import { clubKit } from '@football/shared';
+import { CENTER_SERVICES, clubKit } from '@football/shared';
 import { ageFatigueFactor, expectedTrainingGain } from '@football/domain';
 import type { ViewProps } from '../../ui/view-props';
 import { Portrait } from '../players/pixel-portrait';
@@ -46,7 +46,7 @@ export function IndividualTrainingRoster({
     });
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const confirmPlayer = state.players.byId[confirmId ?? ''];
-  const cost = 100000;
+  const cost = CENTER_SERVICES.individual;
   const activeCount = center.operations?.individual.length ?? 0;
   const slots = Math.min(3, center.levels.coaching);
   return (

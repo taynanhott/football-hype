@@ -40390,6 +40390,7 @@ html body dialog.game-loading-screen[open] {
   text-align: center;
   color: #967020;
   font-size: 14px;
+  font-weight: 700;
   line-height: 18px;
   letter-spacing: 1px;
   text-shadow: 0 1px #fff2b5;
@@ -40571,4 +40572,722 @@ dialog.individual-training-confirm .training-confirm-warning {
   box-shadow:
     0 0 0 2px #153f32,
     0 0 12px #76e6a066;
+}
+
+.rating-substitution {
+  position: absolute;
+  top: -7px;
+  left: -8px;
+  display: grid;
+  place-items: center;
+  width: 19px;
+  height: 19px;
+  border: 1px solid #e2d68e;
+  border-radius: 50%;
+  background: #103f2c;
+  color: #b7f5b2;
+  box-shadow: 0 1px 3px #0008;
+  z-index: 2;
+}
+.rating-contributions {
+  position: absolute;
+  right: -9px;
+  bottom: 1px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  z-index: 2;
+}
+.rating-contribution {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  border-radius: 4px;
+  padding: 1px;
+  background: #123b2ef2;
+  color: #fff4c5;
+  font:
+    700 9px/1 Arial,
+    sans-serif;
+  box-shadow: 0 1px 2px #0006;
+}
+
+/* Contract conversation: readable text on both the paper and the pitch. */
+.market-negotiation-backdrop {
+  z-index: 110;
+}
+.market-negotiation-backdrop .negotiation-experience {
+  color: #f8f3d8;
+}
+.market-negotiation-backdrop .negotiation-experience > .eyebrow,
+.market-negotiation-backdrop .negotiation-counter,
+.market-negotiation-backdrop .negotiation-range small {
+  color: #e0e8d2;
+}
+.market-negotiation-backdrop .contract-sheet {
+  color: #263e30;
+}
+.market-negotiation-backdrop .contract-sheet h3 {
+  color: #254832;
+  margin: 4px 0 12px;
+}
+.market-negotiation-backdrop .contract-sheet p {
+  color: #344b3c;
+  line-height: 1.45;
+}
+.market-negotiation-backdrop .contract-sheet > span,
+.market-negotiation-backdrop .contract-signature-line {
+  color: #665c40;
+}
+.market-negotiation-backdrop .market-player-speech {
+  grid-template-rows: auto auto;
+  align-content: start;
+  gap: 6px;
+  height: auto;
+  min-height: 0;
+  margin: 6px 0 12px;
+  padding: 12px 14px;
+  --speech-color: #e7e9c7;
+  --speech-background: #193d30;
+}
+.market-negotiation-backdrop .market-player-speech > strong {
+  color: #ffe7a3;
+  font-size: 13px;
+  line-height: 1.4;
+}
+.market-negotiation-backdrop .market-player-speech > p {
+  color: #fff9e9;
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.market-negotiation-backdrop .negotiation-range > span {
+  color: #f8f3d8;
+  font-weight: 700;
+  flex-wrap: wrap;
+}
+.market-negotiation-backdrop .negotiation-range output {
+  color: #ffe59b;
+  font-size: 21px;
+}
+@media (max-width: 700px) {
+  .market-negotiation-backdrop {
+    padding: max(10px, env(safe-area-inset-top)) 10px max(10px, env(safe-area-inset-bottom));
+  }
+  .market-negotiation-backdrop > .negotiation-experience[role='dialog'] {
+    width: 100% !important;
+    max-width: 460px !important;
+    height: auto !important;
+    max-height: calc(
+      100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom)
+    ) !important;
+    padding: 14px !important;
+    gap: 10px;
+    overflow-y: auto;
+    box-sizing: border-box;
+  }
+  .market-negotiation-backdrop .negotiation-experience > h2 {
+    margin: 0;
+    font-size: 20px;
+  }
+  .market-negotiation-backdrop .contract-sheet {
+    padding: 13px 15px;
+    margin: 4px 3px 6px 0;
+    transform: none;
+  }
+  .market-negotiation-backdrop .contract-sheet p {
+    margin: 7px 0;
+    font-size: 14px;
+  }
+  .market-negotiation-backdrop .contract-signature-field {
+    margin-top: 8px;
+    height: 42px;
+    padding-top: 20px;
+  }
+  .market-negotiation-backdrop .interest-bars {
+    margin: 0;
+    gap: 8px;
+  }
+  .market-negotiation-backdrop .interest-bars span {
+    color: #fff6d5;
+    font-size: 13px;
+  }
+  .market-negotiation-backdrop .negotiation-range {
+    gap: 7px;
+    margin: 0;
+  }
+  .market-negotiation-backdrop .contract-actions {
+    margin-top: 2px;
+    gap: 8px;
+  }
+  .market-negotiation-backdrop .contract-actions > button.full {
+    min-height: 58px;
+    padding: 9px 7px;
+  }
+}
+.market-negotiation-backdrop .phone-notification p {
+  color: #294333;
+}
+@media (min-width: 701px) {
+  .market-negotiation-backdrop .contract-folder .market-player-speech {
+    grid-column: 2;
+    align-self: start;
+    margin-left: 0;
+  }
+}
+
+/* A contract meeting across the restaurant table. */
+.market-negotiation-backdrop > .contract-folder[role='dialog'] {
+  background: #232c23 !important;
+  isolation: isolate;
+  border: 2px solid #bda366;
+  box-shadow:
+    0 24px 80px #0009,
+    inset 0 0 0 1px #f5dd9329;
+}
+.market-negotiation-backdrop .contract-player-seat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  min-width: 0;
+  margin: 0;
+  padding: 12px 16px 0;
+  border-radius: 18px 18px 8px 8px;
+  background: radial-gradient(ellipse at 50% 80%, #f8d89c26, transparent 70%);
+}
+.market-negotiation-backdrop .contract-player-seat .portrait {
+  width: auto;
+  height: clamp(130px, 24dvh, 210px);
+  max-width: 100%;
+  filter: drop-shadow(0 8px 6px #0008);
+}
+.market-negotiation-backdrop .contract-player-seat figcaption {
+  color: #fff4cc;
+  background: #1b3026eb;
+  border: 1px solid #bda36688;
+  border-radius: 6px;
+  padding: 5px 14px;
+  font-size: 13px;
+  font-weight: 800;
+  text-align: center;
+}
+.market-negotiation-backdrop .contract-folder > .eyebrow {
+  display: none;
+}
+.market-negotiation-backdrop .contract-folder .negotiation-range {
+  padding: 12px 14px;
+  border: 1px solid #c5ad7270;
+  border-radius: 8px;
+  background: #112d22ed;
+}
+@media (min-width: 701px) {
+  .market-negotiation-backdrop > .contract-folder[role='dialog'] {
+    display: grid;
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+    grid-template-rows: auto minmax(180px, 1fr) auto auto auto;
+    column-gap: 26px;
+    row-gap: 12px;
+    width: min(1000px, calc(100vw - 48px)) !important;
+    max-width: min(1000px, calc(100vw - 48px)) !important;
+    height: auto !important;
+    max-height: calc(100dvh - 40px) !important;
+    padding: 20px 24px !important;
+    overflow-y: auto;
+  }
+  .market-negotiation-backdrop .contract-folder > h2 {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    margin: 0;
+    color: #fff0ba;
+    font-size: 22px;
+  }
+  .market-negotiation-backdrop .contract-folder > .contract-sheet {
+    grid-column: 1;
+    grid-row: 2;
+    margin: 0 3px 4px 0;
+    padding: 20px 24px;
+    align-self: stretch;
+    display: flex;
+    flex-direction: column;
+    transform: rotate(-0.4deg);
+  }
+  .market-negotiation-backdrop .contract-folder .contract-signature-field {
+    margin-top: auto;
+    min-height: 60px;
+  }
+  .market-negotiation-backdrop .contract-folder > .contract-player-seat {
+    grid-column: 2;
+    grid-row: 2;
+  }
+  .market-negotiation-backdrop .contract-folder > .market-player-speech {
+    grid-column: 2;
+    grid-row: 3 / span 2;
+    align-self: start;
+    margin: 0;
+  }
+  .market-negotiation-backdrop .contract-folder > .negotiation-range {
+    grid-column: 1;
+    grid-row: 3;
+    margin: 0;
+  }
+  .market-negotiation-backdrop .contract-folder > .contract-actions,
+  .market-negotiation-backdrop .contract-folder > button.primary {
+    grid-column: 1;
+    grid-row: 4;
+    margin: 0;
+    gap: 10px;
+  }
+  .market-negotiation-backdrop .contract-folder .contract-actions > button.full {
+    min-height: 62px;
+    padding: 10px;
+  }
+  .market-negotiation-backdrop .contract-folder > .negotiation-counter {
+    grid-column: 2;
+    grid-row: 4;
+    align-self: end;
+    margin: 0;
+  }
+  .market-negotiation-backdrop .contract-folder > .close-modal {
+    grid-column: 1 / -1;
+    grid-row: 5;
+    position: static !important;
+    margin: 0 !important;
+  }
+}
+@media (max-width: 700px) {
+  .market-negotiation-backdrop .contract-player-seat {
+    flex-direction: row;
+    justify-content: flex-start;
+    padding: 0;
+    gap: 12px;
+  }
+  .market-negotiation-backdrop .contract-player-seat .portrait {
+    height: 72px;
+    width: 65px;
+  }
+  .market-negotiation-backdrop .contract-player-seat figcaption {
+    padding: 6px 12px;
+  }
+}
+
+@media (min-width: 701px) {
+  .market-negotiation-backdrop > .contract-folder[role='dialog'] {
+    position: relative !important;
+    inset: auto !important;
+    margin: auto !important;
+    min-height: 0 !important;
+    height: fit-content !important;
+    grid-template-rows: auto clamp(180px, 29dvh, 250px) auto auto auto auto;
+    row-gap: 10px;
+    padding: 16px 22px !important;
+  }
+  .market-negotiation-backdrop .contract-folder > .contract-sheet {
+    grid-row: 2 / span 2;
+    padding: 18px 22px;
+  }
+  .market-negotiation-backdrop .contract-folder > .contract-player-seat {
+    padding-top: 0;
+    gap: 4px;
+    justify-content: center;
+  }
+  .market-negotiation-backdrop .contract-player-seat .portrait {
+    height: clamp(170px, 27dvh, 230px);
+    width: auto;
+  }
+  .market-negotiation-backdrop .contract-player-seat figcaption {
+    padding: 3px 12px;
+  }
+  .market-negotiation-backdrop .contract-folder > .market-player-speech {
+    grid-row: 3;
+    align-self: center;
+    padding: 10px 12px;
+  }
+  .market-negotiation-backdrop .contract-folder > .negotiation-range {
+    grid-column: 1 / -1;
+    grid-row: 4;
+    width: min(100%, 650px);
+    justify-self: center;
+    box-sizing: border-box;
+    padding: 10px 14px;
+  }
+  .market-negotiation-backdrop .contract-folder > .contract-actions,
+  .market-negotiation-backdrop .contract-folder > button.primary {
+    grid-column: 1 / -1;
+    grid-row: 5;
+    width: min(100%, 650px);
+    justify-self: center;
+  }
+  .market-negotiation-backdrop .contract-folder > .negotiation-counter {
+    grid-column: 1 / -1;
+    grid-row: auto;
+    justify-self: center;
+  }
+  .market-negotiation-backdrop .contract-folder > .close-modal {
+    grid-row: auto;
+  }
+}
+
+/* Restaurant scenery is drawn with CSS; no background image is requested. */
+.market-negotiation-backdrop .negotiation-restaurant {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(90deg, #14241bc9, #1d211b80), linear-gradient(#44352d, #24271e);
+}
+.restaurant-windows {
+  position: absolute;
+  inset: 26px 0 25%;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  opacity: 0.5;
+}
+.restaurant-windows > i {
+  border: 8px solid #a39570;
+  border-left: 22px solid #763c40;
+  border-right: 22px solid #763c40;
+  box-shadow:
+    inset 0 0 0 5px #272d24,
+    4px 0 #482d2d;
+  background:
+    linear-gradient(90deg, transparent 48%, #a3957066 48% 51%, transparent 51%),
+    linear-gradient(transparent 65%, #a3957066 65% 67%, transparent 67%),
+    linear-gradient(150deg, #314562, #ab8275 70%, #d6b277);
+}
+.restaurant-lights {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 130px;
+  opacity: 0.7;
+  background:
+    radial-gradient(circle at 20% 30%, #fff2bc 0 3px, #ffe6aa22 4px, transparent 15px),
+    radial-gradient(circle at 42% 43%, #fff2bc 0 3px, #ffe6aa22 4px, transparent 15px),
+    radial-gradient(circle at 65% 44%, #fff2bc 0 3px, #ffe6aa22 4px, transparent 15px),
+    radial-gradient(circle at 88% 30%, #fff2bc 0 3px, #ffe6aa22 4px, transparent 15px);
+  border-bottom: 2px solid #312b22;
+  border-radius: 0 0 50% 50%;
+}
+.restaurant-floor {
+  position: absolute;
+  inset: 74% 0 0;
+  border-top: 3px solid #9e805744;
+  background:
+    repeating-linear-gradient(0deg, transparent 0 31px, #deb27712 32px 33px),
+    linear-gradient(#57422c, #282a20);
+}
+.restaurant-table {
+  position: absolute;
+  right: -10px;
+  bottom: 55px;
+  width: 190px;
+  height: 95px;
+  background: linear-gradient(90deg, #632f34, #844047, #632f34);
+  border-radius: 50% 50% 12% 12% / 18% 18% 8% 8%;
+  opacity: 0.6;
+  box-shadow: 0 22px 20px #0003;
+}
+.restaurant-table::after {
+  content: '';
+  position: absolute;
+  top: 90px;
+  left: 35px;
+  width: 115px;
+  height: 50px;
+  border-left: 6px solid #27271f;
+  border-right: 6px solid #27271f;
+  transform: skew(-6deg);
+}
+.restaurant-table > i {
+  position: absolute;
+  top: -22px;
+  left: 80px;
+  width: 12px;
+  height: 28px;
+  border-radius: 4px;
+  background: linear-gradient(#f8df9a, #bda774);
+  box-shadow: 0 -5px 35px 15px #ffe0a52b;
+}
+@media (min-width: 701px) {
+  .market-negotiation-backdrop > .contract-folder[role='dialog'] {
+    width: min(840px, calc(100vw - 48px)) !important;
+    max-width: min(840px, calc(100vw - 48px)) !important;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    column-gap: 20px;
+  }
+}
+.contract-duration-picker {
+  min-width: 0;
+  border: 0;
+  padding: 0;
+  margin: 10px 0 14px;
+}
+.contract-duration-picker legend {
+  color: #344b3c;
+  font:
+    700 13px/1.4 Arial,
+    sans-serif;
+  margin-bottom: 7px;
+}
+.contract-duration-picker > div {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 5px;
+}
+.market-negotiation-backdrop .contract-duration-picker button {
+  min-width: 0;
+  min-height: 38px;
+  padding: 7px 2px;
+  border: 1px solid #a99a67;
+  background: #f0ead7;
+  color: #244331;
+  font:
+    700 12px/1.2 Arial,
+    sans-serif;
+  white-space: nowrap;
+}
+.market-negotiation-backdrop .contract-duration-picker button[aria-pressed='true'] {
+  background: #174632;
+  color: #fff0b5;
+  border-color: #174632;
+  box-shadow: inset 0 0 0 2px #d8c17b;
+}
+
+/* The dining corner: upholstered seats, red linen and leafy plants. */
+.restaurant-plant {
+  position: absolute;
+  right: 4%;
+  bottom: 24%;
+  width: 110px;
+  height: 230px;
+  border-left: 4px solid #638979;
+  transform: rotate(-5deg);
+  opacity: 0.75;
+}
+.restaurant-plant > span {
+  position: absolute;
+  left: -5px;
+  bottom: 50px;
+  width: 38px;
+  height: 85px;
+  border-radius: 80% 10% 75% 20%;
+  background:
+    repeating-linear-gradient(75deg, transparent 0 8px, #9bbba415 9px 10px),
+    linear-gradient(70deg, #346b62, #639d8d);
+  transform-origin: 5px 95%;
+  transform: rotate(-65deg);
+}
+.restaurant-plant > span:nth-child(2) {
+  bottom: 75px;
+  transform: rotate(45deg);
+}
+.restaurant-plant > span:nth-child(3) {
+  bottom: 95px;
+  transform: rotate(-40deg);
+}
+.restaurant-plant > span:nth-child(4) {
+  bottom: 112px;
+  transform: rotate(35deg);
+}
+.restaurant-plant > span:nth-child(5) {
+  bottom: 132px;
+  transform: rotate(-20deg);
+}
+.restaurant-plant > span:nth-child(6) {
+  bottom: 40px;
+  transform: rotate(65deg);
+}
+.restaurant-plant > span:nth-child(7) {
+  bottom: 15px;
+  transform: rotate(-75deg);
+}
+.restaurant-plant > i {
+  position: absolute;
+  left: -26px;
+  bottom: -30px;
+  width: 55px;
+  height: 60px;
+  background: linear-gradient(90deg, #9d9a82, #ddd4b8, #a5a28b);
+  clip-path: polygon(0 0, 100% 0, 85% 100%, 15% 100%);
+}
+.restaurant-chair {
+  position: absolute;
+  bottom: 70px;
+  right: 16px;
+  width: 68px;
+  height: 150px;
+  border-radius: 26px 26px 10px 10px;
+  background: repeating-linear-gradient(95deg, #c9c9bc 0 9px, #b4b6ac 10px 12px);
+  box-shadow:
+    inset 5px 0 0 #eeeee230,
+    5px 5px 12px #1115;
+  opacity: 0.65;
+  transform: skew(-8deg);
+}
+.restaurant-chair::after {
+  content: '';
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  top: 100%;
+  height: 65px;
+  border-left: 4px solid #303632;
+  border-right: 4px solid #303632;
+}
+.restaurant-chair-left {
+  right: 220px;
+  transform: skew(8deg);
+}
+.restaurant-table {
+  width: 210px;
+  height: 100px;
+  right: 42px;
+  bottom: 50px;
+  opacity: 0.8;
+  background:
+    repeating-linear-gradient(95deg, transparent 0 22px, #431c292b 23px 25px),
+    linear-gradient(90deg, #913647, #b84d60 50%, #813143);
+  border-top: 9px solid #bf5263;
+  border-radius: 50% 50% 12% 12% / 12% 12% 10% 10%;
+}
+.restaurant-table > .restaurant-vase {
+  top: -39px;
+  left: 95px;
+  width: 21px;
+  height: 30px;
+  background: linear-gradient(90deg, #b7bba7, #e2e1d2, #9ea897);
+  box-shadow: 0 3px 4px #2226;
+  border-radius: 2px 2px 6px 6px;
+}
+.restaurant-vase > span {
+  position: absolute;
+  bottom: 26px;
+  left: 8px;
+  width: 9px;
+  height: 29px;
+  border-radius: 100% 0;
+  transform: rotate(-35deg);
+  transform-origin: bottom;
+  background: #5a9a81;
+}
+.restaurant-vase > span:nth-child(2) {
+  transform: rotate(10deg);
+  height: 35px;
+}
+.restaurant-vase > span:nth-child(3) {
+  transform: rotate(50deg);
+}
+.restaurant-pendant {
+  position: absolute;
+  right: 9%;
+  top: 0;
+  height: 155px;
+  width: 3px;
+  background: #282b24;
+}
+.restaurant-pendant::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: -33px;
+  width: 70px;
+  height: 55px;
+  background: repeating-linear-gradient(85deg, #d9c894 0 9px, #c5b581 10px 12px);
+  clip-path: polygon(22% 0, 78% 0, 100% 100%, 0 100%);
+  filter: drop-shadow(0 10px 15px #ffe7a9);
+  opacity: 0.8;
+}
+
+@media (max-width: 700px) {
+  .market-negotiation-backdrop > .contract-folder[role='dialog'] {
+    display: flex;
+    flex-direction: column;
+  }
+  .market-negotiation-backdrop .contract-folder > h2 {
+    display: none;
+  }
+  .market-negotiation-backdrop .contract-folder > .contract-player-seat {
+    order: -3;
+    margin: 0;
+  }
+  .market-negotiation-backdrop .contract-folder > .market-player-speech {
+    order: -2;
+    margin: 0 0 6px;
+  }
+  .market-negotiation-backdrop .contract-folder > .contract-sheet {
+    order: -1;
+  }
+}
+
+@media (max-width: 700px) {
+  .market-negotiation-backdrop .contract-folder > .contract-player-seat {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+  }
+  .market-negotiation-backdrop .contract-player-seat .portrait {
+    width: 126px;
+    height: 140px;
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 700px) {
+  .market-negotiation-backdrop > .contract-folder[role='dialog'] {
+    display: grid;
+    grid-template-columns: minmax(125px, 42%) minmax(0, 1fr);
+    column-gap: 10px;
+    row-gap: 12px;
+  }
+  .market-negotiation-backdrop .contract-folder > .contract-player-seat {
+    grid-column: 1;
+    grid-row: 1;
+    align-self: center;
+  }
+  .market-negotiation-backdrop .contract-player-seat .portrait {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 9 / 10;
+    max-height: 190px;
+  }
+  .market-negotiation-backdrop .contract-player-seat figcaption {
+    max-width: 100%;
+    box-sizing: border-box;
+    padding: 4px 7px;
+    font-size: 12px;
+    overflow-wrap: anywhere;
+  }
+  .market-negotiation-backdrop .contract-folder > .market-player-speech {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: center;
+    margin: 0;
+    padding: 10px;
+  }
+  .market-negotiation-backdrop .market-player-speech > p {
+    font-size: 13px;
+    line-height: 1.45;
+  }
+  .market-negotiation-backdrop .market-player-speech::after {
+    left: -5px;
+    bottom: auto;
+    top: 24px;
+    border: 0;
+    border-left: 1px solid var(--speech-color);
+    border-bottom: 1px solid var(--speech-color);
+  }
+  .market-negotiation-backdrop
+    .contract-folder
+    > :not(.contract-player-seat):not(.market-player-speech):not(.negotiation-restaurant) {
+    grid-column: 1 / -1;
+  }
+  .market-negotiation-backdrop .contract-folder > .contract-sheet {
+    grid-row: 2;
+  }
 }

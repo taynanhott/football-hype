@@ -1,5 +1,6 @@
 import type { WorldState } from '@football/shared';
 import { contractExpires, refusesForPlayingTime } from './player-contracts.js';
+import { replenishMinimumSquad } from './minimum-squad.js';
 
 /** Keep historical statistics and permanent development when a player changes clubs. */
 export function resetTransferredEffects(previous: WorldState, next: WorldState): WorldState {
@@ -116,6 +117,7 @@ export function settleContractDecisions(state: WorldState): WorldState {
         },
       },
     };
+    next = replenishMinimumSquad(next, club.id, player);
   }
   return resetTransferredEffects(state, next);
 }

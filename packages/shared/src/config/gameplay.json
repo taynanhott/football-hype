@@ -7,7 +7,7 @@
   "cupKickoffMinute": 1230,
   "roundIntervalDays": 7,
   "seed": 20261026,
-  "rosterSize": 16,
+  "rosterSize": 18,
   "startingBalance": 800000000,
   "baseTicketCents": 100,
   "baseUpgradeCost": 1000000,

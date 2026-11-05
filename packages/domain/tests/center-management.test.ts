@@ -42,6 +42,61 @@ beforeEach(() => {
   };
 });
 describe('gerenciamento do centro', () => {
+  it('cobra 25 mil e aguarda 30 dias do jogo entre compras de seringa', () => {
+    const balance = own().balance.cents;
+    expect(act('buy-syringe').ok).toBe(true);
+    expect(own().balance.cents).toBe(balance - 2500000);
+    const availableAt = state.lastProcessedAt + 30 * 86400000;
+    expect(center().operations?.syringeAvailableAt).toBe(availableAt);
+    const c = center();
+    state = {
+      ...state,
+      centers: {
+        ...state.centers,
+        byId: {
+          ...state.centers.byId,
+          [c.id]: { ...c, operations: { ...c.operations!, syringe: false } },
+        },
+      },
+      lastProcessedAt: availableAt - 1,
+    };
+    expect(act('buy-syringe').ok).toBe(false);
+    expect(own().balance.cents).toBe(balance - 2500000);
+    state = { ...state, lastProcessedAt: availableAt };
+    expect(act('buy-syringe').ok).toBe(true);
+    expect(own().balance.cents).toBe(balance - 5000000);
+  });
+  it('cobra 50 mil por treino individual e 20 mil por dia de tratamento médico', () => {
+    const [first, second] = own().playerIds;
+    const balance = own().balance.cents;
+    state = { ...state, injuries: { ...state.injuries, [second!]: 3 } };
+    expect(act('individual', first).ok).toBe(true);
+    expect(own().balance.cents).toBe(balance - 5000000);
+    expect(act('medical', second).ok).toBe(true);
+    expect(own().balance.cents).toBe(balance - 11000000);
+  });
+  it('recusa lesão de um dia e não cobra nem ocupa vaga sem saldo', () => {
+    const id = own().playerIds[0]!;
+    state = { ...state, injuries: { ...state.injuries, [id]: 1 } };
+    const balance = own().balance.cents;
+    expect(act('medical', id).ok).toBe(false);
+    expect(own().balance.cents).toBe(balance);
+    const club = own();
+    state = {
+      ...state,
+      injuries: { ...state.injuries, [id]: 2 },
+      clubs: {
+        ...state.clubs,
+        byId: {
+          ...state.clubs.byId,
+          [club.id]: { ...club, balance: { ...club.balance, cents: 3999999 } },
+        },
+      },
+    };
+    expect(act('medical', id).ok).toBe(false);
+    expect(center().operations?.medical ?? []).not.toContain(id);
+    expect(own().balance.cents).toBe(3999999);
+  });
   it('cobra tratamento e impede duplicidade e excesso de vagas', () => {
     const ids = own().playerIds;
     for (const id of ids.slice(0, 2))
@@ -54,7 +109,7 @@ describe('gerenciamento do centro', () => {
       };
     const balance = own().balance.cents;
     expect(act('fitness', ids[0]).ok).toBe(true);
-    expect(own().balance.cents).toBe(balance - 2500000);
+    expect(own().balance.cents).toBe(balance - 2000000);
     expect(act('fitness', ids[0]).ok).toBe(false);
     expect(act('fitness', ids[1]).ok).toBe(false);
     expect(center().operations?.fitness).toEqual([ids[0]]);
@@ -114,10 +169,10 @@ describe('gerenciamento do centro', () => {
     const id = own().playerIds[0]!;
     state = { ...state, injuries: { ...state.injuries, [id]: 8 } };
     expect(act('medical', id).ok).toBe(true);
-    expect(act('intense').ok).toBe(true);
+    expect(act('intense', id).ok).toBe(true);
     for (let i = 0; i < 3; i++) state = unwrap(playNextBatch(state, now));
     expect(worldStateSchema.safeParse(state).success).toBe(true);
-    expect(center().operations?.load).toBe('intense');
+    expect(center().operations?.playerLoads?.[id]).toBe('intense');
     expect(state.injuries[id]).toBeLessThan(8);
   });
 });

@@ -1,4 +1,5 @@
 export * from './config/domain-limits.js';
+export * from './config/center-services.js';
 export * from './config/money-precision.js';
 export * from './schemas/primitives.js';
 export * from './schemas/player.js';

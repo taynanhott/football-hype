@@ -15,7 +15,7 @@ export function scoutingReport(
   const level = Number.isFinite(scoutLevel) ? Math.max(1, Math.min(5, Math.floor(scoutLevel))) : 1;
   const hidden = !own && level === 1;
   const margin = own ? 0 : (6 - level) * 4;
-  const minimum = hidden ? null : Math.max(1, player.potential - margin);
+  const minimum = hidden ? null : Math.max(player.overall, player.potential - margin);
   const maximum = hidden ? null : Math.min(99, player.potential + margin);
   return {
     overall: hidden ? ('?' as const) : player.overall,

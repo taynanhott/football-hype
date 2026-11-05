@@ -14,9 +14,9 @@ describe('visibility provided by the scout', () => {
     expect(scoutingReport({ ...player, clubId: null }, 'own', 1).hidden).toBe(true);
   });
   it.each([
-    [2, '74–99'],
-    [3, '78–99'],
-    [4, '82–98'],
+    [2, '85–99'],
+    [3, '85–99'],
+    [4, '85–98'],
     [5, '86–94'],
   ] as const)('uses the level %i potential interval', (level, potential) => {
     expect(scoutingReport(player, 'own', level)).toMatchObject({
@@ -34,8 +34,13 @@ describe('visibility provided by the scout', () => {
     expect(scoutingReport({ ...player, academyClubId: 'own' }, 'own', 1).hidden).toBe(true);
   });
   it('bounds reports to valid ratings and reacts to a scout upgrade', () => {
-    expect(scoutingReport({ ...player, potential: 99 }, 'own', 2).potential).toBe('83–99');
-    expect(scoutingReport({ ...player, potential: 3 }, 'own', 2).potential).toBe('1–19');
+    expect(scoutingReport({ ...player, potential: 99 }, 'own', 2).potential).toBe('85–99');
+    expect(scoutingReport({ ...player, overall: 1, potential: 3 }, 'own', 2).potential).toBe(
+      '1–19',
+    );
+    expect(scoutingReport({ ...player, overall: 91, potential: 96 }, 'own', 3).potential).toBe(
+      '91–99',
+    );
     expect(scoutingReport(player, 'own', 1).hidden).toBe(true);
     expect(scoutingReport(player, 'own', 2).overall).toBe(85);
     expect(scoutingReport(player, undefined, 1).hidden).toBe(true);

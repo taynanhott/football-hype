@@ -247,7 +247,13 @@ export function createWorld(input: {
     clubIndex++;
   }
   for (let index = 0; index < 48; index++) {
-    const player = fictionalPlayer(2000 + index, null, index % GAMEPLAY.rosterSize, -1, random);
+    const player = fictionalPlayer(
+      Math.max(2000, clubIndex * GAMEPLAY.rosterSize) + index,
+      null,
+      index % GAMEPLAY.rosterSize,
+      -1,
+      random,
+    );
     players.push({
       ...player,
       nationality: ['AR', 'UY', 'PT', 'ES', 'FR', 'GB', 'DE', 'IT'][index % 8] ?? 'BR',

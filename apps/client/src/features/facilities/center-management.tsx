@@ -1,4 +1,5 @@
 import { Icon } from '../../ui/icons';
+import { CENTER_SERVICES } from '@football/shared';
 import { IndividualTrainingRoster } from './individual-training-roster';
 import { GeneratedPerson } from '../../ui/person-avatar';
 import { FitnessGym } from './fitness-gym';
@@ -95,10 +96,18 @@ export function CenterManagement({
   const treatment = medical || sector === 'fitness';
   const active = medical ? (ops?.medical ?? []) : (ops?.fitness ?? []);
   const slots = treatment ? Math.max(0, level - 2) : Math.min(3, level);
-  const cost = treatment ? (medical ? 50000 : 25000) : 100000;
+  const cost = treatment
+    ? medical
+      ? CENTER_SERVICES.medicalPerDay * (state.injuries[playerId] ?? 0)
+      : CENTER_SERVICES.fitness
+    : CENTER_SERVICES.individual;
+  const syringeDays = Math.max(
+    0,
+    Math.ceil(((ops?.syringeAvailableAt ?? 0) - state.lastProcessedAt) / 86400000),
+  );
   const eligible = players.filter((p) =>
     treatment
-      ? !active.includes(p.id) && (medical ? (state.injuries[p.id] ?? 0) > 0 : p.fitness < 100)
+      ? !active.includes(p.id) && (medical ? (state.injuries[p.id] ?? 0) > 1 : p.fitness < 100)
       : p.overall < 99 && !ops?.individual.some((t) => t.playerId === p.id),
   );
   const occupied = treatment ? active.length : (ops?.individual.length ?? 0);
@@ -170,7 +179,7 @@ export function CenterManagement({
                         <Option key={p.id} value={p.id}>
                           {p.name} ·{' '}
                           {medical
-                            ? `${state.injuries[p.id]} jogos de recuperação`
+                            ? `${state.injuries[p.id]} dias · ${currency(CENTER_SERVICES.medicalPerDay * (state.injuries[p.id] ?? 0))}`
                             : `${Math.round(p.fitness)}% de condição · OVR ${p.overall}`}
                         </Option>
                       ))}
@@ -245,11 +254,17 @@ export function CenterManagement({
                 <button
                   className="secondary full"
                   disabled={
-                    busy || !!ops?.syringe || !!ops?.clearance || club.balance.cents < 150000
+                    busy ||
+                    !!ops?.syringe ||
+                    !!ops?.clearance ||
+                    syringeDays > 0 ||
+                    club.balance.cents < CENTER_SERVICES.syringe
                   }
                   onClick={() => act('buy-syringe')}
                 >
-                  Comprar seringa · {currency(150000)}
+                  {syringeDays > 0
+                    ? `Comprar seringa · ${syringeDays} ${syringeDays === 1 ? 'dia' : 'dias'}`
+                    : `Comprar seringa · ${currency(CENTER_SERVICES.syringe)}`}
                 </button>
                 {ops?.syringe && (
                   <>

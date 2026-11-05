@@ -47,6 +47,7 @@ export const trainingCenterSchema = z
           .array(z.object({ playerId: z.string(), startedAt: z.number(), endsAt: z.number() }))
           .default([]),
         syringe: z.boolean().default(false),
+        syringeAvailableAt: z.number().int().nonnegative().optional(),
         clearance: z.object({ playerId: z.string(), fixtureId: z.string() }).optional(),
       })
       .optional(),
