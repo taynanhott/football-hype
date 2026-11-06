@@ -8,7 +8,12 @@ export type PendingAction = {
   sent: boolean;
   revision?: number;
 };
-export type QueueView = { snapshot: GameSnapshot; pendingActions: number; busy: boolean };
+export type QueueView = {
+  snapshot: GameSnapshot;
+  pendingActions: number;
+  busy: boolean;
+  advancing: boolean;
+};
 const barrier = (command: GameCommand) =>
   command.type === 'advance' || command.type === 'new-season';
 export function draftKey(command: GameCommand): string | undefined {
@@ -67,7 +72,7 @@ export class ActionQueue {
   }
   enqueue(command: GameCommand, id: string, at: number) {
     if (!this.confirmed || this.stopped) throw new Error('Reconecte à liga para sincronizar');
-    if (this.actions.some((action) => barrier(action.command)))
+    if (barrier(command) && this.actions.some((action) => barrier(action.command)))
       throw new Error('Aguarde a atualização da rodada');
 
     // Reject invalid actions immediately using the data already on the player's machine.
@@ -174,7 +179,8 @@ export class ActionQueue {
     this.change({
       snapshot,
       pendingActions: this.actions.length,
-      busy: this.stopped || this.actions.some((action) => barrier(action.command)),
+      busy: this.stopped || this.actions.some((action) => action.command.type === 'new-season'),
+      advancing: this.actions.some((action) => barrier(action.command)),
     });
   }
   private pump() {

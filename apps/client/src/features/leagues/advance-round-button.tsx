@@ -14,7 +14,11 @@ export function AdvanceRoundButton({
   const send = useGameStore((state) => state.send);
   return (
     <>
-      <button className="primary" disabled={disabled} onClick={() => setOpen(true)}>
+      <button
+        className="primary advance-round-button"
+        disabled={disabled}
+        onClick={() => setOpen(true)}
+      >
         {newSeason ? 'Iniciar nova temporada' : 'Avançar rodada'}
         <Icon name="arrow" />
       </button>

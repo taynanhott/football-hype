@@ -232,7 +232,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
         },
         (view) => {
           if (get().room === room)
-            set({ ...view, ...(!view.busy ? { loadingActivity: null } : {}) });
+            set({
+              snapshot: view.snapshot,
+              pendingActions: view.pendingActions,
+              busy: view.busy || (view.advancing && get().loadingActivity === 'travel'),
+              ...(!view.advancing ? { loadingActivity: null } : {}),
+            });
         },
         (message) => {
           if (get().room === room) set({ error: message });

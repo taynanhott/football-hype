@@ -96,11 +96,20 @@ describe('fila de ações com resposta local', () => {
     expect(send).toHaveBeenCalledTimes(1);
   });
   it('aguarda a simulação de rodada sem executá-la duas vezes no cliente', () => {
-    const { queue, view } = setup();
-    queue.enqueue({ type: 'advance' }, randomUUID(), 1);
-    expect(view().busy).toBe(true);
+    const { queue, view, send } = setup();
+    const id = randomUUID();
+    queue.enqueue({ type: 'advance' }, id, 1);
+    expect(view().busy).toBe(false);
+    expect(view().advancing).toBe(true);
     expect(view().snapshot.state.round).toBe(initial.round);
-    expect(() => queue.enqueue(price(100), randomUUID(), 1)).toThrow('rodada');
+    expect(() => queue.enqueue({ type: 'advance' }, randomUUID(), 1)).toThrow('rodada');
+    const next = randomUUID();
+    queue.enqueue(price(100), next, 1);
+    expect(send).toHaveBeenCalledTimes(1);
+    const confirmed = applied(initial, { type: 'advance' }, id);
+    queue.accept(snapshot(confirmed.state, confirmed.event));
+    expect(send.mock.calls.map((call) => call[0])).toEqual([id, next]);
+    expect(view().advancing).toBe(false);
   });
   it('libera a rodada quando o histórico confirma o avanço mesmo sem ack', () => {
     const { queue, view, send } = setup();

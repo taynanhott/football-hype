@@ -31,11 +31,34 @@ const POSITION_PATHS: Partial<Record<Position, readonly Position[]>> = {
 export function canLearnPosition(natural: Position, assigned: Position) {
   return POSITION_PATHS[natural]?.includes(assigned) ?? natural === assigned;
 }
+// Lateral distance distinguishes opposite flanks; depth follows the lines of play.
+const POSITION_LOCATION: Record<Position, readonly [number, number]> = {
+  GK: [0, -1],
+  CB: [0, 0],
+  LB: [-2, 0],
+  RB: [2, 0],
+  LWB: [-2, 1],
+  RWB: [2, 1],
+  DM: [0, 1],
+  CM: [0, 2],
+  LM: [-2, 2],
+  RM: [2, 2],
+  AM: [0, 3],
+  LW: [-2, 3],
+  RW: [2, 3],
+  SS: [0, 3.5],
+  ST: [0, 4],
+};
 export function positionFactor(natural: Position, assigned: Position, matches = 0): number {
   if (natural === assigned) return 1;
   if (natural === 'GK' || assigned === 'GK') return TACTICS.goalkeeperMismatchFactor;
-  if (!canLearnPosition(natural, assigned)) return 0.45;
-  return 0.85 + (0.15 * Math.min(15, Math.max(0, matches))) / 15;
+  const origin = POSITION_LOCATION[natural];
+  const target = POSITION_LOCATION[assigned];
+  const distance = Math.hypot(origin[0] - target[0], origin[1] - target[1]);
+  const learnable = canLearnPosition(natural, assigned);
+  const base = distance <= 1 ? 0.97 : distance <= 2.5 ? 0.94 : learnable ? 0.85 : 0.45;
+  if (!learnable) return base;
+  return base + ((1 - base) * Math.min(15, Math.max(0, matches))) / 15;
 }
 export function masteredPositions(
   state: Pick<WorldState, 'positionExperience'>,

@@ -1,9 +1,29 @@
 import { useGameStore } from '../../store/game-store';
-import { useState } from 'react';
+import { roundNews } from './round-news';
+import { useMemo, useState, type ReactNode } from 'react';
+import { PlayerDetails } from '../players/player-details';
 import type { WorldState, Negotiation } from '@football/shared';
 import { PersonAvatar, type PersonAppearance } from '../../ui/person-avatar';
 
 const REPORTERS: PersonAppearance[] = [
+  ...[
+    'Bruno Formiga',
+    'VSR',
+    'Jorge Iggor',
+    'Craque Neto',
+    'Luis Felipe Freitas',
+    'Octavio Neto',
+    'Villani',
+  ].map((name, index): PersonAppearance => ({
+    name,
+    skin: ['#edc3a3', '#d9ad88', '#efc6a6'][index % 3]!,
+    hair: index % 2 ? 'curto' : 'ondulado',
+    hairColor: index === 3 ? '#74706a' : '#302a24',
+    beard: index % 2 ? 'curta' : 'nenhuma',
+    ...(index === 0 ? { glasses: 'redondo' } : {}),
+    outfit: ['#303b50', '#43374b', '#343b35'][index % 3]!,
+    outfitStyle: index % 2 ? 'polo' : 'camisa',
+  })),
   {
     name: 'Cazé',
     skin: '#f0c9ac',
@@ -67,6 +87,27 @@ const COMPETITION_HEADLINES = [
   'entra na briga pela contratação de',
 ];
 export function TransferNews({ state }: { state: WorldState }) {
+  const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
+  const selectedPlayer = selectedPlayerId ? state.players.byId[selectedPlayerId] : undefined;
+  const mentions = useMemo(() => {
+    const names = new Map<string, { kind: 'club' | 'player'; id: string }>();
+    for (const player of Object.values(state.players.byId)) {
+      if (player.name.length > 2 && !names.has(player.name))
+        names.set(player.name, { kind: 'player', id: player.id });
+      if (/\bNeymar\b/i.test(player.name)) names.set('Neymar', { kind: 'player', id: player.id });
+    }
+    for (const club of Object.values(state.clubs.byId))
+      names.set(club.name, { kind: 'club', id: club.id });
+    const escaped = [...names.keys()]
+      .sort((a, b) => b.length - a.length)
+      .map((name) => name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+    return {
+      names,
+      pattern: escaped.length
+        ? new RegExp(`(?<![\\p{L}\\p{N}])(?:${escaped.join('|')})(?![\\p{L}\\p{N}])`, 'gu')
+        : null,
+    };
+  }, [state.players.byId, state.clubs.byId]);
   const userId = useGameStore((store) => store.userId);
   const ownClubId = state.participants.find((member) => member.userId === userId)?.clubId;
   function playerLink(offer: Negotiation) {
@@ -82,19 +123,45 @@ export function TransferNews({ state }: { state: WorldState }) {
       '#/market?player=' + encodeURIComponent(offer.playerId) + (competing ? '&tab=review' : '')
     );
   }
-  function linkedHeadline(text: string, offer: Negotiation) {
-    const name = state.players.byId[offer.playerId]?.name;
-    if (!name || !text.includes(name)) return text;
-    const index = text.indexOf(name);
-    return (
-      <>
-        {text.slice(0, index)}
-        <a className="news-player-link" href={playerLink(offer)}>
-          {name}
-        </a>
-        {text.slice(index + name.length)}
-      </>
-    );
+  function linkedHeadline(text: string, offer?: Negotiation) {
+    if (!mentions.pattern) return text;
+    const nodes: ReactNode[] = [];
+    let offset = 0;
+    for (const match of text.matchAll(mentions.pattern)) {
+      const name = match[0];
+      const entity = mentions.names.get(name)!;
+      nodes.push(text.slice(offset, match.index));
+      if (entity.kind === 'club')
+        nodes.push(
+          <a
+            className="news-entity-link"
+            key={match.index}
+            href={`#/trophies?club=${encodeURIComponent(entity.id)}`}
+          >
+            {name}
+          </a>,
+        );
+      else if (offer && entity.id === offer.playerId)
+        nodes.push(
+          <a className="news-entity-link" key={match.index} href={playerLink(offer)}>
+            {name}
+          </a>,
+        );
+      else
+        nodes.push(
+          <button
+            type="button"
+            className="news-entity-link"
+            key={match.index}
+            onClick={() => setSelectedPlayerId(entity.id)}
+          >
+            {name}
+          </button>,
+        );
+      offset = match.index + name.length;
+    }
+    nodes.push(text.slice(offset));
+    return nodes;
   }
   const [query, setQuery] = useState('');
   const [exploring, setExploring] = useState(false);
@@ -122,7 +189,7 @@ export function TransferNews({ state }: { state: WorldState }) {
         (offer.sellerId !== undefined && humanClubs.has(offer.sellerId)),
     )
     .sort((a, b) => (a.offeredAt ?? 0) - (b.offeredAt ?? 0));
-  const news = offers
+  const marketNews = offers
     .map((offer, index) => {
       const buyer = state.clubs.byId[offer.buyerId]?.name ?? 'Clube interessado';
       const seller = state.clubs.byId[offer.sellerId ?? '']?.name ?? 'o clube';
@@ -175,18 +242,45 @@ export function TransferNews({ state }: { state: WorldState }) {
         title = buyer + ' retira a oferta por ' + player;
         body = 'O clube desistiu da proposta. As conversas ficam suspensas por uma semana.';
       } else if (offer.status === 'rejected') body += ' Essa proposta não está mais em análise.';
-      return { offer, title, body, reporter: REPORTERS[index % REPORTERS.length]! };
+      return {
+        id: offer.id,
+        at: offer.offeredAt ?? 0,
+        offer,
+        title,
+        body,
+        reporter: REPORTERS[index % REPORTERS.length]!,
+        tags: ['#MercadoDaBola'],
+      };
     })
     .slice(-20)
     .reverse();
+  const news: {
+    id: string;
+    at: number;
+    offer?: Negotiation;
+    title: string;
+    body: string;
+    reporter: PersonAppearance;
+    tags: string[];
+  }[] = [
+    ...marketNews,
+    ...roundNews(state).map((item) => ({
+      ...item,
+      reporter:
+        REPORTERS.find((reporter) => reporter.name === item.reporterName) ??
+        REPORTERS[
+          Array.from(item.id).reduce((sum, char) => sum + char.charCodeAt(0), 0) % REPORTERS.length
+        ]!,
+    })),
+  ].sort((a, b) => b.at - a.at || a.id.localeCompare(b.id));
   const tag = (name: string) => '#' + name.replace(/[^\p{L}\p{N}]/gu, '');
   const tagsFor = (item: (typeof news)[number]) => [
     ...new Set(
       [
-        '#MercadoDaBola',
-        state.players.byId[item.offer.playerId]?.name,
-        state.clubs.byId[item.offer.buyerId]?.name,
-        state.clubs.byId[item.offer.sellerId ?? '']?.name,
+        ...item.tags,
+        item.offer && state.players.byId[item.offer.playerId]?.name,
+        item.offer && state.clubs.byId[item.offer.buyerId]?.name,
+        item.offer && state.clubs.byId[item.offer.sellerId ?? '']?.name,
       ]
         .filter((name): name is string => Boolean(name))
         .map((name) => (name.startsWith('#') ? name : tag(name))),
@@ -208,16 +302,20 @@ export function TransferNews({ state }: { state: WorldState }) {
     (item) =>
       (!topic || tagsFor(item).includes(topic)) &&
       (filter === 'all' ||
-        (filter === 'saved' ? saved.includes(item.offer.id) : item.offer.status === 'completed')) &&
+        (filter === 'saved' ? saved.includes(item.id) : item.offer?.status === 'completed')) &&
       (item.title + ' ' + item.body + ' ' + item.reporter.name)
         .toLocaleLowerCase('pt-BR')
         .includes(query.toLocaleLowerCase('pt-BR')),
   );
   const trending = [
-    ...new Set(news.map((item) => state.players.byId[item.offer.playerId]?.name).filter(Boolean)),
+    ...new Set(
+      news
+        .map((item) => item.offer && state.players.byId[item.offer.playerId]?.name)
+        .filter(Boolean),
+    ),
   ].slice(0, 5);
   return (
-    <section className="transfer-news-page twitter-news" aria-label="Noticiário de transferências">
+    <section className="transfer-news-page twitter-news" aria-label="Noticiário do futebol">
       <nav className="news-left-nav" aria-label="Navegação do noticiário">
         <span className="news-network-logo" role="img" aria-label="Águia do noticiário">
           <svg viewBox="0 0 48 48" width="32" height="32" aria-hidden="true">
@@ -307,7 +405,7 @@ export function TransferNews({ state }: { state: WorldState }) {
             <PersonAvatar profile={REPORTERS[0]!} />
           </span>
           <div>
-            <label htmlFor="news-search-input">O que está acontecendo no mercado?</label>
+            <label htmlFor="news-search-input">O que está acontecendo no futebol?</label>
             <div className="news-composer-tools">
               <span aria-hidden="true">▧ ▤ ▥ ☺ ⚑</span>
               <button onClick={() => document.getElementById('news-search-input')?.focus()}>
@@ -322,7 +420,7 @@ export function TransferNews({ state }: { state: WorldState }) {
             ? 'salvas'
             : filter === 'completed'
               ? 'de negócios fechados'
-              : 'do mercado'}
+              : 'do futebol'}
         </div>
         <div className="transfer-news-feed">
           {exploring && (
@@ -384,8 +482,8 @@ export function TransferNews({ state }: { state: WorldState }) {
                   </p>
                 </div>
               )}
-              {visible.map(({ offer, title, body, reporter }) => (
-                <article className="transfer-news-item" key={offer.id}>
+              {visible.map(({ id, at, tags, offer, title, body, reporter }) => (
+                <article className="transfer-news-item" key={id}>
                   <div className="transfer-reporter-avatar">
                     <PersonAvatar profile={reporter} />
                   </div>
@@ -405,30 +503,30 @@ export function TransferNews({ state }: { state: WorldState }) {
                       </span>
                     </div>
                     <h3>{linkedHeadline(title, offer)}</h3>
-                    <p>{body}</p>
+                    <p>{linkedHeadline(body, offer)}</p>
                     <small>
-                      {offer.offeredAt
-                        ? new Date(offer.offeredAt).toLocaleDateString('pt-BR', {
+                      {at
+                        ? new Date(at).toLocaleDateString('pt-BR', {
                             timeZone: 'America/Sao_Paulo',
                           })
                         : 'Temporada ' + state.season}
                     </small>
                     <div className="news-post-footer">
-                      <button onClick={() => openTopic('#MercadoDaBola')}>#MercadoDaBola</button>
+                      <button onClick={() => openTopic(tags[0]!)}>{tags[0]}</button>
                       <button
-                        aria-pressed={saved.includes(offer.id)}
+                        aria-pressed={saved.includes(id)}
                         aria-label={
-                          saved.includes(offer.id) ? 'Remover notícia dos salvos' : 'Salvar notícia'
+                          saved.includes(id) ? 'Remover notícia dos salvos' : 'Salvar notícia'
                         }
                         onClick={() =>
                           setSaved((previous) =>
-                            previous.includes(offer.id)
-                              ? previous.filter((id) => id !== offer.id)
-                              : [...previous, offer.id],
+                            previous.includes(id)
+                              ? previous.filter((entry) => entry !== id)
+                              : [...previous, id],
                           )
                         }
                       >
-                        {saved.includes(offer.id) ? '★ Salvo' : '☆ Salvar'}
+                        {saved.includes(id) ? '★ Salvo' : '☆ Salvar'}
                       </button>
                     </div>
                   </div>
@@ -482,6 +580,13 @@ export function TransferNews({ state }: { state: WorldState }) {
         </section>
         <p className="news-discover-note">Notícias da sua liga · Últimas 20 movimentações</p>
       </aside>
+      {selectedPlayer && (
+        <PlayerDetails
+          player={selectedPlayer}
+          club={state.clubs.byId[selectedPlayer.clubId ?? '']}
+          onClose={() => setSelectedPlayerId(null)}
+        />
+      )}
     </section>
   );
 }

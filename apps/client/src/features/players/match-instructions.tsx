@@ -205,7 +205,7 @@ export function MatchInstructionsEditor({
               <div className="match-situation-controls">
                 <label>
                   <Select
-                    className="match-situation-select"
+                    className={`match-situation-select ${!rule?.style ? 'unchanged-choice' : ''}`}
                     menuMinWidth={240}
                     aria-label={`Estilo: ${label}`}
                     value={rule?.style ?? ''}
@@ -213,7 +213,12 @@ export function MatchInstructionsEditor({
                       change({ style: style ? playStyleSchema.parse(style) : undefined })
                     }
                   >
-                    <Option value="">Não muda</Option>
+                    <Option value="">
+                      <span className="match-option-content">
+                        <Icon name="block" size={16} />
+                        <span>Não muda</span>
+                      </span>
+                    </Option>
                     {playStyleSchema.options.map((s) => (
                       <Option key={s} value={s}>
                         <span className={`match-option-content play-style-option play-style-${s}`}>
@@ -226,7 +231,7 @@ export function MatchInstructionsEditor({
                 </label>
                 <label>
                   <Select
-                    className="match-situation-select"
+                    className={`match-situation-select ${!rule?.formation ? 'unchanged-choice' : ''}`}
                     menuMinWidth={240}
                     aria-label={`Formação: ${label}`}
                     value={rule?.formation ?? ''}
@@ -236,7 +241,12 @@ export function MatchInstructionsEditor({
                       })
                     }
                   >
-                    <Option value="">Não muda</Option>
+                    <Option value="">
+                      <span className="match-option-content">
+                        <Icon name="block" size={16} />
+                        <span>Não muda</span>
+                      </span>
+                    </Option>
                     {formationSchema.options.map((f) => (
                       <Option key={f} value={f}>
                         <span className="match-option-content">

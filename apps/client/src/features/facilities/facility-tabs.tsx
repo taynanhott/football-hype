@@ -22,6 +22,7 @@ export function FacilityTabs({
       {items.map((item) => (
         <button
           key={item.id}
+          className={`sector-${item.id} stadium-sector-${item.id}`}
           role="tab"
           aria-label={item.fullLabel}
           title={item.fullLabel}

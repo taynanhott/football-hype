@@ -1,6 +1,7 @@
 import { clubKit, MATCH_DURATION_MS, type MatchResult } from '@football/shared';
 import { lazy, Suspense, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { PixelBadge } from '../../ui/pixel-badge';
+import { Icon } from '../../ui/icons';
 import type { ViewProps } from '../../ui/view-props';
 import { useGameStore } from '../../store/game-store';
 import { visibleActionMinute } from '../../three/match-playback';
@@ -172,9 +173,29 @@ export function Matches({ snapshot, club }: ViewProps) {
   }, [result, minute, elapsed, start, soundOn]);
   if (!result)
     return (
-      <section className="panel">
-        <h1>Central de partidas</h1>
-        <p>Avance uma rodada para acompanhar seu clube em campo.</p>
+      <section className="matches-empty" aria-label="Nenhuma partida disputada">
+        <div className="matches-empty-pitch" aria-hidden="true">
+          <Icon name="pitch" size={132} />
+          <PixelBadge name={club.name} size={desktop ? 128 : 48} />
+        </div>
+        <div className="matches-empty-content">
+          <span className="matches-empty-status">
+            <i />
+            Aguardando o apito inicial
+          </span>
+          <h2>Seu clube ainda não entrou em campo</h2>
+          <p>Depois do primeiro jogo, acompanhe aqui os lances, o placar e as estatísticas.</p>
+          <nav aria-label="Preparação para a próxima partida">
+            <a href="#/calendar">
+              <Icon name="calendar" size={17} />
+              Ver calendário
+            </a>
+            <a href="#/lineup">
+              <Icon name="lineup" size={17} />
+              Preparar escalação
+            </a>
+          </nav>
+        </div>
       </section>
     );
   const home = state.clubs.byId[result.homeId ?? ''];

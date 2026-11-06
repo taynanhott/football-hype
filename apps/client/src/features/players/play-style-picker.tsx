@@ -37,7 +37,7 @@ export function PlayStylePicker({
     .map((s) => STYLE_LABELS[s])
     .join(' e ');
   return (
-    <section className="play-style-cards" aria-label="Estilo de jogo">
+    <section className="play-style-cards" data-style={value} aria-label="Estilo de jogo">
       <Select
         value={value}
         onValueChange={(s) => onChange(playStyleSchema.parse(s))}

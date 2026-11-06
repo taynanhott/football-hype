@@ -170,7 +170,8 @@ describe('relatórios mensais de caixa', () => {
       fixedCosts: 3000000,
       profit: 7000000,
     });
-    expect(report.averageProfit).toBe(3500000);
+    expect(report.averageProfit).toBe(0);
+    expect(report.previous?.month).toBe('2026-01');
     expect(report.months).toHaveLength(2);
     expect(recordFinancialHistory(saved, saved)).toBe(saved);
   });
@@ -205,7 +206,8 @@ describe('relatórios mensais de caixa', () => {
     expect(report.expenses).toBe(5000000);
     expect(report.current.profit).toBe(-4000000);
     expect(report.months.find((m) => m.month === '2026-02')?.profit).toBe(0);
-    expect(report.averageProfit).toBe(-2000000 / 3);
+    expect(report.averageProfit).toBe(1000000);
+    expect(report.previous?.profit).toBe(0);
     expect(report.legacy).toBe(true);
   });
   it('não contabiliza salários não pagos como saída de caixa', () => {

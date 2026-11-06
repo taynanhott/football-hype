@@ -172,11 +172,18 @@ export function monthlyFinancialReport(
     .map((row) => ({ ...row, profit: row.income - row.expenses }));
   const income = months.reduce((sum, r) => sum + r.income, 0),
     expenses = months.reduce((sum, r) => sum + r.expenses, 0);
+  const completedMonths = months.filter((row) => row.month < last);
+  const previousDate = new Date(end);
+  previousDate.setUTCMonth(previousDate.getUTCMonth() - 1);
+  const previousMonth = previousDate.toISOString().slice(0, 7);
   return {
     months,
     income,
     expenses,
-    averageProfit: months.length ? (income - expenses) / months.length : 0,
+    averageProfit: completedMonths.length
+      ? completedMonths.reduce((sum, row) => sum + row.profit, 0) / completedMonths.length
+      : 0,
+    previous: months.find((row) => row.month === previousMonth),
     current: months.find((row) => row.month === last)!,
     legacy: ledger.some(
       (e) =>

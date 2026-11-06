@@ -550,8 +550,8 @@ const individualCommandSchema = z.discriminatedUnion('type', [
   }),
   z.strictObject({
     type: z.literal('financial-plan'),
-    transfer: gameAmountSchema.transform((value) => Math.floor(value / 50000000) * 50000000),
-    salaries: salaryAmountSchema.transform((value) => Math.floor(value / 50000000) * 50000000),
+    transfer: gameAmountSchema,
+    salaries: salaryAmountSchema,
   }),
   z.strictObject({ type: z.literal('ready'), ready: z.boolean() }),
   z.strictObject({ type: z.literal('advance') }),

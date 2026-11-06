@@ -1,6 +1,6 @@
 import { FacilityTabs } from './facility-tabs';
 import { Select, Option } from '../../ui/select';
-import { clubKit } from '@football/shared';
+import { clubKit, GAMEPLAY } from '@football/shared';
 import { STADIUM_SKINS, linkedStadiumSkin } from '../../three/stadium-catalog';
 import { SECTORS, MARKETING_BENEFITS } from './center-sectors';
 import { CenterManagement, SectorGuide } from './center-management';
@@ -61,6 +61,34 @@ const DESCRIPTIONS: Record<string, { title: string; description: string }> = {
   },
 };
 const TRAINING_STYLES: Record<string, readonly string[]> = {
+  surroundings: [
+    'Acesso básico',
+    'Entrada organizada',
+    'Praça de acesso',
+    'Entorno urbanizado',
+    'Complexo de acesso à arena',
+  ],
+  food: [
+    'Lanchonete simples',
+    'Quiosques de alimentação',
+    'Praça de alimentação',
+    'Restaurantes da arena',
+    'Centro gastronômico',
+  ],
+  shirts: [
+    'Loja simples',
+    'Loja equipada',
+    'Loja oficial ampliada',
+    'Megaloja do clube',
+    'Centro comercial do torcedor',
+  ],
+  hospitality: [
+    'Camarote básico',
+    'Camarotes equipados',
+    'Lounges exclusivos',
+    'Camarotes premium',
+    'Hospitalidade de elite',
+  ],
   fitness: [
     'Academia simples',
     'Academia equipada',
@@ -237,172 +265,214 @@ export function Facilities(props: ViewProps & { training?: boolean }) {
           )}
         </div>
       </section>
-      <FacilityTabs
-        label={training ? 'Estruturas do CT' : 'Estruturas do estádio'}
-        value={(levels.some(([id]) => id === mobileSector) ? mobileSector : levels[0]?.[0]) ?? ''}
-        onChange={setMobileSector}
-        items={levels.map(([target]) => ({
-          id: target,
-          fullLabel: DESCRIPTIONS[target]?.title ?? target,
-          label:
-            (
-              {
-                fitness: 'Físico',
-                medical: 'Médico',
-                scouting: 'Scout',
-                coaching: 'Técnico',
-                marketing: 'Marketing',
-                pitch: 'Gramado',
-                surroundings: 'Entorno',
-                structure: 'Estrutura',
-                food: 'Alimentação',
-                shirts: 'Loja',
-                hospitality: 'Camarotes',
-              } as Record<string, string>
-            )[target] ?? target,
-          icon:
-            SECTORS[target]?.icon ??
-            (
-              {
-                pitch: 'pitch',
-                surroundings: 'entrance',
-                structure: 'stadium',
-                food: 'food',
-                shirts: 'shirt',
-                hospitality: 'hospitality',
-              } as Record<string, string>
-            )[target] ??
-            'stadium',
-        }))}
-      />
-      <div className="facility-grid">
-        {levels.map(([target, level]) => {
-          const info = DESCRIPTIONS[target];
-          const cost = upgradePrice(level, target);
-          return (
-            <section
-              className={`panel facility-card ${training ? `sector-card sector-${target}` : `stadium-sector stadium-sector-${target}`}`}
-              key={target}
-              data-mobile-active={
-                (levels.some(([id]) => id === mobileSector) ? mobileSector : levels[0]?.[0]) ===
-                target
-              }
-            >
-              <div className="section-header">
-                <span className="facility-icon">
-                  <Icon
-                    name={
-                      training
-                        ? (SECTORS[target]?.icon ?? 'training')
-                        : ((
-                            {
-                              pitch: 'pitch',
-                              surroundings: 'entrance',
-                              structure: 'stadium',
-                              food: 'food',
-                              shirts: 'shirt',
-                              hospitality: 'hospitality',
-                            } as Record<string, string>
-                          )[target] ?? 'stadium')
-                    }
-                    size={26}
-                  />
-                </span>
-                <span className="pill">NÍVEL {level} / 5</span>
-              </div>
-              <h2>{info?.title}</h2>
-              <p>{info?.description}</p>
-              {training && <SectorGuide sector={target} />}
-              {training && target === 'marketing' && (
-                <p className="sector-benefit">{MARKETING_BENEFITS[level - 1]}</p>
-              )}
-              {(target === 'structure' || target === 'pitch') && (
-                <div className="upgrade-evolution">
-                  <strong>
-                    {(target === 'structure' ? STADIUM_STYLES : PITCH_STYLES)[level - 1]}
-                  </strong>
-                  {level < 5 && (
-                    <span>
-                      Próximo: {(target === 'structure' ? STADIUM_STYLES : PITCH_STYLES)[level]}
-                    </span>
-                  )}
+      <div className="facility-structure-panel">
+        <FacilityTabs
+          label={training ? 'Estruturas do CT' : 'Estruturas do estádio'}
+          value={(levels.some(([id]) => id === mobileSector) ? mobileSector : levels[0]?.[0]) ?? ''}
+          onChange={setMobileSector}
+          items={levels.map(([target]) => ({
+            id: target,
+            fullLabel: DESCRIPTIONS[target]?.title ?? target,
+            label:
+              (
+                {
+                  fitness: 'Físico',
+                  medical: 'Médico',
+                  scouting: 'Scout',
+                  coaching: 'Técnico',
+                  marketing: 'Marketing',
+                  pitch: 'Gramado',
+                  surroundings: 'Entorno',
+                  structure: 'Estrutura',
+                  food: 'Alimentação',
+                  shirts: 'Loja',
+                  hospitality: 'Camarotes',
+                } as Record<string, string>
+              )[target] ?? target,
+            icon:
+              SECTORS[target]?.icon ??
+              (
+                {
+                  pitch: 'pitch',
+                  surroundings: 'entrance',
+                  structure: 'stadium',
+                  food: 'food',
+                  shirts: 'shirt',
+                  hospitality: 'hospitality',
+                } as Record<string, string>
+              )[target] ??
+              'stadium',
+          }))}
+        />
+        <div className="facility-grid">
+          {levels.map(([target, level]) => {
+            const info = DESCRIPTIONS[target];
+            const cost = upgradePrice(level, target);
+            const commerce =
+              stadium.commerce.foodLevel * 1.5 +
+              stadium.commerce.shirtsLevel +
+              stadium.commerce.hospitalityLevel * 4;
+            const percent = (value: number) =>
+              new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 0 }).format(
+                Math.floor(value),
+              );
+            const benefit =
+              level >= 5
+                ? 'Estrutura no máximo'
+                : (
+                    {
+                      pitch: '+2% de atratividade',
+                      surroundings: '+3% de atratividade',
+                      structure: '+2% de atratividade',
+                      food: `+${percent(150 / commerce)}% na receita de consumo*`,
+                      shirts: `+${percent(100 / commerce)}% na receita de consumo*`,
+                      hospitality: `+${percent(400 / commerce)}% na receita de consumo*`,
+                      scouting: `+${GAMEPLAY.interestFacilityWeight}% no interesse dos atletas`,
+                      coaching: `+${percent(100 / level)}% na evolução por treino`,
+                      medical: `−${percent((1 - Math.sqrt(level / (level + 1))) * 100)}% no risco de lesão em jogos`,
+                      fitness: `−${percent((100 * GAMEPLAY.fitnessFatigueReductionPerLevel) / (1 + level * GAMEPLAY.fitnessFatigueReductionPerLevel))}% no desgaste em jogos`,
+                      marketing: '+2% na demanda da torcida',
+                    } as Record<string, string>
+                  )[target];
+            return (
+              <section
+                className={`panel facility-card ${training ? `sector-card sector-${target}` : `stadium-sector stadium-sector-${target}`}`}
+                key={target}
+                data-mobile-active={
+                  (levels.some(([id]) => id === mobileSector) ? mobileSector : levels[0]?.[0]) ===
+                  target
+                }
+              >
+                <div className="section-header">
+                  <span className="facility-icon">
+                    <Icon
+                      name={
+                        training
+                          ? (SECTORS[target]?.icon ?? 'training')
+                          : ((
+                              {
+                                pitch: 'pitch',
+                                surroundings: 'entrance',
+                                structure: 'stadium',
+                                food: 'food',
+                                shirts: 'shirt',
+                                hospitality: 'hospitality',
+                              } as Record<string, string>
+                            )[target] ?? 'stadium')
+                      }
+                      size={26}
+                    />
+                  </span>
+                  <span className="pill">NÍVEL {level} / 5</span>
                 </div>
-              )}
-              {training && (
-                <div className="upgrade-evolution">
-                  <strong>{TRAINING_STYLES[target]?.[level - 1]}</strong>
-                  {level < 5 && <span>Próximo: {TRAINING_STYLES[target]?.[level]}</span>}
-                </div>
-              )}
-              <div className="facility-card-footer">
-                {level < 5 && (
-                  <p className="negative">
-                    Próximo nível: +
-                    {currency(
-                      maintenanceForLevel(level + 1, target) - maintenanceForLevel(level, target),
+                <h2>{info?.title}</h2>
+                <p>{info?.description}</p>
+                {training && <SectorGuide sector={target} />}
+                {training && target === 'marketing' && (
+                  <p className="sector-benefit">{MARKETING_BENEFITS[level - 1]}</p>
+                )}
+                {(target === 'structure' || target === 'pitch') && (
+                  <div className="upgrade-evolution">
+                    <aside className="facility-benefit">
+                      <small>Próximo nível</small>
+                      <b>{benefit}</b>
+                    </aside>
+                    <strong>
+                      {(target === 'structure' ? STADIUM_STYLES : PITCH_STYLES)[level - 1]}
+                    </strong>
+                    {level < 5 && (
+                      <span>
+                        Próximo: {(target === 'structure' ? STADIUM_STYLES : PITCH_STYLES)[level]}
+                      </span>
                     )}
-                    /mês de manutenção
-                  </p>
+                  </div>
                 )}
-                <p>Manutenção mensal: {currency(maintenanceForLevel(level, target))}</p>
-                <div className="level-track">
-                  {[1, 2, 3, 4, 5].map((step) => (
-                    <i key={step} className={step <= level ? 'filled' : ''} />
-                  ))}
-                </div>
-                {training && (
-                  <button
-                    className="sector-manage full"
-                    onClick={() => {
-                      setManaging(target);
-                      if (target === 'scouting')
-                        send({ type: 'management', action: 'scout-academy' });
-                    }}
-                  >
-                    Gerenciar <Icon name="arrow" size={17} />
-                  </button>
+                {TRAINING_STYLES[target] && (
+                  <div className="upgrade-evolution">
+                    <aside
+                      className="facility-benefit"
+                      title="Receitas de consumo variam com público, capacidade e arredondamentos; não representam lucro líquido."
+                    >
+                      <small>{level >= 5 ? 'Benefício' : 'Próximo nível'}</small>
+                      <b>{benefit}</b>
+                    </aside>
+                    <strong>{TRAINING_STYLES[target]?.[level - 1]}</strong>
+                    {level < 5 && <span>Próximo: {TRAINING_STYLES[target]?.[level]}</span>}
+                  </div>
                 )}
-                <div className="facility-actions">
-                  <button
-                    className="secondary full facility-upgrade"
-                    disabled={busy || level >= 5 || club.balance.cents < cost}
-                    onClick={() => {
-                      setConfirmation({
-                        message:
-                          'Confirmar upgrade de ' + info?.title + ' por ' + currency(cost) + '?',
-                        action: () => send({ type: 'upgrade', target }),
-                      });
-                    }}
-                  >
-                    {level >= 5 ? 'Estrutura no máximo' : `Upgrade · ${currency(cost)}`}
-                  </button>
-                  {level > 1 && (
+                <div className="facility-card-footer">
+                  <div className="facility-maintenance-summary">
+                    {level < 5 && (
+                      <p className="negative">
+                        Próximo nível: +
+                        {currency(
+                          maintenanceForLevel(level + 1, target) -
+                            maintenanceForLevel(level, target),
+                        )}
+                        /mês de manutenção
+                      </p>
+                    )}
+                    <p>Manutenção mensal: {currency(maintenanceForLevel(level, target))}</p>
+                  </div>
+                  <div className="level-track">
+                    {[1, 2, 3, 4, 5].map((step) => (
+                      <i key={step} className={step <= level ? 'filled' : ''} />
+                    ))}
+                  </div>
+                  {training && (
                     <button
-                      className="secondary full"
-                      disabled={busy}
+                      className="sector-manage full"
+                      onClick={() => {
+                        setManaging(target);
+                        if (target === 'scouting')
+                          send({ type: 'management', action: 'scout-academy' });
+                      }}
+                    >
+                      Gerenciar <Icon name="arrow" size={17} />
+                    </button>
+                  )}
+                  <div className="facility-actions">
+                    <button
+                      className="secondary full facility-upgrade"
+                      disabled={busy || level >= 5 || club.balance.cents < cost}
                       onClick={() => {
                         setConfirmation({
                           message:
-                            'Vender um nível de ' +
-                            info?.title +
-                            ' por ' +
-                            currency(upgradePrice(level - 1, target) * 0.5) +
-                            '? A estrutura voltará ao nível ' +
-                            (level - 1) +
-                            '.',
-                          action: () =>
-                            send({ type: 'management', action: 'sell-facility', target }),
+                            'Confirmar upgrade de ' + info?.title + ' por ' + currency(cost) + '?',
+                          action: () => send({ type: 'upgrade', target }),
                         });
                       }}
                     >
-                      Vender · {currency(upgradePrice(level - 1, target) * 0.5)}
+                      {level >= 5 ? 'Estrutura no máximo' : `Upgrade · ${currency(cost)}`}
                     </button>
-                  )}
+                    {level > 1 && (
+                      <button
+                        className="secondary full"
+                        disabled={busy}
+                        onClick={() => {
+                          setConfirmation({
+                            message:
+                              'Vender um nível de ' +
+                              info?.title +
+                              ' por ' +
+                              currency(upgradePrice(level - 1, target) * 0.5) +
+                              '? A estrutura voltará ao nível ' +
+                              (level - 1) +
+                              '.',
+                            action: () =>
+                              send({ type: 'management', action: 'sell-facility', target }),
+                          });
+                        }}
+                      >
+                        Vender · {currency(upgradePrice(level - 1, target) * 0.5)}
+                      </button>
+                    )}
+                  </div>
                 </div>
-              </div>
-            </section>
-          );
-        })}
+              </section>
+            );
+          })}
+        </div>
       </div>
       {confirmation && (
         <PlayerModal

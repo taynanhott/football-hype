@@ -27,7 +27,7 @@
   "fitnessCost": 12,
   "fitnessRecovery": 7,
   "recoveryPerLevel": 2,
-  "injuryChance": 0.035,
+  "injuryChance": 0.0175,
   "injuryMaxMatches": 5,
   "youthMinAge": 16,
   "youthMaxAge": 23,

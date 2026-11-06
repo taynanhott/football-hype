@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   clubPayroll,
   defaultFinancialPlan,
@@ -29,13 +29,9 @@ const COLORS = {
 const compact = currency;
 type Props = { snapshot: GameSnapshot; club: ClubSnapshot };
 export function FinancialManagement(props: Props) {
-  const plan = props.snapshot.state.management?.financialPlans?.[props.club.id];
   return (
     <div className="finance-management-grid">
-      <BudgetEditor
-        key={`${props.club.id}:${props.club.balance.cents}:${plan?.transfer}:${plan?.salaries}`}
-        {...props}
-      />
+      <BudgetEditor key={props.club.id} {...props} />
       <TicketPricing state={props.snapshot.state} clubId={props.club.id} />
       <FinancialHistory {...props} />
     </div>
@@ -50,18 +46,23 @@ export function BudgetEditor({ snapshot, club }: Props) {
   const plan = state.management?.financialPlans?.[club.id];
   const payroll = clubPayroll(state, club);
   const monthlyExpenses = payroll + operations;
-  const [salaries, setSalaries] = useState(
-    Math.floor(
-      Math.min(total, plan?.salaries ?? defaultFinancialPlan(state, club).salaries) / budgetStep,
-    ) * budgetStep,
-  );
+  const savedSalaries = plan?.salaries ?? defaultFinancialPlan(state, club).salaries;
+  const [draftSalaries, setSalaries] = useState<number | null>(null);
+  // Release the local edit only after the plan reflects the selected amount.
+  if (draftSalaries !== null && savedSalaries === draftSalaries) setSalaries(null);
+  const salaries =
+    Math.floor(Math.max(0, Math.min(total, draftSalaries ?? savedSalaries)) / budgetStep) *
+    budgetStep;
   const transfer = Math.floor(Math.max(0, total - salaries) / budgetStep) * budgetStep;
   const busy = useGameStore((s) => s.busy);
   const send = useGameStore((s) => s.send);
   const submitted = useRef('');
+  const editedValue = useRef<number | null>(null);
   const share = total ? (salaries / total) * 100 : 0;
   const costShare = total ? Math.min(100, (monthlyExpenses / total) * 100) : 0;
-  function commit(value: number) {
+  const commit = useCallback(() => {
+    if (editedValue.current === null) return;
+    let value = editedValue.current;
     value = Math.floor(Math.max(0, Math.min(total, value)) / budgetStep) * budgetStep;
     const purchases = Math.floor(Math.max(0, total - value) / budgetStep) * budgetStep;
     const signature = `${value}:${purchases}`;
@@ -71,9 +72,21 @@ export function BudgetEditor({ snapshot, club }: Props) {
       (plan?.salaries === value && plan.transfer === purchases)
     )
       return;
-    submitted.current = signature;
-    send({ type: 'financial-plan', salaries: value, transfer: purchases });
-  }
+    editedValue.current = null;
+    if (send({ type: 'financial-plan', salaries: value, transfer: purchases })) {
+      submitted.current = signature;
+    } else editedValue.current = value;
+  }, [busy, total, budgetStep, plan, send]);
+  useEffect(() => {
+    const finish = () => commit();
+    window.addEventListener('pointerup', finish);
+    window.addEventListener('pointercancel', finish);
+    return () => {
+      window.removeEventListener('pointerup', finish);
+      window.removeEventListener('pointercancel', finish);
+      finish();
+    };
+  }, [commit]);
   return (
     <section className="panel financial-budget split-budget">
       <header className="section-header">
@@ -102,9 +115,10 @@ export function BudgetEditor({ snapshot, club }: Props) {
           aria-valuetext={`${formatMoneyFull(salaries)} para salários por mês e ${formatMoneyFull(transfer)} para compras`}
           onChange={(e) => {
             submitted.current = '';
+            editedValue.current = Number(e.target.value);
             setSalaries(Number(e.target.value));
           }}
-          onPointerUp={(e) => commit(Number(e.currentTarget.value))}
+          onPointerUp={commit}
           onKeyUp={(e) => {
             if (
               [
@@ -118,9 +132,9 @@ export function BudgetEditor({ snapshot, club }: Props) {
                 'PageDown',
               ].includes(e.key)
             )
-              commit(Number(e.currentTarget.value));
+              commit();
           }}
-          onBlur={(e) => commit(Number(e.currentTarget.value))}
+          onBlur={commit}
         />
       </div>
       <div className="split-budget-labels">
@@ -201,6 +215,7 @@ export function FinancialHistory({ snapshot, club }: Props) {
           { label: 'Total gasto', value: report.expenses },
           { label: 'Gasto no mês atual', value: current.expenses },
           { label: 'Lucro no mês atual', value: current.profit },
+          { label: 'Lucro do mês passado', value: report.previous?.profit ?? 0 },
           { label: 'Lucro médio por mês', value: report.averageProfit },
         ].map((metric) => (
           <div key={metric.label}>
@@ -222,7 +237,7 @@ export function FinancialHistory({ snapshot, club }: Props) {
       </div>
       <p className="financial-budget-note">
         Custo fixo mensal atual: <strong>{currency(fixed)}</strong>. Média calculada desde o início
-        da carreira, incluindo meses sem movimentação e o mês atual.
+        da carreira, incluindo meses sem movimentação e excluindo o mês atual.
       </p>
       {months.some(
         (month) => month.income || month.expenses || month.fixedCosts || month.profit,

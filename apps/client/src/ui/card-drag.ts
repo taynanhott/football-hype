@@ -2,6 +2,17 @@ import type { DragEvent as ReactDragEvent, PointerEvent as ReactPointerEvent } f
 
 let cleanup: (() => void) | undefined;
 
+function preserveCardFrame(source: HTMLElement, preview: HTMLElement) {
+  if (!source.classList.contains('tactics-player')) return;
+  const computed = getComputedStyle(source);
+  const fill = computed.getPropertyValue('--lineup-card-fill').trim();
+  const edge = computed.getPropertyValue('--lineup-card-edge').trim();
+  // The lineup frame uses pseudo-elements scoped to its original container.
+  // The drag preview lives under body, so carry its resolved surface explicitly.
+  if (fill) preview.style.setProperty('background', fill, 'important');
+  if (edge) preview.style.setProperty('border-color', edge, 'important');
+}
+
 export function showDraggedCard(event: ReactDragEvent<HTMLElement>) {
   cleanup?.();
   const source = event.currentTarget;
@@ -24,6 +35,7 @@ export function showDraggedCard(event: ReactDragEvent<HTMLElement>) {
     top: bounds.top + 'px',
     opacity: '1',
   });
+  preserveCardFrame(source, preview);
   document.body.appendChild(preview);
   document.body.classList.add('dragging-player-card');
   const blank = document.createElement('canvas');
@@ -151,6 +163,7 @@ export function startCardPointerDrag(event: ReactPointerEvent<HTMLElement>, play
         transition: 'none',
         animation: 'none',
       });
+      preserveCardFrame(source, preview);
       document.body.appendChild(preview);
       document.body.classList.add('dragging-player-card');
     }

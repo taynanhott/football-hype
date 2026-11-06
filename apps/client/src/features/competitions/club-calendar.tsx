@@ -465,7 +465,15 @@ export function ClubCalendar({ state: rawState, clubId }: { state: WorldState; c
           </ul>
           {!state.clubs.byId[clubId]?.playerIds.some(
             (id) => (state.players.byId[id]?.overall ?? 0) >= 80,
-          ) && <p>Nenhum jogador convocado.</p>}
+          ) && (
+            <div className="calendar-callup-empty">
+              <Icon name="lineup" size={26} />
+              <div>
+                <strong>Nenhum jogador convocado</strong>
+                <p>Seu elenco segue à disposição do clube nesta Data FIFA.</p>
+              </div>
+            </div>
+          )}
         </PlayerModal>
       )}
       {selectedDraw && (
@@ -529,7 +537,7 @@ function PendingGameDetails({
   return (
     <dialog
       ref={dialog}
-      className="calendar-pending-dialog"
+      className="calendar-pending-dialog compact-content-modal"
       aria-label={`${competition?.name} · ${dateTime(game.scheduledAt)}`}
       style={
         {

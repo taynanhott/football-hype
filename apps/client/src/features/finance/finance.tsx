@@ -301,19 +301,7 @@ export function Finance({ snapshot, club }: ViewProps) {
         )}
       </div>
       <div className="finance-fill-column finance-fill-controls">
-        <BudgetEditor
-          key={
-            club.id +
-            ':' +
-            cash +
-            ':' +
-            state.management?.financialPlans?.[club.id]?.transfer +
-            ':' +
-            state.management?.financialPlans?.[club.id]?.salaries
-          }
-          snapshot={snapshot}
-          club={club}
-        />
+        <BudgetEditor key={club.id} snapshot={snapshot} club={club} />
         <TicketPricing state={state} clubId={club.id} />
         <FinancialHistory snapshot={snapshot} club={club} />
       </div>

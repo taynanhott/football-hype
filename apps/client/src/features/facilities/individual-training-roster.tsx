@@ -153,9 +153,6 @@ export function IndividualTrainingRoster({
                       disabled={busy}
                       onClick={() => onLoadChange(id, value)}
                     >
-                      <span className="training-load-check" aria-hidden="true">
-                        {load === value ? '✓' : ''}
-                      </span>
                       {label}
                     </button>
                   ))}
