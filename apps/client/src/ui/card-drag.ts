@@ -11,6 +11,8 @@ function preserveCardFrame(source: HTMLElement, preview: HTMLElement) {
   // The drag preview lives under body, so carry its resolved surface explicitly.
   if (fill) preview.style.setProperty('background', fill, 'important');
   if (edge) preview.style.setProperty('border-color', edge, 'important');
+  preview.style.setProperty('clip-path', 'none', 'important');
+  preview.style.setProperty('overflow', 'visible', 'important');
 }
 
 export function showDraggedCard(event: ReactDragEvent<HTMLElement>) {
@@ -157,7 +159,7 @@ export function startCardPointerDrag(event: ReactPointerEvent<HTMLElement>, play
         left: bounds.left + 'px',
         top: bounds.top + 'px',
         willChange: 'transform',
-        contain: 'layout style paint',
+        contain: 'layout style',
         right: 'auto',
         bottom: 'auto',
         transition: 'none',

@@ -44,6 +44,25 @@ function world() {
   return { state, club, player };
 }
 describe('dias da temporada', () => {
+  it('ganha 1% de entrosamento por dia de treino, uma única vez e até 100%', () => {
+    const { state, club, player } = world();
+    state.lastProcessedAt = at(13);
+    state.chemistry = { [club.id]: { [player.id]: 2.5 } };
+    const trained = advanceGameDays(state, at(14));
+    expect(trained.chemistry[club.id]?.[player.id]).toBeCloseTo(2.55);
+    expect(advanceGameDays(trained, at(14)).chemistry[club.id]?.[player.id]).toBeCloseTo(2.55);
+    expect(state.chemistry[club.id]?.[player.id]).toBe(2.5);
+    const nearMaximum = { ...state, chemistry: { [club.id]: { [player.id]: 4.99 } } };
+    expect(advanceGameDays(nearMaximum, at(14)).chemistry[club.id]?.[player.id]).toBe(5);
+  });
+  it('não aumenta o entrosamento de lesionados nem em dias de recuperação', () => {
+    const { state, club, player } = world();
+    state.chemistry = { [club.id]: { [player.id]: 2.5 } };
+    expect(advanceGameDays(state, at(12)).chemistry[club.id]?.[player.id]).toBe(2.5);
+    state.lastProcessedAt = at(13);
+    state.injuries = { ...state.injuries, [player.id]: 2 };
+    expect(advanceGameDays(state, at(14)).chemistry[club.id]?.[player.id]).toBe(2.5);
+  });
   it('não grava mudanças sem efeitos e ainda processa vencimentos financeiros dentro do mesmo dia', () => {
     const { state: initial, club, player } = world();
     const state = advanceGameDays(initial, initial.lastProcessedAt);

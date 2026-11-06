@@ -42588,3 +42588,65 @@ button.primary.advance-round-button:focus-visible {
 button.primary.advance-round-button > svg {
   color: inherit;
 }
+
+@media (min-width: 901px) {
+  .lobby-clubs .lobby-header,
+  .lobby-clubs .club-selection,
+  .lobby-clubs:has(.career-saves) .club-selection {
+    width: calc(100% - 48px);
+    max-width: 1300px;
+    margin-inline: auto;
+    box-sizing: border-box;
+  }
+  .lobby-clubs .club-selection > .career-toolbar,
+  .lobby-clubs .club-selection > .creation-workspace {
+    width: 100%;
+    max-width: none;
+    margin-inline: 0;
+  }
+  .modal-backdrop > section.invite-dialog.league-invite-ticket[role='dialog'] {
+    position: relative;
+    inset: auto !important;
+    width: min(540px, calc(100vw - 40px)) !important;
+    max-width: 540px !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: calc(100dvh - 40px) !important;
+    margin: auto !important;
+    padding: 0 !important;
+    display: flex;
+    flex-direction: column;
+    overflow: auto;
+  }
+  .league-invite-ticket > .invite-ticket-header {
+    padding: 20px 24px;
+    flex: 0 0 auto;
+  }
+  .league-invite-ticket > .invite-ticket-body {
+    padding: 20px 24px;
+    flex: 0 0 auto;
+    min-height: 0;
+  }
+  .league-invite-ticket .invite-ticket-body label {
+    color: #e5d6ac;
+  }
+  .league-invite-ticket .invite-ticket-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .league-invite-ticket > .invite-ticket-footer {
+    padding: 12px 24px;
+    flex: 0 0 auto;
+  }
+  .modal-backdrop > .league-invite-ticket[role='dialog'] > .close-modal {
+    position: static !important;
+    inset: auto !important;
+    order: 999;
+    width: calc(100% - 48px) !important;
+    max-width: none !important;
+    margin: 12px 24px 24px !important;
+    min-height: 40px;
+    flex: 0 0 auto;
+  }
+}

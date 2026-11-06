@@ -16,7 +16,8 @@ export function GameLoading() {
   const clockOffset = useGameStore((store) => store.clockOffset);
   const playing = useSimulationNavigationLock(startedAt, clockOffset);
   const busy = pending && !playing;
-  const moving = useGameStore((state) => Boolean(state.snapshot));
+  const reconnecting = useGameStore((state) => Boolean(state.snapshot) && !state.connected);
+  const moving = useGameStore((state) => Boolean(state.snapshot) && state.connected);
   const activity = useGameStore((store) => {
     if (store.loadingActivity) return store.loadingActivity;
     const state = store.snapshot?.state;
@@ -147,13 +148,15 @@ export function GameLoading() {
           </div>
         )}
         <strong>
-          {moving
-            ? training
-              ? 'Time em treinamento…'
-              : activity === 'travel'
-                ? 'Time em movimento…'
-                : 'Avançando calendário…'
-            : (message ?? 'Carregando carreira…')}
+          {reconnecting
+            ? 'Restabelecendo conexão…'
+            : moving
+              ? training
+                ? 'Time em treinamento…'
+                : activity === 'travel'
+                  ? 'Time em movimento…'
+                  : 'Avançando calendário…'
+              : (message ?? 'Carregando carreira…')}
         </strong>
       </div>
     </dialog>,

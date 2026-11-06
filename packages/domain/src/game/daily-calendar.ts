@@ -7,7 +7,7 @@ import {
 import { ageFatigueFactor, initializeContractHistory } from './player-contracts.js';
 import { normalizeRoundCalendar } from '../competitions/round-calendar.js';
 import { realizeCompetitionDraws } from '../competitions/competition-draws.js';
-import { GAMEPLAY, type Fixture, type WorldState } from '@football/shared';
+import { GAMEPLAY, TACTICS, type Fixture, type WorldState } from '@football/shared';
 import { scheduledFixtures } from '../competitions/fixtures.js';
 import { revalueGrowth } from '../players/development.js';
 import { hashSeed, mulberry32 } from '../simulation/random.js';
@@ -66,6 +66,9 @@ function advanceGameDaysInternal(state: WorldState, target: number): WorldState 
   const centers = { ...state.centers.byId };
   const injuries = { ...state.injuries };
   const development = { ...state.development };
+  const chemistry = Object.fromEntries(
+    Object.entries(state.chemistry).map(([clubId, players]) => [clubId, { ...players }]),
+  );
   const attemptedDraws = new Set<string>();
   for (let day = start; day < end; day += GAME_DAY_MS) {
     // A long advance must use the calendar known on each completed day, not
@@ -163,6 +166,13 @@ function advanceGameDaysInternal(state: WorldState, target: number): WorldState 
           ),
         };
         if (!injured && routine === 'training') {
+          const clubChemistry = (chemistry[center.clubId] ??= {});
+          const current = clubChemistry[id] ?? 0;
+          if (current < TACTICS.chemistryMatches)
+            clubChemistry[id] = Math.min(
+              TACTICS.chemistryMatches,
+              current + TACTICS.chemistryMatches / 100,
+            );
           const growth =
             (development[id] ?? 0) +
             0.003 *
@@ -289,6 +299,7 @@ function advanceGameDaysInternal(state: WorldState, target: number): WorldState 
       centers: { ...state.centers, byId: centers },
       injuries,
       development,
+      chemistry,
     },
     target,
   );
