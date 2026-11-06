@@ -15,11 +15,11 @@ export function NegotiationChat({
   snapshot,
   club,
   player,
-  value,
+  value: offeredValue,
   maximum,
   minimumOffer,
   maximumOffer,
-  onValue,
+  onValue: changeValue,
   onClose,
   onContinue,
 }: Pick<ViewProps, 'snapshot' | 'club'> & {
@@ -32,7 +32,6 @@ export function NegotiationChat({
   onClose: () => void;
   onContinue: () => void;
 }) {
-  const offerDisplay = currency(value);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const loanCloseTimer = useRef<number | undefined>(undefined);
   useEffect(() => () => window.clearTimeout(loanCloseTimer.current), []);
@@ -83,6 +82,22 @@ export function NegotiationChat({
   const error = useGameStore((s) => s.error);
   const bottom = useRef<HTMLDivElement>(null);
   const blocked = (last?.blockedUntil ?? 0) > snapshot.state.lastProcessedAt;
+  const demandKey = `${last?.id ?? ''}:${last?.minimumFee ?? 0}`;
+  const [editedDemand, setEditedDemand] = useState('');
+  const acceptingDemand = Boolean(
+    last?.status === 'rejected' &&
+    last.revealed &&
+    last.minimumFee &&
+    !blocked &&
+    editedDemand !== demandKey,
+  );
+  const value = acceptingDemand ? Math.max(0, last!.minimumFee! - exchangeValue) : offeredValue;
+  const offerDisplay = currency(value);
+  const submitLabel = acceptingDemand ? `Aceitar por ${offerDisplay}` : 'Enviar proposta';
+  function onValue(next: number) {
+    setEditedDemand(demandKey);
+    changeValue(next);
+  }
   const typing = introCount < 3 || replyCount < history.length || busy || awaitingReply;
   useEffect(() => {
     if (introCount < 3) return;
@@ -403,7 +418,7 @@ export function NegotiationChat({
                   aria-label="Valor da proposta"
                   min={minimumOffer}
                   max={Math.max(maximumOffer, value)}
-                  step={MONEY_STEPS.transfer * 2}
+                  step={acceptingDemand ? MONEY_STEPS.general : MONEY_STEPS.transfer * 2}
                   value={value}
                   onChange={(e) =>
                     onValue(
@@ -473,7 +488,7 @@ export function NegotiationChat({
               )}
               <button
                 type="submit"
-                aria-label="Enviar proposta"
+                aria-label={submitLabel}
                 disabled={
                   typing ||
                   !budgetVisible ||
@@ -485,7 +500,7 @@ export function NegotiationChat({
                     value + exchangeValue <= last.fee + (last.exchangeValue ?? 0))
                 }
               >
-                Enviar proposta
+                {submitLabel}
               </button>
             </form>
           )}

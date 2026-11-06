@@ -200,7 +200,7 @@ function advanceGameDaysInternal(state: WorldState, target: number): WorldState 
           development[id] = growth % 1;
           if (
             random() <
-            (0.0005 * load * load * ageFatigue * (1 + (effort[id] ?? 0) / 6)) /
+            (0.0001 * load * load * ageFatigue * (1 + (effort[id] ?? 0) / 6)) /
               center.levels.medical
           )
             injuries[id] = Math.max(1, Math.ceil(3 / center.levels.medical));

@@ -68,7 +68,7 @@ export function handleCommand(input: CommandContext): Result<CommandOutcome> {
       action.type === 'home-ticket-price' || action.type === 'ticket-price'
         ? { ...action, priceCents: roundMoney(action.priceCents, MONEY_STEPS.ticket) }
         : action.type === 'offer'
-          ? { ...action, fee: roundMoney(action.fee, MONEY_STEPS.transfer) }
+          ? { ...action, fee: roundMoney(action.fee, MONEY_STEPS.general) }
           : action.type === 'salary' || action.type === 'sign-free'
             ? { ...action, salary: roundMoney(action.salary, MONEY_STEPS.salary) }
             : action,

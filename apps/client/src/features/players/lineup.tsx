@@ -23,6 +23,7 @@ import {
 } from '@football/shared';
 import {
   medicallyAvailable,
+  canLearnPosition,
   resolveLineup,
   resolveBench,
   injuryProbability,
@@ -83,7 +84,13 @@ export function LineupEditor({ snapshot, club, center }: ViewProps) {
     state.tactics[club.id]?.formation ?? '4-3-3',
   );
   const [style, setStyle] = useState<PlayStyle>(state.tactics[club.id]?.style ?? 'balanced');
-  const [starters, setStarters] = useState<string[]>(state.tactics[club.id]?.starters ?? []);
+  const [starters, setStarters] = useState<string[]>(
+    () =>
+      state.tactics[club.id]?.starters ??
+      resolveLineup(state, club, availabilityAt).flatMap((entry) =>
+        entry.player ? [entry.player.id] : [],
+      ),
+  );
   const [bench, setBench] = useState<string[]>(() =>
     resolveBench(
       state,
@@ -462,7 +469,7 @@ export function LineupEditor({ snapshot, club, center }: ViewProps) {
                     key={index}
                     data-lineup-slot={index}
                     data-dragging={dragging === entry.player?.id}
-                    draggable={!!entry.player}
+                    draggable={!mobile && !!entry.player}
                     onPointerDown={(event) => {
                       if (entry.player) startCardPointerDrag(event, entry.player.id);
                     }}
@@ -516,6 +523,26 @@ export function LineupEditor({ snapshot, club, center }: ViewProps) {
                       />
                       <small>{positionLabel(entry.position)}</small>
                     </span>
+                    {entry.player &&
+                      entry.factor < 1 &&
+                      canLearnPosition(entry.player.position, entry.position) && (
+                        <span
+                          className="position-learning-badge"
+                          title={`Aprendizado em ${positionLabel(entry.position)}`}
+                          aria-label={`Aprendizado em ${positionLabel(entry.position)}: ${Math.floor(Math.min(100, ((state.positionExperience?.[entry.player.id]?.[entry.position] ?? 0) / 15) * 100))}%`}
+                        >
+                          {Math.floor(
+                            Math.min(
+                              100,
+                              ((state.positionExperience?.[entry.player.id]?.[entry.position] ??
+                                0) /
+                                15) *
+                                100,
+                            ),
+                          )}
+                          %
+                        </span>
+                      )}
                     {entry.player && <Portrait player={entry.player} />}
                     <strong title={entry.player?.name}>
                       {entry.player ? cardPlayerName(entry.player.name) : 'Sem atleta'}

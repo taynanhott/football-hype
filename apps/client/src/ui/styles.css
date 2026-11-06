@@ -42650,3 +42650,38 @@ button.primary.advance-round-button > svg {
     flex: 0 0 auto;
   }
 }
+
+@media (max-width: 760px), (pointer: coarse) {
+  .lineup-editor .tactics-field,
+  .lineup-editor .tactics-player,
+  .lineup-editor .tactics-player * {
+    touch-action: pan-y pinch-zoom;
+  }
+}
+.lineup-editor .tactics-player .position-learning-badge {
+  position: absolute;
+  top: -9px;
+  right: -4px;
+  z-index: 12;
+  padding: 2px 3px;
+  border: 1px solid #d7bc70;
+  border-radius: 4px;
+  background: #302b1d;
+  color: #f7dda0;
+  font-size: 8px;
+  line-height: 1;
+  font-weight: 800;
+  white-space: nowrap;
+}
+@media (max-width: 760px) {
+  dialog[open]:not(.game-loading-screen):not(.player-card-overlay) > .modal-return,
+  .modal-backdrop > [role='dialog'] > .close-modal {
+    position: static !important;
+    inset: auto !important;
+    width: calc(100% - 24px) !important;
+    margin: 12px 12px max(12px, env(safe-area-inset-bottom)) !important;
+    flex: 0 0 auto;
+    min-height: 42px;
+    align-self: center;
+  }
+}

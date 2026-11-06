@@ -1,8 +1,38 @@
 import { describe, expect, it } from 'vitest';
 import { positionSchema } from '@football/shared';
-import { canLearnPosition, positionFactor } from '../src/game/tactics.js';
+import { canLearnPosition, positionFactor, resolveLineup } from '../src/game/tactics.js';
+import { createWorld, stableId } from '../src/game/world-factory.js';
+import { unwrap } from '../../../tests/fixtures/domain.js';
 
 describe('penalidade por proximidade das posições', () => {
+  it('aplica a penalidade de lateral no meio desde a primeira leitura da escalação', () => {
+    const state = unwrap(
+      createWorld({
+        id: stableId(707, 1),
+        userId: 'host',
+        name: 'Posições iniciais',
+        mode: 'offline',
+        now: 1,
+      }),
+    );
+    const club = state.clubs.byId[state.participants[0]!.clubId]!;
+    const initial = resolveLineup(state, club, 1);
+    const starters = initial.map((entry) => entry.player!.id);
+    const lateral = starters[1]!;
+    [starters[1], starters[5]] = [starters[5]!, lateral];
+    const player = { ...state.players.byId[lateral]!, name: 'Reinaldo', position: 'LB' as const };
+    const saved = {
+      ...state,
+      players: { ...state.players, byId: { ...state.players.byId, [lateral]: player } },
+      tactics: { ...state.tactics, [club.id]: { formation: '4-3-3' as const, starters } },
+    };
+    const entry = resolveLineup(saved, club, 1)[5]!;
+    expect(entry.player?.id).toBe(lateral);
+    expect(entry.position).toBe('CM');
+    expect(entry.factor).toBeLessThan(1);
+    expect(entry.effectiveOverall).toBeLessThan(player.overall);
+    expect(canLearnPosition(player.position, entry.position)).toBe(false);
+  });
   it.each([
     ['LW', 'LM'],
     ['RW', 'RM'],

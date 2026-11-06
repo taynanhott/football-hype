@@ -33,6 +33,11 @@ function act(command: Parameters<typeof executeCommand>[1]) {
 }
 
 describe('limites financeiros autoritativos', () => {
+  it('preserva uma proposta de HC$ 3.800 sem arredondar para HC$ 4.000', () => {
+    const player = Object.values(state.players.byId).find((p) => p.clubId === null)!;
+    state = act({ type: 'offer', playerId: player.id, fee: 380000 });
+    expect(state.negotiations.at(-1)?.fee).toBe(380000);
+  });
   it('inicia todos os clubes após as despesas mensais sem exceder o caixa', () => {
     for (const club of Object.values(state.clubs.byId)) {
       const expenses = clubPayroll(state, club) + monthlyStructureCost(state, club);

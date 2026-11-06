@@ -545,7 +545,7 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
     transferMinimum,
     Math.min(
       feeMaximum,
-      Math.floor((Number(fee) * 100) / MONEY_STEPS.transfer) * MONEY_STEPS.transfer,
+      Math.floor((Number(fee) * 100) / MONEY_STEPS.general) * MONEY_STEPS.general,
     ),
   );
   return (

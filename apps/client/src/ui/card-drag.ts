@@ -65,7 +65,8 @@ export function showDraggedCard(event: ReactDragEvent<HTMLElement>) {
 }
 
 export function startCardPointerDrag(event: ReactPointerEvent<HTMLElement>, playerId: string) {
-  if (event.button !== 0 || event.pointerType === 'touch') return;
+  if (event.button !== 0) return;
+  const touch = event.pointerType === 'touch';
   cleanup?.();
   const pointerId = event.pointerId;
   const source = event.currentTarget;
@@ -73,6 +74,7 @@ export function startCardPointerDrag(event: ReactPointerEvent<HTMLElement>, play
   const startX = event.clientX,
     startY = event.clientY;
   let active = false;
+  let holdTimer: ReturnType<typeof setTimeout> | undefined;
   let preview: HTMLElement | undefined;
   let frame = 0;
   let latestX = startX;
@@ -88,9 +90,7 @@ export function startCardPointerDrag(event: ReactPointerEvent<HTMLElement>, play
     e.stopImmediatePropagation();
   };
   source.addEventListener('dragstart', preventNative, true);
-  const move = (e: PointerEvent) => {
-    if (e.pointerId !== pointerId) return;
-    if (!active && Math.hypot(e.clientX - startX, e.clientY - startY) < 5) return;
+  const begin = () => {
     if (!active) {
       active = true;
       shield = document.createElement('div');
@@ -169,6 +169,16 @@ export function startCardPointerDrag(event: ReactPointerEvent<HTMLElement>, play
       document.body.appendChild(preview);
       document.body.classList.add('dragging-player-card');
     }
+  };
+  const move = (e: PointerEvent) => {
+    if (e.pointerId !== pointerId) return;
+    const distance = Math.hypot(e.clientX - startX, e.clientY - startY);
+    if (!active && touch) {
+      if (distance > 8) abort();
+      return;
+    }
+    if (!active && distance < 5) return;
+    begin();
     e.preventDefault();
     latestX = e.clientX;
     latestY = e.clientY;
@@ -176,12 +186,15 @@ export function startCardPointerDrag(event: ReactPointerEvent<HTMLElement>, play
   };
   const finish = (e: PointerEvent) => {
     if (e.pointerId !== pointerId) return;
+    clearTimeout(holdTimer);
     cancelAnimationFrame(frame);
     if (shield?.hasPointerCapture(pointerId)) shield.releasePointerCapture(pointerId);
     shield?.remove();
     preview?.remove();
     document.body.classList.remove('dragging-player-card');
     source.removeEventListener('dragstart', preventNative, true);
+    source.removeEventListener('contextmenu', preventNative, true);
+    document.removeEventListener('touchmove', preventTouchScroll);
     window.removeEventListener('blur', abort);
     cleanup = undefined;
     document.removeEventListener('pointermove', move);
@@ -216,6 +229,14 @@ export function startCardPointerDrag(event: ReactPointerEvent<HTMLElement>, play
   };
   const cancel = (e: PointerEvent) => finish(e);
   const abort = () => finish(new PointerEvent('pointercancel', { pointerId }));
+  const preventTouchScroll = (e: TouchEvent) => {
+    if (active && e.cancelable) e.preventDefault();
+  };
+  if (touch) {
+    holdTimer = setTimeout(begin, 350);
+    source.addEventListener('contextmenu', preventNative, true);
+    document.addEventListener('touchmove', preventTouchScroll, { passive: false });
+  }
   cleanup = abort;
   window.addEventListener('blur', abort);
   document.addEventListener('pointermove', move, { passive: false });
