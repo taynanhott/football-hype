@@ -132,6 +132,9 @@ export function IndividualTrainingRoster({
                 <small>
                   {positionLabel(player.position)} · {player.age} anos
                   {injured ? ' · Lesionado' : ''}
+                  {state.management?.contractHistory?.[id]?.dissatisfied
+                    ? ' · Evolução pausada: contrato'
+                    : ''}
                 </small>
                 <div
                   className="individual-load-buttons"

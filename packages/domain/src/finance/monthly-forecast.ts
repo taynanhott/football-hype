@@ -1,11 +1,10 @@
 import type { ClubSnapshot, GameEvent, WorldState } from '@football/shared';
 import { scheduledFixtures } from '../competitions/fixtures.js';
-import { scheduledBatches } from '../game/season-clock.js';
 import { clubPayroll, financialMonth, monthlyFinancialReport } from './financial-management.js';
 import { monthlyStructureCost } from './facility-costs.js';
 import { indexDemandResults, matchDemand } from './match-demand.js';
 import { shareMatchRevenue } from './gate-sharing.js';
-import { roundSponsorship } from './sponsorship.js';
+import { monthlySponsorship, sponsorshipContract } from './calendar-sponsorship.js';
 
 /** Read-only forecast: actual transactions plus known remaining matches, without speculative transfers. */
 export function currentMonthForecast(
@@ -49,19 +48,18 @@ export function currentMonthForecast(
       homeGames++;
     }
   }
-  const groups = new Map<number, typeof remaining>();
-  if (!state.seasonClock)
-    for (const fixture of remaining) {
-      const batch = groups.get(fixture.scheduledAt) ?? [];
-      batch.push(fixture);
-      groups.set(fixture.scheduledAt, batch);
-    }
-  const batches = state.seasonClock ? scheduledBatches(remaining) : [...groups.values()];
-  const sponsorships = batches.filter((batch) =>
-    batch.some((f) => f.competitionId.startsWith('serie-')),
-  ).length;
-  const marketing = state.centers.byId[club.trainingCenterId]?.levels.marketing ?? 1;
-  const sponsorship = sponsorships * roundSponsorship(club, marketing);
+  const monthDate = new Date(state.lastProcessedAt - 10800000);
+  const monthStart = Date.UTC(monthDate.getUTCFullYear(), monthDate.getUTCMonth(), 1, 3);
+  const monthEnd = Date.UTC(monthDate.getUTCFullYear(), monthDate.getUTCMonth() + 1, 1, 3);
+  const monthly = monthlySponsorship(state, club, sponsorshipContract(state, month));
+  const paidThrough = Math.max(
+    state.lastProcessedAt,
+    state.management?.sponsorshipAccruedThrough ?? state.lastProcessedAt,
+  );
+  const sponsorship = Math.max(
+    0,
+    monthly - Math.floor((monthly * (paidThrough - monthStart)) / (monthEnd - monthStart)),
+  );
   const fixedCosts = clubPayroll(state, club) + monthlyStructureCost(state, club);
   const pendingCosts = Math.max(0, fixedCosts - current.fixedCosts);
   const income = current.income + matchRevenue + sponsorship;

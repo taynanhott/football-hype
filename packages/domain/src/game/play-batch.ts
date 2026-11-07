@@ -1,8 +1,7 @@
 import { settleContractDecisions } from './contract-lifecycle.js';
-import { roundSponsorship } from '../finance/sponsorship.js';
 import { lineupTacticalBonus, canLearnPosition, masteredPositions } from './tactics.js';
 import { FORMATIONS } from '@football/shared';
-import { ageFatigueFactor, moraleSensitivity } from './player-contracts.js';
+import { ageFatigueFactor, moraleSensitivity, developmentPaused } from './player-contracts.js';
 import { upgradeUnstartedCompetitions } from '../competitions/upgrade-formats.js';
 import { resolveRegionalQualifiers } from '../competitions/regional-qualifiers.js';
 import { advanceGameDays } from './daily-calendar.js';
@@ -358,6 +357,7 @@ export function playNextBatch(state: WorldState, processedAt: number): Result<Wo
         center?.operations?.progression?.[player.id] ?? emptyTrainingProgression(),
         center?.levels.coaching ?? 1,
         Boolean(center?.operations?.individual.some((plan) => plan.playerId === player.id)),
+        developmentPaused(state, player.id),
       );
       const trainingHistory = currentTrainingHistory(
         center?.operations?.trainingHistory?.[player.id],
@@ -498,24 +498,11 @@ export function playNextBatch(state: WorldState, processedAt: number): Result<Wo
       centers[center.id] = { ...center, operations };
     }
   }
-  const leagueBatch = batch.some((fixture) => fixture.competitionId.startsWith('serie-'));
   for (const club of Object.values(clubs)) {
-    const center = state.centers.byId[club.trainingCenterId];
-    if (leagueBatch) {
-      const sponsor = roundSponsorship(club, center?.levels.marketing ?? 1);
-      clubs[club.id] = {
-        ...club,
-        balance: {
-          ...club.balance,
-          cents: club.balance.cents + (revenue.get(club.id) ?? 0) + sponsor,
-        },
-      };
-    } else {
-      clubs[club.id] = {
-        ...club,
-        balance: { ...club.balance, cents: club.balance.cents + (revenue.get(club.id) ?? 0) },
-      };
-    }
+    clubs[club.id] = {
+      ...club,
+      balance: { ...club.balance, cents: club.balance.cents + (revenue.get(club.id) ?? 0) },
+    };
   }
   const trophies = [...state.trophies];
   for (const rule of COMPETITIONS.filter((rule) => rule.id !== 'pre-libertadores')) {

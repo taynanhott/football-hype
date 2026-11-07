@@ -76,7 +76,18 @@ export function recordFinancialHistory(previous: WorldState, next: WorldState) {
       (next.clubs.byId[id]?.balance.cents ?? 0) !== (previous.clubs.byId[id]?.balance.cents ?? 0),
   );
   if (!charges.length && !changes.length) return next;
-  const rows = (previous.management?.financialHistory ?? []).map((row) => ({
+  const bookedIncome = new Map<string, number>();
+  for (const [direction, entries] of [
+    [-1, previous.management?.financialHistory ?? []],
+    [1, next.management?.financialHistory ?? []],
+  ] as const)
+    for (const row of entries)
+      bookedIncome.set(row.clubId, (bookedIncome.get(row.clubId) ?? 0) + direction * row.income);
+  const rows = (
+    next.management?.financialHistory ??
+    previous.management?.financialHistory ??
+    []
+  ).map((row) => ({
     ...row,
     season: row.season ?? previous.season,
   }));
@@ -106,7 +117,7 @@ export function recordFinancialHistory(previous: WorldState, next: WorldState) {
   for (const id of new Set([...changes, ...paid.keys()])) {
     const delta =
       (next.clubs.byId[id]?.balance.cents ?? 0) - (previous.clubs.byId[id]?.balance.cents ?? 0);
-    const gross = delta + (paid.get(id) ?? 0);
+    const gross = delta + (paid.get(id) ?? 0) - (bookedIncome.get(id) ?? 0);
     const row = get(id, financialMonth(next.lastProcessedAt));
     row.income += Math.max(0, gross);
     row.expenses += Math.max(0, -gross);

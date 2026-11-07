@@ -58,7 +58,7 @@ describe('estimativa mensal de lucro', () => {
     const forecast = currentMonthForecast(noGames, club, []);
     expect(forecast.remainingGames).toBe(0);
     expect(forecast.pendingCosts).toBe(0);
-    expect(forecast.profit).toBe(500000 - costs);
+    expect(forecast.profit).toBe(500000 + forecast.sponsorship - costs);
   });
   it('inclui a receita de visitante e aumenta a projeção para mata-mata', () => {
     const visiting = { ...fixture, homeId: away, awayId: club.id };

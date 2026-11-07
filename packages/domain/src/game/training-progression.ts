@@ -62,6 +62,7 @@ export function officialMatchDevelopment(
   previous: TrainingProgression,
   coaching: number,
   individual: boolean,
+  developmentPaused = false,
 ) {
   const multiplier = individual ? 1.5 : 1;
   const trained = progressTraining(
@@ -73,7 +74,7 @@ export function officialMatchDevelopment(
     multiplier,
   );
   const growth =
-    player.age <= 33 && player.overall < player.potential
+    !developmentPaused && player.age <= 33 && player.overall < player.potential
       ? development + 0.006 * coaching * 1.5 * multiplier * developmentFactor(player)
       : development;
   const overall =
@@ -105,6 +106,12 @@ export function currentTrainingHistory(
 export function expectedTrainingGain(state: WorldState, player: PlayerSnapshot): number {
   const center = state.centers.byId[state.clubs.byId[player.clubId ?? '']?.trainingCenterId ?? ''];
   const record = center?.operations?.trainingHistory?.[player.id];
+  if (
+    state.management?.contractHistory?.[player.id]?.dissatisfied &&
+    player.overall < player.potential &&
+    player.age <= 33
+  )
+    return 0;
   if (!record || record.season !== state.season || record.days <= 0) return 0;
   const seasonEnd = Date.UTC(state.season + 1, 0, 1);
   const remaining = Math.max(0, Math.ceil((seasonEnd - state.lastProcessedAt) / 86400000));

@@ -1,3 +1,4 @@
+import { accrueSponsorship } from '../finance/calendar-sponsorship.js';
 import { resetTransferredEffects, settleContractDecisions } from './contract-lifecycle.js';
 import {
   developmentFactor,
@@ -5,7 +6,11 @@ import {
   emptyTrainingProgression,
   currentTrainingHistory,
 } from './training-progression.js';
-import { ageFatigueFactor, initializeContractHistory } from './player-contracts.js';
+import {
+  ageFatigueFactor,
+  initializeContractHistory,
+  developmentPaused,
+} from './player-contracts.js';
 import { normalizeRoundCalendar } from '../competitions/round-calendar.js';
 import { realizeCompetitionDraws } from '../competitions/competition-draws.js';
 import { GAMEPLAY, TACTICS, type Fixture, type WorldState } from '@football/shared';
@@ -180,7 +185,7 @@ function advanceGameDaysInternal(state: WorldState, target: number): WorldState 
               center.levels.coaching *
               load *
               (individual ? 1.5 : 1) *
-              developmentFactor(player);
+              (developmentPaused(state, id) ? 0 : developmentFactor(player));
           if (player.age <= 33 && player.overall < player.potential)
             history.growth += Math.min(
               player.potential - player.overall,
@@ -265,7 +270,7 @@ function advanceGameDaysInternal(state: WorldState, target: number): WorldState 
     const loanIds = Object.keys(state.management?.loans ?? {});
     state = returnLoans(
       {
-        ...settleMonthly(state, day + GAME_DAY_MS),
+        ...settleMonthly(accrueSponsorship(state, day + GAME_DAY_MS), day + GAME_DAY_MS),
         lastProcessedAt: day + GAME_DAY_MS,
       },
       day + GAME_DAY_MS,

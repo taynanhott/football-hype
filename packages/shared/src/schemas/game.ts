@@ -353,6 +353,20 @@ export const worldStateSchema = z.strictObject({
   competitionRulesVersion: z.number().int().nonnegative().optional(),
   management: z
     .object({
+      sponsorshipAccruedThrough: z.number().optional(),
+      monthlySponsorshipContract: z
+        .object({
+          month: z.string(),
+          clubs: z.record(
+            z.string(),
+            z.object({
+              low: z.number().nonnegative(),
+              normal: z.number().nonnegative(),
+              high: z.number().nonnegative(),
+            }),
+          ),
+        })
+        .optional(),
       policies: z
         .record(
           entityIdSchema,

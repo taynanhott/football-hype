@@ -1,4 +1,4 @@
-import { careerAmbition } from './career-ambition.js';
+import { divisionStrength, careerAmbition } from './career-ambition.js';
 import { clubResults, playerRatings } from './history-index.js';
 import { ceilMoney, MONEY_STEPS, type PlayerSnapshot, type WorldState } from '@football/shared';
 const DAY = 86400000;
@@ -28,6 +28,23 @@ export function averageMonthlySalary(overall: number, age: number): number {
         ? 1
         : Math.max(0.55, 1 - (age - 29) * 0.055);
   return ceilMoney(600000 * Math.pow(3, (rating - 70) / 10) * ageFactor, MONEY_STEPS.salary);
+}
+/** Salary progression follows the existing contract unless ability has outgrown the league. */
+export function renewalSalaryBaseline(state: WorldState, player: PlayerSnapshot) {
+  const club = state.clubs.byId[player.clubId ?? ''];
+  const benchmark = averageMonthlySalary(player.overall, player.age);
+  const gap = club ? player.overall - divisionStrength(club) : 0;
+  if (gap > 12)
+    return Math.max(player.salary.cents * 1.1, benchmark * (1 + Math.min(0.35, (gap - 12) * 0.02)));
+  const previous = state.management?.contractHistory?.[player.id]?.overall ?? player.overall;
+  const growth = Math.max(0, player.overall - previous);
+  return Math.max(
+    player.salary.cents,
+    Math.min(benchmark, player.salary.cents * 1.05 * Math.pow(1.08, growth)),
+  );
+}
+export function developmentPaused(state: WorldState, playerId: string) {
+  return Boolean(state.management?.contractHistory?.[playerId]?.dissatisfied);
 }
 export function renewalPatience(player: PlayerSnapshot) {
   const seed = player.id.split('').reduce((sum, character) => sum + character.charCodeAt(0), 0);
@@ -122,12 +139,20 @@ export function renewalTerms(state: WorldState, player: PlayerSnapshot, years = 
   const demand = Boolean(request && queue.some((item) => item.id === player.id));
   const shortContractDiscount = 0.96 + (Math.max(1, Math.min(5, years)) - 1) * 0.01;
   const senior = player.age >= 32;
-  const baseline = demand
-    ? averageSalary
-    : senior && remaining <= 180
-      ? Math.max(player.salary.cents * 0.65, averageSalary * 0.95)
-      : Math.max(player.salary.cents * (senior ? 1 : 0.9), averageSalary);
-  const minimumSalary = ceilMoney(baseline * shortContractDiscount, MONEY_STEPS.salary);
+  const salaryBaseline = renewalSalaryBaseline(state, player);
+  const club = state.clubs.byId[player.clubId ?? ''];
+  const outgrownLeague = Boolean(club && player.overall > divisionStrength(club) + 12);
+  const baseline =
+    senior && remaining <= 180 && !outgrownLeague
+      ? Math.max(
+          player.salary.cents * 0.65,
+          Math.min(averageSalary * 0.95, player.salary.cents * 0.95),
+        )
+      : salaryBaseline;
+  const minimumSalary = Math.max(
+    ceilMoney(baseline * shortContractDiscount, MONEY_STEPS.salary),
+    ceilMoney(baseline * 0.96, MONEY_STEPS.salary) + (years > 1 ? MONEY_STEPS.salary : 0),
+  );
   const recent = record && state.lastProcessedAt - record.signedAt < 180 * DAY;
   const reason =
     record?.refusesRenewal || (remaining <= 180 && refusesForPlayingTime(state, player))

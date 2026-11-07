@@ -1176,14 +1176,14 @@ export function settleMonthly(state: WorldState, at: number): WorldState {
       const oldDebt = debts[original.id] ?? 0;
       const owed = oldDebt + wages + retainedWages + maintenance;
       const paid = Math.min(original.balance.cents, owed);
-      debts[original.id] = roundMoney(owed - paid);
+      debts[original.id] = owed - paid;
       // Settle old salary arrears first, then this month's salaries, then maintenance.
       wageDebts[original.id] = roundMoney(
         Math.max(0, (wageDebts[original.id] ?? 0) + wages + retainedWages - paid),
       );
       clubs[original.id] = {
         ...original,
-        balance: { ...original.balance, cents: roundMoney(original.balance.cents - paid) },
+        balance: { ...original.balance, cents: original.balance.cents - paid },
       };
       charges.push({
         clubId: original.id,
