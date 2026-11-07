@@ -1,3 +1,6 @@
+import { useState } from 'react';
+import { createPortal } from 'react-dom';
+import { PlayerDetails } from '../players/player-details';
 import { PlayerCard } from '../players/player-card';
 import { clubKit } from '@football/shared';
 import type { ViewProps } from '../../ui/view-props';
@@ -15,6 +18,8 @@ export function FitnessGym({
   medical?: boolean;
   coaching?: boolean;
 }) {
+  const [detailPlayerId, setDetailPlayerId] = useState<string | null>(null);
+  const detailPlayer = snapshot.state.players.byId[detailPlayerId ?? ''];
   return (
     <div className={`fitness-gym ${medical ? 'medical-room' : coaching ? 'training-ground' : ''}`}>
       <svg
@@ -146,13 +151,39 @@ export function FitnessGym({
       <div className="fitness-gym-players">
         {Array.from({ length: Math.max(slots, active.length) }, (_, index) => {
           const player = snapshot.state.players.byId[active[index] ?? ''];
+          const cycle = coaching
+            ? snapshot.state.centers.byId[club.trainingCenterId]?.operations?.individual.find(
+                (plan) => plan.playerId === player?.id,
+              )
+            : undefined;
+          const remainingDays = cycle
+            ? Math.max(0, Math.ceil((cycle.endsAt - snapshot.state.lastProcessedAt) / 86400000))
+            : 0;
           return (
             <div className="fitness-gym-station" key={index}>
               {player ? (
                 <>
-                  <PlayerCard player={player} clubName={club.name} kit={clubKit(club)} />
+                  <PlayerCard
+                    player={player}
+                    clubName={club.name}
+                    kit={clubKit(club)}
+                    {...(coaching ? { onActivate: () => setDetailPlayerId(player.id) } : {})}
+                  />
                   <span className="fitness-gym-status">
-                    <i /> {coaching ? 'Treinando · +50%' : 'Recuperando · +50%'}
+                    {coaching ? (
+                      remainingDays > 0 ? (
+                        <>
+                          Falta{remainingDays === 1 ? '' : 'm'} {remainingDays} dia
+                          {remainingDays === 1 ? '' : 's'}
+                        </>
+                      ) : (
+                        'Concluindo treino'
+                      )
+                    ) : (
+                      <>
+                        <i /> Recuperando · +50%
+                      </>
+                    )}
                   </span>
                   {coaching ? null : medical ? (
                     <span className="medical-room-days">
@@ -180,6 +211,15 @@ export function FitnessGym({
           );
         })}
       </div>
+      {detailPlayer &&
+        createPortal(
+          <PlayerDetails
+            player={detailPlayer}
+            club={snapshot.state.clubs.byId[detailPlayer.clubId ?? '']}
+            onClose={() => setDetailPlayerId(null)}
+          />,
+          document.body,
+        )}
     </div>
   );
 }

@@ -12,10 +12,61 @@ const JOKES = [
   'A torcida pediu raça. O mascote interpretou literalmente e entrou com um cachorro.',
 ];
 const NETO_JOKES = [
+  'Porra, Corinthians! Eu pedi uma jogada ensaiada, não um ensaio de como perder a bola na lateral!',
+  'Caralho, o atacante recebeu livre e resolveu dar mais um toque. Era para finalizar, não para parcelar a jogada!',
+  'Puta que pariu, esse escanteio não passou do primeiro homem! Se a ideia era acertar o marcador, foi uma cobrança perfeita.',
+  'Que merda de recuo foi esse? O goleiro pediu a bola no pé, não um teste de sobrevivência!',
   'Neymar, o controle de videogame já está aquecido. Agora falta aquecer a chuteira! A torcida quer o drible no campo, não no menu.',
   'Se cada rumor de volta do Neymar valesse um gol, o placar precisava de mais dois dígitos. Deixa a bola falar agora!',
   'Corinthians, meu coração não tem banco de reservas! Resolve esse jogo antes que eu precise pedir substituição no sofá.',
   'No Corinthians até o café do intervalo vem com emoção. Eu pedi três pontos, não três sustos e um pão de queijo!',
+];
+
+const PILHADO_JOKES = [
+  'Eu vim debater futebol com calma. A calma viu a primeira substituição e foi embora do estúdio.',
+  'O time prometeu intensidade. Quem terminou suando fui eu explicando a escalação.',
+  'Tem treinador que guarda substituição como se desse para levar para o próximo campeonato.',
+  'O debate estava equilibrado até alguém perguntar quem marcava o lateral. Agora ninguém lembra a pergunta e todo mundo está gritando.',
+  'Porra, isso era um contra-ataque! Quando o time decidiu acelerar, a defesa adversária já tinha até tomado água.',
+  'Caralho, três jogadores olhando a bola passar! É defesa de futebol ou visita guiada ao gramado?',
+  'Puta que pariu, mais um passe para trás! A torcida pagou ingresso para ver o ataque, não o goleiro organizar excursão.',
+  'Que merda de saída de bola! O adversário nem precisou pressionar: recebeu em domicílio e sem taxa de entrega.',
+];
+
+const CAZE_JOKES = [
+  'O Vasco ainda vai me fazer comemorar lateral no campo de ataque como se fosse título. É uma construção emocional por etapas.',
+  'O cara falou que acompanha o Vasco sem passar nervoso. Meteu essa? Eu fico tenso até na divulgação dos relacionados.',
+  'Fui assistir ao Vasco tranquilo. Durou até a primeira bola recuada para o goleiro.',
+  'Que papinho, hein? Me falaram que era só um jogo do Vasco. Então explica por que eu terminei fazendo promessa para o próximo domingo.',
+  'A vantagem de torcer para o Vasco é que o relógio da academia passa rápido. Dez minutos de jogo já equivalem a quarenta de cardio.',
+  'O forte! Muito forte esse meu otimismo com o Vasco. Sobrevive até à bola recuada aos quarenta e nove.',
+  'O Vasco pode até controlar a posse. Quem não controla nada sou eu andando pela sala.',
+  'Falaram para eu trocar de time para ter paz. Esquisito… Eu pedi uma vitória do Vasco, não uma nova identidade.',
+  'Prometi analisar o Vasco com calma. A calma pediu substituição antes do intervalo.',
+  'Na minha simulação mental, o Vasco deu um amasso. Agora falta combinar com a realidade e com o lateral adversário.',
+  'No jogo do Vasco, meu sofá tem mapa de calor. Eu já ocupei todas as posições.',
+  'O Vasco tá muito grandudo na minha expectativa. Já a tranquilidade para assistir continua pequenininha.',
+  'O Vasco sai jogando e eu saio da cadeira. Sincronia perfeita.',
+  'Ih! O Vasco vai sair tocando dentro da área. Vou levantar aqui, porque sofrer sentado já não está dando vazão.',
+  'Hoje eu só queria um jogo tranquilo do Vasco. Meu pedido continua em análise no departamento de milagres.',
+  'A bola parada do Vasco tem dois especialistas: quem cobra e eu, que fico parado sem respirar.',
+  'Se acreditar no Vasco desse ponto no campeonato, a gente já estava escolhendo a faixa.',
+  'Meu planejamento para o Vasco era simples: fazer o gol e respirar. A segunda parte exige negociação.',
+  'O Vasco entra em campo com onze. Aqui em casa entram mais três: esperança, ansiedade e o vizinho reclamando do grito.',
+];
+const FORMIGA_JOKES = [
+  'O Flamengo não perdeu a bola. Transferiu temporariamente a responsabilidade da construção para o adversário. É diferente.',
+  'Antes de reclamar do passe para trás do Flamengo, precisamos entender a progressão territorial em sentido filosófico.',
+  'A finalização do Flamengo foi para fora, mas o conceito entrou. Falta o placar incorporar essa métrica.',
+  'O Flamengo não estava desorganizado: testava um sistema que ainda não foi descoberto pelos próprios jogadores.',
+  'O árbitro não demorou para decidir. Abriu uma janela de reflexão coletiva sobre as regras.',
+  'O VAR levou oito minutos? Prefiro chamar de análise aprofundada com intervalo para maturação da imagem.',
+  'O juiz não inverteu o lateral. Propôs uma redistribuição democrática da posse.',
+  'O acréscimo pareceu exagerado, mas o relógio também precisa ter liberdade interpretativa.',
+  'O Flamengo recuou demais? Era um convite à pressão. O problema foi o adversário aceitar com tanta educação.',
+  'O cartão saiu tarde porque o árbitro estava respeitando o tempo de processamento emocional do atleta.',
+  'Não foi um cruzamento errado do Flamengo. Foi uma inversão tão ambiciosa que saiu do campo de análise.',
+  'O apito interrompeu uma boa jogada, mas precisamos valorizar a participação do árbitro na circulação da bola.',
 ];
 
 export function roundNews(state: WorldState) {
@@ -28,11 +79,56 @@ export function roundNews(state: WorldState) {
     if (!group.some((r) => r.fixtureId === result.fixtureId)) group.push(result);
     rounds.set(fixture.scheduledAt, group);
   }
+  const columns = [
+    { reporterName: 'Cazé', pool: CAZE_JOKES, tags: ['#Vasco', '#Caze'] },
+    {
+      reporterName: 'Bruno Formiga',
+      pool: FORMIGA_JOKES,
+      tags: ['#NaPrancheta', '#BrunoFormiga'],
+    },
+    { reporterName: 'Craque Neto', pool: NETO_JOKES, tags: ['#CraqueNeto'] },
+    { reporterName: 'Pilhado', pool: PILHADO_JOKES, tags: ['#Pilhado', '#ResenhaDeBancada'] },
+    { reporterName: undefined, pool: JOKES, tags: ['#Bastidores'] },
+  ];
+
+  const appearances = new Map<string | undefined, number>();
+  const selections = new Map<number, { column: (typeof columns)[number]; body: string }[]>();
+  for (const day of [...rounds.keys()].sort((a, b) => a - b)) {
+    const seed = Math.abs(Math.floor(day / 86400000));
+    selections.set(
+      day,
+      Array.from({ length: 2 + (seed % 3) }, (_, index) => {
+        const column = columns[(seed + index) % columns.length]!;
+        const occurrence = appearances.get(column.reporterName) ?? 0;
+        appearances.set(column.reporterName, occurrence + 1);
+        let pool = column.pool;
+        let turn = occurrence;
+        if (column.reporterName === 'Cazé') {
+          const catchphrase = /Meteu essa|Que papinho|O forte!|Esquisito|amasso|grandudo|Ih!/;
+          const useCatchphrase = occurrence % 3 === 2;
+          pool = column.pool.filter((text) => catchphrase.test(text) === useCatchphrase);
+          turn = useCatchphrase
+            ? Math.floor(occurrence / 3)
+            : occurrence - Math.floor(occurrence / 3);
+        }
+        if (column.reporterName === 'Craque Neto' || column.reporterName === 'Pilhado') {
+          const profanity = /porra|caralho|puta que pariu|merda/i;
+          const useProfanity = occurrence % 3 === 2;
+          pool = column.pool.filter((text) => profanity.test(text) === useProfanity);
+          turn = useProfanity
+            ? Math.floor(occurrence / 3)
+            : occurrence - Math.floor(occurrence / 3);
+        }
+        return { column, body: pool[turn % pool.length]! };
+      }),
+    );
+  }
   return [...rounds]
     .sort(([a], [b]) => b - a)
     .slice(0, 8)
     .flatMap(([day, results]) => {
-      const at = Math.max(...results.map((r) => r.startedAt ?? day));
+      // Use the fixture date: processing several rounds together must not reorder the feed.
+      const at = day;
       const highlights = [...results]
         .sort(
           (a, b) =>
@@ -51,7 +147,7 @@ export function roundNews(state: WorldState) {
           return {
             id: `score:${result.fixtureId}`,
             reporterName: undefined as string | undefined,
-            at: at + index,
+            at: at - index,
             title: margin >= 3 ? `${shock[index]} ${score}` : `Destaque da rodada: ${score}`,
             body:
               margin >= 3
@@ -60,26 +156,17 @@ export function roundNews(state: WorldState) {
             tags: ['#GiroDaRodada', ...(margin >= 3 ? ['#Goleada'] : [])],
           };
         });
-      const seed = Math.abs(Math.floor(day / 86400000));
-      const jokes = Array.from({ length: 1 + (seed % 2) }, (_, index) => ({
-        id: `resenha:${day}:${index}`,
-        at: at + 0.5 + index,
-        title: 'Resenha do vestiário · notícia fictícia',
-        body:
-          index === 0 && seed % 2 === 0
-            ? NETO_JOKES[Math.floor(seed / 2) % NETO_JOKES.length]!
-            : JOKES[(seed + index * 3) % JOKES.length]!,
-        reporterName: index === 0 && seed % 2 === 0 ? 'Craque Neto' : undefined,
-        tags: [
-          '#ResenhaFictícia',
-          ...(index === 0 && seed % 2 === 0
-            ? [
-                '#CraqueNeto',
-                Math.floor(seed / 2) % NETO_JOKES.length < 2 ? '#Neymar' : '#Corinthians',
-              ]
-            : []),
-        ],
-      }));
+      const jokes = selections.get(day)!.map(({ column, body }, index) => {
+        return {
+          id: `resenha:${day}:${index}`,
+          at: at + 0.5 + index,
+          title: 'Resenha do Vestiário',
+          body,
+          reporterName: column.reporterName,
+          tags: ['#ResenhaDaRodada', ...column.tags],
+        };
+      });
       return [...highlights, ...jokes];
-    });
+    })
+    .sort((a, b) => b.at - a.at || a.id.localeCompare(b.id));
 }

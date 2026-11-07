@@ -1,3 +1,4 @@
+import { careerAmbition } from './career-ambition.js';
 import { clubResults, playerRatings } from './history-index.js';
 import { ceilMoney, MONEY_STEPS, type PlayerSnapshot, type WorldState } from '@football/shared';
 const DAY = 86400000;
@@ -131,15 +132,17 @@ export function renewalTerms(state: WorldState, player: PlayerSnapshot, years = 
   const reason =
     record?.refusesRenewal || (remaining <= 180 && refusesForPlayingTime(state, player))
       ? 'O jogador decidiu não renovar. Ele pode ser vendido ou sairá livre ao fim do contrato.'
-      : state.management?.loans?.[player.id]
-        ? 'Jogador emprestado: a renovação será tratada no clube de origem.'
-        : recent
-          ? 'Contrato renovado recentemente. O jogador não quer renegociar agora.'
-          : remaining > 180 && !demand && !record?.severeDissatisfaction
-            ? 'A renegociação voluntária só pode ocorrer nos últimos seis meses do contrato.'
-            : morale < 30
-              ? 'Moral baixa: o jogador não quer renovar.'
-              : '';
+      : careerAmbition(state, player) >= 60
+        ? 'O jogador busca uma liga mais forte para continuar a carreira e não deseja renovar neste momento.'
+        : state.management?.loans?.[player.id]
+          ? 'Jogador emprestado: a renovação será tratada no clube de origem.'
+          : recent
+            ? 'Contrato renovado recentemente. O jogador não quer renegociar agora.'
+            : remaining > 180 && !demand && !record?.severeDissatisfaction
+              ? 'A renegociação voluntária só pode ocorrer nos últimos seis meses do contrato.'
+              : morale < 30
+                ? 'Moral baixa: o jogador não quer renovar.'
+                : '';
   return {
     morale: Math.round(morale),
     remaining,

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createWorld, stableId } from '../src/index.js';
 import { agePlayer } from '../src/players/development.js';
 import {
+  developmentFactor,
   annualDecline,
   expectedTrainingGain,
   emptyTrainingProgression,
@@ -73,7 +74,7 @@ describe('barras de treinamento', () => {
     const developing = { ...base, overall: 70 };
     expect(
       officialMatchDevelopment(developing, 0, emptyTrainingProgression(), 3, true).development,
-    ).toBeCloseTo(0.006 * 3 * 1.5 * 1.5);
+    ).toBeCloseTo(0.006 * 3 * 1.5 * 1.5 * developmentFactor(developing));
   });
   it('participar de jogo pausa a barra vermelha sem descontar overall novamente', () => {
     const veteran = { ...base, age: 36 };

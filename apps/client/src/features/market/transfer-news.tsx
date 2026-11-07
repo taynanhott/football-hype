@@ -1,3 +1,4 @@
+import { transferStoryKey, uniqueTransferStories } from './transfer-stories';
 import { useGameStore } from '../../store/game-store';
 import { roundNews } from './round-news';
 import { useMemo, useState, type ReactNode } from 'react';
@@ -17,15 +18,16 @@ const REPORTERS: PersonAppearance[] = [
   ].map((name, index): PersonAppearance => ({
     name,
     skin: ['#edc3a3', '#d9ad88', '#efc6a6'][index % 3]!,
-    hair: index % 2 ? 'curto' : 'ondulado',
-    hairColor: index === 3 ? '#74706a' : '#302a24',
-    beard: index % 2 ? 'curta' : 'nenhuma',
+    hair: index === 1 || index === 3 ? 'curto' : index % 2 ? 'curto' : 'ondulado',
+    hairColor: index === 3 ? '#a7a5a0' : '#302a24',
+    beard: index === 3 ? 'nenhuma' : index <= 1 ? 'cheia' : index % 2 ? 'curta' : 'nenhuma',
     ...(index === 0 ? { glasses: 'redondo' } : {}),
     outfit: ['#303b50', '#43374b', '#343b35'][index % 3]!,
     outfitStyle: index % 2 ? 'polo' : 'camisa',
   })),
   {
     name: 'Cazé',
+    build: 'large',
     skin: '#f0c9ac',
     hair: 'curto',
     hairColor: '#292322',
@@ -48,7 +50,7 @@ const REPORTERS: PersonAppearance[] = [
     skin: '#f3cfb4',
     hair: 'ondulado',
     hairColor: '#322721',
-    beard: 'curta',
+    beard: 'cheia',
     outfit: '#343b54',
     outfitStyle: 'camisa',
   },
@@ -57,7 +59,7 @@ const REPORTERS: PersonAppearance[] = [
     skin: '#eec8ad',
     hair: 'curto',
     hairColor: '#292320',
-    beard: 'curta',
+    beard: 'bigode',
     outfit: '#473a53',
     outfitStyle: 'polo',
   },
@@ -169,26 +171,28 @@ export function TransferNews({ state }: { state: WorldState }) {
   const [filter, setFilter] = useState<'all' | 'completed' | 'saved'>('all');
   const [saved, setSaved] = useState<string[]>([]);
   const humanClubs = new Set(state.participants.map((participant) => participant.clubId));
-  const offers: Negotiation[] = [
-    ...state.negotiations,
-    ...(state.management?.offers ?? []).map((offer) => ({
-      ...offer,
-      offeredSalary: offer.salary,
-      interest: 0,
-      status:
-        offer.status === 'pending'
-          ? ('review' as const)
-          : offer.status === 'accepted'
-            ? ('completed' as const)
-            : ('rejected' as const),
-    })),
-  ]
-    .filter(
-      (offer) =>
-        humanClubs.has(offer.buyerId) ||
-        (offer.sellerId !== undefined && humanClubs.has(offer.sellerId)),
-    )
-    .sort((a, b) => (a.offeredAt ?? 0) - (b.offeredAt ?? 0));
+  const offers: Negotiation[] = uniqueTransferStories(
+    [
+      ...state.negotiations,
+      ...(state.management?.offers ?? []).map((offer) => ({
+        ...offer,
+        offeredSalary: offer.salary,
+        interest: 0,
+        status:
+          offer.status === 'pending'
+            ? ('review' as const)
+            : offer.status === 'accepted'
+              ? ('completed' as const)
+              : ('rejected' as const),
+      })),
+    ]
+      .filter(
+        (offer) =>
+          humanClubs.has(offer.buyerId) ||
+          (offer.sellerId !== undefined && humanClubs.has(offer.sellerId)),
+      )
+      .sort((a, b) => (a.offeredAt ?? 0) - (b.offeredAt ?? 0)),
+  );
   const marketNews = offers
     .map((offer, index) => {
       const buyer = state.clubs.byId[offer.buyerId]?.name ?? 'Clube interessado';
@@ -243,12 +247,16 @@ export function TransferNews({ state }: { state: WorldState }) {
         body = 'O clube desistiu da proposta. As conversas ficam suspensas por uma semana.';
       } else if (offer.status === 'rejected') body += ' Essa proposta não está mais em análise.';
       return {
-        id: offer.id,
+        id: transferStoryKey(offer),
         at: offer.offeredAt ?? 0,
         offer,
         title,
         body,
-        reporter: REPORTERS[index % REPORTERS.length]!,
+        reporter:
+          REPORTERS[
+            Array.from(transferStoryKey(offer)).reduce((sum, char) => sum + char.charCodeAt(0), 0) %
+              REPORTERS.length
+          ]!,
         tags: ['#MercadoDaBola'],
       };
     })

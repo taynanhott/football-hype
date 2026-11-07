@@ -264,9 +264,9 @@ export function IndividualTrainingRoster({
                   ? 'Reduz gradualmente a barra de desgaste até zero, sem recuperar overall perdido. O nível do CT melhora o efeito.'
                   : confirmPlayer.age < 33
                     ? confirmPlayer.overall < confirmPlayer.potential
-                      ? '+1 de overall ao concluir, limitado ao potencial.'
+                      ? 'Evolução acelerada em 50%, respeitando idade e proximidade do potencial.'
                       : '+1 de bônus temporário por 15 jogos oficiais ao concluir.'
-                    : 'Sem ganho de overall aos 33 anos.'}
+                    : 'Evolução gradual até o potencial; sem bônus automático ao concluir.'}
               </p>
             </section>
             <div className="career-confirm-actions">

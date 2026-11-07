@@ -4,6 +4,7 @@ export type PersonAppearance = {
   hair: string;
   beard: string;
   outfit: string;
+  build?: 'regular' | 'large';
   hairColor?: string;
   secondary?: string;
   beardColor?: string;
@@ -49,7 +50,10 @@ export function PersonAvatar({
       role="img"
       aria-label={`Retrato em pixel art de ${profile.name || 'treinador'}`}
     >
-      <g aria-label={`Roupa: ${outfitStyle}`}>
+      <g
+        aria-label={`Roupa: ${outfitStyle}`}
+        transform={profile.build === 'large' ? 'translate(-2.16 0) scale(1.06 1)' : undefined}
+      >
         <path
           fill="#111b20"
           d="M3 78V67H6V62H10V59H15V56H23V53H28V48H45V53H50V56H58V59H63V62H67V67H69V78Z"
@@ -124,105 +128,115 @@ export function PersonAvatar({
         )}
         <path fill="#000" opacity=".15" d="M5 75H15V77H5ZM57 75H67V77H57Z" />
       </g>
-      <path fill="#171b18" d="M25 43H47V53H44V57H40V60H32V57H28V53H25Z" />
-      <path fill={profile.skin} d="M28 44H44V52H41V56H32V54H28Z" />
-      <path fill="#000" opacity=".19" d="M28 46H44V51H40V53H32V51H28Z" />
-      <path
-        fill="#151917"
-        d="M18 33V20H21V16H26V12H31V10H43V12H48V16H52V20H55V33H58V35H60V40H57V43H53V48H49V52H44V55H29V53H24V49H20V44H16V41H12V34H15V33Z"
-      />
-      <path
-        fill={profile.skin}
-        d="M16 34H21V21H24V17H29V14H44V17H49V21H52V34H56V35H58V39H55V41H51V47H47V51H43V53H30V51H26V47H22V41H17V39H14V35H16Z"
-      />
-      <path
-        fill="#000"
-        opacity=".18"
-        d="M17 35H19V40H17ZM54 35H56V39H54ZM22 29H25V44H28V48H32V51H43V53H30V51H26V47H22ZM48 30H51V43H48Z"
-      />
-      <path
-        fill="#ffe2aa"
-        opacity=".4"
-        d="M27 25H33V27H27ZM25 28H28V32H25ZM45 27H48V31H45ZM29 43H33V45H29Z"
-      />
-      {profile.hair !== 'careca' && (
-        <g>
-          <path fill={hairColor} stroke="#171b18" strokeWidth="1" strokeLinejoin="miter" d={hair} />
-          {profile.hair === 'trancas' ? (
+      <g transform={profile.build === 'large' ? 'translate(-5.76 0) scale(1.16 1)' : undefined}>
+        <path fill="#171b18" d="M25 43H47V53H44V57H40V60H32V57H28V53H25Z" />
+        <path fill={profile.skin} d="M28 44H44V52H41V56H32V54H28Z" />
+        <path fill="#000" opacity=".19" d="M28 46H44V51H40V53H32V51H28Z" />
+        <path
+          fill="#151917"
+          d="M18 33V20H21V16H26V12H31V10H43V12H48V16H52V20H55V33H58V35H60V40H57V43H53V48H49V52H44V55H29V53H24V49H20V44H16V41H12V34H15V33Z"
+        />
+        <path
+          fill={profile.skin}
+          d="M16 34H21V21H24V17H29V14H44V17H49V21H52V34H56V35H58V39H55V41H51V47H47V51H43V53H30V51H26V47H22V41H17V39H14V35H16Z"
+        />
+        <path
+          fill="#000"
+          opacity=".18"
+          d="M17 35H19V40H17ZM54 35H56V39H54ZM22 29H25V44H28V48H32V51H43V53H30V51H26V47H22ZM48 30H51V43H48Z"
+        />
+        <path
+          fill="#ffe2aa"
+          opacity=".4"
+          d="M27 25H33V27H27ZM25 28H28V32H25ZM45 27H48V31H45ZM29 43H33V45H29Z"
+        />
+        {profile.hair !== 'careca' && (
+          <g>
             <path
-              d="M23 17V23M28 14V21M33 12V20M39 12V20M45 15V21M50 19V30M20 27V42M52 27V42"
+              fill={hairColor}
               stroke="#171b18"
               strokeWidth="1"
+              strokeLinejoin="miter"
+              d={hair}
             />
-          ) : (
+            {profile.hair === 'trancas' ? (
+              <path
+                d="M23 17V23M28 14V21M33 12V20M39 12V20M45 15V21M50 19V30M20 27V42M52 27V42"
+                stroke="#171b18"
+                strokeWidth="1"
+              />
+            ) : (
+              <path
+                fill="#fff"
+                opacity=".16"
+                d={
+                  profile.hair === 'moicano'
+                    ? 'M33 11H36V19H33Z'
+                    : 'M23 19H26V16H31V14H41V16H32V18H27V21H23Z'
+                }
+              />
+            )}
+          </g>
+        )}
+        <path fill="#282820" d="M25 30H32V32H24V31H25ZM41 30H48V31H49V32H41Z" />
+        <path fill="#906744" d="M24 33H33V34H24ZM40 33H49V34H40Z" />
+        <path fill="#fff3d9" d="M25 34H32V40H25ZM41 34H48V40H41Z" />
+        <path fill={profile.eyeColor ?? '#234c40'} d="M28 34H32V39H28ZM42 34H46V39H42Z" />
+        <path fill="#132b29" d="M29 35H32V39H29ZM42 35H45V39H42Z" />
+        <path fill="#fff" d="M28 34H30V36H28ZM42 34H44V36H42Z" />
+        <path fill="#d98a67" opacity=".35" d="M24 41H29V43H24ZM45 41H50V43H45Z" />
+        <path fill="#795c3d" d="M35 40H37V42H39V43H34V42H35Z" />
+        {profile.beard !== 'nenhuma' && (
+          <>
             <path
-              fill="#fff"
-              opacity=".16"
+              fill={beardColor}
+              opacity={profile.beard === 'curta' ? 0.5 : 0.95}
               d={
-                profile.hair === 'moicano'
-                  ? 'M33 11H36V19H33Z'
-                  : 'M23 19H26V16H31V14H41V16H32V18H27V21H23Z'
+                profile.beard === 'bigode'
+                  ? 'M30 44H43V46H30Z'
+                  : profile.beard === 'cavanhaque'
+                    ? 'M32 44H41V46H39V52H34V46H32Z'
+                    : profile.beard === 'longa'
+                      ? 'M22 40H25V45H29V48H44V45H48V40H51V47H48V53H44V57H30V54H26V50H23Z'
+                      : 'M22 40H24V44H27V47H31V49H43V47H47V44H49V40H51V46H48V50H44V53H30V51H26V48H23V44H22Z'
               }
             />
-          )}
-        </g>
-      )}
-      <path fill="#282820" d="M25 30H32V32H24V31H25ZM41 30H48V31H49V32H41Z" />
-      <path fill="#906744" d="M24 33H33V34H24ZM40 33H49V34H40Z" />
-      <path fill="#fff3d9" d="M25 34H32V40H25ZM41 34H48V40H41Z" />
-      <path fill={profile.eyeColor ?? '#234c40'} d="M28 34H32V39H28ZM42 34H46V39H42Z" />
-      <path fill="#132b29" d="M29 35H32V39H29ZM42 35H45V39H42Z" />
-      <path fill="#fff" d="M28 34H30V36H28ZM42 34H44V36H42Z" />
-      <path fill="#d98a67" opacity=".35" d="M24 41H29V43H24ZM45 41H50V43H45Z" />
-      <path fill="#795c3d" d="M35 40H37V42H39V43H34V42H35Z" />
-      {profile.beard !== 'nenhuma' && (
-        <>
+            {profile.beard !== 'bigode' && (
+              <path
+                fill={beardColor}
+                opacity=".5"
+                d="M25 44H27V47H30V49H33V51H30V50H27V48H25ZM46 46H48V49H45V51H42V49H45Z"
+              />
+            )}
+          </>
+        )}
+        <path fill="#3a3022" d="M30 46H43V47H41V48H32V47H30Z" />
+        <path fill="#f9d296" opacity=".6" d="M33 48H40V49H33Z" />
+        {['longa', 'cheia', 'curta'].includes(profile.beard) && (
           <path
             fill={beardColor}
-            opacity={profile.beard === 'curta' ? 0.5 : 0.95}
-            d={
-              profile.beard === 'bigode'
-                ? 'M30 44H43V46H30Z'
-                : profile.beard === 'cavanhaque'
-                  ? 'M32 44H41V46H39V52H34V46H32Z'
-                  : profile.beard === 'longa'
-                    ? 'M22 40H25V45H29V48H44V45H48V40H51V47H48V53H44V57H30V54H26V50H23Z'
-                    : 'M22 40H24V44H27V47H31V49H43V47H47V44H49V40H51V46H48V50H44V53H30V51H26V48H23V44H22Z'
-            }
+            opacity={profile.beard === 'curta' ? 0.5 : 1}
+            d="M32 43H35V44H38V43H41V44H44V46H46V49H42V48H39V47H34V48H30V49H27V46H29V44H32Z"
           />
-          <path
-            fill={beardColor}
-            opacity=".5"
-            d="M25 44H27V47H30V49H33V51H30V50H27V48H25ZM46 46H48V49H45V51H42V49H45Z"
-          />
-        </>
-      )}
-      <path fill="#3a3022" d="M30 46H43V47H41V48H32V47H30Z" />
-      <path fill="#f9d296" opacity=".6" d="M33 48H40V49H33Z" />
-      {['longa', 'cheia', 'curta'].includes(profile.beard) && (
-        <path
-          fill={beardColor}
-          opacity={profile.beard === 'curta' ? 0.5 : 1}
-          d="M32 43H35V44H38V43H41V44H44V46H46V49H42V48H39V47H34V48H30V49H27V46H29V44H32Z"
-        />
-      )}
-      {profile.glasses && profile.glasses !== 'nenhum' && (
-        <g
-          fill={profile.glasses === 'solar' ? '#18252d' : 'none'}
-          stroke={profile.glassesColor ?? '#222b30'}
-          strokeWidth="1.5"
-        >
-          <path
-            d={
-              profile.glasses === 'redondo'
-                ? 'M24 34H26V33H31V34H33V39H31V41H26V40H24ZM40 34H42V33H47V34H49V39H47V41H42V40H40Z'
-                : 'M23 33H34V41H23ZM39 33H50V41H39Z'
-            }
-          />
-          <path d="M34 35H39M19 34H23M50 34H54" />
-        </g>
-      )}
-      <path fill="#263128" d="M34 51H39V52H34Z" />
+        )}
+        {profile.glasses && profile.glasses !== 'nenhum' && (
+          <g
+            fill={profile.glasses === 'solar' ? '#18252d' : 'none'}
+            stroke={profile.glassesColor ?? '#222b30'}
+            strokeWidth="1.5"
+          >
+            <path
+              d={
+                profile.glasses === 'redondo'
+                  ? 'M24 34H26V33H31V34H33V39H31V41H26V40H24ZM40 34H42V33H47V34H49V39H47V41H42V40H40Z'
+                  : 'M23 33H34V41H23ZM39 33H50V41H39Z'
+              }
+            />
+            <path d="M34 35H39M19 34H23M50 34H54" />
+          </g>
+        )}
+        <path fill="#263128" d="M34 51H39V52H34Z" />
+      </g>
     </svg>
   );
 }

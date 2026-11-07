@@ -56,7 +56,7 @@ export function NegotiationChat({
   );
   const [exchangeExpanded, setExchangeExpanded] = useState(false);
   const candidates = exchangeCandidates(snapshot.state, club.id, player.clubId ?? '').sort(
-    (a, b) => b.value - a.value || a.player.name.localeCompare(b.player.name, 'pt-BR'),
+    (a, b) => a.value - b.value || a.player.name.localeCompare(b.player.name, 'pt-BR'),
   );
   const exchangeValue = candidates
     .filter((c) => exchangeIds.includes(c.player.id))
@@ -92,6 +92,11 @@ export function NegotiationChat({
     editedDemand !== demandKey,
   );
   const value = acceptingDemand ? Math.max(0, last!.minimumFee! - exchangeValue) : offeredValue;
+  const sliderStep = MONEY_STEPS.transfer;
+  const sliderMaximum = Math.max(
+    minimumOffer,
+    Math.floor(Math.min(maximumOffer, maximum) / sliderStep) * sliderStep,
+  );
   const offerDisplay = currency(value);
   const submitLabel = acceptingDemand ? `Aceitar por ${offerDisplay}` : 'Enviar proposta';
   function onValue(next: number) {
@@ -403,7 +408,7 @@ export function NegotiationChat({
                     type="button"
                     aria-label="Aumentar oferta"
                     disabled={typing || blocked}
-                    onClick={() => onValue(Math.min(maximum, value + MONEY_STEPS.transfer))}
+                    onClick={() => onValue(Math.min(sliderMaximum, value + MONEY_STEPS.transfer))}
                   >
                     +
                   </button>
@@ -417,17 +422,16 @@ export function NegotiationChat({
                 <MoneyRange
                   aria-label="Valor da proposta"
                   min={minimumOffer}
-                  max={Math.max(maximumOffer, value)}
-                  step={acceptingDemand ? MONEY_STEPS.general : MONEY_STEPS.transfer * 2}
+                  max={Math.max(sliderMaximum, value)}
+                  step={sliderStep}
                   value={value}
                   onChange={(e) =>
                     onValue(
                       Math.min(
-                        maximum,
+                        sliderMaximum,
                         Math.max(
                           minimumOffer,
-                          Math.round(Number(e.target.value) / (MONEY_STEPS.transfer * 2)) *
-                            (MONEY_STEPS.transfer * 2),
+                          Math.round(Number(e.target.value) / sliderStep) * sliderStep,
                         ),
                       ),
                     )

@@ -1,27 +1,37 @@
 import { GameLoading } from './game-loading';
 import { useSimulationNavigationLock } from './use-simulation-navigation-lock';
 import { useNavigationNotifications } from './use-navigation-notifications';
-import { TransferNews } from '../features/market/transfer-news';
+import { TransferNews as TransferNewsPage } from '../features/market/transfer-news';
 import { request } from '../features/leagues/api';
 import { CoachAvatar, CoachEditor } from './coach-profile';
 import { readCoach } from './coach-profile-storage';
 import { useSession } from '../features/auth/session';
 import { AdvanceRoundButton } from '../features/leagues/advance-round-button';
 import { BrandMark } from './brand-mark';
-import { useEffect, useLayoutEffect, useState, useSyncExternalStore } from 'react';
+import { memo, useEffect, useLayoutEffect, useState, useSyncExternalStore } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useGameStore } from '../store/game-store';
 import { Lobby } from '../features/leagues/lobby';
-import { Dashboard } from '../features/dashboard/dashboard';
-import { LineupEditor } from '../features/players/lineup';
-import { Squad } from '../features/players/squad';
-import { Market } from '../features/market/market';
-import { Facilities } from '../features/facilities/facilities';
-import { Finance } from '../features/finance/finance';
-import { Matches } from '../features/matches/matches';
+import { Dashboard as DashboardPage } from '../features/dashboard/dashboard';
+import { LineupEditor as LineupEditorPage } from '../features/players/lineup';
+import { Squad as SquadPage } from '../features/players/squad';
+import { Market as MarketPage } from '../features/market/market';
+import { Facilities as FacilitiesPage } from '../features/facilities/facilities';
+import { Finance as FinancePage } from '../features/finance/finance';
+import { Matches as MatchesPage } from '../features/matches/matches';
 import { LeagueSettings, TrophyGallery } from '../features/leagues/settings';
-import { Calendar } from '../features/competitions/calendar';
+import { Calendar as CalendarPage } from '../features/competitions/calendar';
 import { Icon } from './icons';
+
+const Dashboard = memo(DashboardPage);
+const LineupEditor = memo(LineupEditorPage);
+const Squad = memo(SquadPage);
+const Market = memo(MarketPage);
+const Facilities = memo(FacilitiesPage);
+const Finance = memo(FinancePage);
+const Matches = memo(MatchesPage);
+const Calendar = memo(CalendarPage);
+const TransferNews = memo(TransferNewsPage);
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30000, retry: 1 } },

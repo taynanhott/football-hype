@@ -29,6 +29,9 @@ export function PlayerDetails({
       <div className="player-detail-card">
         <PlayerCard player={player} clubName={club?.name ?? 'Sem clube'} kit={clubKit(club)} />
       </div>
+      <button type="button" className="modal-return" onClick={onClose}>
+        ← Voltar
+      </button>
     </dialog>
   );
 }

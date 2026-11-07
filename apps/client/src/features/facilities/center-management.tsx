@@ -64,8 +64,8 @@ export function SectorGuide({ sector, rules = false }: { sector: string; rules?:
               <p>
                 <b>Até alcançar o potencial</b> · Treinos e jogos oficiais preenchem a barra de
                 evolução. Cada barra completa aumenta +1 de overall, até o potencial. No ciclo
-                individual, atletas com menos de 33 anos recebem +1 ao concluir, sem ultrapassar
-                esse limite.
+                individual, a evolução é acelerada em 50%, respeitando esse limite. Jovens evoluem
+                mais e os últimos cinco pontos até o potencial exigem mais tempo.
               </p>
               <p>
                 <b>Potencial alcançado</b> · A barra amarela carrega devagar no intenso, mantém no
@@ -253,7 +253,7 @@ export function CenterManagement({
                           <strong>{state.players.byId[t.playerId]?.name ?? 'Jogador'}</strong>
                           <span>
                             {Math.max(0, Math.ceil((t.endsAt - state.lastProcessedAt) / 86400000))}{' '}
-                            dias restantes · +1 OVR ao concluir
+                            dias restantes · evolução acelerada
                           </span>
                         </div>
                       ))}

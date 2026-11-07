@@ -67,6 +67,28 @@ export function CompetitionDrawDetails({
   const [running, setRunning] = useState(completed);
   const [speed, setSpeed] = useState(1);
   const [page, setPage] = useState(0);
+  const resultsRef = useRef<HTMLDivElement>(null);
+  const [pageSize, setPageSize] = useState(completed ? 4 : 8);
+  useEffect(() => {
+    const element = resultsRef.current;
+    if (!element || mobile) return;
+    const fit = () => {
+      const list = element.firstElementChild;
+      const row = list?.firstElementChild;
+      if (!list || !row) return;
+      const gap = parseFloat(getComputedStyle(list).rowGap) || 0;
+      const rowHeight = row.getBoundingClientRect().height;
+      if (rowHeight <= 0) return;
+      const columns = completed ? 1 : 2;
+      const capacity =
+        Math.max(1, Math.floor((element.clientHeight + gap) / (rowHeight + gap))) * columns;
+      setPageSize(capacity);
+    };
+    const observer = new ResizeObserver(fit);
+    observer.observe(element);
+    fit();
+    return () => observer.disconnect();
+  }, [mobile, completed, draw.kind]);
   const [groupPage, setGroupPage] = useState(0);
   const finished = completed && revealed >= entries.length;
   const groups = useMemo(
@@ -76,8 +98,9 @@ export function CompetitionDrawDetails({
   const name = COMPETITIONS.find((r) => r.id === draw.competitionId)?.name ?? draw.competitionId;
   const pages = Math.max(
     1,
-    Math.ceil((completed ? entries.length : draw.participantIds.length) / (completed ? 4 : 8)),
+    Math.ceil((completed ? entries.length : draw.participantIds.length) / pageSize),
   );
+  const currentPage = Math.min(page, pages - 1);
   const active = revealed ? entries[Math.min(revealed, entries.length) - 1] : undefined;
   useEffect(() => {
     if (!running || finished || !completed) return;
@@ -85,14 +108,14 @@ export function CompetitionDrawDetails({
       () => {
         const next = Math.min(revealed + 1, entries.length);
         setRevealed(next);
-        setPage(Math.max(0, Math.floor((next - 1) / 4)));
+        setPage(Math.max(0, Math.floor((next - 1) / pageSize)));
         const group = entries[next - 1]?.group;
         if (group) setGroupPage(Math.max(0, groups.indexOf(group)));
       },
       (draw.kind === 'groups' ? 1500 : 2200) / speed,
     );
     return () => clearTimeout(timer);
-  }, [running, finished, completed, revealed, entries, speed, draw.kind, groups]);
+  }, [running, finished, completed, revealed, entries, speed, draw.kind, groups, pageSize]);
   const club = (id: string, large = false) => (
     <span className={`ceremony-club ${large ? 'ceremony-club-large' : ''}`} key={id}>
       <PixelBadge
@@ -224,11 +247,14 @@ export function CompetitionDrawDetails({
           />
         )}
       </div>
-      <div className="ceremony-results">
+      <div className="ceremony-results" ref={resultsRef}>
         {!completed ? (
           <div className="ceremony-entrants">
             {draw.participantIds
-              .slice(mobile ? 0 : page * 8, mobile ? undefined : page * 8 + 8)
+              .slice(
+                mobile ? 0 : currentPage * pageSize,
+                mobile ? undefined : currentPage * pageSize + pageSize,
+              )
               .map((id) => club(id))}
           </div>
         ) : draw.kind === 'groups' ? (
@@ -253,11 +279,16 @@ export function CompetitionDrawDetails({
         ) : (
           <div className="ceremony-ties">
             {entries
-              .slice(mobile ? 0 : page * 4, mobile ? undefined : page * 4 + 4)
+              .slice(
+                mobile ? 0 : currentPage * pageSize,
+                mobile ? undefined : currentPage * pageSize + pageSize,
+              )
               .map((e, index) => (
                 <div className="ceremony-tie" key={e.id}>
-                  <small>{String((mobile ? 0 : page * 4) + index + 1).padStart(2, '0')}</small>
-                  {(mobile ? 0 : page * 4) + index < revealed ? (
+                  <small>
+                    {String((mobile ? 0 : currentPage * pageSize) + index + 1).padStart(2, '0')}
+                  </small>
+                  {(mobile ? 0 : currentPage * pageSize) + index < revealed ? (
                     <>
                       <div className="ceremony-tie-home">{club(e.homeId)}</div>
                       <b className="ceremony-tie-versus" aria-label="contra">
@@ -323,31 +354,31 @@ export function CompetitionDrawDetails({
               ›
             </button>
           </nav>
-        ) : (
+        ) : pages > 1 ? (
           <nav aria-label="Páginas do sorteio">
             <button
-              disabled={page === 0}
+              disabled={currentPage === 0}
               onClick={() => {
                 setRunning(false);
-                setPage(page - 1);
+                setPage(currentPage - 1);
               }}
             >
               ‹
             </button>
             <span>
-              {page + 1} / {pages}
+              {currentPage + 1} / {pages}
             </span>
             <button
-              disabled={page >= pages - 1}
+              disabled={currentPage >= pages - 1}
               onClick={() => {
                 setRunning(false);
-                setPage(page + 1);
+                setPage(currentPage + 1);
               }}
             >
               ›
             </button>
           </nav>
-        )}
+        ) : null}
       </footer>
       <button type="button" className="modal-return" aria-label="Voltar" onClick={onClose}>
         ← Voltar

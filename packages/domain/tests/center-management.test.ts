@@ -130,7 +130,7 @@ describe('gerenciamento do centro', () => {
     expect(state.injuries[id]).toBeGreaterThan(0);
     expect(worldStateSchema.safeParse(state).success).toBe(true);
   });
-  it('respeita o limite individual e conclui o ciclo com +1 de overall', () => {
+  it('respeita o limite individual e não concede overall automático ao lesionado', () => {
     const id = own().playerIds[0]!;
     expect(act('individual', id).ok).toBe(true);
     expect(act('individual', own().playerIds[1]).ok).toBe(false);
@@ -161,7 +161,7 @@ describe('gerenciamento do centro', () => {
       },
     };
     state = unwrap(playNextBatch(state, now));
-    expect(state.players.byId[id]!.overall).toBe(p.overall + 1);
+    expect(state.players.byId[id]!.overall).toBe(p.overall);
     expect(center().operations?.individual).toHaveLength(0);
     expect(worldStateSchema.safeParse(state).success).toBe(true);
   });

@@ -1,5 +1,6 @@
 import { resetTransferredEffects, settleContractDecisions } from './contract-lifecycle.js';
 import {
+  developmentFactor,
   progressTraining,
   emptyTrainingProgression,
   currentTrainingHistory,
@@ -179,7 +180,7 @@ function advanceGameDaysInternal(state: WorldState, target: number): WorldState 
               center.levels.coaching *
               load *
               (individual ? 1.5 : 1) *
-              Math.max(0.15, (34 - player.age) / 16);
+              developmentFactor(player);
           if (player.age <= 33 && player.overall < player.potential)
             history.growth += Math.min(
               player.potential - player.overall,
@@ -187,7 +188,7 @@ function advanceGameDaysInternal(state: WorldState, target: number): WorldState 
                 center.levels.coaching *
                 load *
                 (individual ? 1.5 : 1) *
-                Math.max(0.15, (34 - player.age) / 16),
+                developmentFactor(player),
             );
           next = {
             ...next,
@@ -233,9 +234,7 @@ function advanceGameDaysInternal(state: WorldState, target: number): WorldState 
         if (player.age > 33) next = { ...next, overall: trained.overall };
         if (individual && day + GAME_DAY_MS >= individual.endsAt) {
           if (player.age < 33) {
-            if (next.overall < next.potential)
-              next = { ...next, overall: Math.min(next.potential, next.overall + 1) };
-            else cycleBonuses[id] = { games: 15 };
+            if (next.overall >= next.potential) cycleBonuses[id] = { games: 15 };
           }
           completed.add(id);
         }
@@ -370,11 +369,6 @@ function finishIndividualCycles(state: WorldState, at: number): WorldState {
       const player = players[plan.playerId];
       if (!player || player.clubId !== center.clubId || player.age >= 33) continue;
       if (player.overall >= player.potential) cycleBonuses[player.id] = { games: 15 };
-      else
-        players[player.id] = revalueGrowth(player, {
-          ...player,
-          overall: Math.min(player.potential, player.overall + 1),
-        });
     }
     centers[center.id] = {
       ...center,

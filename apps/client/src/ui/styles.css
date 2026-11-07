@@ -51,10 +51,10 @@ a {
   touch-action: manipulation;
 }
 button {
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
 }
 button:disabled {
-  cursor: not-allowed;
+  cursor: var(--cursor-not-allowed);
   opacity: 0.48;
 }
 a {
@@ -228,7 +228,7 @@ strong {
 .sidebar {
   overflow-y: auto;
   scrollbar-width: thin;
-  scrollbar-color: #456342 #122e27;
+  scrollbar-color: #c9ad60 #242424;
   position: fixed;
   inset: 0 auto 0 0;
   width: 244px;
@@ -3053,7 +3053,7 @@ dialog.modal {
 .market-face {
   padding: 0;
   position: relative;
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
 }
 .market-face:focus-visible {
   outline: 3px solid #93af62;
@@ -3485,7 +3485,7 @@ dialog.modal {
   scrollbar-gutter: stable;
   overscroll-behavior: auto;
   scrollbar-width: thin;
-  scrollbar-color: #62a47a #19241f;
+  scrollbar-color: #c9ad60 #242424;
   border: 1px solid #41464c;
   border-radius: 10px;
   background: #22262b;
@@ -4540,11 +4540,11 @@ dialog.modal {
   border: 0;
   background: transparent;
   accent-color: var(--green);
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
 }
 .home-ticket-slider input[type='range']:disabled {
   opacity: 0.6;
-  cursor: default;
+  cursor: var(--cursor-default);
 }
 .ticket-slider-limits {
   display: flex;
@@ -5022,7 +5022,7 @@ dialog.modal {
   color: var(--card-muted);
 }
 .player-card[role='button'] {
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
 }
 .player-card:focus-visible {
   outline: 3px solid #16835b;
@@ -5064,12 +5064,12 @@ dialog.modal {
 .tactics-player {
   touch-action: none;
   user-select: none;
-  cursor: grab;
+  cursor: var(--cursor-grab);
 }
 .tactics-player[data-dragging='true'] {
   outline: 3px solid #f5e389;
   opacity: 0.6;
-  cursor: grabbing;
+  cursor: var(--cursor-grabbing);
 }
 .player-overview {
   display: grid;
@@ -5332,7 +5332,7 @@ dialog.modal {
   background: transparent;
   box-shadow: none;
   accent-color: #23865b;
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
 }
 .market-filter-toggles {
   margin-top: 20px;
@@ -5348,7 +5348,7 @@ dialog.modal {
   margin: 0;
   color: #395443;
   font-size: 13px;
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
 }
 .market-filter-toggle input {
   appearance: none;
@@ -5362,7 +5362,7 @@ dialog.modal {
   border-radius: 20px;
   background: #ccd7ce;
   position: relative;
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
   transition: background 0.15s;
 }
 .market-filter-toggle input::after {
@@ -5726,7 +5726,7 @@ dialog.modal {
   height: auto;
 }
 .financial-data-table summary {
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
   font-weight: 650;
   font-size: 13px;
   color: #356b4b;
@@ -6219,7 +6219,7 @@ dialog.modal {
 }
 .finance-ledger > summary,
 .finance-revenue-settings > summary {
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -7009,7 +7009,7 @@ dialog.modal {
 }
 .match-reserve:disabled {
   opacity: 0.45;
-  cursor: not-allowed;
+  cursor: var(--cursor-not-allowed);
 }
 @media (max-width: 900px) {
   .lineup-editor .tactics-sidebar {
@@ -7217,7 +7217,7 @@ dialog.modal {
   place-items: center;
   height: 100%;
   list-style: none;
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
   color: #abb6c4;
   font-weight: 800;
 }
@@ -7307,7 +7307,7 @@ dialog.modal {
   overflow: auto;
   scrollbar-gutter: stable;
   scrollbar-width: thin;
-  scrollbar-color: #718c94 transparent;
+  scrollbar-color: #c9ad60 #242424;
 }
 .reserve-mini {
   position: relative;
@@ -7367,7 +7367,7 @@ dialog.modal {
 }
 .reserve-mini:disabled {
   opacity: 0.4;
-  cursor: not-allowed;
+  cursor: var(--cursor-not-allowed);
 }
 .reserve-empty {
   grid-column: 1 / -1;
@@ -7516,7 +7516,7 @@ dialog.modal {
   font-size: 12px;
   font-weight: 600;
   text-align: left;
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
   transition:
     border-color 0.15s,
     box-shadow 0.15s;
@@ -7531,7 +7531,7 @@ dialog.modal {
 }
 .game-select .game-select-trigger:disabled {
   opacity: 0.5;
-  cursor: not-allowed;
+  cursor: var(--cursor-not-allowed);
 }
 .game-select-trigger > svg {
   flex-shrink: 0;
@@ -7566,7 +7566,7 @@ dialog.modal {
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: thin;
-  scrollbar-color: #9bb9a5 transparent;
+  scrollbar-color: #c9ad60 #242424;
   font-size: 12px;
   font-weight: 500;
   text-align: left;
@@ -7580,7 +7580,7 @@ dialog.modal {
   padding: 10px 12px;
   box-sizing: border-box;
   border-radius: 7px;
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
   line-height: 1.5;
   overflow-wrap: anywhere;
 }
@@ -7597,7 +7597,7 @@ dialog.modal {
 }
 .game-select-option[aria-disabled='true'] {
   opacity: 0.4;
-  cursor: not-allowed;
+  cursor: var(--cursor-not-allowed);
 }
 .game-select-check {
   flex: 0 0 16px;
@@ -7723,7 +7723,7 @@ dialog.modal {
   font-size: 12px;
 }
 .squad-player-offers summary {
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
   font-weight: 700;
 }
 .squad-player-offers .panel {
@@ -7910,7 +7910,7 @@ dialog.modal {
   padding: 14px 16px;
   border-radius: 10px;
   font-weight: 700;
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
 }
 .facility-actions {
   display: flex;
@@ -7973,7 +7973,7 @@ dialog.modal {
   border: 1px solid #dfe5e9;
   border-radius: 10px;
   text-align: left;
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
 }
 .training-load button[aria-pressed='true'] {
   border-color: var(--sector);
@@ -8349,7 +8349,7 @@ dialog.modal {
   padding: 0;
   appearance: none;
   background: transparent;
-  cursor: ew-resize;
+  cursor: var(--cursor-ew-resize);
 }
 .split-budget-track input::-webkit-slider-thumb {
   appearance: none;
@@ -8418,7 +8418,7 @@ input.money-range:not(.plain-filter-range) {
     #dfc785 0 var(--money-progress),
     #202020 var(--money-progress) 100%
   );
-  cursor: ew-resize;
+  cursor: var(--cursor-ew-resize);
   accent-color: #dfc785;
 }
 input.money-range:not(.plain-filter-range)::-webkit-slider-thumb {
@@ -8444,7 +8444,7 @@ input.money-range:not(.plain-filter-range):focus-visible {
 }
 input.money-range:not(.plain-filter-range):disabled {
   opacity: 0.45;
-  cursor: not-allowed;
+  cursor: var(--cursor-not-allowed);
 }
 
 .negotiation-experience {
@@ -8872,7 +8872,7 @@ input.money-range:not(.plain-filter-range):disabled {
 }
 .contract-actions > button:disabled {
   opacity: 0.45;
-  cursor: not-allowed;
+  cursor: var(--cursor-not-allowed);
 }
 @media (max-width: 420px) {
   .contract-actions {
@@ -8926,10 +8926,10 @@ input.money-range:not(.plain-filter-range):disabled {
 }
 .lineup-editor .reserve-mini,
 .lineup-editor .tactics-player {
-  cursor: grab;
+  cursor: var(--cursor-grab);
 }
 .lineup-editor [draggable='true']:active {
-  cursor: grabbing;
+  cursor: var(--cursor-grabbing);
 }
 .lineup-editor .reserve-section:has([draggable]:hover) {
   border-color: #9dcac2;
@@ -9348,7 +9348,7 @@ input.money-range:not(.plain-filter-range):disabled {
   font: inherit;
   font-weight: 700;
   text-align: left;
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
 }
 .squad-table .squad-sort:hover {
   color: #12653c;
@@ -9359,7 +9359,7 @@ input.money-range:not(.plain-filter-range):disabled {
 }
 .squad-table td,
 .squad-table th {
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
 }
 .squad-table td:hover {
   background: #e3eddf;
@@ -9561,7 +9561,7 @@ input.money-range:not(.plain-filter-range):disabled {
 }
 .club-match-history > summary {
   font-weight: 700;
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
 }
 .club-history-grid {
   display: grid;
@@ -9749,7 +9749,7 @@ input.money-range:not(.plain-filter-range):disabled {
   background: #fcfdf9;
   box-shadow: 0 4px 18px #183e3010;
   scrollbar-width: thin;
-  scrollbar-color: #91ad9b #edf2eb;
+  scrollbar-color: #c9ad60 #242424;
 }
 .squad-table {
   font-size: 12px;
@@ -10946,7 +10946,7 @@ input.money-range:not(.plain-filter-range):disabled {
   font-size: 14px;
   font-weight: 700;
   line-height: 1.3;
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
   box-shadow: 0 4px 14px #0003;
   transition:
     background 0.18s,
@@ -10968,7 +10968,7 @@ input.money-range:not(.plain-filter-range):disabled {
 }
 .facility-confirmation .facility-actions > button:disabled {
   opacity: 0.5;
-  cursor: wait;
+  cursor: var(--cursor-wait);
 }
 @media (max-width: 480px) {
   .modal.facility-confirmation {
@@ -11889,7 +11889,7 @@ html {
   border-bottom-color: #ad6750;
 }
 .tactical-analysis-modal .tactical-analysis-list {
-  scrollbar-color: #8e9f83 transparent;
+  scrollbar-color: #c9ad60 #242424;
   max-height: min(340px, 38vh);
 }
 .tactical-analysis-modal .tactical-analysis-scheme:first-child {
@@ -11942,7 +11942,7 @@ html {
   box-shadow:
     0 2px 5px #0004,
     inset 0 1px #ffffff18;
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
 }
 .tactical-analysis-modal .close-modal:hover {
   background: #363636;
@@ -12600,7 +12600,7 @@ html {
 }
 .competition-navigation .competition-view-tabs.segmented button:disabled {
   opacity: 0.4;
-  cursor: not-allowed;
+  cursor: var(--cursor-not-allowed);
   background: transparent;
   color: #dce8de;
   box-shadow: none;
@@ -13136,7 +13136,7 @@ html {
 }
 .cup-round-navigation button:disabled {
   opacity: 0.35;
-  cursor: not-allowed;
+  cursor: var(--cursor-not-allowed);
   background: #202020;
   color: #eef1e7;
   box-shadow: none;
@@ -14310,7 +14310,7 @@ html {
 .market-list-row {
   grid-template-columns: 40px minmax(140px, 1fr) 36px 145px minmax(190px, 0.7fr) 130px;
   gap: 18px;
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
 }
 .market-list-interest {
   display: grid;
@@ -14332,7 +14332,7 @@ html {
 }
 .market-list-negotiate:disabled {
   opacity: 0.5;
-  cursor: not-allowed;
+  cursor: var(--cursor-not-allowed);
 }
 @media (max-width: 1000px) {
   .market-list-row {
@@ -14452,7 +14452,7 @@ html {
 }
 .split-budget-track input:disabled {
   opacity: 0.55;
-  cursor: not-allowed;
+  cursor: var(--cursor-not-allowed);
 }
 .finance-hub .financial-budget.split-budget {
   color: #233e31;
@@ -15040,7 +15040,7 @@ html {
   }
 }
 .career-empty-slot {
-  cursor: default;
+  cursor: var(--cursor-default);
 }
 
 .career-save-settings button {
@@ -15122,7 +15122,7 @@ html {
 
 .career-actions > button:disabled {
   opacity: 0.5;
-  cursor: not-allowed;
+  cursor: var(--cursor-not-allowed);
   filter: saturate(0.35);
   transform: none;
   box-shadow: none;
@@ -15151,7 +15151,7 @@ html {
 .invite-team-grid .club-choice:disabled {
   opacity: 0.45;
   filter: grayscale(0.8);
-  cursor: not-allowed;
+  cursor: var(--cursor-not-allowed);
 }
 .invite-team-grid .club-choice:disabled small {
   color: #963e33;
@@ -15273,7 +15273,7 @@ html {
 }
 .invite-ticket-actions .invite-ticket-primary:disabled {
   opacity: 0.5;
-  cursor: not-allowed;
+  cursor: var(--cursor-not-allowed);
 }
 .invite-ticket-actions .secondary {
   background: #eee6d1;
@@ -15748,7 +15748,7 @@ html {
 }
 .lobby-clubs .career-toolbar .career-nav-button:disabled {
   opacity: 0.45;
-  cursor: not-allowed;
+  cursor: var(--cursor-not-allowed);
 }
 
 .lobby-clubs .creation-workspace > .career-toolbar .career-back-button {
@@ -16224,7 +16224,7 @@ html {
 }
 .game-details-navigation button:disabled {
   color: #a6b19e;
-  cursor: default;
+  cursor: var(--cursor-default);
 }
 .game-details-navigation > span {
   position: absolute;
@@ -16650,7 +16650,7 @@ html {
   border-radius: inherit;
 }
 .club-calendar-day:has(.calendar-draw-event) {
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
   background: linear-gradient(135deg, #fffdf7, var(--draw-surface, #f0e3ad));
   border-color: var(--draw-color, #d9c480);
   border-left: 3px solid var(--draw-color, #d9c480);
@@ -16745,7 +16745,7 @@ html {
 }
 .ceremony-footer button:disabled {
   opacity: 0.35;
-  cursor: default;
+  cursor: var(--cursor-default);
 }
 .ceremony-stage {
   display: grid;
@@ -17154,7 +17154,7 @@ html {
   color: inherit;
   border: 0;
   font-size: 26px;
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
 }
 .calendar-pending-dialog p {
   line-height: 1.5;
@@ -17186,7 +17186,7 @@ html {
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
   z-index: 2;
 }
 .club-calendar .club-calendar-month-navigation button:first-child {
@@ -17827,7 +17827,7 @@ html {
   height: 32px;
   border-radius: 50%;
   border: 2px solid #68816b;
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
 }
 .coach-swatches button[aria-pressed='true'] {
   outline: 2px solid #dfc776;
@@ -17840,7 +17840,7 @@ html {
   border-radius: 6px;
   padding: 12px;
   font-weight: 700;
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
 }
 @media (max-width: 600px) {
   .coach-editor {
@@ -17924,7 +17924,7 @@ html {
   width: 44px;
   height: 30px;
   padding: 2px;
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
 }
 .coach-preview {
   align-self: start;
@@ -17974,7 +17974,7 @@ html {
   border: 1px solid #365343;
   border-radius: 8px;
   background: #191919;
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
   transition:
     border-color 0.15s,
     background 0.15s;
@@ -18323,7 +18323,7 @@ html {
 .lineup-selection-modal,
 .lineup-selection-modal .bench-list {
   scrollbar-width: thin;
-  scrollbar-color: #c5a653 #102d26;
+  scrollbar-color: #c9ad60 #242424;
 }
 .lineup-selection-modal::-webkit-scrollbar,
 .lineup-selection-modal .bench-list::-webkit-scrollbar {
@@ -18416,10 +18416,7 @@ html {
 html,
 body,
 body * {
-  cursor:
-    url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2232%22%20height%3D%2232%22%20viewBox%3D%220%200%2032%2032%22%3E%3Cpath%20d%3D%22M6%203%20Q4%202%204%205%20L4%2025%20Q4%2028%207%2026%20L12%2021%20L16%2029%20Q17%2031%2019%2030%20L22%2028%20Q23%2027%2022%2025%20L18%2018%20L26%2018%20Q29%2018%2027%2015%20Z%22%20fill%3D%22%23153d2c%22%20stroke%3D%22%23e5c66f%22%20stroke-width%3D%222%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')
-      5 4,
-    default;
+  cursor: var(--cursor-default);
 }
 button,
 button *,
@@ -18433,28 +18430,22 @@ summary *,
 label[for],
 input[type='checkbox'],
 input[type='radio'] {
-  cursor:
-    url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2232%22%20height%3D%2232%22%20viewBox%3D%220%200%2032%2032%22%3E%3Cpath%20d%3D%22M11%2017V5a2.5%202.5%200%200%201%205%200v9-2a2.5%202.5%200%200%201%205%200v2a2.5%202.5%200%200%201%205%200v2a2%202%200%200%201%204%200v6c0%205-3%208-8%208h-5c-3%200-5-2-7-5l-6-7a2.5%202.5%200%200%201%204-3l3%203Z%22%20fill%3D%22%23153d2c%22%20stroke%3D%22%23e5c66f%22%20stroke-width%3D%222%22%20stroke-linejoin%3D%22round%22%20stroke-linecap%3D%22round%22%2F%3E%3Cpath%20d%3D%22M16%2014v5m5-5v5m5-3v4%22%20stroke%3D%22%23f4db94%22%20stroke-width%3D%221.4%22%20stroke-linecap%3D%22round%22%2F%3E%3C%2Fsvg%3E')
-      13 4,
-    pointer !important;
+  cursor: var(--cursor-pointer) !important;
 }
 
 [draggable='true'],
 [draggable='true'] * {
-  cursor:
-    url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2232%22%20height%3D%2232%22%3E%3Crect%20x%3D%225%22%20y%3D%225%22%20width%3D%2222%22%20height%3D%2222%22%20rx%3D%227%22%20fill%3D%22%23153d2c%22%20stroke%3D%22%23e5c66f%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M10%2016h12m-6-6v12m-6-6%203-3m-3%203%203%203m9-3-3-3m3%203-3%203%22%20fill%3D%22none%22%20stroke%3D%22%23f4db94%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')
-      16 16,
-    grab;
+  cursor: var(--cursor-grab);
 }
 button:disabled,
 button:disabled *,
 [aria-disabled='true'] {
-  cursor: not-allowed;
+  cursor: var(--cursor-not-allowed);
 }
 input,
 textarea,
 [contenteditable='true'] {
-  cursor: text;
+  cursor: var(--cursor-text);
 }
 .dragged-card-preview {
   border: 2px solid #e5c66f !important;
@@ -18466,10 +18457,7 @@ textarea,
 
 .career-saves .career-empty-slot,
 .career-saves .career-empty-slot * {
-  cursor:
-    url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2232%22%20height%3D%2232%22%20viewBox%3D%220%200%2032%2032%22%3E%3Cpath%20d%3D%22M6%203%20Q4%202%204%205%20L4%2025%20Q4%2028%207%2026%20L12%2021%20L16%2029%20Q17%2031%2019%2030%20L22%2028%20Q23%2027%2022%2025%20L18%2018%20L26%2018%20Q29%2018%2027%2015%20Z%22%20fill%3D%22%23153d2c%22%20stroke%3D%22%23e5c66f%22%20stroke-width%3D%222%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')
-      5 4,
-    default;
+  cursor: var(--cursor-default);
 }
 
 button:disabled,
@@ -18481,20 +18469,14 @@ textarea:disabled,
 [disabled] *,
 [aria-disabled='true'],
 [aria-disabled='true'] * {
-  cursor:
-    url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2232%22%20height%3D%2232%22%20viewBox%3D%220%200%2032%2032%22%3E%3Ccircle%20cx%3D%2216%22%20cy%3D%2216%22%20r%3D%2212%22%20fill%3D%22%23153d2c%22%20stroke%3D%22%23e5c66f%22%20stroke-width%3D%222.5%22%2F%3E%3Cpath%20d%3D%22m8%208%2016%2016%22%20stroke%3D%22%23e5c66f%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%2F%3E%3C%2Fsvg%3E')
-      16 16,
-    not-allowed !important;
+  cursor: var(--cursor-not-allowed) !important;
 }
 
 body.dragging-player-card,
 body.dragging-player-card *,
 .lineup-editor [draggable='true']:active,
 .lineup-editor [draggable='true']:active * {
-  cursor:
-    url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2232%22%20height%3D%2232%22%20viewBox%3D%220%200%2032%2032%22%3E%3Cpath%20d%3D%22M8%2016v-5a3%203%200%200%201%205-2%203%203%200%200%201%205%200%203%203%200%200%201%205%201%203%203%200%200%201%205%202v9c0%205-4%208-9%208h-3c-4%200-6-2-8-5l-4-6a3%203%200%200%201%204-4l4%204%22%20fill%3D%22%23153d2c%22%20stroke%3D%22%23e5c66f%22%20stroke-width%3D%222%22%20stroke-linejoin%3D%22round%22%20stroke-linecap%3D%22round%22%2F%3E%3Cpath%20d%3D%22M13%2010v6m5-6v6m5-5v6M12%2021h10%22%20stroke%3D%22%23f4db94%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22round%22%2F%3E%3C%2Fsvg%3E')
-      16 16,
-    grabbing !important;
+  cursor: var(--cursor-grabbing) !important;
 }
 
 /* Avoid expensive hover effects on underlying cards during a drag. */
@@ -18585,22 +18567,13 @@ body.dragging-player-card .tactics-player:hover {
 input[type='range']:not(:disabled),
 .split-budget-track input[type='range']:not(:disabled),
 input.money-range:not(:disabled) {
-  cursor:
-    url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2232%22%20height%3D%2232%22%20viewBox%3D%220%200%2032%2032%22%3E%3Cpath%20d%3D%22M10%208%202%2016l8%208v-5h12v5l8-8-8-8v5H10Z%22%20fill%3D%22%23153d2c%22%20stroke%3D%22%23e5c66f%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')
-      16 16,
-    ew-resize !important;
+  cursor: var(--cursor-ew-resize) !important;
 }
 input[type='range']:not(:disabled)::-webkit-slider-thumb {
-  cursor:
-    url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2232%22%20height%3D%2232%22%20viewBox%3D%220%200%2032%2032%22%3E%3Cpath%20d%3D%22M10%208%202%2016l8%208v-5h12v5l8-8-8-8v5H10Z%22%20fill%3D%22%23153d2c%22%20stroke%3D%22%23e5c66f%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')
-      16 16,
-    ew-resize !important;
+  cursor: var(--cursor-ew-resize) !important;
 }
 input[type='range']:not(:disabled)::-moz-range-thumb {
-  cursor:
-    url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2232%22%20height%3D%2232%22%20viewBox%3D%220%200%2032%2032%22%3E%3Cpath%20d%3D%22M10%208%202%2016l8%208v-5h12v5l8-8-8-8v5H10Z%22%20fill%3D%22%23153d2c%22%20stroke%3D%22%23e5c66f%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')
-      16 16,
-    ew-resize !important;
+  cursor: var(--cursor-ew-resize) !important;
 }
 
 .facility-cash-bar {
@@ -18887,7 +18860,7 @@ input[type='range']:not(:disabled)::-moz-range-thumb {
   overflow-x: auto;
   padding: 6px 0 10px;
   scrollbar-width: thin;
-  scrollbar-color: #c5a653 #153d2c;
+  scrollbar-color: #c9ad60 #242424;
 }
 .trophy-gallery-compact > .trophy-card {
   flex: 1 0 88px;
@@ -19342,10 +19315,7 @@ input[type='range']:not(:disabled)::-moz-range-thumb {
 
 .league-member-row[role='link'],
 .league-member-row[role='link'] * {
-  cursor:
-    url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2232%22%20height%3D%2232%22%20viewBox%3D%220%200%2032%2032%22%3E%3Cpath%20d%3D%22M11%2017V5a2.5%202.5%200%200%201%205%200v9-2a2.5%202.5%200%200%201%205%200v2a2.5%202.5%200%200%201%205%200v2a2%202%200%200%201%204%200v6c0%205-3%208-8%208h-5c-3%200-5-2-7-5l-6-7a2.5%202.5%200%200%201%204-3l3%203Z%22%20fill%3D%22%23153d2c%22%20stroke%3D%22%23e5c66f%22%20stroke-width%3D%222%22%20stroke-linejoin%3D%22round%22%20stroke-linecap%3D%22round%22%2F%3E%3Cpath%20d%3D%22M16%2014v5m5-5v5m5-3v4%22%20stroke%3D%22%23f4db94%22%20stroke-width%3D%221.4%22%20stroke-linecap%3D%22round%22%2F%3E%3C%2Fsvg%3E')
-      13 4,
-    pointer !important;
+  cursor: var(--cursor-pointer) !important;
 }
 
 .club-profile-banner.trainer-profile-banner {
@@ -19426,7 +19396,7 @@ input[type='range']:not(:disabled)::-moz-range-thumb {
 
 /* The document scrollbar is shared by every page; nested panels keep their own theme. */
 html {
-  scrollbar-color: #4e9062 #102e25;
+  scrollbar-color: #c9ad60 #242424;
   scrollbar-width: auto;
 }
 html::-webkit-scrollbar,
@@ -19603,7 +19573,7 @@ body::-webkit-scrollbar-corner {
   max-height: min(600px, 65dvh);
   overflow-y: auto;
   scrollbar-width: thin;
-  scrollbar-color: #c5a653 #102d26;
+  scrollbar-color: #c9ad60 #242424;
   padding-right: 6px;
 }
 .training-player-row {
@@ -20403,7 +20373,7 @@ body::-webkit-scrollbar-corner {
 }
 .review-offer-actions .withdraw-offer-button:disabled {
   opacity: 0.5;
-  cursor: not-allowed;
+  cursor: var(--cursor-not-allowed);
 }
 .withdraw-offer-confirm {
   width: min(480px, 94vw);
@@ -20788,7 +20758,7 @@ body::-webkit-scrollbar-corner {
   color: #95a5b3;
   font-size: 13px;
   margin: 5px 0 20px;
-  cursor: text;
+  cursor: var(--cursor-text);
 }
 .news-composer-tools {
   display: flex;
@@ -22007,7 +21977,7 @@ body::-webkit-scrollbar-corner {
     inset 0 0 0 6px #c5aa6355,
     4px 5px 0 #dcd3ad;
   text-align: center;
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
 }
 .ledger-leather-cover strong {
   font-family: Georgia, serif;
@@ -22973,7 +22943,7 @@ dialog.modal.ledger-book-modal[open] {
   overflow-y: auto;
   scrollbar-gutter: stable;
   scrollbar-width: thin;
-  scrollbar-color: #c5a452 #102e24;
+  scrollbar-color: #c9ad60 #242424;
   padding-right: 6px;
 }
 .squad-office-players::-webkit-scrollbar {
@@ -23741,7 +23711,7 @@ dialog.modal.ledger-book-modal[open] {
 }
 .career-save-open[aria-busy='true'] {
   opacity: 1;
-  cursor: progress;
+  cursor: var(--cursor-progress);
 }
 .career-save-spinner {
   display: inline-block;
@@ -24607,7 +24577,7 @@ dialog.competition-draw-modal[open] {
 }
 .player-management button.player-policy-offers:disabled {
   opacity: 0.45;
-  cursor: not-allowed;
+  cursor: var(--cursor-not-allowed);
 }
 
 .transfer-alert-dot {
@@ -25136,7 +25106,7 @@ dialog.competition-draw-modal[open] {
 
 button.scene-camera-lock {
   pointer-events: auto;
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
   padding: 0;
 }
 button.scene-camera-lock:focus-visible {
@@ -25612,7 +25582,7 @@ dialog button[aria-label^='Fechar'] > svg {
   grid-auto-rows: max-content;
   scrollbar-gutter: stable;
   scrollbar-width: thin;
-  scrollbar-color: #c5a452 #102e24;
+  scrollbar-color: #c9ad60 #242424;
   padding-right: 6px;
   padding-bottom: 8px;
   scroll-padding-block: 8px;
@@ -25713,7 +25683,7 @@ dialog button[aria-label^='Fechar'] > svg {
     overflow-x: auto;
     scroll-snap-type: x mandatory;
     scrollbar-width: thin;
-    scrollbar-color: #bda45a #153d2e;
+    scrollbar-color: #c9ad60 #242424;
     margin-top: 8px;
     padding-bottom: 8px;
     min-width: 0;
@@ -26038,7 +26008,7 @@ button.squad-list-category {
   gap: 10px;
   width: 100%;
   text-align: left;
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
 }
 .squad-notification-dot {
   display: inline-block;
@@ -26134,7 +26104,7 @@ button.squad-list-category {
   overflow-y: auto;
   padding: 0 4px 8px 0;
   scrollbar-width: thin;
-  scrollbar-color: #c5a452 #102e24;
+  scrollbar-color: #c9ad60 #242424;
 }
 .squad-office .squad-category-players .squad-office-player {
   flex-shrink: 0;
@@ -26268,7 +26238,7 @@ button.squad-list-category {
   min-height: 44px;
   margin: 0;
   text-align: left;
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
 }
 
 .squad-planning-list h3.squad-list-category {
@@ -27777,7 +27747,7 @@ button.squad-list-category {
     color: #fff0b8;
     font-size: 13px;
     font-weight: 800;
-    cursor: pointer;
+    cursor: var(--cursor-pointer);
   }
   .individual-training-expandable[data-collapsible='true'][data-expanded='false'] {
     display: none;
@@ -28375,7 +28345,7 @@ button.squad-list-category {
     ):not(.calendar-pending-dialog) {
     scrollbar-gutter: auto;
     scrollbar-width: thin;
-    scrollbar-color: #bca25d #163e30;
+    scrollbar-color: #c9ad60 #242424;
   }
 }
 
@@ -29049,7 +29019,7 @@ dialog[open] .chat-header > button[aria-label^='Fechar'] {
 .market-favorite-action:disabled,
 .player-management button:disabled {
   opacity: 1 !important;
-  cursor: not-allowed;
+  cursor: var(--cursor-not-allowed);
   background: repeating-linear-gradient(135deg, #64716d 0 3px, #57625e 3px 6px) !important;
   color: #d5dcd6 !important;
   border: 1px solid #8b9690 !important;
@@ -29704,7 +29674,7 @@ dialog[open] .chat-header > button[aria-label^='Fechar'] {
   border-radius: inherit;
   background: transparent;
   box-shadow: none;
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
 }
 .club-calendar .club-calendar-day > time {
   position: relative;
@@ -29855,7 +29825,7 @@ dialog.modal.ledger-book-modal[open] {
 
 /* Expand the bench on demand; every reserve stays in the normal page flow. */
 .lineup-editor .reserve-section-heading {
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
   list-style: none;
   min-height: 34px;
   margin: 0;
@@ -30095,7 +30065,7 @@ dialog.modal.ledger-book-modal[open] {
   font-weight: 800;
 }
 .match-instructions summary {
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
   margin: 0;
 }
 .unavailable-players[open] summary {
@@ -32205,7 +32175,7 @@ dialog[open].calendar-fifa-modal > .modal-content {
   background: #1d4a34;
 }
 .club-calendar .calendar-fifa-event:not(button) {
-  cursor: default;
+  cursor: var(--cursor-default);
 }
 
 .calendar-fifa-summary {
@@ -32693,7 +32663,7 @@ dialog[open].calendar-fifa-modal > .modal-content {
   color: #f3ecd8;
 }
 .exchange-picker summary {
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
   display: flex;
   justify-content: space-between;
   gap: 10px;
@@ -32912,7 +32882,7 @@ dialog.negotiation-chat-dialog[open] {
   border: 1px solid #78917a40;
   border-radius: 9px;
   background: #ffffff06;
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
 }
 .negotiation-chat-dialog .transfer-proposal-composer .exchange-options > label:has(input:checked) {
   background: #333333;
@@ -32961,7 +32931,7 @@ dialog.negotiation-chat-dialog[open] {
   gap: 6px;
   padding-right: 5px;
   scrollbar-width: thin;
-  scrollbar-color: #6d946c #102e24;
+  scrollbar-color: #c9ad60 #242424;
 }
 
 /* Keep the proposal action visible; only messages and roster rows scroll. */
@@ -33379,7 +33349,7 @@ dialog[open].modal.career-confirm-dialog {
   background: #484848;
   color: white;
   font: 700 12px sans-serif;
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
 }
 .squad-proposal-actions button:focus-visible {
   outline: 2px solid #ead696;
@@ -33390,7 +33360,7 @@ dialog[open].modal.career-confirm-dialog {
 }
 .squad-proposal-actions button:disabled {
   opacity: 0.55;
-  cursor: wait;
+  cursor: var(--cursor-wait);
 }
 .squad-proposal-actions .squad-proposal-counter {
   background: #df9400;
@@ -33602,7 +33572,7 @@ dialog[open].modal.career-confirm-dialog {
 .squad-inline-offers .incoming-offers .incoming-offers-grid {
   overflow-y: auto;
   scrollbar-width: thin;
-  scrollbar-color: #bfa759 #102d21;
+  scrollbar-color: #c9ad60 #242424;
   overscroll-behavior-y: contain;
 }
 @media (max-width: 480px) {
@@ -33691,7 +33661,7 @@ dialog[open].modal.career-confirm-dialog {
   border: 1px solid #769c72;
   border-radius: 7px;
   font-weight: 700;
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
 }
 .player-management.transfer-policy-panel
   .transfer-availability
@@ -33710,7 +33680,7 @@ dialog[open].modal.career-confirm-dialog {
   color: inherit;
   font: inherit;
   text-align: inherit;
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
 }
 .market-player-name-trigger:hover {
   text-decoration: underline;
@@ -33863,7 +33833,7 @@ dialog.player-card-overlay .player-detail-card {
   padding: 10px 14px;
   background: #202020;
   color: #f8edca;
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
   font-weight: 700;
 }
 .counter-offer-dialog > .counter-send {
@@ -34060,7 +34030,7 @@ dialog[open].squad-roster-management-modal {
 
 .exchange-options label {
   position: relative;
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
 }
 .exchange-options label > input[type='checkbox'] {
   position: absolute;
@@ -34082,7 +34052,7 @@ dialog[open].squad-roster-management-modal {
 }
 .exchange-options label:has(input:disabled):not(:has(input:checked)) {
   opacity: 0.55;
-  cursor: default;
+  cursor: var(--cursor-default);
 }
 .incoming-offers-review .incoming-offer-details .review-exchange-players {
   display: block;
@@ -34591,7 +34561,7 @@ dialog.modal[open].squad-action-modal.squad-roster-management-modal {
 }
 .squad-numbers tr:has(td):hover {
   background: #252525;
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
 }
 .squad-rating {
   display: inline-block;
@@ -35328,7 +35298,7 @@ dialog.market-filter-redesign[open] .market-filter-close {
   border: 2px solid #cde56f;
   background: #f8f3d9;
   pointer-events: auto;
-  cursor: grab;
+  cursor: var(--cursor-grab);
 }
 .market-dual-track input::-moz-range-track {
   height: 4px;
@@ -35341,7 +35311,7 @@ dialog.market-filter-redesign[open] .market-filter-close {
   border: 2px solid #cde56f;
   background: #f8f3d9;
   pointer-events: auto;
-  cursor: grab;
+  cursor: var(--cursor-grab);
 }
 .market-dual-track input:focus-visible {
   outline: 2px solid #e6d387;
@@ -35907,7 +35877,7 @@ dialog.market-filter-redesign .market-filter-surface > .market-filter-back {
   box-shadow:
     0 14px 32px #03150e66,
     inset 0 1px 0 #ffffff0d;
-  scrollbar-color: var(--select-border) transparent;
+  scrollbar-color: #c9ad60 #242424;
 }
 .game-select .game-select-option.is-active {
   background: var(--select-hover);
@@ -37835,7 +37805,7 @@ a:is(
   color: #879488;
   background: #1f1f1f;
   opacity: 0.45;
-  cursor: not-allowed;
+  cursor: var(--cursor-not-allowed);
   filter: none;
 }
 
@@ -40009,7 +39979,7 @@ html body dialog.game-loading-screen[open] {
   text-decoration-color: #f4d37e80;
   text-underline-offset: 3px;
   border-radius: 3px;
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
 }
 .player-card .reverse-facts a.player-club-access > span {
   color: #ffe7a1;
@@ -41352,7 +41322,7 @@ dialog.individual-training-confirm .training-confirm-warning {
 }
 
 :is(.sidebar, .mobile-bottom-nav)[data-simulation-locked='true'] {
-  cursor: not-allowed;
+  cursor: var(--cursor-not-allowed);
 }
 :is(.sidebar, .mobile-bottom-nav)[data-simulation-locked='true'] :is(a, button) {
   background: linear-gradient(135deg, #212121, #191919) !important;
@@ -42186,7 +42156,7 @@ body,
 html,
 body,
 .sidebar {
-  scrollbar-color: #9c854f #232323;
+  scrollbar-color: #c9ad60 #242424;
 }
 html::-webkit-scrollbar-track,
 body::-webkit-scrollbar-track {
@@ -42322,7 +42292,7 @@ body::-webkit-scrollbar-thumb:hover {
     linear-gradient(145deg, #2c2b28, #1c1c1c);
   border-color: #bca15a;
   color: #eee3c8;
-  scrollbar-color: #ad9457 #242424;
+  scrollbar-color: #c9ad60 #242424;
 }
 .game-select .game-select-option:not(:has(.play-style-option)) {
   background: transparent;
@@ -42489,7 +42459,7 @@ body::-webkit-scrollbar-thumb:hover {
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: thin;
-  scrollbar-color: #bda15b #242424;
+  scrollbar-color: #c9ad60 #242424;
 }
 .twitter-news .news-discover .news-reporters > h3 {
   position: sticky;
@@ -42511,7 +42481,7 @@ body::-webkit-scrollbar-thumb:hover {
 
 .twitter-news,
 .twitter-news * {
-  scrollbar-color: #388bb8 #172630;
+  scrollbar-color: #c9ad60 #242424;
   scrollbar-width: thin;
 }
 .twitter-news ::-webkit-scrollbar {
@@ -42526,7 +42496,7 @@ body::-webkit-scrollbar-thumb:hover {
   border-radius: 4px;
 }
 .twitter-news .news-discover .news-reporters {
-  scrollbar-color: #388bb8 #172630;
+  scrollbar-color: #c9ad60 #242424;
 }
 .twitter-news .news-reporters::-webkit-scrollbar-track {
   background: #172630;
@@ -42552,7 +42522,7 @@ body::-webkit-scrollbar-thumb:hover {
   text-decoration: underline;
   text-decoration-color: #61c5fb66;
   text-underline-offset: 3px;
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
 }
 .twitter-news .transfer-news-item .news-entity-link:hover {
   color: #c6ecff;
@@ -42683,5 +42653,331 @@ button.primary.advance-round-button > svg {
     flex: 0 0 auto;
     min-height: 42px;
     align-self: center;
+  }
+}
+
+/* Keep mobile structure navigation in the same sector colors as desktop. */
+@media (max-width: 900px) {
+  .facilities-page .facility-structure-panel .facility-two-row-tabs > button {
+    --tab-color: var(--sector, var(--sector-accent, #2563a6));
+    color: #fff;
+    border-color: color-mix(in srgb, var(--tab-color) 55%, white);
+    background:
+      repeating-linear-gradient(120deg, #ffffff09 0 8px, transparent 8px 18px),
+      repeating-linear-gradient(45deg, #ffffff08 0 1px, transparent 1px 4px),
+      linear-gradient(135deg, var(--tab-color), color-mix(in srgb, var(--tab-color) 65%, #0b2026));
+  }
+  .facilities-page .facility-structure-panel .facility-two-row-tabs > .sector-fitness {
+    --tab-color: #2563a6;
+  }
+  .facilities-page .facility-structure-panel .facility-two-row-tabs > button[aria-selected='true'] {
+    color: #fff;
+    background:
+      repeating-linear-gradient(120deg, #ffffff1a 0 8px, transparent 8px 18px),
+      repeating-linear-gradient(45deg, #ffffff10 0 1px, transparent 1px 4px),
+      linear-gradient(135deg, var(--tab-color), color-mix(in srgb, var(--tab-color) 80%, #0b2026));
+    outline: 2px solid #f2d782;
+    outline-offset: -3px;
+  }
+  .facilities-page .facility-structure-panel .facility-two-row-tabs > button:hover {
+    filter: brightness(1.12);
+  }
+}
+
+/* Give desktop training cards enough room for the player and the cycle countdown. */
+@media (min-width: 901px) {
+  .individual-coaching-modal .center-management-content .training-ground .fitness-gym-players {
+    align-items: center;
+    padding: 30px 10px 12px;
+  }
+  .individual-coaching-modal .training-ground .fitness-gym-station {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+  .individual-coaching-modal .training-ground .fitness-gym-station > .player-card {
+    width: min(112px, 14dvh);
+    max-width: 100%;
+    flex: 0 0 auto;
+    container-type: inline-size;
+  }
+  .individual-coaching-modal .training-ground .card-rank {
+    top: 9px;
+    left: 9px;
+  }
+  .individual-coaching-modal .training-ground .card-rank strong {
+    font-size: clamp(20px, 26cqw, 29px);
+  }
+  .individual-coaching-modal .training-ground .card-country {
+    top: 10px;
+    right: 8px;
+  }
+  .individual-coaching-modal .training-ground .card-front .portrait {
+    height: 68%;
+    bottom: 22%;
+  }
+  .individual-coaching-modal .training-ground .card-label {
+    padding: 16px 6px 9px;
+  }
+  .individual-coaching-modal .training-ground .card-label h3 {
+    font-size: clamp(10px, 11cqw, 12px);
+    line-height: 1.2;
+    margin-bottom: 4px;
+  }
+  .individual-coaching-modal .training-ground .card-label p {
+    font-size: clamp(8px, 8cqw, 9px);
+    line-height: 1.3;
+  }
+  .individual-coaching-modal .training-ground .fitness-gym-status {
+    margin: 0;
+    padding: 5px 9px;
+    border: 1px solid #789064;
+    border-radius: 20px;
+    background: #edf4df;
+    color: #304b28;
+    font-size: 11px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* Calendar events are labels inside a day, without the shared gold button frame. */
+.club-calendar .club-calendar-day > button:is(.club-calendar-event, .calendar-draw-event) {
+  border: 0;
+  border-image: none !important;
+  border-radius: 0 !important;
+  clip-path: none !important;
+  box-shadow: none !important;
+  background: transparent;
+}
+
+/* Desktop draw pages fill the available result area before paginating. */
+@media (min-width: 621px) {
+  dialog.competition-draw-modal.draw-ceremony[open] .ceremony-results {
+    flex: 1 1 0;
+    min-height: 0;
+    overflow-y: auto;
+  }
+  .competition-draw-modal.draw-ceremony .ceremony-entrants,
+  .competition-draw-modal.draw-ceremony .ceremony-ties {
+    height: auto;
+    grid-template-rows: none;
+    grid-auto-rows: auto;
+    align-content: start;
+  }
+  .competition-draw-modal.draw-ceremony .ceremony-tie {
+    min-height: 42px;
+    box-sizing: border-box;
+  }
+  .competition-draw-modal.draw-ceremony .ceremony-footer {
+    min-height: 30px;
+    flex-shrink: 0;
+  }
+}
+
+/* Gold football UI cursors also cover the popover's padding and option text. */
+.game-select {
+  --select-cursor: var(--cursor-pointer);
+}
+.game-select .game-select-menu,
+.game-select .game-select-menu * {
+  cursor: var(--select-cursor);
+  user-select: none;
+}
+.game-select .game-select-trigger,
+.game-select .game-select-trigger *,
+.game-select .game-select-option,
+.game-select .game-select-option * {
+  cursor: var(--select-cursor);
+}
+.game-select .game-select-option[aria-disabled='true'],
+.game-select .game-select-option[aria-disabled='true'] * {
+  cursor: var(--cursor-not-allowed);
+}
+
+/* Pixel art gold cursors share one palette across the football interface. */
+:root {
+  --cursor-default: url('/cursors/default.svg') 2 2, default;
+  --cursor-pointer: url('/cursors/pointer.svg') 12 2, pointer;
+  --cursor-text: url('/cursors/text.svg') 14 14, text;
+  --cursor-grab: url('/cursors/grab.svg') 14 14, grab;
+  --cursor-grabbing: url('/cursors/grabbing.svg') 14 14, grabbing;
+  --cursor-not-allowed: url('/cursors/not-allowed.svg') 14 14, not-allowed;
+  --cursor-ew-resize: url('/cursors/ew-resize.svg') 14 14, ew-resize;
+  --cursor-wait: url('/cursors/wait.svg') 14 14, wait;
+  --cursor-progress: var(--cursor-wait);
+}
+
+html,
+body {
+  cursor: var(--cursor-default);
+}
+:where(button, a[href], [role='button'], [role='tab'], summary, label[for], select) {
+  cursor: var(--cursor-pointer);
+}
+:where(button, a[href], [role='button'], [role='tab'], summary) > * {
+  cursor: inherit;
+}
+:where(
+  input:not([type='checkbox']):not([type='radio']):not([type='range']),
+  textarea,
+  [contenteditable='true']
+) {
+  cursor: var(--cursor-text);
+}
+:where(input[type='checkbox'], input[type='radio']) {
+  cursor: var(--cursor-pointer);
+}
+:where(button, input, select, textarea):disabled,
+[aria-disabled='true'],
+[aria-disabled='true'] * {
+  cursor: var(--cursor-not-allowed);
+}
+[aria-busy='true'] {
+  cursor: var(--cursor-wait);
+}
+
+/* Keep a visible return action below the expanded card within the viewport. */
+dialog.player-card-overlay[open] {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+}
+.player-card-overlay .player-detail-card .player-card {
+  width: min(340px, calc(100vw - 48px), calc((100dvh - 100px) * 200 / 368));
+}
+dialog.player-card-overlay[open] > .modal-return {
+  position: static !important;
+  flex: 0 0 44px;
+  margin: 0 !important;
+  width: 100% !important;
+  min-height: 44px;
+}
+
+/* Unified gold scrollbars across pages, dialogs, lists and select menus. */
+*::-webkit-scrollbar-track {
+  background: #242424 !important;
+}
+*::-webkit-scrollbar-thumb {
+  background: #c9ad60 !important;
+  border-color: #242424 !important;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: #e4cb7c !important;
+}
+*::-webkit-scrollbar-corner {
+  background: #242424;
+}
+
+/* The active ticket price reads as a selected gold match ticket. */
+.panel.ticket-pricing .ticket-tier-option[aria-pressed='true'] {
+  background: linear-gradient(120deg, #f2e2a6, #d5b760);
+  border-color: #fff0b5;
+  box-shadow:
+    inset 0 0 0 2px #fff0b5,
+    inset 5px 0 #6d5421 !important;
+  color: #292313;
+}
+.panel.ticket-pricing .ticket-tier-option[aria-pressed='true'] :is(b, strong, small) {
+  color: #292313;
+}
+
+/* Match-day panels: woven shirts, colored stands and illuminated scoreboards. */
+.game-details-modal.compact-match-preview .game-details-teams > div {
+  background:
+    repeating-linear-gradient(120deg, #ffffff0b 0 12px, transparent 12px 26px),
+    repeating-linear-gradient(45deg, #ffffff0a 0 1px, transparent 1px 4px),
+    linear-gradient(145deg, #eee6cd, #cfc6a7);
+  border: 1px solid #f5e7ae;
+  border-top-width: 3px;
+  box-shadow:
+    inset 0 1px #fff8d6,
+    0 3px 8px #0003;
+}
+.game-details-modal.compact-match-preview .game-details-facts > div {
+  --fact-accent: #d9be70;
+  background:
+    repeating-linear-gradient(125deg, #ffffff06 0 8px, transparent 8px 20px),
+    repeating-linear-gradient(45deg, #ffffff05 0 1px, transparent 1px 4px),
+    linear-gradient(140deg, color-mix(in srgb, var(--fact-accent) 15%, #192522), #141c1b);
+  border: 1px solid color-mix(in srgb, var(--fact-accent) 45%, #24342b);
+  border-left: 3px solid var(--fact-accent);
+  box-shadow:
+    inset 0 1px #ffffff12,
+    0 2px 5px #0003;
+}
+.game-details-modal.compact-match-preview .game-details-facts > div:nth-child(2) {
+  --fact-accent: #83afcf;
+}
+.game-details-modal.compact-match-preview .game-details-facts > div:nth-child(3) {
+  --fact-accent: #7dce96;
+}
+.game-details-modal.compact-match-preview .game-details-facts > div:nth-child(4) {
+  --fact-accent: #d9b57b;
+}
+.game-details-modal.compact-match-preview .game-details-facts > div:nth-child(5) {
+  --fact-accent: #edce6c;
+}
+.game-details-modal.compact-match-preview .game-details-facts > div:nth-child(6) {
+  --fact-accent: #b3a3df;
+}
+.game-details-modal.compact-match-preview .game-details-facts dt {
+  color: #d9dfd0;
+}
+.game-details-modal.compact-match-preview .game-details-facts dt svg {
+  color: var(--fact-accent);
+}
+.game-details-modal.compact-match-preview .game-details-facts dd {
+  color: #fff3cf;
+  font-weight: 750;
+  text-shadow: 0 1px 2px #0005;
+}
+.game-details-modal.compact-match-preview .game-probability-labels > span {
+  --chance-accent: #6ae0a0;
+  color: var(--chance-accent);
+  background:
+    repeating-linear-gradient(120deg, #ffffff09 0 9px, transparent 9px 20px),
+    linear-gradient(145deg, color-mix(in srgb, var(--chance-accent) 16%, #172320), #17201e);
+  border: 1px solid color-mix(in srgb, var(--chance-accent) 45%, #25392c);
+  box-shadow: inset 0 -3px color-mix(in srgb, var(--chance-accent) 60%, transparent);
+}
+.game-details-modal.compact-match-preview .game-probability-labels > span:nth-child(2) {
+  --chance-accent: #9eb2ff;
+}
+.game-details-modal.compact-match-preview .game-probability-labels > span:nth-child(3) {
+  --chance-accent: #ff91a3;
+}
+.game-details-modal.compact-match-preview .game-probability-labels > span b {
+  color: var(--chance-accent);
+  text-shadow: 0 1px 3px #0005;
+  font-variant-numeric: tabular-nums;
+}
+/* Restore the club's green in match statistics and victory probability. */
+.stat-proportion .stat-fill-own,
+.game-probability-bar .probability-win {
+  background:
+    repeating-linear-gradient(120deg, #ffffff15 0 7px, transparent 7px 15px),
+    linear-gradient(90deg, #228657, #51bf7e);
+}
+.match-statistics .stat-own {
+  color: #69d69a;
+}
+
+/* Reduce compositing work when opening navigation and menus on touch screens. */
+@media (max-width: 900px), (pointer: coarse) {
+  .sidebar,
+  .sidebar-backdrop,
+  .mobile-bottom-nav,
+  .game-select-menu {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+  .game-select-menu,
+  .mobile-bottom-nav button,
+  .mobile-bottom-nav a,
+  .sidebar nav a {
+    touch-action: manipulation;
   }
 }

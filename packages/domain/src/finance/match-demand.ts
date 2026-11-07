@@ -8,7 +8,7 @@ import {
   type WorldState,
 } from '@football/shared';
 import { resolveLineup, lineupTacticalBonus } from '../game/tactics.js';
-import { tacticalBonus } from '../game/management.js';
+import { isRival, tacticalBonus } from '../game/management.js';
 import { balancedStrategy } from '../simulation/match.js';
 import { scheduledFixtures } from '../competitions/fixtures.js';
 
@@ -134,6 +134,13 @@ export function matchDemand(
         ? 'Reta final do campeonato'
         : 'Rodada regular';
   const opponent = state.clubs.byId[fixture.awayId];
+  const derby = Boolean(home && opponent && isRival(home, opponent));
+  // Important games add demand at every price tier, including expensive tickets.
+  const crowdBoost = Math.min(
+    0.5,
+    (derby ? 0.2 : 0) +
+      (node ? (node.round === finalRound ? 0.3 : node.round === finalRound - 1 ? 0.25 : 0.2) : 0),
+  );
   const variation =
     ((Array.from(fixture.id).reduce((sum, char) => sum + char.charCodeAt(0), 0) % 21) - 10) / 100;
   const appeal = clamp(0.85 + ((opponent?.leagueStrength ?? 80) - 50) / 200 + variation, 0.7, 1.4);
@@ -170,13 +177,22 @@ export function matchDemand(
   );
   const commerce = benefits.commerce;
   const projection = projectTicketDemand(
-    { capacity, selloutPriceCents, minimumCrowdPriceCents, commerce, demandFactor, fairPriceCents },
+    {
+      capacity,
+      selloutPriceCents,
+      minimumCrowdPriceCents,
+      commerce,
+      demandFactor,
+      crowdBoost,
+      fairPriceCents,
+    },
     priceCents,
   );
   return {
     capacity,
     commerce,
     demandFactor,
+    crowdBoost,
     ...projection,
     revenue:
       projection.ticketRevenue +
@@ -187,7 +203,7 @@ export function matchDemand(
     minimumCrowdPriceCents,
     form,
     morale,
-    importanceLabel,
+    importanceLabel: derby ? `Clássico · ${importanceLabel}` : importanceLabel,
   };
 }
 
@@ -198,6 +214,7 @@ export function projectTicketDemand(
     minimumCrowdPriceCents: number;
     commerce: number;
     demandFactor?: number;
+    crowdBoost?: number;
     fairPriceCents?: number;
   },
   rawPriceCents: number,
@@ -212,7 +229,11 @@ export function projectTicketDemand(
     tiers[0]!,
   );
   const priceCents = tier.priceCents;
-  const occupancy = clamp(tier.occupancy * (parameters.demandFactor ?? 1), 0.01, 1);
+  const occupancy = clamp(
+    tier.occupancy * (parameters.demandFactor ?? 1) + (parameters.crowdBoost ?? 0),
+    0.01,
+    1,
+  );
   const attendance = Math.floor(capacity * occupancy);
   // Larger stadiums retain an advantage with diminishing financial returns.
   const capacityYield = Math.min(1, Math.pow(7200 / Math.max(1, capacity), 0.8));

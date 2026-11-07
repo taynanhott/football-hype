@@ -1,5 +1,11 @@
 import { revalueGrowth } from '../players/development.js';
 import type { PlayerSnapshot, WorldState } from '@football/shared';
+export function developmentFactor(player: PlayerSnapshot) {
+  if (player.age > 33 || player.overall >= player.potential) return 0;
+  return (
+    Math.max(0.15, (34 - player.age) / 16) * Math.min(1, (player.potential - player.overall) / 5)
+  );
+}
 export type TrainingLoad = 'light' | 'moderate' | 'intense';
 export type TrainingProgression = { buff: number; buffProgress: number; declineProgress: number };
 export const emptyTrainingProgression = (): TrainingProgression => ({
@@ -68,7 +74,7 @@ export function officialMatchDevelopment(
   );
   const growth =
     player.age <= 33 && player.overall < player.potential
-      ? development + 0.006 * coaching * 1.5 * multiplier
+      ? development + 0.006 * coaching * 1.5 * multiplier * developmentFactor(player)
       : development;
   const overall =
     player.age <= 33

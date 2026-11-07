@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { clubCalendarFixtures } from './club-calendar-fixtures';
 import { clubKit, COMPETITIONS, type Fixture, type WorldState } from '@football/shared';
 import {
+  TICKET_TIERS,
   matchDemand,
   matchProbabilities,
   pendingFixtures,
@@ -11,7 +12,7 @@ import {
 } from '@football/domain';
 import { Icon } from '../../ui/icons';
 import { PixelBadge } from '../../ui/pixel-badge';
-import { currency, ticketPrice } from '../../ui/format';
+import { currency } from '../../ui/format';
 
 function MatchDate({ at, label }: { at: number; label: string }) {
   const format = (options: Intl.DateTimeFormatOptions) =>
@@ -288,9 +289,23 @@ export function GameDetails({
           <dd>
             {result
               ? result.ticketPriceCents
-                ? ticketPrice(result.ticketPriceCents)
+                ? TICKET_TIERS.reduce(
+                    (best, tier) =>
+                      Math.abs(tier.priceCents - result.ticketPriceCents!) <
+                      Math.abs(best.priceCents - result.ticketPriceCents!)
+                        ? tier
+                        : best,
+                    TICKET_TIERS[0],
+                  ).label
                 : 'Não registrado'
-              : ticketPrice(demand.priceCents)}
+              : TICKET_TIERS.reduce(
+                  (best, tier) =>
+                    Math.abs(tier.priceCents - demand.priceCents) <
+                    Math.abs(best.priceCents - demand.priceCents)
+                      ? tier
+                      : best,
+                  TICKET_TIERS[0],
+                ).label}
           </dd>
         </div>
         <div>

@@ -497,9 +497,7 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
       ),
     );
     const context = transferContext(snapshot.state, player, club);
-    setFee(
-      String(Math.min(context.minimumFee, financialLimits(snapshot.state, club).transfer) / 100),
-    );
+    setFee(String(roundMoney(player.marketValue.cents, MONEY_STEPS.transfer) / 100));
     setSalary(
       String(Math.min(context.minimumSalary, financialLimits(snapshot.state, club).salary) / 100),
     );

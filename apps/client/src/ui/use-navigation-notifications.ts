@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { WorldState } from '@football/shared';
 import { renewalTerms } from '@football/domain';
 import { clubUnavailablePlayers } from '../features/players/player-availability';
@@ -58,9 +58,15 @@ export function useNavigationNotifications(
     return () => window.removeEventListener(event, update);
   }, []);
   const clubId = world?.participants.find((member) => member.userId === userId)?.clubId;
+  const signatures = useMemo(() => {
+    const kinds: Kind[] = ['renewal', 'unavailable', 'market', 'pending'];
+    return Object.fromEntries(
+      kinds.map((kind) => [kind, world && clubId ? signature(world, clubId, kind) : '']),
+    );
+  }, [world, clubId]);
   const unread = (kind: Kind) => {
     if (!world || !clubId) return false;
-    const value = signature(world, clubId, kind);
+    const value = signatures[kind];
     try {
       return (
         value !== '[]' &&

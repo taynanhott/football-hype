@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import {
+  currentMonthForecast,
   clubPayroll,
   defaultFinancialPlan,
   monthlyFinancialReport,
@@ -177,6 +178,7 @@ export function FinancialHistory({ snapshot, club }: Props) {
     return () => observer.disconnect();
   }, []);
   const report = monthlyFinancialReport(snapshot.state, club.id, snapshot.ledger);
+  const forecast = currentMonthForecast(snapshot.state, club, snapshot.ledger);
   const months = report.months.slice(-12),
     current = report.current;
   const fixed =
@@ -212,7 +214,7 @@ export function FinancialHistory({ snapshot, club }: Props) {
       <div className="financial-insights-metrics">
         {[
           { label: 'Total arrecadado', value: report.income },
-          { label: 'Total gasto', value: report.expenses },
+          { label: 'Estimativa de lucro do mês atual', value: forecast.profit },
           { label: 'Gasto no mês atual', value: current.expenses },
           { label: 'Lucro no mês atual', value: current.profit },
           { label: 'Lucro do mês passado', value: report.previous?.profit ?? 0 },
@@ -222,11 +224,7 @@ export function FinancialHistory({ snapshot, club }: Props) {
             <span>{metric.label}</span>
             <strong
               className={
-                metric.value < 0 ||
-                metric.label === 'Total gasto' ||
-                metric.label === 'Gasto no mês atual'
-                  ? 'negative'
-                  : ''
+                metric.value < 0 || metric.label === 'Gasto no mês atual' ? 'negative' : ''
               }
               title={currency(metric.value)}
             >
@@ -236,8 +234,13 @@ export function FinancialHistory({ snapshot, club }: Props) {
         ))}
       </div>
       <p className="financial-budget-note">
-        Custo fixo mensal atual: <strong>{currency(fixed)}</strong>. Média calculada desde o início
-        da carreira, incluindo meses sem movimentação e excluindo o mês atual.
+        Estimativa: receitas registradas, público previsto por partida, participação na bilheteria,
+        patrocínios e custos do mês. Média de público:{' '}
+        <strong>{forecast.averageAttendance.toLocaleString('pt-BR')}</strong>; ingresso médio:{' '}
+        <strong>{currency(forecast.averageTicketPrice)}</strong>. Considera os jogos conhecidos no
+        calendário e os preços atuais. Custo fixo mensal atual: <strong>{currency(fixed)}</strong>.
+        Média calculada desde o início da carreira, incluindo meses sem movimentação e excluindo o
+        mês atual.
       </p>
       {months.some(
         (month) => month.income || month.expenses || month.fixedCosts || month.profit,

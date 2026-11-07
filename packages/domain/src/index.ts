@@ -75,3 +75,5 @@ export { expectedTrainingGain } from './game/training-progression.js';
 export { exchangeCandidates } from './game/player-exchange.js';
 
 export { TICKET_TIERS } from './finance/match-demand.js';
+
+export * from './finance/monthly-forecast.js';

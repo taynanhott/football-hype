@@ -1,3 +1,4 @@
+import { careerAmbition, divisionStrength } from './career-ambition.js';
 import { clubResults, playerRatings } from './history-index.js';
 import { formatMoney } from '@football/shared';
 import {
@@ -139,6 +140,12 @@ export function transferContext(
     },
     { label: 'Problemas financeiros', value: (state.debts[buyer.id] ?? 0) > 0 ? -20 : 0 },
   ];
+  const ambition = careerAmbition(state, player);
+  if (seller && ambition > 0 && divisionStrength(buyer) > divisionStrength(seller))
+    playerReasons.push({
+      label: 'Ambição de jogar em uma liga mais forte',
+      value: Math.round(ambition / 5),
+    });
   const important = sellerSquad.filter((p) => p.overall > player.overall).length < 11;
   const clubReasons = [
     { label: 'Disposição para vender', value: human ? (policy?.interest ?? 35) : 55 },
@@ -1238,9 +1245,11 @@ export function generateIncomingOffers(state: WorldState): WorldState {
       if (!player || state.management?.loans?.[id]) continue;
       const unsolicited = !policy?.available && !policy?.loanAvailable;
       // One rare club-level opportunity avoids multiplying the chance by squad size.
-      if (unsolicited && interest(`unsolicited:${seller.id}`) >= 0.08) continue;
+      const ambition = careerAmbition(state, player);
+      if (unsolicited && interest(`unsolicited:${seller.id}`) >= (ambition >= 30 ? 0.4 : 0.08))
+        continue;
       if (offers.some((o) => o.playerId === id && o.status === 'pending')) continue;
-      if (interest(`player:${id}`) > (unsolicited ? 0.06 : 0.4)) continue;
+      if (interest(`player:${id}`) > (unsolicited ? (ambition >= 30 ? 0.4 : 0.06) : 0.4)) continue;
       // Let interest cool after a proposal, including rejected or expired offers.
       if (
         offers.some(
@@ -1249,6 +1258,8 @@ export function generateIncomingOffers(state: WorldState): WorldState {
       )
         continue;
       for (const buyer of buyers) {
+        if (unsolicited && ambition >= 30 && divisionStrength(buyer) <= divisionStrength(seller))
+          continue;
         const positionPlayers = buyer.playerIds.flatMap((pid) => {
           const p = state.players.byId[pid];
           return p?.position === player.position ? [p] : [];
