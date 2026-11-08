@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { WorldState } from '@football/shared';
 import { renewalTerms } from '@football/domain';
 import { clubUnavailablePlayers } from '../features/players/player-availability';
+import { hasUnreadClubNews, newsSeenEvent } from '../features/market/news-notifications';
 
 type Kind = 'renewal' | 'unavailable' | 'market' | 'pending';
 const event = 'football-notifications-seen';
@@ -55,7 +56,11 @@ export function useNavigationNotifications(
   useEffect(() => {
     const update = () => refresh((n) => n + 1);
     window.addEventListener(event, update);
-    return () => window.removeEventListener(event, update);
+    window.addEventListener(newsSeenEvent, update);
+    return () => {
+      window.removeEventListener(event, update);
+      window.removeEventListener(newsSeenEvent, update);
+    };
   }, []);
   const clubId = world?.participants.find((member) => member.userId === userId)?.clubId;
   const signatures = useMemo(() => {
@@ -78,6 +83,7 @@ export function useNavigationNotifications(
     }
   };
   const flags = {
+    news: Boolean(world && clubId && hasUnreadClubNews(world, clubId, userId)),
     renewal: unread('renewal'),
     unavailable: unread('unavailable'),
     market: unread('market') || unread('pending') || unread('renewal'),

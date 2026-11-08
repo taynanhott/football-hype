@@ -1,4 +1,6 @@
 import { CountryFlag } from '../../ui/country-flag';
+import { useNavigationNotifications } from '../../ui/use-navigation-notifications';
+import { useGameStore } from '../../store/game-store';
 import {
   renewalTerms,
   clubPayroll,
@@ -32,6 +34,8 @@ const MOBILE_SHORTCUTS = [
 ];
 export function Dashboard({ snapshot, club, stadium, center }: ViewProps) {
   const { state } = snapshot;
+  const userId = useGameStore((store) => store.userId);
+  const notifications = useNavigationNotifications(state, userId, false);
   const hasRenewalRequests = club.playerIds.some((id) => {
     const player = state.players.byId[id];
     return player && renewalTerms(state, player).demand;
@@ -168,13 +172,16 @@ export function Dashboard({ snapshot, club, stadium, center }: ViewProps) {
             <Icon name={item.id} size={20} />
             <span>{item.label}</span>
             {(item.id === 'market' && hasTransferNotifications) ||
-            (item.id === 'squad' && hasRenewalRequests) ? (
+            (item.id === 'squad' && hasRenewalRequests) ||
+            (item.id === 'news' && notifications.news) ? (
               <span
                 className="transfer-alert-dot"
                 aria-label={
-                  item.id === 'squad'
-                    ? 'Há jogadores pedindo renovação'
-                    : 'Há propostas recebidas ou negociações em análise'
+                  item.id === 'news'
+                    ? 'Há notícias do seu time ainda não vistas'
+                    : item.id === 'squad'
+                      ? 'Há jogadores pedindo renovação'
+                      : 'Há propostas recebidas ou negociações em análise'
                 }
               />
             ) : (

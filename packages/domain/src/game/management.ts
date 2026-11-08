@@ -8,6 +8,7 @@ import {
   contractExpires,
 } from './player-contracts.js';
 import { prepareAcademy } from './academy.js';
+import { resetTransferredEffects } from './contract-lifecycle.js';
 import { scheduledFixtures } from '../competitions/fixtures.js';
 import { upgradePrice, facilityCosts } from '../finance/facility-costs.js';
 export { upgradePrice, maintenanceForLevel } from '../finance/facility-costs.js';
@@ -65,6 +66,11 @@ export function isRival(a: ClubSnapshot, b: ClubSnapshot) {
 }
 export function contractEnd(state: WorldState, player: PlayerSnapshot) {
   return contractExpires(state, player);
+}
+/** Remaining monthly wages, prorated by day, in cents. */
+export function contractTerminationCost(state: WorldState, player: PlayerSnapshot) {
+  const remaining = Math.max(0, contractEnd(state, player) - state.lastProcessedAt);
+  return Math.ceil((player.salary.cents * remaining) / (30 * 86400000));
 }
 export function interestLabel(score: number) {
   return score <= 0
@@ -839,6 +845,78 @@ export function manageClub({
       },
     };
     return done({ ...state, management }, 'Disponibilidade para transferências atualizada');
+  }
+  if (command.action === 'terminate-contract') {
+    if (!player || player.clubId !== club.id || !club.playerIds.includes(player.id))
+      return fail('Jogador não pertence ao clube');
+    if (management.loans?.[player.id])
+      return fail('Não é possível rescindir durante um empréstimo');
+    if (club.playerIds.length <= MIN_SQUAD_SIZE)
+      return fail('O clube precisa manter pelo menos 18 jogadores');
+    const cost = contractTerminationCost(state, player);
+    if (!Number.isSafeInteger(cost) || cost < 0) return fail('Indenização inválida');
+    if (club.balance.cents < cost) return fail('Saldo insuficiente para pagar a rescisão');
+    const tactics = { ...state.tactics };
+    if (tactics[club.id]?.starters.includes(player.id)) delete tactics[club.id];
+    else if (tactics[club.id])
+      tactics[club.id] = {
+        ...tactics[club.id]!,
+        bench: tactics[club.id]!.bench?.filter((id) => id !== player.id),
+        instructions: tactics[club.id]!.instructions
+          ? {
+              ...tactics[club.id]!.instructions!,
+              substitutions: tactics[club.id]!.instructions!.substitutions.filter(
+                (plan) => plan.in !== player.id && plan.out !== player.id,
+              ),
+              protected: tactics[club.id]!.instructions!.protected.filter((id) => id !== player.id),
+            }
+          : undefined,
+      };
+    const contracts = { ...management.contracts };
+    const policies = { ...management.policies };
+    delete contracts[player.id];
+    delete policies[player.id];
+    const next: WorldState = {
+      ...state,
+      tactics,
+      management: {
+        ...management,
+        contracts,
+        policies,
+        offers: management.offers?.map((offer) =>
+          offer.playerId === player.id && offer.status === 'pending'
+            ? { ...offer, status: 'rejected' as const }
+            : offer,
+        ),
+      },
+      negotiations: state.negotiations.map((negotiation) =>
+        (negotiation.playerId === player.id ||
+          negotiation.exchangePlayerIds?.includes(player.id)) &&
+        (negotiation.status === 'review' || negotiation.status === 'salary')
+          ? { ...negotiation, status: 'rejected' as const }
+          : negotiation,
+      ),
+      players: {
+        ...state.players,
+        byId: { ...state.players.byId, [player.id]: { ...player, clubId: null } },
+      },
+      clubs: {
+        ...state.clubs,
+        byId: {
+          ...state.clubs.byId,
+          [club.id]: {
+            ...club,
+            playerIds: club.playerIds.filter((id) => id !== player.id),
+            balance: { ...club.balance, cents: club.balance.cents - cost },
+          },
+        },
+      },
+    };
+    return done(
+      resetTransferredEffects(state, next),
+      'Contrato rescindido: jogador livre no mercado',
+      -cost,
+    );
   }
   if (command.action === 'reject-renewal') {
     if (!player || player.clubId !== club.id) return fail('Jogador não pertence ao clube');

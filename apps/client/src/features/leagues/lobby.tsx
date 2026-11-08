@@ -110,16 +110,18 @@ export function Lobby() {
             </div>
           </div>
           <div className="login-access">
-            <div className="login-game-brand">
-              <BrandMark size={144} />
-              <strong>FOOTBALL HYPE</strong>
-              <span>FOOTBALL MANAGER BRASIL</span>
+            <div className="login-intro">
+              <div className="login-game-brand">
+                <BrandMark size={144} />
+                <strong>FOOTBALL HYPE</strong>
+                <span>FOOTBALL MANAGER BRASIL</span>
+              </div>
+              <p className="login-football-copy">
+                O vestiário te espera, professor.
+                <br />
+                Seu próximo título começa aqui.
+              </p>
             </div>
-            <p className="login-football-copy">
-              O vestiário te espera, professor.
-              <br />
-              Seu próximo título começa aqui.
-            </p>
             <button
               className="primary google-login-button"
               disabled={busy || session.loading || !firebaseEnabled}

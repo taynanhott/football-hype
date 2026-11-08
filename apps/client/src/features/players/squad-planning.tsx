@@ -31,7 +31,7 @@ const subscribeMobile = (change: () => void) => {
 const mobileActions = [
   { id: 'policy', label: 'Transferências' },
   { id: 'effects', label: 'Efeitos' },
-  { id: 'renew', label: 'Renegociação' },
+  { id: 'renew', label: 'Contrato' },
 ] as const;
 
 export function SquadPlanning({ snapshot, club }: ViewProps) {
@@ -408,7 +408,7 @@ export function SquadPlanning({ snapshot, club }: ViewProps) {
           <p className="squad-office-empty">Nenhum jogador encontrado com esses filtros.</p>
         )}
       </section>
-      {selectedPlayerId && preview.state.players.byId[selectedPlayerId] && (
+      {selectedPlayerId && preview.state.players.byId[selectedPlayerId]?.clubId === club.id && (
         <PlayerModal
           className="squad-action-modal squad-roster-management-modal"
           titleIcon={
@@ -439,23 +439,25 @@ export function SquadPlanning({ snapshot, club }: ViewProps) {
           />
         </PlayerModal>
       )}
-      {mobile && mobileAction && preview.state.players.byId[mobileAction.playerId] && (
-        <PlayerModal
-          className="squad-action-modal"
-          title={`${mobileActions.find((action) => action.id === mobileAction.section)!.label} · ${preview.state.players.byId[mobileAction.playerId]!.name}`}
-          onClose={() => setMobileAction(null)}
-        >
-          <PlayerManagement
-            key={`${mobileAction.playerId}.${mobileAction.section}`}
-            player={preview.state.players.byId[mobileAction.playerId]!}
-            snapshot={preview}
+      {mobile &&
+        mobileAction &&
+        preview.state.players.byId[mobileAction.playerId]?.clubId === club.id && (
+          <PlayerModal
+            className="squad-action-modal"
+            title={`${mobileActions.find((action) => action.id === mobileAction.section)!.label} · ${preview.state.players.byId[mobileAction.playerId]!.name}`}
+            onClose={() => setMobileAction(null)}
+          >
+            <PlayerManagement
+              key={`${mobileAction.playerId}.${mobileAction.section}`}
+              player={preview.state.players.byId[mobileAction.playerId]!}
+              snapshot={preview}
 
-            planningBusy={locked}
-            initialSection={mobileAction.section}
-            hideTabs
-          />
-        </PlayerModal>
-      )}
+              planningBusy={locked}
+              initialSection={mobileAction.section}
+              hideTabs
+            />
+          </PlayerModal>
+        )}
     </div>
   );
 }

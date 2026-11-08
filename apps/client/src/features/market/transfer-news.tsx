@@ -1,7 +1,8 @@
-import { transferStoryKey, uniqueTransferStories } from './transfer-stories';
+import { transferStoryKey } from './transfer-stories';
 import { useGameStore } from '../../store/game-store';
 import { roundNews } from './round-news';
-import { useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { listedNewsOffers, ownNewsKeys, markClubNewsSeen } from './news-notifications';
 import { PlayerDetails } from '../players/player-details';
 import type { WorldState, Negotiation } from '@football/shared';
 import { PersonAvatar, type PersonAppearance } from '../../ui/person-avatar';
@@ -89,6 +90,7 @@ const COMPETITION_HEADLINES = [
   'entra na briga pela contratação de',
 ];
 export function TransferNews({ state }: { state: WorldState }) {
+  const feedRef = useRef<HTMLDivElement>(null);
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
   const selectedPlayer = selectedPlayerId ? state.players.byId[selectedPlayerId] : undefined;
   const mentions = useMemo(() => {
@@ -170,29 +172,7 @@ export function TransferNews({ state }: { state: WorldState }) {
   const [topic, setTopic] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | 'completed' | 'saved'>('all');
   const [saved, setSaved] = useState<string[]>([]);
-  const humanClubs = new Set(state.participants.map((participant) => participant.clubId));
-  const offers: Negotiation[] = uniqueTransferStories(
-    [
-      ...state.negotiations,
-      ...(state.management?.offers ?? []).map((offer) => ({
-        ...offer,
-        offeredSalary: offer.salary,
-        interest: 0,
-        status:
-          offer.status === 'pending'
-            ? ('review' as const)
-            : offer.status === 'accepted'
-              ? ('completed' as const)
-              : ('rejected' as const),
-      })),
-    ]
-      .filter(
-        (offer) =>
-          humanClubs.has(offer.buyerId) ||
-          (offer.sellerId !== undefined && humanClubs.has(offer.sellerId)),
-      )
-      .sort((a, b) => (a.offeredAt ?? 0) - (b.offeredAt ?? 0)),
-  );
+  const offers = listedNewsOffers(state);
   const marketNews = offers
     .map((offer, index) => {
       const buyer = state.clubs.byId[offer.buyerId]?.name ?? 'Clube interessado';
@@ -315,6 +295,42 @@ export function TransferNews({ state }: { state: WorldState }) {
         .toLocaleLowerCase('pt-BR')
         .includes(query.toLocaleLowerCase('pt-BR')),
   );
+  const visibleKeys = JSON.stringify(visible.map((item) => item.id));
+  useEffect(() => {
+    const feed = feedRef.current;
+    if (!feed || !ownClubId) return;
+    const own = new Set(ownNewsKeys(state, ownClubId));
+    const timers = new Map<Element, ReturnType<typeof setTimeout>>();
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          const id = (entry.target as HTMLElement).dataset.newsId;
+          if (!id || !own.has(id)) continue;
+          const inView =
+            entry.isIntersecting &&
+            entry.intersectionRect.height >= Math.min(100, entry.boundingClientRect.height / 2);
+          if (inView && !document.hidden && !timers.has(entry.target)) {
+            timers.set(
+              entry.target,
+              setTimeout(() => {
+                timers.delete(entry.target);
+                if (!document.hidden) markClubNewsSeen(state, ownClubId, userId, id);
+              }, 700),
+            );
+          } else if (!inView) {
+            clearTimeout(timers.get(entry.target));
+            timers.delete(entry.target);
+          }
+        }
+      },
+      { threshold: [0, 0.25, 0.5, 0.75, 1] },
+    );
+    feed.querySelectorAll('[data-news-id]').forEach((node) => observer.observe(node));
+    return () => {
+      observer.disconnect();
+      timers.forEach(clearTimeout);
+    };
+  }, [state, ownClubId, userId, visibleKeys]);
   const trending = [
     ...new Set(
       news
@@ -430,7 +446,7 @@ export function TransferNews({ state }: { state: WorldState }) {
               ? 'de negócios fechados'
               : 'do futebol'}
         </div>
-        <div className="transfer-news-feed">
+        <div className="transfer-news-feed" ref={feedRef}>
           {exploring && (
             <section className="news-explore-topics" aria-label="Hashtags dos assuntos do momento">
               <h3>Assuntos do momento</h3>
@@ -491,7 +507,7 @@ export function TransferNews({ state }: { state: WorldState }) {
                 </div>
               )}
               {visible.map(({ id, at, tags, offer, title, body, reporter }) => (
-                <article className="transfer-news-item" key={id}>
+                <article className="transfer-news-item" key={id} data-news-id={id}>
                   <div className="transfer-reporter-avatar">
                     <PersonAvatar profile={reporter} />
                   </div>

@@ -261,6 +261,12 @@ function GameApp() {
                     aria-label="Há propostas recebidas ou negociações em análise"
                   />
                 )}
+                {item.id === 'news' && notifications.news && (
+                  <span
+                    className="transfer-alert-dot"
+                    aria-label="Há notícias do seu time ainda não vistas"
+                  />
+                )}
               </a>
             ),
           )}
@@ -369,6 +375,12 @@ function GameApp() {
         >
           <Icon name="menu" />
           <span>Menu</span>
+          {notifications.news && (
+            <span
+              className="transfer-alert-dot lineup-nav-alert"
+              aria-label="Há notícias do seu time ainda não vistas"
+            />
+          )}
         </button>
         <a
           href="#/lineup"

@@ -1,11 +1,25 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 88" fill="none">
-  <defs><linearGradient id="gold" x1="10" y1="4" x2="68" y2="80" gradientUnits="userSpaceOnUse"><stop stop-color="#fff0b0"/><stop offset=".48" stop-color="#d9b85f"/><stop offset="1" stop-color="#ad8137"/></linearGradient><linearGradient id="green" x1="12" y1="8" x2="64" y2="78" gradientUnits="userSpaceOnUse"><stop stop-color="#265d46"/><stop offset="1" stop-color="#0b2924"/></linearGradient></defs>
-  <path d="M40 3 74 15v31c0 18-18 31-34 39C24 77 6 64 6 46V15z" fill="#071e1a"/>
-  <path d="M40 5 72 17v29c0 17-17 29-32 37C25 75 8 63 8 46V17z" fill="url(#gold)"/>
-  <path d="M40 10 67 20v26c0 14-14 25-27 32C27 71 13 60 13 46V20z" fill="url(#green)"/>
-  <path d="M18 25v21c0 11 10 20 22 27" stroke="#7eac7e" stroke-opacity=".5"/>
-  <path d="M22 29h22l-4 8H30v7h10l-4 8h-6v12l-8-6z" fill="#f4edcf"/>
-  <path d="m48 25-6 18h9l-9 23 19-29H50l7-12z" fill="url(#gold)"/>
-  <path d="m35 17 5-2 5 2-2 4h-6z" fill="#f4edcf"/>
-  <path d="m32 68 8 5 8-5" stroke="#e2c374" stroke-width="2"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="144" viewBox="0 0 64 72" fill="none" shape-rendering="crispEdges">
+<title>Football Hype — escudo pixel art</title>
+<path d="M24 2h16v2h10v2h8v4h4v30h-2v8h-4v6h-4v4h-6v4h-6v4h-6v4h-4v-4h-6v-4h-6v-4h-6v-4H8v-6H4v-8H2V10h4V6h8V4h10Z" fill="#111112"/>
+<path d="M24 4h16v2h10v2h8v4h2v28h-2v8h-4v6h-4v4h-6v4h-6v4H26v-4h-6v-4h-6v-4h-4v-6H6v-8H4V12h2V8h8V6h10Z" fill="#aa8138"/>
+<path d="M24 4h16v2h10v2h8v4h2v4h-4v-4h-8v-2H38V8H26v2H16v2H8v28H6V12h2V8h6V6h10Z" fill="#f2d995"/>
+<path d="M24 8h16v2h8v2h8v28h-2v6h-4v6h-4v4h-6v4h-6v4h-4v-4h-6v-4h-6v-4h-4v-6h-4v-6H8V12h8v-2h8Z" fill="#171719"/>
+<path d="M24 10h16v2h8v2h6v26h-2v6h-4v6h-4v4h-6v4H26v-4h-6v-4h-4v-6h-4v-6h-2V14h6v-2h8Z" fill="#333336"/>
+<path d="M32 10h8v2h8v2h6v26h-2v6h-4v6h-4v4h-6v4h-6Z" fill="#232325"/>
+<path d="M14 16h2v22h-2Zm4-2h6v2h-6ZM40 14h8v2h-8Z" fill="#515154"/>
+<path d="M20 17h2v2h2v2h-2v2h-2v-2h-2v-2h2Zm22 0h2v2h2v2h-2v2h-2v-2h-2v-2h2ZM30 12h4v2h2v2h-2v2h-4v-2h-2v-2h2Z" fill="#e4c477"/>
+<path d="M30 12h4v2h-4ZM20 17h2v2h-2Zm22 0h2v2h-2Z" fill="#fff0b5"/>
+<path d="M26 20h12v2h4v4h2v12h-2v4h-4v2H26v-2h-4v-4h-2V26h2v-4h4Z" fill="#111112"/>
+<path d="M26 22h12v2h4v14h-2v4H26v-2h-4V26h4Z" fill="#a5a5a6"/>
+<path d="M26 22h10v2h-8v2h-4v10h-2V26h4Z" fill="#f2d995"/>
+<path d="M30 26h6v2h2v6h-2v2h-6v-2h-2v-6h2ZM24 24h4v4h-4Zm14 0h4v4h-4ZM22 34h4v4h2v4h-4v-4h-2Zm16 2h4v4h-4v2h-4v-4h4Z" fill="#232325"/>
+<path d="M28 24h2v4h-2Zm8 0h2v4h-2ZM24 30h4v2h-4Zm14 0h4v2h-4ZM30 36h2v6h-2Zm4 0h2v4h-2Z" fill="#515154"/>
+<path d="M30 28h4v2h-4Z" fill="#727275"/>
+<path d="M14 28h2v4h2v4h2v4h2v4h4v2h-6v-4h-4v-6h-2Zm-2 4h2v4h-2Zm2 8h2v4h-2Zm4 6h4v2h-4ZM48 28h2v8h-2v6h-4v4h-6v-2h4v-4h2v-4h2v-4h2Zm2 4h2v4h-2Zm-2 8h2v4h-2Zm-6 6h4v2h-4Z" fill="#b38b44"/>
+<path d="M14 28h2v4h-2Zm2 8h2v4h-2Zm4 6h2v2h-2ZM48 28h2v4h-2Zm-2 8h2v4h-2Zm-4 6h2v2h-2Z" fill="#f2d995"/>
+<path d="M18 46h28v2h4v10h-4v2H18v-2h-4V48h4Z" fill="#111112"/>
+<path d="M18 46h28v2H18Zm0 12h28v2H18Z" fill="#aa8138"/>
+<path d="M20 48h10v2h-7v2h6v2h-6v4h-3Zm14 0h3v4h5v-4h3v10h-3v-4h-5v4h-3Z" fill="#e4c477"/>
+<path d="M20 48h10v2H20Zm14 0h3v2h-3Zm8 0h3v2h-3Z" fill="#fff0b5"/>
+<path d="M30 62h4v2h-4Z" fill="#f2d995"/>
 </svg>

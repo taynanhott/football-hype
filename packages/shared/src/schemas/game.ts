@@ -635,6 +635,7 @@ const individualCommandSchema = z.discriminatedUnion('type', [
       'reject-transfer',
       'renew',
       'reject-renewal',
+      'terminate-contract',
       'accept',
       'reject',
       'sell-facility',

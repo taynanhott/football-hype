@@ -29,6 +29,7 @@ export function PlayerModal({
         'individual-training-confirm',
         'withdraw-offer-confirm',
         'discard-training-confirm',
+        'contract-termination-confirm',
       ].includes(name),
     );
   const ref = useRef<HTMLDialogElement>(null);

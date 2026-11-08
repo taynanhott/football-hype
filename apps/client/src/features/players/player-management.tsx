@@ -3,9 +3,16 @@ import { marketValue, transferMoney } from '../../ui/format';
 import { positionLabel } from '../../ui/position-label';
 import { MoneyRange } from '../../ui/money-range';
 import { useLayoutEffect, useRef, useState } from 'react';
-import { roundMoney, clubKit, MONEY_STEPS, type PlayerSnapshot } from '@football/shared';
+import {
+  roundMoney,
+  clubKit,
+  MIN_SQUAD_SIZE,
+  MONEY_STEPS,
+  type PlayerSnapshot,
+} from '@football/shared';
 import {
   contractEnd,
+  contractTerminationCost,
   effectiveOverall,
   temporaryModifiers,
   renewalTerms,
@@ -16,6 +23,7 @@ import { useGameStore } from '../../store/game-store';
 import { currency } from '../../ui/format';
 import { PlayerCard, Portrait } from './player-card';
 import { PlayerDetails } from './player-details';
+import { PlayerModal } from './player-modal';
 import { ClubBadge, Icon } from '../../ui/icons';
 
 export function PlayerManagement({
@@ -46,7 +54,17 @@ export function PlayerManagement({
     base: player.salary.cents,
     value: player.salary.cents,
   });
-  const [years, setYears] = useState(1);
+  const [years, setYears] = useState(() => Math.max(1, Math.ceil(days / 365)));
+  const [terminationPlayerId, setTerminationPlayerId] = useState<string | null>(null);
+  const terminationCost = contractTerminationCost(state, player);
+  const owner = state.clubs.byId[player.clubId ?? ''];
+  const terminationReason = state.management?.loans?.[player.id]
+    ? 'Não é possível rescindir durante um empréstimo.'
+    : !owner || owner.playerIds.length <= MIN_SQUAD_SIZE
+      ? 'O clube precisa manter pelo menos 18 jogadores.'
+      : owner.balance.cents < terminationCost
+        ? 'Saldo insuficiente para pagar a rescisão.'
+        : '';
   const [submittedSalary, setSubmittedSalary] = useState<{
     playerId: string;
     salary: number;
@@ -160,7 +178,7 @@ export function PlayerManagement({
             [
               { id: 'policy', label: 'Transferências' },
               { id: 'effects', label: 'Efeitos' },
-              { id: 'renew', label: 'Renegociação' },
+              { id: 'renew', label: 'Contrato' },
             ] as const
           ).map((item) => (
             <button
@@ -373,6 +391,53 @@ export function PlayerManagement({
             Enviar oferta
           </button>
         </div>
+      )}
+      {section === 'renew' && (
+        <div className="contract-termination">
+          <div>
+            <strong>Rescisão de contrato</strong>
+            <small>Indenização: {currency(terminationCost)} · salários restantes</small>
+            {terminationReason && <small className="negative">{terminationReason}</small>}
+          </div>
+          <button
+            type="button"
+            className="renewal-demand-reject"
+            disabled={busy || Boolean(terminationReason)}
+            onClick={() => setTerminationPlayerId(player.id)}
+          >
+            Rescindir contrato
+          </button>
+        </div>
+      )}
+      {section === 'renew' && terminationPlayerId === player.id && (
+        <PlayerModal
+          title="Rescindir contrato?"
+          className="contract-termination-confirm"
+          hideClose
+          onClose={() => setTerminationPlayerId(null)}
+        >
+          <div className="contract-termination-emblem">
+            <Icon name="broken-contract" size={52} />
+          </div>
+          <button
+            type="button"
+            className="renewal-demand-reject full"
+            disabled={busy || Boolean(terminationReason)}
+            onClick={() => {
+              send({ type: 'management', action: 'terminate-contract', playerId: player.id });
+              setTerminationPlayerId(null);
+            }}
+          >
+            Rescindir · {currency(terminationCost)}
+          </button>
+          <button
+            type="button"
+            className="contract-termination-cancel"
+            onClick={() => setTerminationPlayerId(null)}
+          >
+            Cancelar
+          </button>
+        </PlayerModal>
       )}
       {section === 'policy' && state.clubs.byId[player.clubId ?? ''] && (
         <div className="squad-inline-offers">
