@@ -62,7 +62,7 @@ export function MarketFiltersDialog(props: FilterProps) {
       values: draft.price,
       min: 0,
       max: props.priceCeiling,
-      step: 10000000,
+      step: 10000,
       format: money,
     },
     {
@@ -153,8 +153,7 @@ export function MarketFiltersDialog(props: FilterProps) {
         <div className="market-filter-dual-ranges">
           {ranges.map((range) => {
             const low = Math.min(range.max, range.values[0]!);
-            const firstMaximum = Math.min(range.max, range.min + range.step);
-            const high = Math.max(low, firstMaximum, Math.min(range.max, range.values[1]!));
+            const high = Math.max(low, Math.min(range.max, range.values[1]!));
             const style = {
               '--range-start': ((low - range.min) / (range.max - range.min)) * 100 + '%',
               '--range-end': ((high - range.min) / (range.max - range.min)) * 100 + '%',
@@ -197,7 +196,7 @@ export function MarketFiltersDialog(props: FilterProps) {
                         const next = [...range.values];
                         let value = Number(event.target.value);
                         if (index === 0) value = Math.min(value, high);
-                        else value = Math.max(value, low, firstMaximum);
+                        else value = Math.max(value, low);
                         next[index] =
                           (range.id === 'price' || range.id === 'salary') &&
                           index === 1 &&
