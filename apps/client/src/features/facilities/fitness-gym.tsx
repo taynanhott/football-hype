@@ -204,7 +204,8 @@ export function FitnessGym({
                 </>
               ) : (
                 <div className="fitness-gym-empty">
-                  <span>+</span>Vaga disponível
+                  <span aria-hidden="true">+</span>
+                  <span className="fitness-gym-empty-label">Vaga disponível</span>
                 </div>
               )}
             </div>

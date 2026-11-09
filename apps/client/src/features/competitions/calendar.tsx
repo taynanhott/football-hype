@@ -160,6 +160,8 @@ export function Calendar({ snapshot, club }: ViewProps) {
             <label>
               Temporada
               <Select
+                className="competition-season-select"
+                menuMinWidth={136}
                 value={state.season}
                 onValueChange={(value) => setSelectedSeason(Number(value))}
               >

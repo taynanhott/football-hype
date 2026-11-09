@@ -23,3 +23,6 @@ tmp/calendar-advance-*.json
 
 apps/worker/assets/
 **/.wrangler/
+
+# Segredos locais dos emuladores Firebase
+.secret.local

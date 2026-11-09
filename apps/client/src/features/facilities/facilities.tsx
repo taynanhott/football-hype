@@ -137,6 +137,67 @@ type Target =
   | 'scouting'
   | 'coaching'
   | 'marketing';
+
+function facilityBonuses(target: Target, level: number, sectors: number): string[] {
+  const fmt = (n: number) => n.toLocaleString('pt-BR', { maximumFractionDigits: 1 });
+  switch (target) {
+    case 'pitch':
+      return [
+        `+${level * 2} p.p. de atratividade`,
+        `+${fmt(level * 2.5)}% na tolerância ao preço do ingresso`,
+      ];
+    case 'surroundings':
+      return [
+        `+${level * 3} p.p. de atratividade`,
+        `+${fmt(level * 1.5)}% na tolerância ao preço do ingresso`,
+      ];
+    case 'structure':
+      return [
+        `+${level * 2} p.p. de atratividade com todos os setores neste nível`,
+        `+${level * 3}% na tolerância ao preço do ingresso`,
+        `+${((level - 1) * GAMEPLAY.upgradeCapacity * sectors).toLocaleString('pt-BR')} lugares adicionais`,
+      ];
+    case 'food':
+    case 'shirts':
+    case 'hospitality':
+      return [
+        `Contribuição ao consumo: peso ${fmt(level * (target === 'food' ? 1.5 : target === 'shirts' ? 1 : 4))}`,
+        'O efeito depende do público e das demais estruturas comerciais.',
+      ];
+    case 'scouting':
+      return [`+${level * GAMEPLAY.interestFacilityWeight} pontos no interesse dos atletas`];
+    case 'coaching':
+      return [
+        `Evolução por treino: +${(level - 1) * 100}%`,
+        `+${level * GAMEPLAY.interestFacilityWeight} pontos no interesse dos atletas`,
+        `Até ${Math.min(3, level)} ciclos individuais simultâneos`,
+      ];
+    case 'fitness':
+      return [
+        `${fmt((1 - 1 / (1 + (level - 1) * GAMEPLAY.fitnessFatigueReductionPerLevel)) * 100)}% a menos de desgaste em jogos`,
+        `Recuperação base: ${fmt(GAMEPLAY.fitnessRecovery + level * GAMEPLAY.recoveryPerLevel)} por dia, ajustada pela rotina`,
+        ...(level >= 3
+          ? [
+              `${level - 2} ${level === 3 ? 'vaga' : 'vagas'} de atendimento Plus (+50% de recuperação)`,
+            ]
+          : []),
+      ];
+    case 'medical':
+      return [
+        `Risco de lesão: ${fmt((1 - 1 / Math.sqrt(level)) * 100)}% a menos`,
+        `Duração das lesões: ${fmt((1 - 1 / level) * 100)}% a menos`,
+        ...(level >= 3
+          ? [
+              `${level - 2} ${level === 3 ? 'vaga' : 'vagas'} de tratamento Plus (recuperação de 2 partidas por jogo)`,
+            ]
+          : []),
+        ...(level === 5 ? ['Seringa e liberação médica disponíveis.'] : []),
+      ];
+    case 'marketing':
+      return MARKETING_BENEFITS.slice(0, level);
+  }
+}
+
 export function Facilities(props: ViewProps & { training?: boolean }) {
   const pageRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -179,6 +240,7 @@ export function Facilities(props: ViewProps & { training?: boolean }) {
     }
   };
   const [managing, setManaging] = useState<string | null>(null);
+  const [bonusTarget, setBonusTarget] = useState<Target | null>(null);
   const [customizationOpen, setCustomizationOpen] = useState(false);
   const send = useGameStore((state) => state.send);
   const busy = useGameStore((state) => state.busy);
@@ -344,7 +406,12 @@ export function Facilities(props: ViewProps & { training?: boolean }) {
                 }
               >
                 <div className="section-header">
-                  <span className="facility-icon">
+                  <button
+                    type="button"
+                    className="facility-icon facility-bonus-trigger"
+                    aria-label={`Ver bônus de ${info?.title ?? target} por nível`}
+                    onClick={() => setBonusTarget(target)}
+                  >
                     <Icon
                       name={
                         training
@@ -362,7 +429,7 @@ export function Facilities(props: ViewProps & { training?: boolean }) {
                       }
                       size={26}
                     />
-                  </span>
+                  </button>
                   <span className="pill">NÍVEL {level} / 5</span>
                 </div>
                 <h2>{info?.title}</h2>
@@ -474,6 +541,57 @@ export function Facilities(props: ViewProps & { training?: boolean }) {
           })}
         </div>
       </div>
+      {bonusTarget && (
+        <PlayerModal
+          title={DESCRIPTIONS[bonusTarget]!.title + ' · Bônus por nível'}
+          className={`facility-bonus-modal sector-${bonusTarget} stadium-sector-${bonusTarget}`}
+          onClose={() => setBonusTarget(null)}
+        >
+          <p>
+            Benefícios por nível. Percentuais de evolução, redução e capacidade adicional comparados
+            ao nível 1.
+          </p>
+          <div className="facility-bonus-grid">
+            {[1, 2, 3, 4, 5].map((tier) => {
+              const current = levels.find(([target]) => target === bonusTarget)?.[1] ?? 0;
+              return (
+                <section
+                  key={tier}
+                  className="facility-bonus-level"
+                  data-locked={tier > current}
+                  data-current={tier === current}
+                >
+                  <header>
+                    <strong>Nível {tier}</strong>
+                    <span>
+                      {tier > current
+                        ? '🔒 Não adquirido'
+                        : tier === current
+                          ? '✓ Atual'
+                          : '✓ Adquirido'}
+                    </span>
+                  </header>
+                  <b>
+                    {
+                      (bonusTarget === 'structure'
+                        ? STADIUM_STYLES
+                        : bonusTarget === 'pitch'
+                          ? PITCH_STYLES
+                          : TRAINING_STYLES[bonusTarget])?.[tier - 1]
+                    }
+                  </b>
+                  <ul>
+                    {facilityBonuses(bonusTarget, tier, stadium.sectors.length).map((bonus) => (
+                      <li key={bonus}>{bonus}</li>
+                    ))}
+                  </ul>
+                  <small>Manutenção: {currency(maintenanceForLevel(tier, bonusTarget))}/mês</small>
+                </section>
+              );
+            })}
+          </div>
+        </PlayerModal>
+      )}
       {confirmation && (
         <PlayerModal
           title="Decisão da diretoria"

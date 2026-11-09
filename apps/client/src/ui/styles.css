@@ -7603,6 +7603,11 @@ dialog.modal {
   flex: 0 0 16px;
   color: #b9dc83;
 }
+.competition-season-select .game-select-option > span:first-child {
+  white-space: nowrap;
+  overflow-wrap: normal;
+  flex-shrink: 0;
+}
 .game-select-empty {
   padding: 16px;
   color: #6c7c71;
@@ -43234,4 +43239,334 @@ dialog.contract-termination-confirm .modal-title {
     overscroll-behavior-y: contain;
     -webkit-overflow-scrolling: touch;
   }
+}
+
+/* Guia de evolução das estruturas: cinco níveis visíveis e identidade do setor. */
+.facility-bonus-trigger {
+  cursor: pointer;
+  border: 1px solid currentColor;
+}
+.facility-bonus-trigger:focus-visible {
+  outline: 3px solid currentColor;
+  outline-offset: 3px;
+}
+
+/* Scoped palette overrides the shared dark modal skin. */
+dialog.modal.player-management-modal.facility-bonus-modal[open] {
+  --bonus-color: var(--sector-accent, var(--sector, #2563a6));
+  --bonus-soft: var(--sector-tint, var(--sector-soft, #edf5ff));
+  width: min(760px, calc(100vw - 24px)) !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: calc(100dvh - 24px) !important;
+  padding: 20px !important;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  border: 2px solid var(--bonus-color) !important;
+  border-top: 7px solid var(--bonus-color) !important;
+  border-radius: 16px !important;
+  background:
+    repeating-linear-gradient(120deg, #ffffff22 0 8px, transparent 8px 18px),
+    repeating-linear-gradient(45deg, #ffffff35 0 1px, transparent 1px 4px),
+    linear-gradient(135deg, var(--bonus-soft), color-mix(in srgb, var(--bonus-color) 23%, #f7f0df)) !important;
+  color: #172f40 !important;
+  box-shadow: 0 22px 80px #0009 !important;
+}
+dialog.facility-bonus-modal > .modal-content {
+  flex: 0 1 auto !important;
+  min-height: 0 !important;
+  overflow-y: auto;
+  padding: 0 !important;
+  background: transparent !important;
+}
+dialog.facility-bonus-modal .modal-title {
+  color: var(--bonus-color) !important;
+  font-size: 21px;
+  margin: 0 0 8px;
+  text-shadow: none !important;
+}
+dialog.facility-bonus-modal .modal-content > p {
+  color: #314b5c !important;
+  font-size: 13px;
+  margin: 0 0 14px;
+}
+dialog.facility-bonus-modal .facility-bonus-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+dialog.facility-bonus-modal .facility-bonus-level {
+  padding: 11px 14px;
+  border: 1px solid color-mix(in srgb, var(--bonus-color) 45%, white);
+  border-left: 5px solid var(--bonus-color);
+  border-radius: 9px;
+  background: #fffcf4;
+  opacity: 1;
+  filter: none;
+}
+dialog.facility-bonus-modal .facility-bonus-level :is(b, li, small) {
+  color: #203b4b !important;
+  text-shadow: none !important;
+}
+dialog.facility-bonus-modal .facility-bonus-level > b {
+  font-size: 14px;
+}
+dialog.facility-bonus-modal .facility-bonus-level header {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+dialog.facility-bonus-modal .facility-bonus-level header :is(strong, span) {
+  color: var(--bonus-color) !important;
+  text-shadow: none !important;
+}
+dialog.facility-bonus-modal .facility-bonus-level header span {
+  font-size: 12px;
+}
+dialog.facility-bonus-modal .facility-bonus-level ul {
+  padding-left: 18px;
+  margin: 5px 0;
+  font-size: 13px;
+  line-height: 1.45;
+}
+dialog.facility-bonus-modal .facility-bonus-level small {
+  font-size: 12px;
+}
+dialog.facility-bonus-modal .facility-bonus-level[data-current='true'] {
+  outline: 2px solid var(--bonus-color);
+  outline-offset: -1px;
+  background: color-mix(in srgb, var(--bonus-soft) 65%, white);
+}
+dialog.facility-bonus-modal .facility-bonus-level[data-locked='true'] {
+  background: color-mix(in srgb, var(--bonus-soft) 30%, #e4e6e5);
+  border-style: dashed;
+  opacity: 0.85;
+  filter: saturate(0.5);
+}
+dialog.facility-bonus-modal > .modal-return {
+  position: static !important;
+  flex: 0 0 auto !important;
+  margin: 0 !important;
+  width: 100%;
+  color: white !important;
+  background: var(--bonus-color) !important;
+  border: 1px solid var(--bonus-color) !important;
+  border-image: none !important;
+  clip-path: none !important;
+  border-radius: 8px !important;
+}
+@media (max-width: 600px) {
+  dialog.modal.player-management-modal.facility-bonus-modal[open] {
+    padding: 14px !important;
+  }
+  dialog.facility-bonus-modal .modal-title {
+    font-size: 18px;
+  }
+}
+
+/* Desktop: five stacked tiers fit without a tall list of bullet points. */
+@media (min-width: 901px) {
+  dialog.modal.player-management-modal.facility-bonus-modal[open] {
+    width: min(1000px, calc(100vw - 40px)) !important;
+    padding: 14px 18px !important;
+    gap: 8px;
+  }
+  dialog.facility-bonus-modal .modal-title {
+    font-size: 18px;
+    line-height: 1.2;
+    margin-bottom: 5px;
+  }
+  dialog.facility-bonus-modal .modal-content > p {
+    font-size: 12px;
+    margin-bottom: 8px;
+  }
+  dialog.facility-bonus-modal .facility-bonus-grid {
+    gap: 6px;
+  }
+  dialog.facility-bonus-modal .facility-bonus-level {
+    padding: 7px 11px;
+    display: grid;
+    grid-template-columns: minmax(160px, 0.8fr) minmax(0, 2fr);
+    column-gap: 16px;
+    align-items: start;
+  }
+  dialog.facility-bonus-modal .facility-bonus-level header {
+    grid-column: 1;
+    flex-wrap: wrap;
+    margin: 0 0 3px;
+    line-height: 1.2;
+  }
+  dialog.facility-bonus-modal .facility-bonus-level > b {
+    grid-column: 1;
+    font-size: 12px;
+    line-height: 1.25;
+  }
+  dialog.facility-bonus-modal .facility-bonus-level ul {
+    grid-column: 2;
+    grid-row: 1 / span 3;
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.35;
+    padding-left: 16px;
+  }
+  dialog.facility-bonus-modal .facility-bonus-level small {
+    grid-column: 1;
+    font-size: 11px;
+    line-height: 1.25;
+    margin-top: 3px;
+  }
+  dialog.facility-bonus-modal > .modal-return {
+    min-height: 32px !important;
+    padding: 6px 12px !important;
+    font-size: 13px;
+  }
+}
+
+/* Size this guide to its contents rather than the shared full-screen dialog frame. */
+dialog.modal.player-management-modal.facility-bonus-modal[open] {
+  inset: 0 !important;
+  margin: auto !important;
+  height: fit-content !important;
+  block-size: fit-content !important;
+  min-block-size: 0 !important;
+  max-block-size: calc(100dvh - 24px) !important;
+  align-self: center;
+}
+@media (min-width: 901px) {
+  dialog.modal.player-management-modal.facility-bonus-modal[open] {
+    width: min(860px, calc(100vw - 40px)) !important;
+    padding: 18px 20px !important;
+    gap: 12px;
+  }
+  dialog.facility-bonus-modal .modal-title {
+    font-size: 21px;
+    margin-bottom: 7px;
+  }
+  dialog.facility-bonus-modal .facility-bonus-grid {
+    gap: 8px;
+  }
+  dialog.facility-bonus-modal .facility-bonus-level {
+    padding: 10px 13px;
+    grid-template-columns: minmax(170px, 0.85fr) minmax(0, 2fr);
+  }
+  dialog.facility-bonus-modal .facility-bonus-level > b {
+    font-size: 14px;
+  }
+  dialog.facility-bonus-modal .facility-bonus-level ul {
+    font-size: 13px;
+    line-height: 1.45;
+  }
+  dialog.facility-bonus-modal .facility-bonus-level small {
+    font-size: 12px;
+  }
+  dialog.facility-bonus-modal > .modal-return {
+    min-height: 36px !important;
+  }
+}
+@media (min-width: 901px) and (max-height: 740px) {
+  dialog.modal.player-management-modal.facility-bonus-modal[open] {
+    padding: 12px 16px !important;
+    gap: 8px;
+  }
+  dialog.facility-bonus-modal .facility-bonus-level {
+    padding: 7px 11px;
+  }
+  dialog.facility-bonus-modal .facility-bonus-level ul {
+    font-size: 12px;
+    line-height: 1.35;
+  }
+  dialog.facility-bonus-modal .facility-bonus-grid {
+    gap: 6px;
+  }
+}
+
+.facilities-page .facility-card button.facility-bonus-trigger {
+  border: 1px solid var(--sector-accent, var(--sector, #2563a6)) !important;
+  border-image: none !important;
+  box-shadow: none !important;
+}
+
+/* Shared empty slots: readable labels with breathing room in every department. */
+.fitness-gym-empty {
+  box-sizing: border-box;
+  padding: 12px 10px;
+  gap: 8px;
+  text-align: center;
+}
+.fitness-gym-empty > .fitness-gym-empty-label {
+  display: block;
+  max-width: 100%;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.45;
+  white-space: normal;
+  overflow-wrap: normal;
+  word-break: normal;
+  text-wrap: balance;
+}
+
+/* Icon buttons keep their own shape instead of the shared action-button frame. */
+.facilities-page .facility-card button.facility-bonus-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  padding: 0 !important;
+  min-width: 0;
+  min-height: 0;
+  line-height: 1;
+  clip-path: none !important;
+  border-radius: 10px !important;
+  overflow: visible;
+  touch-action: manipulation;
+}
+.facilities-page .facility-card button.facility-bonus-trigger::before,
+.facilities-page .facility-card button.facility-bonus-trigger::after {
+  content: none !important;
+}
+@media (max-width: 900px) {
+  .facilities-page .facility-card button.facility-bonus-trigger {
+    width: 25px;
+    height: 25px;
+    min-width: 25px;
+    min-height: 25px;
+  }
+  .facilities-page .facility-card button.facility-bonus-trigger svg {
+    display: block;
+    flex: 0 0 auto;
+    width: 21px;
+    height: 21px;
+    margin: 0;
+  }
+}
+
+/* Compact facility controls use the system's chamfered corners. */
+.facilities-page .facility-card button.facility-bonus-trigger {
+  --button-cut: 4px;
+  border-radius: 0 !important;
+  clip-path: polygon(
+    0 0,
+    calc(100% - 4px) 0,
+    100% 4px,
+    100% 100%,
+    4px 100%,
+    0 calc(100% - 4px)
+  ) !important;
+  box-shadow: inset 0 0 0 1px var(--sector-accent, var(--sector, #2563a6)) !important;
+  background-image:
+    linear-gradient(45deg, var(--sector-accent, var(--sector, #2563a6)) 0 3px, transparent 3px),
+    linear-gradient(225deg, var(--sector-accent, var(--sector, #2563a6)) 0 3px, transparent 3px) !important;
+}
+
+/* Available upgrades have a consistent green action across stadium and CT. */
+.facilities-page .facility-card .facility-actions > button.facility-upgrade:not(:disabled) {
+  color: #fff !important;
+  background: linear-gradient(135deg, #23864d, #176438) !important;
+  border-color: #72bd85 !important;
+  text-shadow: 0 1px 1px #123c2a;
+}
+.facilities-page .facility-card .facility-actions > button.facility-upgrade:not(:disabled):hover {
+  background: linear-gradient(135deg, #2c995b, #1c7743) !important;
 }

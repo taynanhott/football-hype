@@ -6,9 +6,8 @@ import {
   financialLimits,
   maintenanceBreakdown,
   monthlyFinancialReport,
-  scheduledFixtures,
 } from '@football/domain';
-import { GAMEPLAY, roundMoney, clubKit, formatMoneyFull } from '@football/shared';
+import { clubKit, formatMoneyFull } from '@football/shared';
 import { useGameStore } from '../../store/game-store';
 import type { ViewProps } from '../../ui/view-props';
 import { currency } from '../../ui/format';
@@ -111,13 +110,7 @@ export function Finance({ snapshot, club }: ViewProps) {
   const report = monthlyFinancialReport(state, club.id, snapshot.ledger),
     limits = financialLimits(state, club),
     coverage = monthly ? Math.max(0, net) / monthly : 0;
-  const fixtures = new Map(scheduledFixtures(state).map((fixture) => [fixture.id, fixture]));
   const stadium = state.stadiums.byId[club.stadiumId];
-  const commercialWeights: Record<string, number> = {
-    food: (stadium?.commerce.foodLevel ?? 0) * 1.5,
-    shirts: stadium?.commerce.shirtsLevel ?? 0,
-    hospitality: (stadium?.commerce.hospitalityLevel ?? 0) * 4,
-  };
   const attraction: Record<string, number> = {
     pitch: (stadium?.pitchLevel ?? 0) * 2,
     surroundings: (stadium?.surroundingsLevel ?? 0) * 3,
@@ -126,28 +119,6 @@ export function Finance({ snapshot, club }: ViewProps) {
         2
       : 0,
   };
-  const totalWeight = Object.values(commercialWeights).reduce((sum, weight) => sum + weight, 0);
-  const marketing = state.centers.byId[club.trainingCenterId]?.levels.marketing ?? 1;
-  const consumption = state.results.reduce((sum, result) => {
-    const fixture = fixtures.get(result.fixtureId);
-    if (
-      !fixture ||
-      fixture.homeId !== club.id ||
-      fixture.neutral ||
-      new Date(fixture.scheduledAt - 10800000).toISOString().slice(0, 7) !== report.current.month
-    )
-      return sum;
-    const estimate = roundMoney(
-      ((result.attendance * GAMEPLAY.baseTicketCents * totalWeight) /
-        GAMEPLAY.commerceRateDivisor) *
-        (marketing >= 4 ? 1.2 : 1),
-    );
-    const available =
-      result.ticketPriceCents === undefined
-        ? result.revenue
-        : Math.max(0, result.revenue - roundMoney(result.attendance * result.ticketPriceCents));
-    return sum + Math.min(available, estimate);
-  }, 0);
   const recentMonths = report.months.slice(-3);
   const recentProfit =
     recentMonths.reduce((sum, month) => sum + month.profit, 0) / Math.max(1, recentMonths.length);
@@ -326,7 +297,7 @@ export function Finance({ snapshot, club }: ViewProps) {
               </strong>
             </header>
             <p className="facility-return-note">
-              {report.current.month} · Receita e saldo estimados · Sem upgrades
+              {report.current.month} · Custos mensais · Sem upgrades
             </p>
             <div className="finance-facility-costs">
               {costs
@@ -373,53 +344,13 @@ export function Finance({ snapshot, club }: ViewProps) {
                       <span>
                         Custo <strong>{currency(item.cost)}</strong>
                       </span>
-                      {commercialWeights[item.target] !== undefined ? (
-                        <>
-                          <span>
-                            Receita{' '}
-                            <b>
-                              {currency(
-                                totalWeight
-                                  ? (consumption * commercialWeights[item.target]!) / totalWeight
-                                  : 0,
-                              )}
-                            </b>
-                          </span>
-                          <span>
-                            Saldo{' '}
-                            <b
-                              className={
-                                (totalWeight
-                                  ? (consumption * commercialWeights[item.target]!) / totalWeight
-                                  : 0) -
-                                  item.cost <
-                                0
-                                  ? 'negative'
-                                  : 'positive'
-                              }
-                            >
-                              {currency(
-                                (totalWeight
-                                  ? (consumption * commercialWeights[item.target]!) / totalWeight
-                                  : 0) - item.cost,
-                              )}
-                            </b>
-                          </span>
-                        </>
-                      ) : attraction[item.target] !== undefined ? (
+                      {attraction[item.target] !== undefined && (
                         <span title="Contribuição ao interesse da torcida, em pontos percentuais. Não representa aumento garantido de público.">
                           Atratividade{' '}
                           <b className="positive">
                             +{Number(attraction[item.target]!.toFixed(1)).toLocaleString('pt-BR')}{' '}
                             p.p.
                           </b>
-                        </span>
-                      ) : (
-                        <span
-                          className="facility-indirect"
-                          title="Benefícios indiretos, sem lucro individual registrado"
-                        >
-                          Retorno indireto
                         </span>
                       )}
                     </span>
