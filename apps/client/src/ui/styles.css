@@ -37193,15 +37193,26 @@ dialog.market-filter-redesign .market-filter-surface > .market-filter-back {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 5px;
+  gap: 6px;
   min-height: 24px;
   width: 100%;
-  padding: 3px;
+  padding: 4px 8px;
   border: 0;
   border-top: 1px solid #b8a15d44;
   background: transparent;
   color: #d5dfba;
-  font-size: 9px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    color 150ms ease,
+    background-color 150ms ease,
+    border-color 150ms ease;
+}
+.market-expand-toggle:hover:not(:disabled) {
+  color: #ffe5a0;
+  background: #b8a15d18;
+  border-top-color: #edcf71;
 }
 .market-expand-toggle[aria-expanded='true'] svg {
   transform: rotate(180deg);
@@ -38105,6 +38116,16 @@ a:is(
   box-shadow: none !important;
   clip-path: none !important;
   background: transparent;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.transfer-hub
+  .market-controls.market-collapsible-controls
+  > .market-expand-toggle:hover:not(:disabled) {
+  background: #b8a15d18 !important;
+  color: #ffe5a0 !important;
+  border-top-color: #edcf71 !important;
 }
 
 .transfer-hub .market-controls.market-collapsible-controls > .market-filter-expansion {

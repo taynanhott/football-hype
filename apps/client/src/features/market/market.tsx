@@ -633,9 +633,11 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
           aria-controls="market-expanded-filters"
           onClick={() => setFiltersOpen(!filtersOpen)}
         >
-          <Icon name="chevron-down" size={12} />
+          <Icon name="chevron-down" size={14} />
           <span>
-            {filtersOpen && tab !== 'Propostas' && tab !== 'Pendente' ? 'recolher' : 'expandir'}
+            {filtersOpen && tab !== 'Propostas' && tab !== 'Pendente'
+              ? 'Recolher filtros'
+              : 'Filtros avançados'}
           </span>
         </button>
         {tab !== 'Propostas' && tab !== 'Pendente' && (

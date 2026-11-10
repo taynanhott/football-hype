@@ -164,8 +164,17 @@ function facilityBonuses(target: Target, level: number, sectors: number): string
         `Contribuição ao consumo: peso ${fmt(level * (target === 'food' ? 1.5 : target === 'shirts' ? 1 : 4))}`,
         'O efeito depende do público e das demais estruturas comerciais.',
       ];
-    case 'scouting':
-      return [`+${level * GAMEPLAY.interestFacilityWeight} pontos no interesse dos atletas`];
+    case 'scouting': {
+      const margin = (6 - level) * 4;
+      const potMin = 48 + level * 6;
+      return [
+        `+${level * GAMEPLAY.interestFacilityWeight} pontos no interesse dos atletas`,
+        level === 1
+          ? 'Potencial de adversários oculto no mercado'
+          : `Relatório de scout: margem de ±${margin} no potencial`,
+        `Potencial mínimo dos jovens da base: ${potMin}`,
+      ];
+    }
     case 'coaching':
       return [
         `Evolução por treino: +${(level - 1) * 100}%`,
@@ -389,7 +398,7 @@ export function Facilities(props: ViewProps & { training?: boolean }) {
                       food: `+${percent(150 / commerce)}% na receita de consumo*`,
                       shirts: `+${percent(100 / commerce)}% na receita de consumo*`,
                       hospitality: `+${percent(400 / commerce)}% na receita de consumo*`,
-                      scouting: `+${GAMEPLAY.interestFacilityWeight}% no interesse dos atletas`,
+                      scouting: `+${GAMEPLAY.interestFacilityWeight} pontos no interesse dos atletas`,
                       coaching: `+${percent(100 / level)}% na evolução por treino`,
                       medical: `−${percent((1 - Math.sqrt(level / (level + 1))) * 100)}% no risco de lesão em jogos`,
                       fitness: `−${percent((100 * GAMEPLAY.fitnessFatigueReductionPerLevel) / (1 + level * GAMEPLAY.fitnessFatigueReductionPerLevel))}% no desgaste em jogos`,
