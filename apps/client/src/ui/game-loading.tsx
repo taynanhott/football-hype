@@ -109,7 +109,7 @@ export function GameLoading() {
               <circle className="training-loading-pass" cx="43" cy="40" r="2.5" fill="#fff7dd" />
             </svg>
           </div>
-        ) : moving ? (
+        ) : moving && activity === 'travel' ? (
           <div className="team-bus-scene" aria-hidden="true">
             <svg className="team-bus" viewBox="0 0 260 130" width="260" height="130">
               <path
@@ -142,6 +142,10 @@ export function GameLoading() {
             </svg>
             <div className="team-bus-road" />
           </div>
+        ) : moving && activity === 'calendar' ? (
+          <div className="career-loading-ball" aria-hidden="true">
+            <Icon name="calendar" size={48} />
+          </div>
         ) : (
           <div className="career-loading-ball" aria-hidden="true">
             <Icon name="ball" size={32} />
@@ -155,7 +159,7 @@ export function GameLoading() {
                 ? 'Time em treinamento…'
                 : activity === 'travel'
                   ? 'Time em movimento…'
-                  : 'Avançando calendário…'
+                  : 'Processando rodada…'
               : (message ?? 'Carregando carreira…')}
         </strong>
       </div>

@@ -146,6 +146,9 @@ export function roundNews(state: WorldState) {
           const shock = ['Que atropelo!', 'É de cair o queixo!', 'Virou um passeio!'];
           return {
             id: `score:${result.fixtureId}`,
+            stadiumId: state.clubs.byId[fixture.homeId]?.stadiumId,
+            homeId: fixture.homeId,
+            awayId: fixture.awayId,
             reporterName: undefined as string | undefined,
             at: at - index,
             title: margin >= 3 ? `${shock[index]} ${score}` : `Destaque da rodada: ${score}`,

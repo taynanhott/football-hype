@@ -123,7 +123,7 @@ describe('participantes fixos e sorteios da liga', () => {
       ],
     };
     const event = executeCommand(
-      finished,
+      { ...finished, participants: finished.participants.map((p) => ({ ...p, ready: true })) },
       { type: 'new-season' },
       state.administratorId,
       Date.UTC(2027, 0, 1),

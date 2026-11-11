@@ -12,3 +12,6 @@ pnpm-lock.yaml
 
 data/player-source.json
 data/player-database.json
+
+.tmp/
+outputs/

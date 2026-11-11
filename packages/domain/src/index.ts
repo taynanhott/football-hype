@@ -79,3 +79,10 @@ export { TICKET_TIERS } from './finance/match-demand.js';
 export * from './finance/monthly-forecast.js';
 
 export * from './finance/calendar-sponsorship.js';
+export * from './competitions/european-leagues.js';
+
+export { finalizeSeasonAwards } from './competitions/season-awards.js';
+
+export { SEASON_EVENT_GAP_MS, seasonClosingDates } from './competitions/season-closing.js';
+
+export { pendingSeasonClosingDates } from './competitions/season-closing.js';

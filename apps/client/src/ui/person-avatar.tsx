@@ -16,8 +16,10 @@ export type PersonAppearance = {
 export function PersonAvatar({
   profile,
   className = '',
+  framed = false,
 }: {
   profile: PersonAppearance;
+  framed?: boolean;
   className?: string;
 }) {
   const hairShapes: Record<string, string> = {
@@ -44,7 +46,8 @@ export function PersonAvatar({
   const shortSleeves = ['polo', 'camisa', 'camiseta'].includes(outfitStyle);
   return (
     <svg
-      viewBox="0 0 72 80"
+      viewBox={framed ? '0 0 72 77' : '0 0 72 80'}
+      preserveAspectRatio={framed ? 'xMidYMax slice' : 'xMidYMid meet'}
       className={`person-pixel-portrait ${className}`}
       shapeRendering="crispEdges"
       role="img"
@@ -244,10 +247,14 @@ export function GeneratedPerson({
   name,
   className = '',
   outfit = '#243e52',
+  outfitStyle = 'agasalho',
+  framed = false,
 }: {
   name: string;
   className?: string;
   outfit?: string;
+  outfitStyle?: string;
+  framed?: boolean;
 }) {
   const feminine = /Helena|Médica|Diretora/.test(name);
   let seed = 0;
@@ -255,9 +262,11 @@ export function GeneratedPerson({
   return (
     <PersonAvatar
       className={className}
+      framed={framed}
       profile={{
         name,
         outfit,
+        outfitStyle,
         skin: ['#f3d6b5', '#dfb18a', '#c58d65', '#9b6346', '#70452f', '#432b22'][seed % 6]!,
         hair: feminine ? 'longo' : ['curto', 'cacheado', 'longo', 'careca'][(seed >>> 4) % 4]!,
         beard: feminine ? 'nenhuma' : ['nenhuma', 'curta', 'cheia'][(seed >>> 8) % 3]!,

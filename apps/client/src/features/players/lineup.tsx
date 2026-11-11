@@ -513,6 +513,7 @@ export function LineupEditor({ snapshot, club, center }: ViewProps) {
                       setSelectionOpen(true);
                     }}
                   >
+                    <span className="starter-card-aura" aria-hidden="true" />
                     <span className="tactics-rating">
                       <Overall
                         base={entry.player?.overall ?? 0}

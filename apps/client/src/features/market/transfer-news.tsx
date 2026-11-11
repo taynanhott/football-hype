@@ -1,6 +1,8 @@
+import { awardNews } from './award-news';
 import { transferStoryKey } from './transfer-stories';
 import { useGameStore } from '../../store/game-store';
 import { roundNews } from './round-news';
+import { NewsMedia } from './news-media';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { listedNewsOffers, ownNewsKeys, markClubNewsSeen } from './news-notifications';
 import { PlayerDetails } from '../players/player-details';
@@ -138,7 +140,7 @@ export function TransferNews({ state }: { state: WorldState }) {
       if (entity.kind === 'club')
         nodes.push(
           <a
-            className="news-entity-link"
+            className={`news-entity-link${entity.id === ownClubId || name === state.clubs.byId[ownClubId ?? '']?.name ? ' news-own-club' : ''}`}
             key={match.index}
             href={`#/trophies?club=${encodeURIComponent(entity.id)}`}
           >
@@ -250,8 +252,12 @@ export function TransferNews({ state }: { state: WorldState }) {
     body: string;
     reporter: PersonAppearance;
     tags: string[];
+    stadiumId?: string | undefined;
+    homeId?: string | undefined;
+    awayId?: string | undefined;
   }[] = [
     ...marketNews,
+    ...awardNews(state).map((item) => ({ ...item, reporter: REPORTERS[0]! })),
     ...roundNews(state).map((item) => ({
       ...item,
       reporter:
@@ -506,56 +512,67 @@ export function TransferNews({ state }: { state: WorldState }) {
                   </p>
                 </div>
               )}
-              {visible.map(({ id, at, tags, offer, title, body, reporter }) => (
-                <article className="transfer-news-item" key={id} data-news-id={id}>
-                  <div className="transfer-reporter-avatar">
-                    <PersonAvatar profile={reporter} />
-                  </div>
-                  <div>
-                    <div className="news-post-author">
-                      <strong className="transfer-reporter-name">{reporter.name}</strong>
-                      <span className="news-verified" aria-label="Repórter verificado">
-                        ✓
-                      </span>
-                      <span className="news-handle">
-                        @
-                        {reporter.name
-                          .toLowerCase()
-                          .replaceAll(' ', '')
-                          .normalize('NFD')
-                          .replace(/[̀-ͯ]/g, '')}
-                      </span>
+              {visible.map(
+                ({ id, at, tags, offer, title, body, reporter, stadiumId, homeId, awayId }) => (
+                  <article className="transfer-news-item" key={id} data-news-id={id}>
+                    <div className="transfer-reporter-avatar">
+                      <PersonAvatar profile={reporter} />
                     </div>
-                    <h3>{linkedHeadline(title, offer)}</h3>
-                    <p>{linkedHeadline(body, offer)}</p>
-                    <small>
-                      {at
-                        ? new Date(at).toLocaleDateString('pt-BR', {
-                            timeZone: 'America/Sao_Paulo',
-                          })
-                        : 'Temporada ' + state.season}
-                    </small>
-                    <div className="news-post-footer">
-                      <button onClick={() => openTopic(tags[0]!)}>{tags[0]}</button>
-                      <button
-                        aria-pressed={saved.includes(id)}
-                        aria-label={
-                          saved.includes(id) ? 'Remover notícia dos salvos' : 'Salvar notícia'
-                        }
-                        onClick={() =>
-                          setSaved((previous) =>
-                            previous.includes(id)
-                              ? previous.filter((entry) => entry !== id)
-                              : [...previous, id],
-                          )
-                        }
-                      >
-                        {saved.includes(id) ? '★ Salvo' : '☆ Salvar'}
-                      </button>
+                    <div>
+                      <div className="news-post-author">
+                        <strong className="transfer-reporter-name">{reporter.name}</strong>
+                        <span className="news-verified" aria-label="Repórter verificado">
+                          ✓
+                        </span>
+                        <span className="news-handle">
+                          @
+                          {reporter.name
+                            .toLowerCase()
+                            .replaceAll(' ', '')
+                            .normalize('NFD')
+                            .replace(/[̀-ͯ]/g, '')}
+                        </span>
+                      </div>
+                      <h3>{linkedHeadline(title, offer)}</h3>
+                      <p>{linkedHeadline(body, offer)}</p>
+                      <NewsMedia
+                        id={id}
+                        title={title}
+                        body={body}
+                        reporter={reporter}
+                        stadium={state.stadiums.byId[stadiumId ?? '']}
+                        homeClub={state.clubs.byId[homeId ?? '']}
+                        awayClub={state.clubs.byId[awayId ?? '']}
+                      />
+                      <small>
+                        {at
+                          ? new Date(at).toLocaleDateString('pt-BR', {
+                              timeZone: 'America/Sao_Paulo',
+                            })
+                          : 'Temporada ' + state.season}
+                      </small>
+                      <div className="news-post-footer">
+                        <button onClick={() => openTopic(tags[0]!)}>{tags[0]}</button>
+                        <button
+                          aria-pressed={saved.includes(id)}
+                          aria-label={
+                            saved.includes(id) ? 'Remover notícia dos salvos' : 'Salvar notícia'
+                          }
+                          onClick={() =>
+                            setSaved((previous) =>
+                              previous.includes(id)
+                                ? previous.filter((entry) => entry !== id)
+                                : [...previous, id],
+                            )
+                          }
+                        >
+                          {saved.includes(id) ? '★ Salvo' : '☆ Salvar'}
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                </article>
-              ))}
+                  </article>
+                ),
+              )}
             </>
           )}
         </div>

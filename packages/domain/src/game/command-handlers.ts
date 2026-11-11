@@ -32,6 +32,7 @@ import { playNextBatch } from './play-batch.js';
 import { agePlayer } from '../players/development.js';
 import { ACCESS_GRAPH, qualificationPlaces, standings } from '../competitions/standings.js';
 import { seasonSchedule } from './world-factory.js';
+import { createEuropeanLeagues, europeanQualifiers } from '../competitions/european-leagues.js';
 import {
   feeAcceptedState,
   salaryAcceptedState,
@@ -374,6 +375,8 @@ function handleReady({
   club,
   command,
   userId,
+  now,
+  eventId,
 }: Omit<CommandContext, 'command'> & {
   command: Extract<GameCommand, { type: 'ready' }>;
 }): Result<CommandOutcome> {
@@ -389,6 +392,19 @@ function handleReady({
         : member,
     ),
   };
+  if (
+    state.status === 'finished' &&
+    command.ready &&
+    next.participants.filter((p) => p.ready).length > next.participants.length / 2
+  )
+    return handleNewSeason({
+      state: next,
+      club,
+      userId,
+      now,
+      eventId,
+      command: { type: 'new-season' },
+    });
   message = command.ready ? `${club.name} está pronto` : `${club.name} voltou a preparar o time`;
   return success({ next, type, message, amount });
 }
@@ -936,8 +952,18 @@ function handleNewSeason({
   let type: GameEvent['type'] = 'ready.changed';
   let message = '';
   const amount = 0;
-  if (userId !== state.administratorId || state.status !== 'finished')
+  if (state.status !== 'finished')
     return failure(domainError('VALIDATION_ERROR', 'A temporada atual ainda não terminou'));
+  if (
+    !state.participants.some((p) => p.userId === userId) ||
+    state.participants.filter((p) => p.ready).length <= state.participants.length / 2
+  )
+    return failure(
+      domainError(
+        'VALIDATION_ERROR',
+        'A maioria dos treinadores precisa marcar Pronto para iniciar a próxima temporada',
+      ),
+    );
   const finale = state.results.find((result) => result.fixtureId === 'intercontinental:final');
   if (finale?.startedAt !== undefined && now < finale.startedAt + MATCH_DURATION_MS)
     return failure(
@@ -990,6 +1016,7 @@ function handleNewSeason({
     }
   }
   const generatedSchedule = seasonSchedule(Object.values(clubs), seasonStart(state.season + 1), {
+    champions: europeanQualifiers(state.europeanLeagues),
     libertadores,
     sulAmericana,
     preLibertadores,
@@ -1042,6 +1069,7 @@ function handleNewSeason({
       ),
     },
     season: state.season + 1,
+    europeanLeagues: createEuropeanLeagues(Object.values(clubs), state.season + 1),
     ...(state.seasonClock
       ? {
           nextScheduledAt: nextRealMatchTime(now),
@@ -1061,6 +1089,7 @@ function handleNewSeason({
       ...(state.seasonArchives ?? []),
       {
         season: state.season,
+        ...(state.europeanLeagues ? { europeanLeagues: state.europeanLeagues } : {}),
         clubs: state.clubs,
         fixtures: state.fixtures,
         results: state.results.map((result) => ({
@@ -1080,6 +1109,7 @@ function handleNewSeason({
         ...(state.competitionNotes ? { competitionNotes: state.competitionNotes } : {}),
       },
     ],
+    seasonClosing: undefined,
     status: nextSeasonState('finished', 'NEW_SEASON'),
     results: [],
     round: 0,

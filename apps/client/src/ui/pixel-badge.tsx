@@ -1,36 +1,28 @@
 import { GeneratedBadge } from './generated-badge';
-import { useState } from 'react';
+import { clubCrest, clubCrestSchema } from '@football/shared';
 import { useGameStore } from '../store/game-store';
+import catalog from '../data/club-catalog.json';
 
-export function PixelBadge({
-  name,
-  url,
-  size = 72,
-}: {
-  name: string;
-  url?: string;
-  size?: number;
-}) {
-  const storedUrl = useGameStore(
-    (state) =>
-      Object.values(state.snapshot?.state.clubs.byId ?? {}).find((club) => club.name === name)
-        ?.crestUrl,
+const catalogClubs = new Map(
+  catalog.clubs.map((club) => [
+    club.name,
+    {
+      name: club.name,
+      abbreviation: club.abbreviation,
+      crest: clubCrestSchema.parse(club.crest),
+    },
+  ]),
+);
+
+export function PixelBadge({ name, size = 72 }: { name: string; url?: string; size?: number }) {
+  const storedClub = useGameStore((state) =>
+    Object.values(state.snapshot?.state.clubs.byId ?? {}).find((club) => club.name === name),
   );
-  const source = url || storedUrl;
-  const [failedUrl, setFailedUrl] = useState<string>();
+  const club = storedClub ?? catalogClubs.get(name);
+  const crest = clubCrest(club ?? { name, abbreviation: '' });
   return (
     <span className="official-club-badge" style={{ width: size, height: size }}>
-      {source && failedUrl !== source ? (
-        <img
-          src={source}
-          alt={'Escudo do ' + name}
-          width={size}
-          height={size}
-          onError={() => setFailedUrl(source)}
-        />
-      ) : (
-        <GeneratedBadge name={name} size={size} />
-      )}
+      <GeneratedBadge name={name} size={size} crest={crest} />
     </span>
   );
 }

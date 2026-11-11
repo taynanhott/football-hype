@@ -18,6 +18,7 @@ import { scheduledFixtures } from '../competitions/fixtures.js';
 import { revalueGrowth } from '../players/development.js';
 import { hashSeed, mulberry32 } from '../simulation/random.js';
 import { settleMonthly, returnLoans } from './management.js';
+import { advanceEuropeanLeagues } from '../competitions/european-leagues.js';
 
 export const GAME_DAY_MS = 86_400_000;
 const OFFSET = 10_800_000;
@@ -77,6 +78,9 @@ function advanceGameDaysInternal(state: WorldState, target: number): WorldState 
   );
   const attemptedDraws = new Set<string>();
   for (let day = start; day < end; day += GAME_DAY_MS) {
+    // Score due background rounds before this day's training, with the players
+    // known on that date. A long advance and several short advances agree.
+    state = advanceEuropeanLeagues(state, day + GAME_DAY_MS - 1, players);
     // A long advance must use the calendar known on each completed day, not
     // postpone all draws until the end and train against obsolete fixture dates.
     if (
@@ -410,7 +414,10 @@ export function advanceGameDays(state: WorldState, target: number): WorldState {
     resetTransferredEffects(
       state,
       realizeCompetitionDraws(
-        returnLoans(advanceGameDaysInternal(normalizeRoundCalendar(state), target), target),
+        advanceEuropeanLeagues(
+          returnLoans(advanceGameDaysInternal(normalizeRoundCalendar(state), target), target),
+          target,
+        ),
         target,
       ),
     ),

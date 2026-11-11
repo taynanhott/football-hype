@@ -8,6 +8,7 @@ import {
   SEASON_CALENDAR_VERSION,
 } from '../competitions/season-calendar.js';
 import { nextRealMatchTime } from './season-clock.js';
+import { championsParticipants } from '../competitions/european-leagues.js';
 import { initializeStartingChemistry } from './tactics.js';
 import { mapResult } from '../core/result.js';
 import {
@@ -16,6 +17,7 @@ import {
   competitionClubKey,
   knockoutLegs,
   clubKit,
+  clubCrest,
   GAMEPLAY,
   worldStateSchema,
   type ClubSnapshot,
@@ -275,7 +277,7 @@ export function createWorld(input: {
       round: 0,
       revision: 0,
       status: 'active',
-      clubs: normalize(clubs),
+      clubs: normalize(clubs.map((club) => ({ ...club, crest: clubCrest(club) }))),
       players: normalize(players),
       stadiums: normalize(stadiums),
       centers: normalize(centers),
@@ -339,6 +341,7 @@ export function seasonSchedule(
     sulAmericana: readonly string[];
     serieB?: readonly string[];
     preLibertadores?: readonly string[];
+    champions?: readonly string[] | undefined;
   }>,
   drawSeed = start,
 ): {
@@ -518,30 +521,7 @@ export function seasonSchedule(
           .country.localeCompare(clubs.find((c) => c.id === b)!.country),
       );
     } else if (rule.id === 'europa') {
-      selected = clubs
-        .filter(
-          (club) =>
-            [
-              'DE',
-              'GB',
-              'ES',
-              'IT',
-              'FR',
-              'PT',
-              'NL',
-              'BE',
-              'TR',
-              'GR',
-              'AT',
-              'CH',
-              'DK',
-              'HR',
-              'RS',
-              'UA',
-            ].includes(club.country) && club.playerIds.length >= 11,
-        )
-        .slice(0, 32)
-        .map((club) => club.id);
+      selected = championsParticipants(clubs, year, qualifications?.champions);
     } else if (rule.id === 'copa-brasil') {
       const a = clubs
         .filter((club) => club.country === 'BR' && club.division === 'A')

@@ -4,9 +4,9 @@ import { cupReturnDate, REGIONAL_QUALIFIERS } from '@football/domain';
 import { Icon } from '../../ui/icons';
 import { Select, Option } from '../../ui/select';
 import { useState } from 'react';
-import { cupGroupTables, standings } from '@football/domain';
+import { cupGroupTables, standings, europeanLeagueView } from '@football/domain';
 import { CupBracket } from './cup-bracket';
-import { COMPETITIONS, type Fixture } from '@football/shared';
+import { COMPETITIONS, EUROPEAN_LEAGUES, type Fixture } from '@football/shared';
 import type { ViewProps } from '../../ui/view-props';
 import { StandingsTable } from './standings-table';
 import { PixelBadge } from '../../ui/pixel-badge';
@@ -19,6 +19,7 @@ export function Calendar({ snapshot, club }: ViewProps) {
     if (
       requested &&
       (COMPETITIONS.some((item) => item.id === requested) ||
+        EUROPEAN_LEAGUES.some((item) => item.id === requested) ||
         REGIONAL_QUALIFIERS.some((item) => item.id === requested))
     )
       return requested;
@@ -33,9 +34,25 @@ export function Calendar({ snapshot, club }: ViewProps) {
   const [selectedSeason, setSelectedSeason] = useState<number | null>(null);
   const [roundSelection, setRoundSelection] = useState<{ scope: string; key: string } | null>(null);
   const archive = snapshot.state.seasonArchives?.find((item) => item.season === selectedSeason);
-  const state = archive
+  const baseState = archive
     ? { ...snapshot.state, competitionNotes: undefined, ...archive }
     : liveState;
+  const europeanRule = EUROPEAN_LEAGUES.find((item) => item.id === competition);
+  const europe = archive ? archive.europeanLeagues : liveState.europeanLeagues;
+  const europeanLeague = europe?.leagues.find((item) => item.competitionId === competition);
+  const europeanView =
+    europeanLeague && europe ? europeanLeagueView(europeanLeague, europe.season) : undefined;
+  // Local projection only. Background fixtures never enter the match centre or persisted full results.
+  const state = europeanRule
+    ? {
+        ...baseState,
+        fixtures: europeanView?.fixtures ?? [],
+        results: europeanView?.results ?? [],
+        cups: [],
+        competitionDraws: [],
+        competitionNotes: undefined,
+      }
+    : baseState;
   const seasons = [
     snapshot.state.season,
     ...(snapshot.state.seasonArchives ?? []).map((item) => item.season),
@@ -45,24 +62,28 @@ export function Calendar({ snapshot, club }: ViewProps) {
   const qualifier = (archive ? archive.regionalQualifiers : state.regionalQualifiers)?.find(
     (q) => q.competitionId === competition,
   );
-  const table = qualifier
-    ? standings(
-        qualifier.candidateIds,
-        state.fixtures.filter((f) => f.competitionId === competition),
-        state.results,
-      )
-    : archive
-      ? rule?.format === 'league'
-        ? standings(
-            state.clubs.ids.filter((id) => state.clubs.byId[id]?.division === rule.division),
-            state.fixtures.filter(
-              (fixture) => fixture.competitionId === competition && !fixture.group,
-            ),
-            state.results,
-            rule.tieBreakers,
-          )
-        : undefined
-      : snapshot.tables[competition];
+  const table =
+    europeanView?.table ??
+    (qualifier
+      ? standings(
+          qualifier.candidateIds,
+          state.fixtures.filter((f) => f.competitionId === competition),
+          state.results,
+        )
+      : archive
+        ? rule?.format === 'league'
+          ? standings(
+              state.clubs.ids.filter((id) => state.clubs.byId[id]?.division === rule.division),
+              state.fixtures.filter(
+                (fixture) => fixture.competitionId === competition && !fixture.group,
+              ),
+              state.results,
+              rule.tieBreakers,
+            )
+          : undefined
+        : europeanRule
+          ? undefined
+          : snapshot.tables[competition]);
   const knockoutFixtures: Fixture[] = state.cups
     .filter((node) => node.competitionId === competition && node.homeId && node.awayId)
     .flatMap((node) => {
@@ -184,11 +205,16 @@ export function Calendar({ snapshot, club }: ViewProps) {
                 {COMPETITIONS.filter(
                   (rule) =>
                     rule.id !== 'pre-libertadores' &&
-                    (state.fixtures.some((fixture) => fixture.competitionId === rule.id) ||
-                      state.cups.some((node) => node.competitionId === rule.id) ||
-                      Boolean(state.competitionNotes?.[rule.id]) ||
+                    (baseState.fixtures.some((fixture) => fixture.competitionId === rule.id) ||
+                      baseState.cups.some((node) => node.competitionId === rule.id) ||
+                      Boolean(baseState.competitionNotes?.[rule.id]) ||
                       rule.id === parentCompetition),
                 ).map((rule) => (
+                  <Option value={rule.id} key={rule.id}>
+                    {rule.name}
+                  </Option>
+                ))}
+                {EUROPEAN_LEAGUES.map((rule) => (
                   <Option value={rule.id} key={rule.id}>
                     {rule.name}
                   </Option>
@@ -218,20 +244,22 @@ export function Calendar({ snapshot, club }: ViewProps) {
             >
               <Icon name="calendar" size={18} /> Partidas
             </button>
-            <button
-              className={activeTab === 'fixtures' ? 'selected' : ''}
-              disabled={Boolean(pendingDraw) || !participates}
-              title={
-                pendingDraw
-                  ? 'Disponível após o sorteio'
-                  : !participates
-                    ? 'Seu clube não participa desta competição'
-                    : undefined
-              }
-              onClick={() => setTab('fixtures')}
-            >
-              <Icon name="matches" size={18} /> Jogos do clube
-            </button>
+            {!europeanRule && (
+              <button
+                className={activeTab === 'fixtures' ? 'selected' : ''}
+                disabled={Boolean(pendingDraw) || !participates}
+                title={
+                  pendingDraw
+                    ? 'Disponível após o sorteio'
+                    : !participates
+                      ? 'Seu clube não participa desta competição'
+                      : undefined
+                }
+                onClick={() => setTab('fixtures')}
+              >
+                <Icon name="matches" size={18} /> Jogos do clube
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -268,7 +296,15 @@ export function Calendar({ snapshot, club }: ViewProps) {
           )}
         </p>
       )}
-      {qualifierRule && !qualifier ? null : pendingDraw ? (
+      {europeanRule && !europeanView ? (
+        <p className="competition-note" role="status">
+          {archive
+            ? 'Esta temporada não possui histórico desta liga.'
+            : !europe
+              ? 'As ligas europeias serão ativadas na próxima temporada desta carreira.'
+              : `Liga indisponível: são necessários os 20 clubes configurados com pelo menos 11 atletas cada. Verifique os elencos da base.`}
+        </p>
+      ) : qualifierRule && !qualifier ? null : pendingDraw ? (
         <CompetitionDrawCard state={state} draw={pendingDraw} />
       ) : activeTab === 'table' && table ? (
         <StandingsTable state={state} table={table} competitionId={competition} clubId={club.id} />

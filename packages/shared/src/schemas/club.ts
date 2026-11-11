@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { DOMAIN_LIMITS } from '../config/domain-limits.js';
+import { clubCrestSchema } from './club-crest.js';
 import {
   countryCodeSchema,
   divisionSchema,
@@ -26,6 +27,7 @@ export const clubSchema = z
       })
       .optional(),
     crestUrl: z.url().optional(),
+    crest: clubCrestSchema.optional(),
     abbreviation: z.string().trim().min(1).max(DOMAIN_LIMITS.abbreviationMaxLength),
     country: countryCodeSchema,
     division: divisionSchema,

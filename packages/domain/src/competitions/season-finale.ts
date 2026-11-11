@@ -1,3 +1,4 @@
+import { SEASON_EVENT_GAP_MS } from './season-closing.js';
 import type { WorldState } from '@football/shared';
 import { cupFinal } from './qualification.js';
 import { nextPlayingTime } from './calendar.js';
@@ -44,7 +45,7 @@ export function scheduleIntercontinental(state: WorldState): WorldState {
         leftId: null,
         rightId: null,
         winnerId: null,
-        scheduledAt: nextPlayingTime(state.lastProcessedAt + 60000),
+        scheduledAt: nextPlayingTime(state.lastProcessedAt + SEASON_EVENT_GAP_MS),
         legs: 1,
         neutral: true,
         stadiumId: stadium,

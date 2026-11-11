@@ -257,13 +257,10 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
   }, [allPlayers]);
   const found =
     searchQuery.length > 1
-      ? searchIndex
-          .search(searchQuery)
-          .slice(0, 50)
-          .flatMap((id) => {
-            const player = snapshot.state.players.byId[id];
-            return player ? [player] : [];
-          })
+      ? searchIndex.search(searchQuery).flatMap((id) => {
+          const player = snapshot.state.players.byId[id];
+          return player ? [player] : [];
+        })
       : allPlayers;
   const linkedPlayer = newsPlayerId ? snapshot.state.players.byId[newsPlayerId] : undefined;
   const exactNewsSearch = linkedPlayer && searchQuery === linkedPlayer.name;

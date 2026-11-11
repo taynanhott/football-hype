@@ -5,427 +5,1362 @@
     {
       "id": "0000001f-0000-4000-8000-db38873e2f6c",
       "name": "Athletico-PR",
-      "division": "A"
+      "division": "A",
+      "abbreviation": "CAP",
+      "crest": {
+        "version": 1,
+        "shape": "pointed",
+        "pattern": "sash",
+        "symbol": "monogram",
+        "primary": "#c82032",
+        "secondary": "#15191d",
+        "accent": "#15191d",
+        "initials": "CAP"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-327d72559aff",
       "name": "Atlético-MG",
-      "division": "A"
+      "division": "A",
+      "abbreviation": "CAM",
+      "crest": {
+        "version": 1,
+        "shape": "pointed",
+        "pattern": "stripes",
+        "symbol": "monogram",
+        "primary": "#f5f3e9",
+        "secondary": "#15191d",
+        "accent": "#15191d",
+        "initials": "CAM"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-6334dee52524",
       "name": "Bahia",
-      "division": "A"
+      "division": "A",
+      "abbreviation": "BAH",
+      "crest": {
+        "version": 1,
+        "shape": "round",
+        "pattern": "stripes",
+        "symbol": "ball",
+        "primary": "#2355ad",
+        "secondary": "#c82032",
+        "accent": "#f5f3e9",
+        "initials": "ECB"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-ded6a6875142",
       "name": "Botafogo",
-      "division": "A"
+      "division": "A",
+      "abbreviation": "BOT",
+      "crest": {
+        "version": 1,
+        "shape": "shield",
+        "pattern": "solid",
+        "symbol": "star",
+        "primary": "#15191d",
+        "secondary": "#f5f3e9",
+        "accent": "#f5f3e9",
+        "initials": "BFR"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-b40a5dab6649",
       "name": "Bragantino",
-      "division": "A"
+      "division": "A",
+      "abbreviation": "RBB",
+      "crest": {
+        "version": 1,
+        "shape": "shield",
+        "pattern": "solid",
+        "symbol": "ball",
+        "primary": "#f5f3e9",
+        "secondary": "#c82032",
+        "accent": "#c82032",
+        "initials": "RBB"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-f104b0fa29cb",
       "name": "Chapecoense",
-      "division": "A"
+      "division": "A",
+      "abbreviation": "CHA",
+      "crest": {
+        "version": 1,
+        "shape": "round",
+        "pattern": "solid",
+        "symbol": "monogram",
+        "primary": "#116b43",
+        "secondary": "#f5f3e9",
+        "accent": "#f5f3e9",
+        "initials": "ACF"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-45643fcbe978",
       "name": "Corinthians",
-      "division": "A"
+      "division": "A",
+      "abbreviation": "COR",
+      "crest": {
+        "version": 1,
+        "shape": "round",
+        "pattern": "solid",
+        "symbol": "anchor",
+        "primary": "#f5f3e9",
+        "secondary": "#15191d",
+        "accent": "#15191d",
+        "initials": "SCCP"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-fa1d5838ef24",
       "name": "Coritiba",
-      "division": "A"
+      "division": "A",
+      "abbreviation": "CFC",
+      "crest": {
+        "version": 1,
+        "shape": "round",
+        "pattern": "solid",
+        "symbol": "monogram",
+        "primary": "#116b43",
+        "secondary": "#f5f3e9",
+        "accent": "#f5f3e9",
+        "initials": "CFC"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-a673e8791149",
       "name": "Cruzeiro",
-      "division": "A"
+      "division": "A",
+      "abbreviation": "CRU",
+      "crest": {
+        "version": 1,
+        "shape": "round",
+        "pattern": "solid",
+        "symbol": "stars",
+        "primary": "#174a9b",
+        "secondary": "#f5f3e9",
+        "accent": "#f5f3e9",
+        "initials": "CEC"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-d58d736c7a96",
       "name": "Flamengo",
-      "division": "A"
+      "division": "A",
+      "abbreviation": "FLA",
+      "crest": {
+        "version": 1,
+        "shape": "pointed",
+        "pattern": "hoops",
+        "symbol": "monogram",
+        "primary": "#c82032",
+        "secondary": "#15191d",
+        "accent": "#15191d",
+        "initials": "CRF"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-f828f11c37ac",
       "name": "Fluminense",
-      "division": "A"
+      "division": "A",
+      "abbreviation": "FLU",
+      "crest": {
+        "version": 1,
+        "shape": "pointed",
+        "pattern": "split",
+        "symbol": "monogram",
+        "primary": "#7f2639",
+        "secondary": "#16704c",
+        "accent": "#f5f3e9",
+        "initials": "FFC"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-d11ede0b1441",
       "name": "Grêmio",
-      "division": "A"
+      "division": "A",
+      "abbreviation": "GRE",
+      "crest": {
+        "version": 1,
+        "shape": "round",
+        "pattern": "stripes",
+        "symbol": "ball",
+        "primary": "#48a8d8",
+        "secondary": "#15191d",
+        "accent": "#f5f3e9",
+        "initials": "GFB"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-8d294eb556df",
       "name": "Internacional",
-      "division": "A"
+      "division": "A",
+      "abbreviation": "INT",
+      "crest": {
+        "version": 1,
+        "shape": "round",
+        "pattern": "solid",
+        "symbol": "monogram",
+        "primary": "#c82032",
+        "secondary": "#f5f3e9",
+        "accent": "#f5f3e9",
+        "initials": "SCI"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-cf07a92378cb",
       "name": "Mirassol",
-      "division": "A"
+      "division": "A",
+      "abbreviation": "MIR",
+      "crest": {
+        "version": 1,
+        "shape": "oval",
+        "pattern": "solid",
+        "symbol": "monogram",
+        "primary": "#FFD200",
+        "secondary": "#0B6B3A",
+        "accent": "#0B6B3A",
+        "initials": "MIR"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-2ac4296d076e",
       "name": "Palmeiras",
-      "division": "A"
+      "division": "A",
+      "abbreviation": "PAL",
+      "crest": {
+        "version": 1,
+        "shape": "round",
+        "pattern": "solid",
+        "symbol": "monogram",
+        "primary": "#116b43",
+        "secondary": "#f5f3e9",
+        "accent": "#f5f3e9",
+        "initials": "P"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-f04e8efb46e2",
       "name": "Remo",
-      "division": "A"
+      "division": "A",
+      "abbreviation": "REM",
+      "crest": {
+        "version": 1,
+        "shape": "shield",
+        "pattern": "solid",
+        "symbol": "monogram",
+        "primary": "#174a9b",
+        "secondary": "#f5f3e9",
+        "accent": "#f5f3e9",
+        "initials": "CR"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-0df2b318462f",
       "name": "Santos",
-      "division": "A"
+      "division": "A",
+      "abbreviation": "SAN",
+      "crest": {
+        "version": 1,
+        "shape": "shield",
+        "pattern": "stripes",
+        "symbol": "ball",
+        "primary": "#f5f3e9",
+        "secondary": "#15191d",
+        "accent": "#15191d",
+        "initials": "SFC"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-8f7f2f7ccd3f",
       "name": "São Paulo",
-      "division": "A"
+      "division": "A",
+      "abbreviation": "SAO",
+      "crest": {
+        "version": 1,
+        "shape": "pennant",
+        "pattern": "split",
+        "symbol": "monogram",
+        "primary": "#f5f3e9",
+        "secondary": "#15191d",
+        "accent": "#15191d",
+        "initials": "SPFC"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-6e10390574fe",
       "name": "Vasco",
-      "division": "A"
+      "division": "A",
+      "abbreviation": "VAS",
+      "crest": {
+        "version": 1,
+        "shape": "shield",
+        "pattern": "sash",
+        "symbol": "cross",
+        "primary": "#f5f3e9",
+        "secondary": "#15191d",
+        "accent": "#15191d",
+        "initials": "CRVG"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-a5f3cf1c18f9",
       "name": "Vitória",
-      "division": "A"
+      "division": "A",
+      "abbreviation": "VIT",
+      "crest": {
+        "version": 1,
+        "shape": "shield",
+        "pattern": "stripes",
+        "symbol": "monogram",
+        "primary": "#c82032",
+        "secondary": "#15191d",
+        "accent": "#15191d",
+        "initials": "ECV"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-c6d330b64067",
       "name": "América-MG",
-      "division": "B"
+      "division": "B",
+      "abbreviation": "AME",
+      "crest": {
+        "version": 1,
+        "shape": "shield",
+        "pattern": "stripes",
+        "symbol": "monogram",
+        "primary": "#116b43",
+        "secondary": "#f5f3e9",
+        "accent": "#f5f3e9",
+        "initials": "AFC"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-b0abb7566fe8",
       "name": "Athletic",
-      "division": "B"
+      "division": "B",
+      "abbreviation": "ATH",
+      "crest": {
+        "version": 1,
+        "shape": "pennant",
+        "pattern": "solid",
+        "symbol": "monogram",
+        "primary": "#141414",
+        "secondary": "#F4F4F4",
+        "accent": "#F4F4F4",
+        "initials": "ATH"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-04d8bec8c29f",
       "name": "Atlético-GO",
-      "division": "B"
+      "division": "B",
+      "abbreviation": "ACG",
+      "crest": {
+        "version": 1,
+        "shape": "pennant",
+        "pattern": "stripes",
+        "symbol": "monogram",
+        "primary": "#D0102C",
+        "secondary": "#141414",
+        "accent": "#141414",
+        "initials": "ACG"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-bd21a6c6007e",
       "name": "Avaí",
-      "division": "B"
+      "division": "B",
+      "abbreviation": "AVA",
+      "crest": {
+        "version": 1,
+        "shape": "diamond",
+        "pattern": "stripes",
+        "symbol": "monogram",
+        "primary": "#1B6FC2",
+        "secondary": "#F4F4F4",
+        "accent": "#F4F4F4",
+        "initials": "AVA"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-ef37e8a35025",
       "name": "Botafogo-SP",
-      "division": "B"
+      "division": "B",
+      "abbreviation": "BFS",
+      "crest": {
+        "version": 1,
+        "shape": "round",
+        "pattern": "stripes",
+        "symbol": "monogram",
+        "primary": "#D0102C",
+        "secondary": "#F4F4F4",
+        "accent": "#F4F4F4",
+        "initials": "BFS"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-70528be54163",
       "name": "Ceará",
-      "division": "B"
+      "division": "B",
+      "abbreviation": "CEA",
+      "crest": {
+        "version": 1,
+        "shape": "pointed",
+        "pattern": "stripes",
+        "symbol": "monogram",
+        "primary": "#15191d",
+        "secondary": "#f5f3e9",
+        "accent": "#f5f3e9",
+        "initials": "CSC"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-38317beee1d7",
       "name": "CRB",
-      "division": "B"
+      "division": "B",
+      "abbreviation": "CRB",
+      "crest": {
+        "version": 1,
+        "shape": "round",
+        "pattern": "hoops",
+        "symbol": "monogram",
+        "primary": "#D0102C",
+        "secondary": "#F4F4F4",
+        "accent": "#F4F4F4",
+        "initials": "CRB"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-9b8c26b16441",
       "name": "Criciúma",
-      "division": "B"
+      "division": "B",
+      "abbreviation": "CRI",
+      "crest": {
+        "version": 1,
+        "shape": "pointed",
+        "pattern": "stripes",
+        "symbol": "ball",
+        "primary": "#e8b934",
+        "secondary": "#15191d",
+        "accent": "#15191d",
+        "initials": "CEC"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-c2c64c35e75e",
       "name": "Cuiabá",
-      "division": "B"
+      "division": "B",
+      "abbreviation": "CUI",
+      "crest": {
+        "version": 1,
+        "shape": "round",
+        "pattern": "stripes",
+        "symbol": "monogram",
+        "primary": "#FFD200",
+        "secondary": "#0B6B3A",
+        "accent": "#0B6B3A",
+        "initials": "CUI"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-d5136e93e64c",
       "name": "Fortaleza",
-      "division": "B"
+      "division": "B",
+      "abbreviation": "FOR",
+      "crest": {
+        "version": 1,
+        "shape": "pennant",
+        "pattern": "split",
+        "symbol": "monogram",
+        "primary": "#2355ad",
+        "secondary": "#c82032",
+        "accent": "#f5f3e9",
+        "initials": "FEC"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-ccd5b09a0739",
       "name": "Goiás",
-      "division": "B"
+      "division": "B",
+      "abbreviation": "GOI",
+      "crest": {
+        "version": 1,
+        "shape": "round",
+        "pattern": "solid",
+        "symbol": "monogram",
+        "primary": "#116b43",
+        "secondary": "#f5f3e9",
+        "accent": "#f5f3e9",
+        "initials": "G"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-e0591aac0255",
       "name": "Juventude",
-      "division": "B"
+      "division": "B",
+      "abbreviation": "JUV",
+      "crest": {
+        "version": 1,
+        "shape": "round",
+        "pattern": "stripes",
+        "symbol": "monogram",
+        "primary": "#116b43",
+        "secondary": "#f5f3e9",
+        "accent": "#f5f3e9",
+        "initials": "ECJ"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-2bb16d2216bc",
       "name": "Londrina",
-      "division": "B"
+      "division": "B",
+      "abbreviation": "LON",
+      "crest": {
+        "version": 1,
+        "shape": "shield",
+        "pattern": "stripes",
+        "symbol": "monogram",
+        "primary": "#6CB4EE",
+        "secondary": "#F4F4F4",
+        "accent": "#F4F4F4",
+        "initials": "LON"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-263a9c36d43f",
       "name": "Náutico",
-      "division": "B"
+      "division": "B",
+      "abbreviation": "NAU",
+      "crest": {
+        "version": 1,
+        "shape": "oval",
+        "pattern": "stripes",
+        "symbol": "anchor",
+        "primary": "#c82032",
+        "secondary": "#f5f3e9",
+        "accent": "#f5f3e9",
+        "initials": "CNC"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-b0a1641b19b0",
       "name": "Novorizontino",
-      "division": "B"
+      "division": "B",
+      "abbreviation": "NOV",
+      "crest": {
+        "version": 1,
+        "shape": "pointed",
+        "pattern": "stripes",
+        "symbol": "monogram",
+        "primary": "#FFD200",
+        "secondary": "#141414",
+        "accent": "#141414",
+        "initials": "NOV"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-1536e1d6cf3b",
       "name": "Operário-PR",
-      "division": "B"
+      "division": "B",
+      "abbreviation": "OPE",
+      "crest": {
+        "version": 1,
+        "shape": "pointed",
+        "pattern": "stripes",
+        "symbol": "monogram",
+        "primary": "#141414",
+        "secondary": "#F4F4F4",
+        "accent": "#F4F4F4",
+        "initials": "OPE"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-b9af2373a81b",
       "name": "Ponte Preta",
-      "division": "B"
+      "division": "B",
+      "abbreviation": "PON",
+      "crest": {
+        "version": 1,
+        "shape": "pennant",
+        "pattern": "sash",
+        "symbol": "monogram",
+        "primary": "#F4F4F4",
+        "secondary": "#141414",
+        "accent": "#141414",
+        "initials": "PON"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-233b54fc6af7",
       "name": "São Bernardo",
-      "division": "B"
+      "division": "B",
+      "abbreviation": "SBC",
+      "crest": {
+        "version": 1,
+        "shape": "oval",
+        "pattern": "hoops",
+        "symbol": "monogram",
+        "primary": "#FFD200",
+        "secondary": "#141414",
+        "accent": "#141414",
+        "initials": "SBC"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-ec450786e26a",
       "name": "Sport",
-      "division": "B"
+      "division": "B",
+      "abbreviation": "SPT",
+      "crest": {
+        "version": 1,
+        "shape": "shield",
+        "pattern": "hoops",
+        "symbol": "lion",
+        "primary": "#c82032",
+        "secondary": "#15191d",
+        "accent": "#15191d",
+        "initials": "SCR"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-b499709a07c0",
       "name": "Vila Nova",
-      "division": "B"
+      "division": "B",
+      "abbreviation": "VIL",
+      "crest": {
+        "version": 1,
+        "shape": "pennant",
+        "pattern": "solid",
+        "symbol": "monogram",
+        "primary": "#D0102C",
+        "secondary": "#F4F4F4",
+        "accent": "#F4F4F4",
+        "initials": "VIL"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-ba7816bf8f01",
       "name": "ABC",
-      "division": "D"
+      "division": "D",
+      "abbreviation": "ABC",
+      "crest": {
+        "version": 1,
+        "shape": "oval",
+        "pattern": "solid",
+        "symbol": "monogram",
+        "primary": "#F4F4F4",
+        "secondary": "#141414",
+        "accent": "#141414",
+        "initials": "ABC"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-b941767a21cd",
       "name": "Águia de Marabá",
-      "division": "D"
+      "division": "D",
+      "abbreviation": "AGU",
+      "crest": {
+        "version": 1,
+        "shape": "oval",
+        "pattern": "solid",
+        "symbol": "monogram",
+        "primary": "#1B3F9A",
+        "secondary": "#F4F4F4",
+        "accent": "#F4F4F4",
+        "initials": "AGU"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-6c198fc6c609",
       "name": "Altos",
-      "division": "D"
+      "division": "D",
+      "abbreviation": "ALT",
+      "crest": {
+        "version": 1,
+        "shape": "shield",
+        "pattern": "sash",
+        "symbol": "monogram",
+        "primary": "#FFD200",
+        "secondary": "#0B6B3A",
+        "accent": "#0B6B3A",
+        "initials": "ALT"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-226887df75c2",
       "name": "Amazonas",
-      "division": "C"
+      "division": "C",
+      "abbreviation": "AMZ",
+      "crest": {
+        "version": 1,
+        "shape": "oval",
+        "pattern": "stripes",
+        "symbol": "monogram",
+        "primary": "#FFD200",
+        "secondary": "#141414",
+        "accent": "#141414",
+        "initials": "AMZ"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-462db43cab84",
       "name": "América-RN",
-      "division": "D"
+      "division": "D",
+      "abbreviation": "AMR",
+      "crest": {
+        "version": 1,
+        "shape": "shield",
+        "pattern": "stripes",
+        "symbol": "monogram",
+        "primary": "#D0102C",
+        "secondary": "#F4F4F4",
+        "accent": "#F4F4F4",
+        "initials": "AMR"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-c906ab86d7cd",
       "name": "Anápolis",
-      "division": "C"
+      "division": "C",
+      "abbreviation": "ANA",
+      "crest": {
+        "version": 1,
+        "shape": "diamond",
+        "pattern": "stripes",
+        "symbol": "monogram",
+        "primary": "#D0102C",
+        "secondary": "#F4F4F4",
+        "accent": "#F4F4F4",
+        "initials": "ANA"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-8ba9e37b18c9",
       "name": "Araguaína",
-      "division": "D"
+      "division": "D",
+      "abbreviation": "ARA",
+      "crest": {
+        "version": 1,
+        "shape": "round",
+        "pattern": "stripes",
+        "symbol": "monogram",
+        "primary": "#FF7A00",
+        "secondary": "#F4F4F4",
+        "accent": "#F4F4F4",
+        "initials": "ARA"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-84c7497f72a3",
       "name": "Barra",
-      "division": "C"
+      "division": "C",
+      "abbreviation": "BAR",
+      "crest": {
+        "version": 1,
+        "shape": "pennant",
+        "pattern": "solid",
+        "symbol": "monogram",
+        "primary": "#6CB4EE",
+        "secondary": "#F4F4F4",
+        "accent": "#F4F4F4",
+        "initials": "BAR"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-d5a6d7c996ef",
       "name": "Botafogo-PB",
-      "division": "C"
+      "division": "C",
+      "abbreviation": "BPB",
+      "crest": {
+        "version": 1,
+        "shape": "oval",
+        "pattern": "stripes",
+        "symbol": "monogram",
+        "primary": "#141414",
+        "secondary": "#F4F4F4",
+        "accent": "#F4F4F4",
+        "initials": "BPB"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-584a7d66322d",
       "name": "Brasiliense",
-      "division": "D"
+      "division": "D",
+      "abbreviation": "BSE",
+      "crest": {
+        "version": 1,
+        "shape": "round",
+        "pattern": "stripes",
+        "symbol": "monogram",
+        "primary": "#FFD200",
+        "secondary": "#0B6B3A",
+        "accent": "#0B6B3A",
+        "initials": "BSE"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-e4c94258cb13",
       "name": "Brusque",
-      "division": "C"
+      "division": "C",
+      "abbreviation": "BRU",
+      "crest": {
+        "version": 1,
+        "shape": "round",
+        "pattern": "hoops",
+        "symbol": "monogram",
+        "primary": "#FFD200",
+        "secondary": "#D0102C",
+        "accent": "#0B6B3A",
+        "initials": "BRU"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-bd08022e8fb8",
       "name": "Capital",
-      "division": "D"
+      "division": "D",
+      "abbreviation": "CPT",
+      "crest": {
+        "version": 1,
+        "shape": "oval",
+        "pattern": "solid",
+        "symbol": "monogram",
+        "primary": "#E0B000",
+        "secondary": "#141414",
+        "accent": "#141414",
+        "initials": "CPT"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-25ff05a7681f",
       "name": "Caxias",
-      "division": "C"
+      "division": "C",
+      "abbreviation": "CAX",
+      "crest": {
+        "version": 1,
+        "shape": "shield",
+        "pattern": "stripes",
+        "symbol": "monogram",
+        "primary": "#7A1230",
+        "secondary": "#F4F4F4",
+        "accent": "#F4F4F4",
+        "initials": "CAX"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-806efcb02802",
       "name": "Cianorte",
-      "division": "D"
+      "division": "D",
+      "abbreviation": "CIA",
+      "crest": {
+        "version": 1,
+        "shape": "shield",
+        "pattern": "stripes",
+        "symbol": "monogram",
+        "primary": "#1B3F9A",
+        "secondary": "#F4F4F4",
+        "accent": "#F4F4F4",
+        "initials": "CIA"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-c70602d05d3a",
       "name": "Confiança",
-      "division": "C"
+      "division": "C",
+      "abbreviation": "CON",
+      "crest": {
+        "version": 1,
+        "shape": "pennant",
+        "pattern": "solid",
+        "symbol": "monogram",
+        "primary": "#1B3F9A",
+        "secondary": "#F4F4F4",
+        "accent": "#F4F4F4",
+        "initials": "CON"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-55fafa646c77",
       "name": "CSA",
-      "division": "D"
+      "division": "D",
+      "abbreviation": "CSA",
+      "crest": {
+        "version": 1,
+        "shape": "round",
+        "pattern": "hoops",
+        "symbol": "monogram",
+        "primary": "#1B3F9A",
+        "secondary": "#F4F4F4",
+        "accent": "#F4F4F4",
+        "initials": "CSA"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-7ed77381c980",
       "name": "Ferroviária",
-      "division": "C"
+      "division": "C",
+      "abbreviation": "AFE",
+      "crest": {
+        "version": 1,
+        "shape": "oval",
+        "pattern": "solid",
+        "symbol": "monogram",
+        "primary": "#7A1230",
+        "secondary": "#F4F4F4",
+        "accent": "#F4F4F4",
+        "initials": "AFE"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-4fcb6314c060",
       "name": "Ferroviário",
-      "division": "D"
+      "division": "D",
+      "abbreviation": "FER",
+      "crest": {
+        "version": 1,
+        "shape": "pointed",
+        "pattern": "hoops",
+        "symbol": "monogram",
+        "primary": "#D0102C",
+        "secondary": "#141414",
+        "accent": "#141414",
+        "initials": "FER"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-237be53281cb",
       "name": "Figueirense",
-      "division": "C"
+      "division": "C",
+      "abbreviation": "FIG",
+      "crest": {
+        "version": 1,
+        "shape": "oval",
+        "pattern": "stripes",
+        "symbol": "monogram",
+        "primary": "#141414",
+        "secondary": "#F4F4F4",
+        "accent": "#F4F4F4",
+        "initials": "FIG"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-080b7f174d2b",
       "name": "Floresta",
-      "division": "C"
+      "division": "C",
+      "abbreviation": "FLO",
+      "crest": {
+        "version": 1,
+        "shape": "pennant",
+        "pattern": "stripes",
+        "symbol": "monogram",
+        "primary": "#0B6B3A",
+        "secondary": "#F4F4F4",
+        "accent": "#F4F4F4",
+        "initials": "FLO"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-a9147877ddf8",
       "name": "Gama",
-      "division": "D"
+      "division": "D",
+      "abbreviation": "GAM",
+      "crest": {
+        "version": 1,
+        "shape": "pennant",
+        "pattern": "hoops",
+        "symbol": "monogram",
+        "primary": "#0B6B3A",
+        "secondary": "#F4F4F4",
+        "accent": "#F4F4F4",
+        "initials": "GAM"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-2fe840e13244",
       "name": "GAS",
-      "division": "D"
+      "division": "D",
+      "abbreviation": "GAS",
+      "crest": {
+        "version": 1,
+        "shape": "diamond",
+        "pattern": "stripes",
+        "symbol": "monogram",
+        "primary": "#0B6B3A",
+        "secondary": "#F4F4F4",
+        "accent": "#F4F4F4",
+        "initials": "GAS"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-cb6b0140a169",
       "name": "Guarani",
-      "division": "C"
+      "division": "C",
+      "abbreviation": "GUA",
+      "crest": {
+        "version": 1,
+        "shape": "round",
+        "pattern": "solid",
+        "symbol": "monogram",
+        "primary": "#116b43",
+        "secondary": "#f5f3e9",
+        "accent": "#f5f3e9",
+        "initials": "GFC"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-3def657185a9",
       "name": "Independência-AC",
-      "division": "D"
+      "division": "D",
+      "abbreviation": "IND",
+      "crest": {
+        "version": 1,
+        "shape": "oval",
+        "pattern": "hoops",
+        "symbol": "monogram",
+        "primary": "#0B6B3A",
+        "secondary": "#F4F4F4",
+        "accent": "#F4F4F4",
+        "initials": "IND"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-464706eedb21",
       "name": "Inter de Limeira",
-      "division": "C"
+      "division": "C",
+      "abbreviation": "INL",
+      "crest": {
+        "version": 1,
+        "shape": "pointed",
+        "pattern": "stripes",
+        "symbol": "monogram",
+        "primary": "#141414",
+        "secondary": "#F4F4F4",
+        "accent": "#F4F4F4",
+        "initials": "INL"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-aa806e122c1b",
       "name": "Itabaiana",
-      "division": "C"
+      "division": "C",
+      "abbreviation": "ITA",
+      "crest": {
+        "version": 1,
+        "shape": "pointed",
+        "pattern": "solid",
+        "symbol": "monogram",
+        "primary": "#1B3F9A",
+        "secondary": "#F4F4F4",
+        "accent": "#F4F4F4",
+        "initials": "ITA"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-0317bdab7cb0",
       "name": "Ituano",
-      "division": "C"
+      "division": "C",
+      "abbreviation": "ITU",
+      "crest": {
+        "version": 1,
+        "shape": "oval",
+        "pattern": "stripes",
+        "symbol": "monogram",
+        "primary": "#D0102C",
+        "secondary": "#141414",
+        "accent": "#141414",
+        "initials": "ITU"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-083369c4a57b",
       "name": "Juazeirense",
-      "division": "D"
+      "division": "D",
+      "abbreviation": "JUA",
+      "crest": {
+        "version": 1,
+        "shape": "round",
+        "pattern": "sash",
+        "symbol": "monogram",
+        "primary": "#FF7A00",
+        "secondary": "#141414",
+        "accent": "#141414",
+        "initials": "JUA"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-ac0f5724f755",
       "name": "Luverdense",
-      "division": "D"
+      "division": "D",
+      "abbreviation": "LUV",
+      "crest": {
+        "version": 1,
+        "shape": "diamond",
+        "pattern": "sash",
+        "symbol": "monogram",
+        "primary": "#0B6B3A",
+        "secondary": "#F4F4F4",
+        "accent": "#F4F4F4",
+        "initials": "LUV"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-b0e5b2870731",
       "name": "Maranhão",
-      "division": "C"
+      "division": "C",
+      "abbreviation": "MAC",
+      "crest": {
+        "version": 1,
+        "shape": "round",
+        "pattern": "hoops",
+        "symbol": "monogram",
+        "primary": "#D0102C",
+        "secondary": "#F4F4F4",
+        "accent": "#1B3F9A",
+        "initials": "MAC"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-4d5b9398d9f3",
       "name": "Maringá",
-      "division": "C"
+      "division": "C",
+      "abbreviation": "MGA",
+      "crest": {
+        "version": 1,
+        "shape": "shield",
+        "pattern": "sash",
+        "symbol": "monogram",
+        "primary": "#1B3F9A",
+        "secondary": "#F4F4F4",
+        "accent": "#F4F4F4",
+        "initials": "MGA"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-da9aa8fda278",
       "name": "Moto Club",
-      "division": "D"
+      "division": "D",
+      "abbreviation": "MOT",
+      "crest": {
+        "version": 1,
+        "shape": "shield",
+        "pattern": "stripes",
+        "symbol": "monogram",
+        "primary": "#D0102C",
+        "secondary": "#141414",
+        "accent": "#141414",
+        "initials": "MOT"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-73d4a81e14f1",
       "name": "Nacional-AM",
-      "division": "D"
+      "division": "D",
+      "abbreviation": "NAM",
+      "crest": {
+        "version": 1,
+        "shape": "pointed",
+        "pattern": "hoops",
+        "symbol": "monogram",
+        "primary": "#1B3F9A",
+        "secondary": "#F4F4F4",
+        "accent": "#F4F4F4",
+        "initials": "NAM"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-31e4bbeb6fda",
       "name": "Operário-MS",
-      "division": "D"
+      "division": "D",
+      "abbreviation": "OMS",
+      "crest": {
+        "version": 1,
+        "shape": "oval",
+        "pattern": "stripes",
+        "symbol": "monogram",
+        "primary": "#141414",
+        "secondary": "#F4F4F4",
+        "accent": "#F4F4F4",
+        "initials": "OMS"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-9d451b47668f",
       "name": "Paysandu",
-      "division": "C"
+      "division": "C",
+      "abbreviation": "PAY",
+      "crest": {
+        "version": 1,
+        "shape": "shield",
+        "pattern": "stripes",
+        "symbol": "star",
+        "primary": "#48a8d8",
+        "secondary": "#f5f3e9",
+        "accent": "#f5f3e9",
+        "initials": "PSC"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-0ea7b0313290",
       "name": "Porto Velho",
-      "division": "D"
+      "division": "D",
+      "abbreviation": "POV",
+      "crest": {
+        "version": 1,
+        "shape": "pennant",
+        "pattern": "solid",
+        "symbol": "monogram",
+        "primary": "#D0102C",
+        "secondary": "#F4F4F4",
+        "accent": "#F4F4F4",
+        "initials": "POV"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-233c761b0953",
       "name": "Portuguesa",
-      "division": "D"
+      "division": "D",
+      "abbreviation": "LUS",
+      "crest": {
+        "version": 1,
+        "shape": "round",
+        "pattern": "hoops",
+        "symbol": "monogram",
+        "primary": "#D0102C",
+        "secondary": "#0B6B3A",
+        "accent": "#0B6B3A",
+        "initials": "LUS"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-a62ee5ab3e89",
       "name": "Primavera",
-      "division": "D"
+      "division": "D",
+      "abbreviation": "PRI",
+      "crest": {
+        "version": 1,
+        "shape": "diamond",
+        "pattern": "stripes",
+        "symbol": "monogram",
+        "primary": "#0B6B3A",
+        "secondary": "#FFD200",
+        "accent": "#FFD200",
+        "initials": "PRI"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-a2b3da557e4d",
       "name": "Sampaio Corrêa",
-      "division": "D"
+      "division": "D",
+      "abbreviation": "SAM",
+      "crest": {
+        "version": 1,
+        "shape": "pennant",
+        "pattern": "hoops",
+        "symbol": "monogram",
+        "primary": "#0B6B3A",
+        "secondary": "#FFD200",
+        "accent": "#D0102C",
+        "initials": "SAM"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-1d61c4a4d5aa",
       "name": "Santa Cruz",
-      "division": "C"
+      "division": "C",
+      "abbreviation": "STA",
+      "crest": {
+        "version": 1,
+        "shape": "shield",
+        "pattern": "hoops",
+        "symbol": "cross",
+        "primary": "#15191d",
+        "secondary": "#c82032",
+        "accent": "#f5f3e9",
+        "initials": "SC"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-0b5eb2f35492",
       "name": "Sergipe",
-      "division": "D"
+      "division": "D",
+      "abbreviation": "SER",
+      "crest": {
+        "version": 1,
+        "shape": "shield",
+        "pattern": "stripes",
+        "symbol": "monogram",
+        "primary": "#D0102C",
+        "secondary": "#F4F4F4",
+        "accent": "#F4F4F4",
+        "initials": "SER"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-c78df4a873fd",
       "name": "Trem",
-      "division": "D"
+      "division": "D",
+      "abbreviation": "TRM",
+      "crest": {
+        "version": 1,
+        "shape": "pointed",
+        "pattern": "stripes",
+        "symbol": "monogram",
+        "primary": "#D0102C",
+        "secondary": "#F4F4F4",
+        "accent": "#F4F4F4",
+        "initials": "TRM"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-e914339b8e43",
       "name": "Treze",
-      "division": "D"
+      "division": "D",
+      "abbreviation": "TRE",
+      "crest": {
+        "version": 1,
+        "shape": "pointed",
+        "pattern": "stripes",
+        "symbol": "monogram",
+        "primary": "#141414",
+        "secondary": "#F4F4F4",
+        "accent": "#F4F4F4",
+        "initials": "TRE"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-e4d1dd05ca07",
       "name": "Volta Redonda",
-      "division": "C"
+      "division": "C",
+      "abbreviation": "VOL",
+      "crest": {
+        "version": 1,
+        "shape": "shield",
+        "pattern": "sash",
+        "symbol": "monogram",
+        "primary": "#FFD200",
+        "secondary": "#141414",
+        "accent": "#141414",
+        "initials": "VOL"
+      }
     },
     {
       "id": "0000001f-0000-4000-8000-6966d14525b6",
       "name": "Ypiranga",
-      "division": "C"
+      "division": "C",
+      "abbreviation": "YPI",
+      "crest": {
+        "version": 1,
+        "shape": "round",
+        "pattern": "stripes",
+        "symbol": "monogram",
+        "primary": "#0B6B3A",
+        "secondary": "#FFD200",
+        "accent": "#FFD200",
+        "initials": "YPI"
+      }
     }
   ]
 }

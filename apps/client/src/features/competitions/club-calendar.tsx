@@ -1,3 +1,5 @@
+import { calendarMonthBounds, boundedCalendarMonth } from './calendar-month-bounds';
+import { seasonAwardsCalendarDate, seasonCalendarMilestones } from './season-awards-date';
 import { useFinishedResults } from '../../ui/use-finished-results';
 import { CompetitionDrawDetails } from './competition-draw-details';
 import {
@@ -77,13 +79,22 @@ export function ClubCalendar({ state: rawState, clubId }: { state: WorldState; c
   const [selectedDrawId, setSelectedDrawId] = useState<string | null>(null);
   const selectedDraw = state.competitionDraws?.find((draw) => draw.id === selectedDrawId);
   const fixtures = clubCalendarFixtures(state, clubId);
+  const seasonAward = rawState.seasonAwards?.find((a) => a.season === state.season);
+  const milestones = seasonCalendarMilestones(rawState);
+  const awardDate = seasonAwardsCalendarDate(rawState);
+  const awardsDay = dayKey(awardDate.at);
   const completedIds = new Set(state.results.map((result) => result.fixtureId));
   const today = dayKey(clubCalendarCurrentTime(state, fixtures, completedIds));
   const [selectedGame, setSelectedGame] = useState<Fixture | null>(null);
   const swipeStart = useRef<{ x: number; y: number } | null>(null);
   const suppressClickUntil = useRef(0);
   const [viewedMonth, setViewedMonth] = useState<{ day: string; date: Date } | null>(null);
-  const month = viewedMonth?.day === today ? viewedMonth.date : new Date(`${today}T12:00:00Z`);
+  const bounds = calendarMonthBounds(rawState);
+  const month = boundedCalendarMonth(
+    viewedMonth?.day === today ? viewedMonth.date : new Date(`${today}T12:00:00Z`),
+    bounds,
+  );
+  const canOpenAwards = Boolean(seasonAward) && today >= awardsDay;
   const pendingGames = clubCalendarPendingGames(state, clubId);
   const missedGames = selectedFifa
     ? fixtures.filter((fixture) => {
@@ -106,7 +117,10 @@ export function ClubCalendar({ state: rawState, clubId }: { state: WorldState; c
   const cells = 42;
   const competitions = [...new Set(fixtures.map((fixture) => fixture.competitionId))];
   const moveMonth = (delta: number) =>
-    setViewedMonth({ day: today, date: new Date(Date.UTC(year, monthIndex + delta, 1, 12)) });
+    setViewedMonth({
+      day: today,
+      date: boundedCalendarMonth(new Date(Date.UTC(year, monthIndex + delta, 1, 12)), bounds),
+    });
   return (
     <>
       <section
@@ -154,6 +168,7 @@ export function ClubCalendar({ state: rawState, clubId }: { state: WorldState; c
         <nav className="club-calendar-month-navigation" aria-label="Navegar pelos meses">
           <button
             type="button"
+            disabled={year * 12 + monthIndex <= bounds.min}
             aria-label="Mês anterior"
             title="Mês anterior"
             onClick={() => moveMonth(-1)}
@@ -162,6 +177,7 @@ export function ClubCalendar({ state: rawState, clubId }: { state: WorldState; c
           </button>
           <button
             type="button"
+            disabled={year * 12 + monthIndex >= bounds.max}
             aria-label="Próximo mês"
             title="Próximo mês"
             onClick={() => moveMonth(1)}
@@ -182,6 +198,19 @@ export function ClubCalendar({ state: rawState, clubId }: { state: WorldState; c
             const date = new Date(Date.UTC(year, monthIndex, index - offset + 1, 12));
             const key = date.toISOString().slice(0, 10);
             const inMonth = date.getUTCMonth() === monthIndex;
+            const seasonEvent = !inMonth
+              ? undefined
+              : key === dayKey(milestones.start)
+                ? 'opening'
+                : key === dayKey(milestones.end)
+                  ? 'intercontinental'
+                  : key === dayKey(milestones.payment)
+                    ? 'payment'
+                    : key === awardsDay
+                      ? 'ballon'
+                      : key === dayKey(milestones.seasonEnd)
+                        ? 'closing'
+                        : undefined;
             const fifaBoundary = inMonth ? fifaCalendarBoundary(key) : undefined;
             const drawOnDay = (state.competitionDraws ?? []).filter(
               (draw) => draw.participantIds.includes(clubId) && dayKey(draw.scheduledAt) === key,
@@ -192,9 +221,12 @@ export function ClubCalendar({ state: rawState, clubId }: { state: WorldState; c
               pendingGames.find((game) => dayKey(game.scheduledAt) === key)?.competitionId;
             const pendingOnDay = pendingGames.find((game) => dayKey(game.scheduledAt) === key);
             const openDay = () => {
-              if (matches[0]) setSelectedGame(matches[0]);
+              if (key === awardsDay && canOpenAwards)
+                window.dispatchEvent(new Event('football:open-season-awards'));
+              else if (matches[0]) setSelectedGame(matches[0]);
               else if (drawOnDay[0]) setSelectedDrawId(drawOnDay[0].id);
               else if (pendingOnDay) setPendingGame(pendingOnDay);
+              else if (fifaBoundary?.kind === 'Início') setSelectedFifa(fifaBoundary);
             };
             const activity = clubDayRoutine(fixtures, clubId, date.getTime());
             const routine = activity === 'match' ? routines.training : routines[activity];
@@ -205,15 +237,28 @@ export function ClubCalendar({ state: rawState, clubId }: { state: WorldState; c
                 aria-current={key === today ? 'date' : undefined}
                 onClick={(event) => {
                   if (!inMonth || (event.target as HTMLElement).closest('button')) return;
-                  if (matches[0]) setSelectedGame(matches[0]);
+                  if (key === awardsDay && canOpenAwards)
+                    window.dispatchEvent(new Event('football:open-season-awards'));
+                  else if (matches[0]) setSelectedGame(matches[0]);
                   else if (drawOnDay[0]) setSelectedDrawId(drawOnDay[0].id);
                   else {
                     const game = pendingGames.find((item) => dayKey(item.scheduledAt) === key);
                     if (game) setPendingGame(game);
+                    else if (fifaBoundary?.kind === 'Início') setSelectedFifa(fifaBoundary);
                   }
                 }}
                 data-routine={inMonth && !cupId && drawOnDay.length === 0 ? activity : undefined}
                 data-cup-day={inMonth ? cupId : undefined}
+                data-season-event={seasonEvent}
+                data-fifa-only={
+                  fifaBoundary &&
+                  !seasonEvent &&
+                  !matches.length &&
+                  !drawOnDay.length &&
+                  !pendingOnDay
+                    ? fifaBoundary.kind
+                    : undefined
+                }
                 style={
                   {
                     '--cup-accent': cupId
@@ -243,6 +288,52 @@ export function ClubCalendar({ state: rawState, clubId }: { state: WorldState; c
                   />
                 )}
                 <time dateTime={key}>{date.getUTCDate()}</time>
+                {inMonth && key === dayKey(milestones.start) && (
+                  <div className="calendar-season-milestone season-opening">
+                    <Icon name="flag" size={14} />
+                    <strong>Início da temporada</strong>
+                  </div>
+                )}
+                {inMonth && key === dayKey(milestones.end) && (
+                  <div className="calendar-season-milestone season-closing">
+                    <Icon name="flag" size={14} />
+                    <strong>Intercontinental</strong>
+                    <small>{milestones.confirmed ? 'Último jogo' : 'Data prevista'}</small>
+                  </div>
+                )}
+                {inMonth && key === dayKey(milestones.payment) && (
+                  <div
+                    className="calendar-season-milestone season-payment"
+                    title="Pagamento de todas as competições no fechamento, antes da gala"
+                  >
+                    <Icon name="balance" size={14} />
+                    <strong>Premiações</strong>
+                    <small>
+                      {rawState.competitionPayments?.some((p) => p.season === state.season)
+                        ? 'Pagamentos realizados'
+                        : 'Após o último jogo'}
+                    </small>
+                  </div>
+                )}
+                {inMonth && key === awardsDay && (
+                  <button
+                    type="button"
+                    className="calendar-awards-event"
+                    disabled={!canOpenAwards}
+                    onClick={() => window.dispatchEvent(new Event('football:open-season-awards'))}
+                    title="Gala prevista após o último jogo possível e o pagamento dos campeonatos."
+                  >
+                    <Icon name="trophy" size={18} />
+                    <strong>Ballon D'or</strong>
+                    <small>{seasonAward ? 'Ver premiação' : 'Após as premiações'}</small>
+                  </button>
+                )}
+                {inMonth && key === dayKey(milestones.seasonEnd) && (
+                  <div className="calendar-season-milestone season-closing">
+                    <Icon name="flag" size={14} />
+                    <strong>Fim da Temporada</strong>
+                  </div>
+                )}
                 {fifaBoundary &&
                   (fifaBoundary.kind === 'Início' ? (
                     <button

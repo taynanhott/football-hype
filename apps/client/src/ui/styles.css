@@ -3859,7 +3859,7 @@ dialog.modal {
   flex-shrink: 0;
 }
 .form-win {
-  background: #8c8c8c;
+  background: #16803c;
 }
 .form-draw {
   background: #83858f;
@@ -37933,8 +37933,9 @@ a:is(
   width: 15px;
   height: 15px;
   border-radius: 50%;
-  background: #e8e7e4;
-  color: #172d20;
+  border: 1px solid #d4af37;
+  background: #000;
+  color: #d4af37;
 }
 @media (max-width: 760px) {
   .main-content:has(.competition-controls) {
@@ -42584,6 +42585,13 @@ body::-webkit-scrollbar-thumb:hover {
 .twitter-news .transfer-news-item .news-entity-link:hover {
   color: #c6ecff;
 }
+.twitter-news .transfer-news-item .news-entity-link.news-own-club {
+  color: #f5c451;
+  text-decoration-color: #f5c45199;
+}
+.twitter-news .transfer-news-item .news-entity-link.news-own-club:hover {
+  color: #ffe29a;
+}
 @media (min-width: 901px) {
   .twitter-news .news-discover {
     display: flex;
@@ -43590,4 +43598,409 @@ dialog.modal.player-management-modal.facility-bonus-modal[open] {
 }
 .facilities-page .facility-card .facility-actions > button.facility-upgrade:not(:disabled):hover {
   background: linear-gradient(135deg, #2c995b, #1c7743) !important;
+}
+
+.twitter-news .news-media {
+  position: relative;
+  margin: 12px 0;
+  overflow: hidden;
+  border: 1px solid #385362;
+  border-radius: 10px;
+  background: #122835;
+  isolation: isolate;
+}
+.news-media > svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  image-rendering: pixelated;
+}
+.twitter-news .news-media figcaption {
+  padding: 10px 12px;
+  border-top: 2px solid #d7ad54;
+  background: #102532;
+}
+.twitter-news .news-media figcaption small {
+  display: block;
+  color: #edbf58;
+  font-size: 10px;
+  letter-spacing: 1px;
+  margin-bottom: 4px;
+}
+.twitter-news .news-media figcaption strong {
+  display: block;
+  color: #e6eeee;
+  font-size: 13px;
+  line-height: 1.4;
+}
+.twitter-news .news-media figcaption.is-tv {
+  border-color: #ab3444;
+}
+.news-media-anchor {
+  position: absolute;
+  top: 13%;
+  left: 18%;
+  width: 31%;
+  height: 48%;
+  overflow: hidden;
+}
+.news-media-anchor > svg {
+  width: 100%;
+  height: 100%;
+}
+
+.twitter-news .news-media-illustrated {
+  width: 50%;
+  max-width: 380px;
+}
+.news-editorial-art {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background-image: url('/images/news/editorial-soft.webp');
+  background-size: 200% 200%;
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+}
+.news-editorial-action {
+  background-position: left top;
+}
+.news-editorial-stadium {
+  background-position: right top;
+}
+.news-editorial-trophy {
+  background-position: left bottom;
+}
+.news-editorial-tv {
+  background-position: right bottom;
+}
+
+.twitter-news .news-action-canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 540px;
+  object-fit: cover;
+  image-rendering: pixelated;
+  background: #183645 url('/images/news/actions-v3.webp') left top / 300% 200%;
+}
+
+/* The workspace already reserves the fixed navigation height on phones. */
+@media (max-width: 760px) {
+  .workspace > .main-content:has(> .twitter-news) {
+    padding-bottom: 0;
+  }
+  .main-content > .transfer-news-page.twitter-news {
+    max-height: none;
+  }
+  .twitter-news .transfer-news-feed {
+    padding-bottom: 16px;
+    scroll-padding-bottom: 16px;
+  }
+}
+@media (min-width: 761px) and (max-width: 900px) {
+  .workspace:has(> .main-content > .twitter-news) {
+    padding-bottom: 0;
+  }
+}
+@media (max-height: 500px) and (max-width: 900px) {
+  .twitter-news .news-composer {
+    display: none;
+  }
+  .twitter-news .news-timeline-header {
+    padding-block: 8px;
+  }
+}
+
+/* Smooth fractional image scaling while retaining the original pixel-art texture. */
+.twitter-news .news-action-canvas {
+  image-rendering: auto;
+  background-image: url('/images/news/actions-v3.webp');
+}
+
+/* Occasional light sweep, staggered per player without timers or network work. */
+.card-front > .player-card-shine,
+.tactics-player > .player-card-shine {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 8;
+}
+.player-card-shine::before {
+  content: '';
+  position: absolute;
+  inset: -40% -90%;
+  background: linear-gradient(
+    115deg,
+    transparent 38%,
+    #fff8d912 43%,
+    #fff7d780 49%,
+    #ffffff99 50%,
+    #ffeeb52b 55%,
+    transparent 62%
+  );
+  transform: translateX(-85%);
+  animation: player-card-light-sweep var(--card-shine-period, 19s) ease-in-out infinite;
+  animation-delay: var(--card-shine-delay, 0s);
+}
+@keyframes player-card-light-sweep {
+  0%,
+  86% {
+    transform: translateX(-85%);
+    opacity: 0;
+  }
+  87% {
+    opacity: 1;
+  }
+  97% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(85%);
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .player-card-shine {
+    display: none;
+  }
+}
+/* Static starter halos leave the tactical labels and formation easy to read. */
+.lineup-editor .tactics-player > .starter-card-aura {
+  position: absolute;
+  inset: -18px;
+  pointer-events: none;
+  z-index: -3;
+  border-radius: 45%;
+  background: radial-gradient(
+    ellipse,
+    color-mix(in srgb, var(--lineup-card-edge) 48%, transparent) 10%,
+    color-mix(in srgb, var(--lineup-card-edge) 24%, transparent) 45%,
+    transparent 74%
+  );
+  filter: blur(6px);
+}
+.lineup-editor .tactics-field {
+  background:
+    radial-gradient(ellipse at 50% 40%, #8dbb4520, transparent 75%),
+    repeating-linear-gradient(
+      94deg,
+      #d5e4a60c 0 1px,
+      transparent 1px 4px,
+      #08291b18 4px 5px,
+      transparent 5px 9px
+    ),
+    repeating-linear-gradient(4deg, transparent 0 3px, #122e1b19 3px 4px, transparent 4px 7px),
+    repeating-linear-gradient(0deg, #ffffff08 0 14%, #102a1c13 14% 28%),
+    linear-gradient(135deg, #326b47, #245137);
+  box-shadow: inset 0 0 45px #0a281f55;
+}
+.sidebar-user .status-dot:not(.offline) {
+  background: #b7f52b;
+  box-shadow: 0 0 8px #b7f52b55;
+}
+@media (max-width: 700px) {
+  dialog.awards-theatre[open] {
+    width: calc(100vw - 8px);
+    max-width: calc(100vw - 8px);
+    border-radius: 8px;
+  }
+  .awards-theatre .awards-stage {
+    padding: 5px 4px 9px;
+    gap: 5px;
+  }
+  .awards-theatre .awards-screen {
+    padding: 7px 5px;
+    border-radius: 10px;
+  }
+  .awards-theatre .award-finalists .award-finalist {
+    width: 32%;
+    left: calc(var(--nominee-slot) * 34%);
+    padding: 8px 3px;
+  }
+  .awards-theatre .award-finalists.is-ranked .award-finalist {
+    width: 44%;
+    height: 43%;
+  }
+  .awards-theatre .award-finalists.is-ranked [data-rank='0'] {
+    left: 28%;
+    top: 2%;
+  }
+  .awards-theatre .award-finalists.is-ranked [data-rank='1'] {
+    left: 3%;
+    top: 53%;
+  }
+  .awards-theatre .award-finalists.is-ranked [data-rank='2'] {
+    left: 53%;
+    top: 53%;
+  }
+}
+/* Fine irregular blades, with broad mowing bands underneath. */
+.lineup-editor .tactics-field {
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.48 .13' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Cpath fill='%23a0ba68' opacity='.15' filter='url(%23n)' d='M0 0h180v180H0z'/%3E%3Cg stroke='%23cee298' opacity='.12' stroke-width='.7'%3E%3Cpath d='m8 15 1-5m23 23-1-6m19 37 2-7m35-28-1-5m25 64 2-6m37-52-2-7m-11 104 1-6m-96 13 2-6m38 30-1-7m-64-11 1-5m127 28 2-6m-51-44-2-5'/%3E%3C/g%3E%3C/svg%3E"),
+    repeating-linear-gradient(0deg, #ffffff06 0 14%, #102a1c16 14% 28%),
+    linear-gradient(135deg, #326b47, #245137);
+}
+
+/* Season events paint the entire day, exactly like competition days. */
+.club-calendar .club-calendar-day[data-season-event] {
+  --season-accent: #c6ae62;
+  --season-surface: #254c3b;
+  position: relative;
+  padding: 4px 5px;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid var(--season-accent);
+  border-left: 3px solid var(--season-accent);
+  background:
+    repeating-linear-gradient(125deg, #ffffff08 0 9px, transparent 9px 18px),
+    linear-gradient(135deg, var(--season-surface), #10221d);
+  color: #f7f0d7;
+}
+.club-calendar .club-calendar-day[data-season-event='intercontinental'] {
+  --season-accent: #d4bb6a;
+  --season-surface: #33445d;
+}
+.club-calendar .club-calendar-day[data-season-event='payment'] {
+  --season-accent: #66b9ad;
+  --season-surface: #24655f;
+}
+.club-calendar .club-calendar-day[data-season-event='ballon'] {
+  --season-accent: #e0bf66;
+  --season-surface: #654a35;
+}
+.club-calendar .club-calendar-day[data-season-event='opening'] {
+  --season-accent: #6fba85;
+  --season-surface: #2a6543;
+}
+.club-calendar .club-calendar-day[data-season-event='closing'] {
+  --season-accent: #83a7b5;
+  --season-surface: #344c5a;
+}
+.club-calendar .club-calendar-day[data-season-event] > time {
+  position: absolute;
+  top: 4px;
+  left: 5px;
+  color: #f7f0d7;
+  line-height: 12px;
+}
+.club-calendar
+  .club-calendar-day[data-season-event]
+  > :is(.calendar-season-milestone, .calendar-awards-event) {
+  position: absolute;
+  inset: 15px 2px 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  height: auto;
+  margin: 0;
+  padding: 0;
+  min-height: 0;
+  border: 0 !important;
+  border-radius: 0 !important;
+  clip-path: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: inherit;
+  text-align: center;
+  z-index: 2;
+  opacity: 1;
+}
+.club-calendar
+  .club-calendar-day[data-season-event]
+  > :is(.calendar-season-milestone, .calendar-awards-event)
+  > strong {
+  display: block;
+  margin: 0;
+  padding: 0;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: 0;
+  text-align: center;
+  white-space: normal;
+  text-wrap: balance;
+  overflow-wrap: normal;
+  color: inherit;
+}
+.club-calendar
+  .club-calendar-day[data-season-event]
+  > :is(.calendar-season-milestone, .calendar-awards-event)
+  > :is(svg, small),
+.club-calendar
+  .club-calendar-day[data-season-event]
+  > :is(.club-calendar-routine, .club-calendar-routine-icon) {
+  display: none;
+}
+@media (max-width: 620px) {
+  .club-calendar
+    .club-calendar-day[data-season-event]
+    > :is(.calendar-season-milestone, .calendar-awards-event)
+    > strong {
+    font-size: 7.5px;
+    overflow-wrap: anywhere;
+  }
+}
+/* FIFA boundaries share the full-cell treatment of competition and season dates. */
+.club-calendar .club-calendar-day[data-fifa-only] {
+  position: relative;
+  padding: 4px 5px;
+  border: 1px solid #71aabe;
+  border-left: 3px solid #71aabe;
+  background:
+    repeating-linear-gradient(125deg, #ffffff08 0 9px, transparent 9px 18px),
+    linear-gradient(135deg, #28677c, #112f3e);
+  color: #e7f5fa;
+  overflow: hidden;
+}
+.club-calendar .club-calendar-day[data-fifa-only] > time {
+  color: #e7f5fa;
+  position: absolute;
+  top: 4px;
+  left: 5px;
+  line-height: 12px;
+}
+.club-calendar .club-calendar-day[data-fifa-only] > .calendar-fifa-event {
+  position: absolute;
+  inset: 15px 2px 3px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  height: auto;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  gap: 1px;
+  border: 0 !important;
+  border-radius: 0 !important;
+  clip-path: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: inherit;
+  text-align: center;
+}
+.club-calendar .club-calendar-day[data-fifa-only] > .calendar-fifa-event > span {
+  display: block;
+  margin: 0;
+  font-size: 8px;
+  line-height: 1.1;
+  color: inherit;
+}
+.club-calendar .club-calendar-day[data-fifa-only] > .calendar-fifa-event > strong {
+  display: block;
+  margin: 0;
+  font-size: 9px;
+  line-height: 1.15;
+  font-weight: 700;
+  color: inherit;
+}
+.club-calendar
+  .club-calendar-day[data-fifa-only]
+  > :is(.club-calendar-routine, .club-calendar-routine-icon) {
+  display: none;
 }

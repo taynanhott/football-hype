@@ -43,6 +43,14 @@ export function Career({ snapshot, club, trainerId }: ViewProps & { trainerId?: 
     .filter((g) => g.goals < g.conceded)
     .sort((a, b) => a.goals - a.conceded - (b.goals - b.conceded) || b.conceded - a.conceded)[0];
   const metrics = [
+    [
+      'Técnico do ano',
+      (state.seasonAwards ?? []).filter(
+        (a) =>
+          a.category === 'coach' &&
+          (trainerId ? a.winners[0]?.coachUserId === trainerId : a.winners[0]?.clubId === club.id),
+      ).length,
+    ],
     ['Jogos', games.length],
     ['Vitórias', wins],
     ['Empates', draws],

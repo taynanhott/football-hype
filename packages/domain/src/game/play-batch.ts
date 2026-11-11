@@ -1,3 +1,6 @@
+import { seasonClosingDates, pendingSeasonClosingDates } from '../competitions/season-closing.js';
+import { settleCompetitionPrizes } from '../competitions/competition-prizes.js';
+import { finalizeSeasonAwards } from '../competitions/season-awards.js';
 import { settleContractDecisions } from './contract-lifecycle.js';
 import { lineupTacticalBonus, canLearnPosition, masteredPositions } from './tactics.js';
 import { FORMATIONS } from '@football/shared';
@@ -62,6 +65,35 @@ export function pendingFixtures(state: WorldState): Fixture[] {
   });
 }
 export function playNextBatch(state: WorldState, processedAt: number): Result<WorldState> {
+  if (state.seasonClosing && state.status === 'active') {
+    const closing = pendingSeasonClosingDates(state.seasonClosing);
+    const at =
+      closing.stage === 'payments'
+        ? closing.paymentAt
+        : closing.stage === 'gala'
+          ? closing.galaAt
+          : closing.endAt;
+    let next = settleMonthly(advanceGameDays(state, at), at);
+    next = { ...next, lastProcessedAt: at, seasonClosing: closing };
+    if (closing.stage === 'payments')
+      next = { ...settleCompetitionPrizes(next), seasonClosing: { ...closing, stage: 'gala' } };
+    else if (closing.stage === 'gala')
+      next = { ...finalizeSeasonAwards(next), seasonClosing: { ...closing, stage: 'end' } };
+    else
+      return success({
+        ...next,
+        status: 'finished',
+        participants: next.participants.map((p) => ({ ...p, ready: false })),
+        nextScheduledAt: processedAt,
+      });
+    const nextGameAt = closing.stage === 'payments' ? closing.galaAt : closing.endAt;
+    return success({
+      ...next,
+      status: 'active',
+      nextScheduledAt: state.seasonClock ? nextRealMatchTime(processedAt) : nextGameAt,
+      ...(state.seasonClock ? { calendarAnchor: { realAt: processedAt, gameAt: at } } : {}),
+    });
+  }
   state = normalizeRoundCalendar(upgradeUnstartedCompetitions(state));
   let pending = pendingFixtures(state);
   const firstScheduledAt = pending[0]?.scheduledAt;
@@ -581,6 +613,22 @@ export function playNextBatch(state: WorldState, processedAt: number): Result<Wo
   next = normalizeRoundCalendar(next);
   const nextTime = pendingFixtures(next)[0]?.scheduledAt;
   next = settleContractDecisions(generateIncomingOffers(next));
+  if (nextTime === undefined) {
+    const lastMatchAt = next.lastProcessedAt;
+    const closingDates = seasonClosingDates(lastMatchAt);
+    return success({
+      ...next,
+      status: 'active',
+      seasonClosing: {
+        ...closingDates,
+        stage: 'payments',
+      },
+      nextScheduledAt: state.seasonClock ? nextRealMatchTime(processedAt) : closingDates.paymentAt,
+      ...(state.seasonClock
+        ? { calendarAnchor: { realAt: processedAt, gameAt: lastMatchAt } }
+        : {}),
+    });
+  }
   return success({
     ...next,
     ...(state.seasonClock ? { calendarAnchor: { realAt: processedAt, gameAt: scheduledAt } } : {}),

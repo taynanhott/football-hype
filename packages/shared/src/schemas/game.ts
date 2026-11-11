@@ -17,6 +17,7 @@ import {
 } from './primitives.js';
 import { leagueModeSchema } from './league.js';
 import { snapshotCacheSchema } from './snapshot-cache.js';
+import { europeanLeaguesSchema } from './european-leagues.js';
 
 export const MATCH_DURATION_MS = 90_000;
 
@@ -217,6 +218,7 @@ export const cupNodeSchema = z.strictObject({
   scheduledAt: countSchema,
 });
 export const worldStateSchema = z.strictObject({
+  europeanLeagues: europeanLeaguesSchema.optional(),
   id: entityIdSchema,
   name: nameSchema,
   deletedAt: countSchema.optional(),
@@ -224,12 +226,53 @@ export const worldStateSchema = z.strictObject({
   administratorId: userIdSchema,
   seed: z.number().int(),
   season: countSchema,
+  seasonClosing: z
+    .object({
+      lastMatchAt: countSchema,
+      paymentAt: countSchema,
+      galaAt: countSchema,
+      endAt: countSchema,
+      stage: z.enum(['payments', 'gala', 'end']),
+    })
+    .optional(),
+  competitionPayments: z
+    .array(
+      z.object({
+        season: countSchema,
+        competitionId: z.string(),
+        clubId: entityIdSchema,
+        amountCents: z.number().int().nonnegative(),
+        paidAt: countSchema,
+      }),
+    )
+    .optional(),
+  seasonAwards: z
+    .array(
+      z.object({
+        season: countSchema,
+        awardedAt: countSchema,
+        category: z.enum(['team-br', 'team-world', 'coach', 'keeper', 'player-br', 'player-world']),
+        winners: z.array(
+          z.object({
+            id: z.string(),
+            name: z.string(),
+            clubId: z.string(),
+            clubName: z.string(),
+            score: z.number(),
+            position: z.string(),
+            coachUserId: z.string().optional(),
+          }),
+        ),
+      }),
+    )
+    .optional(),
   ticketPrices: z.record(z.string(), ticketAmountSchema).optional(),
   homeTicketPrices: z.record(entityIdSchema, ticketAmountSchema).optional(),
   seasonArchives: z
     .array(
       z.strictObject({
         season: countSchema,
+        europeanLeagues: europeanLeaguesSchema.optional(),
         clubs: normalizedSchema(clubSchema),
         fixtures: z.array(fixtureSchema),
         results: z.array(matchResultSchema),

@@ -1,4 +1,5 @@
 import { readFile, mkdir, writeFile } from 'node:fs/promises';
+import { clubCrest } from '../packages/shared/dist/config/club-crests.js';
 
 const root = new URL('../', import.meta.url);
 const dataset = JSON.parse(await readFile(new URL('data/player-database.json', root), 'utf8'));
@@ -7,11 +8,12 @@ const catalog = {
   imported: true,
   clubs: Object.values(dataset.clubs.byId)
     .filter((club) => club.country === 'BR')
-    .map(({ id, name, division, crestUrl }) => ({
-      id,
-      name,
-      division,
-      ...(crestUrl ? { crestUrl } : {}),
+    .map((club) => ({
+      id: club.id,
+      name: club.name,
+      division: club.division,
+      abbreviation: club.abbreviation,
+      crest: clubCrest(club),
     })),
 };
 if (!catalog.clubs.length) throw new Error('O catálogo brasileiro está vazio');

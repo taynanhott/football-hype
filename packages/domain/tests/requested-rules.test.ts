@@ -138,14 +138,23 @@ describe('regras personalizadas da imagem', () => {
       (entry) => (entry.player ? [entry.player.id] : []),
     );
     const after = unwrap(playNextBatch(state, now));
-    expect(after.status).toBe('finished');
+    expect(after.status).toBe('active');
+    let finished = after;
+    for (let i = 0; i < 3; i++) finished = unwrap(playNextBatch(finished, now + 90001));
+    expect(finished.status).toBe('finished');
     expect(after.results.at(-1)?.lineups?.home).toEqual(expected);
     expect(after.results.at(-1)?.stadiumId).toBe(final.stadiumId);
     expect(executeCommand(after, { type: 'new-season' }, IDS.user, now, IDS.secondUser).ok).toBe(
       false,
     );
     expect(
-      executeCommand(after, { type: 'new-season' }, IDS.user, now + 90001, IDS.secondUser).ok,
+      executeCommand(
+        { ...finished, participants: finished.participants.map((p) => ({ ...p, ready: true })) },
+        { type: 'new-season' },
+        IDS.user,
+        now + 90001,
+        IDS.secondUser,
+      ).ok,
     ).toBe(true);
   });
   it('não duplica participantes da Copa do Brasil após acessos entre A e B', () => {

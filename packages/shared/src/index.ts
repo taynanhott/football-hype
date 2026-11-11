@@ -16,6 +16,8 @@ export * from './schemas/dataset.js';
 export * from './schemas/tactics.js';
 
 export * from './config/club-identity.js';
+export * from './config/club-crests.js';
+export * from './schemas/club-crest.js';
 
 export * from './config/player-appearance.js';
 export * from './config/penalty-positions.js';
@@ -25,3 +27,5 @@ export * from './config/fixed-cup-entrants.js';
 
 export * from './config/stadium-identity.js';
 export * from './snapshot-sync.js';
+export * from './config/european-leagues.js';
+export * from './schemas/european-leagues.js';

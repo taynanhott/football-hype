@@ -26,3 +26,7 @@ apps/worker/assets/
 
 # Segredos locais dos emuladores Firebase
 .secret.local
+
+# Local release checks and visual previews
+.tmp/
+outputs/

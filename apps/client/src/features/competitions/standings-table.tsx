@@ -1,7 +1,7 @@
 import { useLayoutEffect, useRef, type CSSProperties } from 'react';
 import { Icon } from '../../ui/icons';
 import { continentalPlaces } from '@football/domain';
-import { COMPETITIONS, type GameSnapshot } from '@football/shared';
+import { COMPETITIONS, EUROPEAN_LEAGUES, type GameSnapshot } from '@football/shared';
 import { PixelBadge } from '../../ui/pixel-badge';
 
 type Props = {
@@ -14,8 +14,11 @@ type Props = {
 
 export function StandingsTable({ state, table, competitionId, clubId, group }: Props) {
   const cardRef = useRef<HTMLElement>(null);
+  const europeanRule = EUROPEAN_LEAGUES.find((item) => item.id === competitionId);
   const league =
-    !group && COMPETITIONS.find((item) => item.id === competitionId)?.format === 'league';
+    !group &&
+    (Boolean(europeanRule) ||
+      COMPETITIONS.find((item) => item.id === competitionId)?.format === 'league');
   useLayoutEffect(() => {
     const card = cardRef.current;
     if (!card || !league) return;
@@ -101,6 +104,9 @@ export function StandingsTable({ state, table, competitionId, clubId, group }: P
         },
       ]
     : [
+        ...(europeanRule
+          ? [{ key: 'continental', name: 'Champions League · próxima temporada', count: 4 }]
+          : []),
         ...(qualifier?.slots
           ? [{ key: 'promotion', name: 'Vaga na copa regional', count: qualifier.slots }]
           : []),
@@ -116,6 +122,7 @@ export function StandingsTable({ state, table, competitionId, clubId, group }: P
           : []),
       ];
   function zone(index: number) {
+    if (europeanRule) return index < 4 ? 'continental' : '';
     if (qualifier) return index < qualifier.slots ? 'promotion' : '';
     if (group) return index < (rule?.advancement === 'mineiro' ? 1 : 2) ? 'promotion' : '';
     if (competitionId === 'serie-a') {
@@ -138,7 +145,7 @@ export function StandingsTable({ state, table, competitionId, clubId, group }: P
     <section
       ref={cardRef}
       style={{ '--standings-rows': Math.max(1, table.length) } as CSSProperties}
-      className={`standings-card ${!group && rule?.format === 'league' ? 'standings-league' : ''}`}
+      className={`standings-card ${league ? 'standings-league' : ''}`}
     >
       {group && (
         <header className="standings-heading">
@@ -153,7 +160,7 @@ export function StandingsTable({ state, table, competitionId, clubId, group }: P
       >
         <table className="standings-table">
           <caption className="standings-sr-only">
-            {rule?.name ?? 'Classificação'} · Temporada {state.season}
+            {europeanRule?.name ?? rule?.name ?? 'Classificação'} · Temporada {state.season}
           </caption>
           <colgroup>
             <col className="standings-col-rank" />

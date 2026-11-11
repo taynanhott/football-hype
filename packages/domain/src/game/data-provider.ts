@@ -7,6 +7,7 @@ import { correctSerieC2026 } from './regularize-season.js';
 import {
   worldDatasetSchema,
   worldStateSchema,
+  clubCrest,
   type WorldDataset,
   type WorldState,
 } from '@football/shared';
@@ -14,6 +15,7 @@ import { flatMapResult, type Result } from '../core/result.js';
 import { parseBoundary } from '../core/validation.js';
 import { isPlayingWindow } from '../competitions/calendar.js';
 import { seasonSchedule } from './world-factory.js';
+import { createEuropeanLeagues } from '../competitions/european-leagues.js';
 import { failure } from '../core/result.js';
 import { domainError } from '../core/domain-error.js';
 import { hashSeed, mulberry32 } from '../simulation/random.js';
@@ -34,7 +36,16 @@ export function importDataset(state: WorldState, input: unknown): Result<WorldSt
           'Dataset sem clube brasileiro ou fora da janela de partidas',
         ),
       );
-    const correctedClubs = correctSerieC2026(dataset.clubs);
+    const corrected = correctSerieC2026(dataset.clubs);
+    const correctedClubs = {
+      ...corrected,
+      byId: Object.fromEntries(
+        Object.entries(corrected.byId).map(([id, club]) => [
+          id,
+          { ...club, crest: clubCrest(club) },
+        ]),
+      ),
+    };
     const schedule = seasonSchedule(
       Object.values(correctedClubs.byId),
       state.createdAt,
@@ -72,6 +83,7 @@ export function importDataset(state: WorldState, input: unknown): Result<WorldSt
         dataSource: dataset.source,
         dataLicense: dataset.license,
         clubs: correctedClubs,
+        europeanLeagues: createEuropeanLeagues(Object.values(correctedClubs.byId), state.season),
         players: {
           ...dataset.players,
           byId: Object.fromEntries(

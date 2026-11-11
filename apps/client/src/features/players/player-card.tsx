@@ -1,3 +1,4 @@
+import { cardShineStyle } from './card-shine';
 import { useScoutingReport } from './use-scouting-report';
 import { Icon } from '../../ui/icons';
 import { CountryFlag } from '../../ui/country-flag';
@@ -82,6 +83,7 @@ export function PlayerCard({
         }
       }}
       className={`player-card ${flipped ? 'is-flipped' : ''}`}
+      style={cardShineStyle(player.id)}
       data-tier={tier}
       aria-label={`${onActivate ? 'Detalhes' : flipped ? 'Ver frente' : 'Ver atributos'} de ${player.name} · ${tierName} · Overall ${report.overall}`}
       aria-pressed={flipped}
@@ -177,6 +179,7 @@ export function PlayerCard({
         transition={{ duration: 0.55 }}
       >
         <div className="card-front">
+          <span className="player-card-shine" aria-hidden="true" />
           <div className="card-rank">
             <strong>
               <Overall base={report.overall} modifier={modifier} />

@@ -1,4 +1,5 @@
 import { careerAmbition, divisionStrength } from './career-ambition.js';
+import { europeanTransferPressure } from '../competitions/european-leagues.js';
 import { clubResults, playerRatings } from './history-index.js';
 import { formatMoney } from '@football/shared';
 import {
@@ -147,6 +148,12 @@ export function transferContext(
     { label: 'Problemas financeiros', value: (state.debts[buyer.id] ?? 0) > 0 ? -20 : 0 },
   ];
   const ambition = careerAmbition(state, player);
+  const europeanPressure = europeanTransferPressure(state, seller?.id);
+  if (europeanPressure)
+    playerReasons.push({
+      label: 'Classificação do clube na liga europeia',
+      value: europeanPressure,
+    });
   if (seller && ambition > 0 && divisionStrength(buyer) > divisionStrength(seller))
     playerReasons.push({
       label: 'Ambição de jogar em uma liga mais forte',

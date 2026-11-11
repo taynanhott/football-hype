@@ -1,3 +1,4 @@
+import { SeasonAwardsDemo } from '../features/leagues/season-awards';
 import { GameLoading } from './game-loading';
 import { useSimulationNavigationLock } from './use-simulation-navigation-lock';
 import { useNavigationNotifications } from './use-navigation-notifications';
@@ -296,7 +297,20 @@ function GameApp() {
                 : `${state.participants.length} treinadores na liga`}
             </small>
           </div>
-          <span className={connected ? 'status-dot' : 'status-dot offline'} />
+          <span
+            className={
+              connected
+                ? (state.seasonAwards ?? []).some(
+                    (a) =>
+                      a.season === state.season &&
+                      !a.category.startsWith('team') &&
+                      a.winners[0]?.clubId === club.id,
+                  )
+                  ? 'status-dot award-winner-dot'
+                  : 'status-dot'
+                : 'status-dot offline'
+            }
+          />
         </a>
       </aside>
       <div className="workspace">
@@ -321,7 +335,7 @@ function GameApp() {
                 </strong>
                 <span>
                   {state.status === 'finished'
-                    ? 'Comece uma nova temporada com acessos e descensos.'
+                    ? `${ready} de ${state.participants.length} treinadores prontos · A maioria inicia a próxima temporada`
                     : state.mode === 'offline'
                       ? 'Avance a rodada quando seu time estiver preparado.'
                       : `${ready} de ${state.participants.length} treinadores prontos · A maioria antecipa a rodada`}
@@ -346,20 +360,20 @@ function GameApp() {
                   )}
                 </>
               ) : (
-                userId === state.administratorId && (
-                  <button
-                    className="primary"
-                    disabled={busy || !connected}
-                    onClick={() => send({ type: 'new-season' })}
-                  >
-                    Iniciar próxima temporada <Icon name="arrow" />
-                  </button>
-                )
+                <button
+                  className={`ready-button ${participant?.ready ? 'checked' : ''}`}
+                  aria-pressed={participant?.ready ?? false}
+                  disabled={busy || !connected}
+                  onClick={() => send({ type: 'ready', ready: !participant?.ready })}
+                >
+                  {participant?.ready ? 'Pronto · desfazer' : 'Pronto para a próxima temporada'}
+                </button>
               )}
             </div>
           </div>
         )}
       </div>
+      <SeasonAwardsDemo />
       <nav
         className="mobile-bottom-nav"
         aria-label="Atalhos de navegação"

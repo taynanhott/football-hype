@@ -1,6 +1,7 @@
 import { initializeStartingChemistry } from './tactics.js';
 import { isSerieC2026, type ClubSnapshot, type WorldState } from '@football/shared';
 import { seasonSchedule } from './world-factory.js';
+import { createEuropeanLeagues } from '../competitions/european-leagues.js';
 
 export function correctSerieC2026(clubs: WorldState['clubs']): WorldState['clubs'] {
   const hasOfficialClubs = Object.values(clubs.byId).some((club) => isSerieC2026(club.name));
@@ -28,6 +29,9 @@ export function resetSeasonCompetitions(state: WorldState, now: number): WorldSt
   return {
     ...state,
     ...schedule,
+    ...(state.europeanLeagues
+      ? { europeanLeagues: createEuropeanLeagues(Object.values(clubs.byId), state.season) }
+      : {}),
     clubs,
     players: {
       ...state.players,

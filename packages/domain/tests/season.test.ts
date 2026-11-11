@@ -32,7 +32,13 @@ describe('ciclo completo da temporada', () => {
     expect(playNextBatch(state, NOW).ok).toBe(false);
     const expectedDPromotions = regionalPromotions(state);
     const event = unwrap(
-      executeCommand(state, { type: 'new-season' }, IDS.user, NOW, stableId(9, 999)),
+      executeCommand(
+        { ...state, participants: state.participants.map((p) => ({ ...p, ready: true })) },
+        { type: 'new-season' },
+        IDS.user,
+        NOW,
+        stableId(9, 999),
+      ),
     );
     const next = unwrap(applyEvent(state, event));
     expect(next.season).toBe(state.season + 1);

@@ -75,7 +75,11 @@ describe('base real normalizada', () => {
     const imported = importDataset(generated.value, dataset);
     if (!imported.ok) throw new Error(imported.error.message);
     const event = executeCommand(
-      { ...imported.value, status: 'finished' },
+      {
+        ...imported.value,
+        status: 'finished',
+        participants: imported.value.participants.map((p) => ({ ...p, ready: true })),
+      },
       { type: 'new-season' },
       'season-data-test',
       now,

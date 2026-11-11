@@ -246,7 +246,11 @@ it.each([6, 12])('preserva o prazo na troca de temporada (%i meses)', (months) =
     months,
     salaryPercent: 100,
   });
-  state = { ...state, status: 'finished' };
+  state = {
+    ...state,
+    status: 'finished',
+    participants: state.participants.map((p) => ({ ...p, ready: true })),
+  };
   act({ type: 'new-season' });
   expect(state.players.byId[player.id]?.clubId).toBe(months === 6 ? seller.id : buyer.id);
   expect(Boolean(state.management?.loans?.[player.id])).toBe(months === 12);
