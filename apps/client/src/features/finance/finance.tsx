@@ -242,7 +242,9 @@ export function Finance({ snapshot, club }: ViewProps) {
         </section>
         {(projected < 0 || debt > 0 || report.current.profit < 0) && (
           <section className="finance-alert" role="alert">
-            <strong>⚠ Atenção financeira</strong>
+            <strong>
+              <Icon name="shield" size={16} /> Atenção financeira
+            </strong>
             {projected < 0 && (
               <p>
                 Sem novas receitas, faltam {currency(-projected)} para cobrir as próximas contas

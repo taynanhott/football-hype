@@ -9,6 +9,7 @@ import { readCoach } from './coach-profile-storage';
 import { useSession } from '../features/auth/session';
 import { AdvanceRoundButton } from '../features/leagues/advance-round-button';
 import { BrandMark } from './brand-mark';
+import { BackgroundAtmosphere } from './background-atmosphere';
 import { memo, useEffect, useLayoutEffect, useState, useSyncExternalStore } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useGameStore } from '../store/game-store';
@@ -314,6 +315,7 @@ function GameApp() {
         </a>
       </aside>
       <div className="workspace">
+        <BackgroundAtmosphere />
         <main className="main-content" key={route}>
           {view}
         </main>

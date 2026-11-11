@@ -10,7 +10,12 @@ import {
   type ClubSnapshot,
 } from '@football/shared';
 import { STYLE_LABELS } from '@football/domain';
-import { clubAvailabilityReturns, clubUnavailablePlayers } from './player-availability';
+import {
+  clubAvailabilityAt,
+  clubAvailabilityReturns,
+  clubUnavailablePlayers,
+} from './player-availability';
+import { playerAvailable } from '@football/domain';
 import { Select, Option } from '../../ui/select';
 import { PlayerModal } from './player-modal';
 import { Portrait } from './pixel-portrait';
@@ -56,7 +61,19 @@ export function UnavailablePlayers({ state, club }: { state: WorldState; club: C
         unavailable.map((p) => {
           const forecast = returns.get(p.id);
           return (
-            <div className="unavailable-player-card" key={p.id}>
+            <div
+              className="unavailable-player-card"
+              data-reason={
+                forecast?.injured
+                  ? 'injured'
+                  : forecast?.suspended
+                    ? 'suspended'
+                    : forecast?.calledUp
+                      ? 'called-up'
+                      : undefined
+              }
+              key={p.id}
+            >
               <span className="unavailable-player-portrait">
                 <Portrait player={p} clubName={club.name} kit={clubKit(club)} />
               </span>
@@ -72,6 +89,11 @@ export function UnavailablePlayers({ state, club }: { state: WorldState; club: C
                   {forecast?.calledUp && (
                     <span className="unavailable-reason">
                       <Icon name="flag" size={12} /> Convocado
+                    </span>
+                  )}
+                  {forecast?.suspended && (
+                    <span className="unavailable-reason">
+                      <Icon name="block" size={12} /> Suspenso por cartões
                     </span>
                   )}
                 </small>
@@ -140,8 +162,8 @@ type Plan = MatchInstructions['substitutions'][number];
 export function MatchInstructionsEditor({
   state,
   club,
-  starters,
-  reserves,
+  starters: requestedStarters,
+  reserves: requestedReserves,
   value,
   onChange,
 }: {
@@ -152,6 +174,9 @@ export function MatchInstructionsEditor({
   value: MatchInstructions;
   onChange: (value: MatchInstructions) => void;
 }) {
+  const availabilityAt = clubAvailabilityAt(state, club);
+  const starters = requestedStarters.filter((id) => playerAvailable(state, id, availabilityAt));
+  const reserves = requestedReserves.filter((id) => playerAvailable(state, id, availabilityAt));
   const [draft, setDraft] = useState<Partial<Plan> | null>(null);
   const [protect, setProtect] = useState(false);
   const unavailable = clubUnavailablePlayers(state, club);
@@ -285,6 +310,11 @@ export function MatchInstructionsEditor({
                 when: plan.when === 90 ? (80 as const) : (plan.when ?? 60),
                 ...patch,
               };
+              if (
+                (next.out && !starters.includes(next.out)) ||
+                (next.in && !reserves.includes(next.in))
+              )
+                return;
               if (saved)
                 onChange({
                   ...value,

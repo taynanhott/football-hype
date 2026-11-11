@@ -266,6 +266,24 @@ export const worldStateSchema = z.strictObject({
       }),
     )
     .optional(),
+  monthlyCoachAwards: z
+    .array(
+      z.object({
+        season: countSchema,
+        month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/),
+        awardedAt: countSchema,
+        coachUserId: z.string().optional(),
+        coachName: z.string(),
+        clubId: entityIdSchema,
+        clubName: z.string(),
+        score: z.number().nonnegative(),
+        games: countSchema,
+        wins: countSchema,
+        draws: countSchema,
+        losses: countSchema,
+      }),
+    )
+    .optional(),
   ticketPrices: z.record(z.string(), ticketAmountSchema).optional(),
   homeTicketPrices: z.record(entityIdSchema, ticketAmountSchema).optional(),
   seasonArchives: z
@@ -358,6 +376,21 @@ export const worldStateSchema = z.strictObject({
     )
     .default({}),
   injuries: z.record(entityIdSchema, countSchema),
+  discipline: z
+    .object({
+      version: z.literal(1),
+      competitions: z.record(
+        z.string(),
+        z.record(
+          entityIdSchema,
+          z.object({
+            yellowCards: z.number().int().min(0).max(2),
+            suspendedGames: countSchema,
+          }),
+        ),
+      ),
+    })
+    .optional(),
   development: z.record(entityIdSchema, z.number().nonnegative()),
   debts: z.record(entityIdSchema, gameAmountSchema),
   lastProcessedAt: countSchema,

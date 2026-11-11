@@ -7,7 +7,7 @@
     "presenceRowsWritten": 19013,
     "sqlStatements": 64700,
     "returnedRows": 268550,
-    "elapsedMs": 5663
+    "elapsedMs": 13462
   },
   "optimizedPresence": {
     "applicationPresenceMessages": 0,

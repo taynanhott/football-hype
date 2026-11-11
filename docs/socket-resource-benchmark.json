@@ -11,16 +11,16 @@
   "rowsRead": 288,
   "rowsWritten": 140,
   "sentMessages": 127,
-  "sentBytes": 21567469,
+  "sentBytes": 21778033,
   "fullSnapshots": 12,
   "deltaSnapshots": 99,
   "alarmWrites": 2,
   "cacheResume": {
-    "fullSnapshotBytes": 1771158,
+    "fullSnapshotBytes": 1788705,
     "resumeBytes": 2564
   },
   "usageLogEvents": 56,
-  "queueWaitMs": 3.086999999999989,
-  "maxQueueWaitMs": 0.6415999999999258,
-  "payloadBytes": 3743736
+  "queueWaitMs": 4.644199999998364,
+  "maxQueueWaitMs": 1.4039999999999964,
+  "payloadBytes": 3778830
 }

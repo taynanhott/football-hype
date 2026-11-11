@@ -573,11 +573,15 @@ export function Facilities(props: ViewProps & { training?: boolean }) {
                   <header>
                     <strong>Nível {tier}</strong>
                     <span>
-                      {tier > current
-                        ? '🔒 Não adquirido'
-                        : tier === current
-                          ? '✓ Atual'
-                          : '✓ Adquirido'}
+                      {tier > current ? (
+                        <>
+                          <Icon name="lock" size={14} /> Não adquirido
+                        </>
+                      ) : tier === current ? (
+                        '✓ Atual'
+                      ) : (
+                        '✓ Adquirido'
+                      )}
                     </span>
                   </header>
                   <b>

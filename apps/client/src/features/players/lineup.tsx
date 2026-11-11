@@ -23,6 +23,7 @@ import {
 } from '@football/shared';
 import {
   medicallyAvailable,
+  playerAvailable,
   canLearnPosition,
   resolveLineup,
   resolveBench,
@@ -91,15 +92,17 @@ export function LineupEditor({ snapshot, club, center }: ViewProps) {
         entry.player ? [entry.player.id] : [],
       ),
   );
-  const [bench, setBench] = useState<string[]>(() =>
-    resolveBench(
-      state,
-      club,
-      availabilityAt,
-      resolveLineup(state, club, availabilityAt).flatMap((entry) =>
-        entry.player ? [entry.player.id] : [],
+  const [bench, setBench] = useState<string[]>(
+    () =>
+      state.tactics[club.id]?.bench ??
+      resolveBench(
+        state,
+        club,
+        availabilityAt,
+        resolveLineup(state, club, availabilityAt).flatMap((entry) =>
+          entry.player ? [entry.player.id] : [],
+        ),
       ),
-    ),
   );
   const [instructions, setInstructions] = useState<MatchInstructions>(
     state.tactics[club.id]?.instructions ?? emptyInstructions,
@@ -180,7 +183,7 @@ export function LineupEditor({ snapshot, club, center }: ViewProps) {
       document.removeEventListener('wheel', wheel);
     };
   }, []);
-  const [dirty, setDirty] = useState(!state.tactics[club.id]?.bench?.length);
+  const [dirty, setDirty] = useState(!state.tactics[club.id]);
   const send = useGameStore((store) => store.send);
   const busy = useGameStore((store) => store.busy);
   const error = useGameStore((store) => store.error);
@@ -240,6 +243,7 @@ export function LineupEditor({ snapshot, club, center }: ViewProps) {
         instructions: saved.instructions ?? emptyInstructions,
       })
     : '';
+  if (dirty && draftKey === savedKey) setDirty(false);
   const pending = dirty && draftKey !== savedKey;
   useEffect(() => {
     if (
@@ -316,7 +320,7 @@ export function LineupEditor({ snapshot, club, center }: ViewProps) {
     setDirty(true);
   }
   function assign(id: string, slot = selected) {
-    if (!club.playerIds.includes(id) || !medicallyAvailable(state, id)) return;
+    if (!club.playerIds.includes(id) || !playerAvailable(state, id, availabilityAt)) return;
     const next = [...ids];
     const old = next[slot];
     const existing = next.indexOf(id);
@@ -570,7 +574,8 @@ export function LineupEditor({ snapshot, club, center }: ViewProps) {
               onMove={(id, targetId, related) => {
                 if (
                   !club.playerIds.includes(id) ||
-                  !medicallyAvailable(state, id) ||
+                  !playerAvailable(state, id, availabilityAt) ||
+                  (targetId !== null && !playerAvailable(state, targetId, availabilityAt)) ||
                   id === targetId
                 )
                   return;
@@ -587,7 +592,8 @@ export function LineupEditor({ snapshot, club, center }: ViewProps) {
                   if (target >= 0) next[target] = id;
                   else if (source < 0 && next.length < 12) next.push(id);
                 } else if (source >= 0) {
-                  if (targetId && medicallyAvailable(state, targetId)) next[source] = targetId;
+                  if (targetId && playerAvailable(state, targetId, availabilityAt))
+                    next[source] = targetId;
                   else next.splice(source, 1);
                 }
                 if (
@@ -599,7 +605,7 @@ export function LineupEditor({ snapshot, club, center }: ViewProps) {
                 setDirty(true);
               }}
               onChange={(next) => {
-                setBench(next);
+                setBench(next.filter((id) => playerAvailable(state, id, availabilityAt)));
                 setDirty(true);
               }}
             />
@@ -748,12 +754,16 @@ export function LineupEditor({ snapshot, club, center }: ViewProps) {
                 <span className="eyebrow">OPÇÕES PARA A POSIÇÃO</span>
                 <h2>Substituir por quem?</h2>
                 <p>
-                  Função diferente reduz o overall efetivo. Jogadores lesionados ficam
-                  indisponíveis.
+                  Função diferente reduz o overall efetivo. Convocados, lesionados e suspensos ficam
+                  fora das opções de substituição.
                 </p>
                 <div className="bench-list">
                   {players
-                    .filter((player) => player.id !== selectedPlayer?.id)
+                    .filter(
+                      (player) =>
+                        player.id !== selectedPlayer?.id &&
+                        playerAvailable(state, player.id, availabilityAt),
+                    )
                     .map((player) => {
                       const load = state.workload[player.id];
                       const risk = injuryProbability(
@@ -766,7 +776,7 @@ export function LineupEditor({ snapshot, club, center }: ViewProps) {
                         <button
                           key={player.id}
                           className={`bench-player ${ids.includes(player.id) ? 'starter' : ''}`}
-                          disabled={!medicallyAvailable(state, player.id)}
+                          disabled={!playerAvailable(state, player.id, availabilityAt)}
                           onClick={() => assign(player.id)}
                         >
                           <Portrait player={player} />

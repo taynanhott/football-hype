@@ -8,7 +8,7 @@ export const awardTitles = {
   'player-world': 'Jogador do ano do mundo',
 };
 export function awardNews(state: WorldState) {
-  return (state.seasonAwards ?? [])
+  const annual = (state.seasonAwards ?? [])
     .filter((a) => !a.category.startsWith('team'))
     .flatMap((a) => {
       const w = a.winners[0];
@@ -24,4 +24,20 @@ export function awardNews(state: WorldState) {
         },
       ];
     });
+  const monthly = (state.monthlyCoachAwards ?? []).map((a) => {
+    const month = new Intl.DateTimeFormat('pt-BR', {
+      month: 'long',
+      year: 'numeric',
+      timeZone: 'UTC',
+    }).format(new Date(`${a.month}-01T12:00:00Z`));
+    return {
+      id: `coach-month:${a.season}:${a.month}`,
+      at: a.awardedAt,
+      title: `${a.coachName} é eleito técnico do mês de ${month}!`,
+      body: `${a.coachName}, do ${a.clubName}, venceu a premiação nacional com ${a.wins} vitórias, ${a.draws} empates e ${a.losses} derrotas em ${a.games} jogos. A escolha considera o aproveitamento, a regularidade e o peso da liga: Série A (80), B (65), C (50) e D (35), com ao menos três partidas no mês.`,
+      tags: ['#Premiação', '#TécnicoDoMês'],
+      homeId: a.clubId,
+    };
+  });
+  return [...annual, ...monthly];
 }

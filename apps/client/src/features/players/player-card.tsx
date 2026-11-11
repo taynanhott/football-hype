@@ -235,7 +235,7 @@ export function PlayerCard({
           <div className="reverse-stats">
             {[
               ['Jogos', stats?.games ?? player.appearances, 'ᵛˢ'],
-              ['Gols', stats?.goals ?? 0, '⚽'],
+              ['Gols', stats?.goals ?? 0, <Icon key="goal" name="ball" size={16} />],
               ['Assist.', stats?.assists ?? 0, '➜'],
               ['Nota', score(stats?.average), '★'],
               ['Min.', stats?.minutes ?? 0, '◷'],

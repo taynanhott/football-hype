@@ -1,4 +1,4 @@
-import { initializeStartingChemistry } from './tactics.js';
+import { initializeStartingChemistry, playerAvailable, clubAvailabilityAt } from './tactics.js';
 import { exchangeCandidates } from './player-exchange.js';
 import { formatMoney } from '@football/shared';
 import { maxContractYears, moraleSensitivity, signingSalary } from './player-contracts.js';
@@ -1069,6 +1069,23 @@ function handleNewSeason({
       ),
     },
     season: state.season + 1,
+    ...(state.discipline
+      ? {
+          discipline: {
+            version: 1 as const,
+            competitions: Object.fromEntries(
+              Object.entries(state.discipline.competitions).map(([competition, records]) => [
+                competition,
+                Object.fromEntries(
+                  Object.entries(records)
+                    .filter(([, record]) => record.suspendedGames > 0)
+                    .map(([id, record]) => [id, { ...record, yellowCards: 0 }]),
+                ),
+              ]),
+            ),
+          },
+        }
+      : {}),
     europeanLeagues: createEuropeanLeagues(Object.values(clubs), state.season + 1),
     ...(state.seasonClock
       ? {
@@ -1192,7 +1209,6 @@ function upgrade(
 function statePlayerInvalid(state: WorldState, club: ClubSnapshot, id: string) {
   return (
     state.players.byId[id]?.clubId !== club.id ||
-    ((state.injuries[id] ?? 0) > 0 &&
-      state.centers.byId[club.trainingCenterId]?.operations?.clearance?.playerId !== id)
+    !playerAvailable(state, id, clubAvailabilityAt(state, club))
   );
 }

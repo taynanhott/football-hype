@@ -8,6 +8,7 @@ import { listedNewsOffers, ownNewsKeys, markClubNewsSeen } from './news-notifica
 import { PlayerDetails } from '../players/player-details';
 import type { WorldState, Negotiation } from '@football/shared';
 import { PersonAvatar, type PersonAppearance } from '../../ui/person-avatar';
+import { Icon } from '../../ui/icons';
 
 const REPORTERS: PersonAppearance[] = [
   ...[
@@ -590,7 +591,10 @@ export function TransferNews({ state }: { state: WorldState }) {
         </label>
         <section className="news-trends">
           <h3>
-            Assuntos para você <span aria-hidden="true">⚙</span>
+            Assuntos para você{' '}
+            <span aria-hidden="true">
+              <Icon name="gear" size={18} />
+            </span>
           </h3>
           {trending.length ? (
             trending.map((name, index) => (

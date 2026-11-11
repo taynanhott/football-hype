@@ -1,6 +1,7 @@
 import { seasonClosingDates, pendingSeasonClosingDates } from '../competitions/season-closing.js';
 import { settleCompetitionPrizes } from '../competitions/competition-prizes.js';
 import { finalizeSeasonAwards } from '../competitions/season-awards.js';
+import { settleMatchDiscipline } from './discipline.js';
 import { settleContractDecisions } from './contract-lifecycle.js';
 import { lineupTacticalBonus, canLearnPosition, masteredPositions } from './tactics.js';
 import { FORMATIONS } from '@football/shared';
@@ -127,6 +128,7 @@ export function playNextBatch(state: WorldState, processedAt: number): Result<Wo
   const players = { ...state.players.byId };
   const clubs = { ...state.clubs.byId };
   const injuries = { ...state.injuries };
+  let discipline = state.discipline;
   const contractHistory = { ...state.management?.contractHistory };
   const development = { ...state.development };
   const debts = { ...state.debts };
@@ -215,6 +217,7 @@ export function playNextBatch(state: WorldState, processedAt: number): Result<Wo
     const awayStyle = botStyle(away.id, home.id);
     const selectionState = {
       ...state,
+      ...(discipline ? { discipline } : {}),
       injuries: clearedInjuries,
       tactics: {
         ...state.tactics,
@@ -228,8 +231,26 @@ export function playNextBatch(state: WorldState, processedAt: number): Result<Wo
         },
       },
     };
-    const homeSelection = resolveLineup(selectionState, home, scheduledAt, players);
-    const awaySelection = resolveLineup(selectionState, away, scheduledAt, players);
+    const homeSelection = resolveLineup(
+      selectionState,
+      home,
+      scheduledAt,
+      players,
+      undefined,
+      undefined,
+      undefined,
+      fixture.competitionId,
+    );
+    const awaySelection = resolveLineup(
+      selectionState,
+      away,
+      scheduledAt,
+      players,
+      undefined,
+      undefined,
+      undefined,
+      fixture.competitionId,
+    );
     const effective = (entries: typeof homeSelection) =>
       entries.flatMap((entry) =>
         entry.player
@@ -290,6 +311,7 @@ export function playNextBatch(state: WorldState, processedAt: number): Result<Wo
                 scheduledAt,
                 lineup.map((p) => p.id),
                 plan.bench,
+                fixture.competitionId,
               ).flatMap((id) => (players[id] ? [players[id]!] : [])),
             },
           ];
@@ -315,6 +337,7 @@ export function playNextBatch(state: WorldState, processedAt: number): Result<Wo
           scheduledAt,
           homeLineup.map((p) => p.id),
           homePlan.bench,
+          fixture.competitionId,
         ),
       },
       away: {
@@ -327,11 +350,13 @@ export function playNextBatch(state: WorldState, processedAt: number): Result<Wo
           scheduledAt,
           awayLineup.map((p) => p.id),
           awayPlan.bench,
+          fixture.competitionId,
         ),
       },
     };
     result.startedAt = processedAt;
     results.push(result);
+    discipline = settleMatchDiscipline(selectionState, fixture, result).discipline;
     const redCardActions = result.actions?.filter((action) => action.type === 'red');
     const gate = shareMatchRevenue(demand.ticketRevenue, result.revenue);
     revenue.set(home.id, (revenue.get(home.id) ?? 0) + gate.home);
@@ -578,6 +603,7 @@ export function playNextBatch(state: WorldState, processedAt: number): Result<Wo
       players: { ...state.players, byId: players },
       clubs: { ...state.clubs, byId: clubs },
       injuries,
+      ...(discipline ? { discipline } : {}),
       management: { ...state.management, contractHistory },
       chemistry,
       positionExperience,

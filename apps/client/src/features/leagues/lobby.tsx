@@ -2,6 +2,7 @@ import { PlayerModal } from '../players/player-modal';
 import { InviteDraw } from './invite-draw';
 import { GeneratedPerson } from '../../ui/person-avatar';
 import { BrandMark } from '../../ui/brand-mark';
+import { BackgroundAtmosphere } from '../../ui/background-atmosphere';
 import { useState, useEffect, useRef, type CSSProperties } from 'react';
 import { z } from 'zod';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -60,6 +61,7 @@ export function Lobby() {
   }
   return (
     <div className="lobby lobby-clubs">
+      <BackgroundAtmosphere />
       <header className="lobby-header">
         <a className="brand" href="#/">
           <BrandMark size={46} />

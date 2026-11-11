@@ -8,8 +8,11 @@ import {
   type Position,
   type PlayStyle,
   type WorldState,
+  type Fixture,
 } from '@football/shared';
 import { effectiveOverall } from './management.js';
+import { isFifaWindow } from '../competitions/calendar.js';
+import { scheduledFixtures } from '../competitions/fixtures.js';
 
 const POSITION_PATHS: Partial<Record<Position, readonly Position[]>> = {
   GK: ['GK'],
@@ -127,6 +130,53 @@ export function medicallyAvailable(state: WorldState, playerId: string): boolean
     state.centers.byId[club.trainingCenterId]?.operations?.clearance?.playerId === playerId
   );
 }
+const nextFixtures = new WeakMap<WorldState, Map<string, Fixture>>();
+export function nextClubFixture(state: WorldState, clubId: string): Fixture | undefined {
+  let fixtures = nextFixtures.get(state);
+  if (!fixtures) {
+    fixtures = new Map();
+    const completed = new Set(state.results.map((result) => result.fixtureId));
+    for (const fixture of scheduledFixtures(state)) {
+      if (completed.has(fixture.id)) continue;
+      for (const id of [fixture.homeId, fixture.awayId])
+        if (!fixtures.has(id)) fixtures.set(id, fixture);
+    }
+    nextFixtures.set(state, fixtures);
+  }
+  return fixtures.get(clubId);
+}
+/** The editor uses the current game date; matches revalidate at their actual fixture date. */
+export function clubAvailabilityAt(state: WorldState, _club: ClubSnapshot): number {
+  void _club;
+  return state.lastProcessedAt;
+}
+export function playerSuspension(
+  state: WorldState,
+  playerId: string,
+  competitionId?: string,
+): number {
+  if (!state.discipline) return 0;
+  const clubId = state.players.byId[playerId]?.clubId;
+  const competition =
+    competitionId ?? (clubId ? nextClubFixture(state, clubId)?.competitionId : undefined);
+  return competition
+    ? (state.discipline?.competitions[competition]?.[playerId]?.suspendedGames ?? 0)
+    : 0;
+}
+export function playerAvailable(
+  state: WorldState,
+  playerId: string,
+  at: number,
+  competitionId?: string,
+): boolean {
+  const player = state.players.byId[playerId];
+  return (
+    Boolean(player) &&
+    medicallyAvailable(state, playerId) &&
+    !playerSuspension(state, playerId, competitionId) &&
+    !(isFifaWindow(at) && player!.overall >= 80)
+  );
+}
 const adaptationCache = new WeakMap<
   WorldState,
   Map<string, Array<{ formation: Formation; style: PlayStyle }>>
@@ -189,11 +239,12 @@ export function tacticalAdaptation(
 export function resolveLineup(
   state: WorldState,
   club: ClubSnapshot,
-  _at: number,
+  at: number,
   pool = state.players.byId,
   formation?: Formation,
   preferred?: readonly string[],
   playStyle?: PlayStyle,
+  competitionId?: string,
 ) {
   const saved = state.tactics[club.id];
   const shape = formation ?? saved?.formation ?? '4-3-3';
@@ -208,7 +259,7 @@ export function resolveLineup(
     .map((id) => pool[id])
     .filter(
       (player): player is PlayerSnapshot =>
-        Boolean(player) && medicallyAvailable(state, player?.id ?? ''),
+        Boolean(player) && playerAvailable(state, player?.id ?? '', at, competitionId),
     );
   const used = new Set<string>();
   const retainedStarters = new Set(
@@ -263,15 +314,18 @@ export function resolveLineup(
 export function resolveBench(
   state: WorldState,
   club: ClubSnapshot,
-  _at: number,
+  at: number,
   starters: readonly string[],
   preferred?: readonly string[],
+  competitionId?: string,
 ) {
   const available = club.playerIds
     .map((id) => state.players.byId[id])
     .filter(
       (player): player is PlayerSnapshot =>
-        Boolean(player) && !starters.includes(player!.id) && medicallyAvailable(state, player!.id),
+        Boolean(player) &&
+        !starters.includes(player!.id) &&
+        playerAvailable(state, player!.id, at, competitionId),
     );
   const requested = preferred ?? state.tactics[club.id]?.bench;
   if (requested?.length) {

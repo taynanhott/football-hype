@@ -7,7 +7,12 @@ import { clubUnavailablePlayers } from './player-availability';
 import { useState } from 'react';
 import type { ClubSnapshot, PlayerSnapshot, WorldState } from '@football/shared';
 import { clubKit } from '@football/shared';
-import { effectiveOverall, temporaryModifiers } from '@football/domain';
+import {
+  effectiveOverall,
+  temporaryModifiers,
+  playerSuspension,
+  medicallyAvailable,
+} from '@football/domain';
 import { Overall } from './overall';
 import { Portrait } from './pixel-portrait';
 import { PlayerCard } from './player-card';
@@ -16,8 +21,8 @@ import { PlayerModal } from './player-modal';
 export function MatchBench({
   state,
   club,
-  starters,
-  reserves,
+  starters: requestedStarters,
+  reserves: requestedReserves,
   onChange,
   onMove,
 }: {
@@ -41,13 +46,21 @@ export function MatchBench({
   const orderedIds = [
     ...new Set([...customOrder.filter((id) => club.playerIds.includes(id)), ...club.playerIds]),
   ];
+  const unavailableIds = new Set(clubUnavailablePlayers(state, club).map((player) => player.id));
+  const starters = requestedStarters.filter((id) => !unavailableIds.has(id));
+  const reserves = requestedReserves.filter((id) => !unavailableIds.has(id));
   const players = orderedIds.flatMap((id) =>
     state.players.byId[id] && !starters.includes(id) ? [state.players.byId[id]!] : [],
   );
-  const unavailableIds = new Set(clubUnavailablePlayers(state, club).map((player) => player.id));
   const available = (player: PlayerSnapshot) => !unavailableIds.has(player.id);
   const moveCard = (id: string, targetId: string | null, related: boolean) => {
-    if (id === targetId || !club.playerIds.includes(id)) return;
+    if (
+      id === targetId ||
+      !club.playerIds.includes(id) ||
+      unavailableIds.has(id) ||
+      (targetId !== null && unavailableIds.has(targetId))
+    )
+      return;
     if (!starters.includes(id) && reserves.includes(id) === related) {
       const list = related
         ? [...reserves]
@@ -71,7 +84,8 @@ export function MatchBench({
   };
   const included = selected ? reserves.includes(selected.id) : false;
   const candidates = players.filter(
-    (player) => player.id !== selected?.id && reserves.includes(player.id) !== included,
+    (player) =>
+      available(player) && player.id !== selected?.id && reserves.includes(player.id) !== included,
   );
   return (
     <section className="reserve-roster" aria-label="Banco de reservas">
@@ -103,11 +117,18 @@ export function MatchBench({
               .map((player) => (
                 <button
                   data-drag-player-id={player.id}
-                  draggable
+                  draggable={available(player)}
+                  disabled={!available(player)}
+                  aria-disabled={!available(player)}
                   onPointerDown={(event) => {
+                    if (!available(player)) return;
                     startCardPointerDrag(event, player.id);
                   }}
                   onDragStart={(event) => {
+                    if (!available(player)) {
+                      event.preventDefault();
+                      return;
+                    }
                     event.dataTransfer.setData('text/plain', player.id);
                     event.dataTransfer.effectAllowed = 'move';
                     showDraggedCard(event);
@@ -118,7 +139,7 @@ export function MatchBench({
                     moveCard(event.dataTransfer.getData('text/plain'), player.id, related);
                   }}
                   type="button"
-                  className="reserve-mini"
+                  className={`reserve-mini${available(player) ? '' : ' reserve-mini-unavailable'}`}
                   data-tier={
                     player.overall <= 69
                       ? 'bronze'
@@ -130,7 +151,7 @@ export function MatchBench({
                   }
                   key={player.id}
                   onClick={() => setSelected(player)}
-                  aria-label={`${related ? 'Substituir reserva' : 'Relacionar'} ${player.name}`}
+                  aria-label={`${!available(player) ? 'Indisponível:' : related ? 'Substituir reserva' : 'Relacionar'} ${player.name}`}
                 >
                   <span className="reserve-mini-rating">
                     <Overall
@@ -146,9 +167,11 @@ export function MatchBench({
                   <span className="reserve-mini-fitness">
                     {available(player)
                       ? `${Math.round(player.fitness)}% COND`
-                      : state.injuries[player.id]
+                      : !medicallyAvailable(state, player.id)
                         ? 'Lesionado'
-                        : 'Convocado'}
+                        : playerSuspension(state, player.id)
+                          ? 'Suspenso'
+                          : 'Convocado'}
                     {available(player) && <i style={{ width: `${player.fitness}%` }} />}
                   </span>
                 </button>

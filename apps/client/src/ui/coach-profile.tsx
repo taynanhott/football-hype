@@ -1,3 +1,4 @@
+import { Icon } from './icons';
 import { Select, Option } from './select';
 import type { CoachProfile } from './coach-profile-storage';
 import { PersonAvatar } from './person-avatar';
@@ -44,7 +45,9 @@ export function CoachEditor({
       <div className="coach-preview">
         <CoachAvatar profile={draft} />
         <strong>{draft.name || 'Treinador'}</strong>
-        <span>COMISSÃO TÉCNICA · ⚽</span>
+        <span>
+          COMISSÃO TÉCNICA · <Icon name="ball" size={16} />
+        </span>
       </div>
       <div className="coach-controls">
         <label>

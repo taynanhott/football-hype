@@ -1,3 +1,4 @@
+import { Icon } from '../../ui/icons';
 import { positionLabel } from '../../ui/position-label';
 import { layoutLineupCards } from '../players/lineup-card-layout';
 import { memo, type CSSProperties } from 'react';
@@ -483,7 +484,7 @@ export function GoalsAndCards({ state, result, minute }: ReportProps & { minute:
                       : 'Cartão amarelo'
                 }
               >
-                {action.type === 'goal' ? '⚽' : ''}
+                {action.type === 'goal' && <Icon name="ball" size={16} />}
               </span>
               <div>
                 <strong>{state.players.byId[action.playerId ?? '']?.name ?? 'Jogador'}</strong>

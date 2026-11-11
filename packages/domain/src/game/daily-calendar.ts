@@ -1,4 +1,5 @@
 import { accrueSponsorship } from '../finance/calendar-sponsorship.js';
+import { finalizeMonthlyCoachAward } from '../competitions/monthly-coach-awards.js';
 import { resetTransferredEffects, settleContractDecisions } from './contract-lifecycle.js';
 import {
   developmentFactor,
@@ -81,6 +82,8 @@ function advanceGameDaysInternal(state: WorldState, target: number): WorldState 
     // Score due background rounds before this day's training, with the players
     // known on that date. A long advance and several short advances agree.
     state = advanceEuropeanLeagues(state, day + GAME_DAY_MS - 1, players);
+    if (new Date(day + GAME_DAY_MS - OFFSET).getUTCDate() === 1)
+      state = finalizeMonthlyCoachAward(state, day + GAME_DAY_MS);
     // A long advance must use the calendar known on each completed day, not
     // postpone all draws until the end and train against obsolete fixture dates.
     if (

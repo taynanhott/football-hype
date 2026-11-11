@@ -1,6 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { ClubSnapshot, WorldState } from '@football/shared';
-import { clubAvailabilityReturns } from '../src/features/players/player-availability';
+import {
+  clubAvailabilityAt,
+  clubAvailabilityReturns,
+  clubCallupActive,
+  clubUnavailablePlayers,
+} from '../src/features/players/player-availability';
 
 vi.mock('../src/features/competitions/club-calendar-fixtures', () => ({
   clubCalendarFixtures: (state: WorldState) => state.fixtures,
@@ -28,6 +33,30 @@ function world(overrides: Partial<WorldState> = {}) {
   } as unknown as WorldState;
 }
 describe('retorno dos jogadores indisponíveis', () => {
+  it.each([
+    ['2026-03-23T02:59:59.999Z', false],
+    ['2026-03-23T03:00:00.000Z', true],
+    ['2026-04-01T03:00:00.000Z', false],
+  ])(
+    'usa a data atual em Brasília (%s), sem antecipar a convocação pela próxima partida',
+    (timestamp, active) => {
+      const state = world({ lastProcessedAt: Date.parse(timestamp) });
+      expect(clubAvailabilityAt(state, club)).toBe(state.lastProcessedAt);
+      expect(clubCallupActive(state, club)).toBe(active);
+      expect(clubUnavailablePlayers(state, club).some((p) => p.id === 'player')).toBe(active);
+      expect(clubAvailabilityReturns(state, club).get('player')?.calledUp ?? false).toBe(active);
+    },
+  );
+  it('mantém o atleta disponível depois da janela mesmo se o próximo jogo cair na janela seguinte', () => {
+    const current = world({ lastProcessedAt: at('2026-04-01'), nextScheduledAt: at('2026-06-03') });
+    const state = {
+      ...current,
+      fixtures: current.fixtures.map((f) => ({ ...f, scheduledAt: at('2026-06-03') })),
+    };
+    expect(clubCallupActive(state, club)).toBe(false);
+    expect(clubUnavailablePlayers(state, club)).toEqual([]);
+    expect(clubAvailabilityReturns(state, club).size).toBe(0);
+  });
   it('conta partidas até o último dia da convocação e libera no dia seguinte', () => {
     const result = clubAvailabilityReturns(world(), club).get('player')!;
     expect(result.games).toBe(2);

@@ -1,3 +1,4 @@
+import { Icon } from '../../ui/icons';
 import { Select, Option } from '../../ui/select';
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -236,7 +237,7 @@ export function IndividualTrainingRoster({
           <PlayerModal
             className="individual-training-confirm"
             title="Confirmar treino individual"
-            titleIcon={<span aria-hidden="true">⚽</span>}
+            titleIcon={<Icon name="ball" size={18} />}
             hideClose
             onClose={() => setConfirmId(null)}
           >
