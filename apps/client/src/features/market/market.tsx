@@ -1,3 +1,5 @@
+import { clubCoachProposals } from './club-coach-proposals';
+import { CoachOffers } from './coach-offers';
 import { markNotificationsSeen } from '../../ui/use-navigation-notifications';
 import { useScoutingReport } from '../players/use-scouting-report';
 import { countryContinent } from './market-filters';
@@ -63,7 +65,9 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
       renewalTerms(snapshot.state, player).demand
     );
   }).length;
+  const coachProposalCount = clubCoachProposals(snapshot.state, club.id).length;
   const proposalCount =
+    coachProposalCount +
     snapshot.state.negotiations.filter((n) => n.sellerId === club.id && n.status === 'review')
       .length +
     renewalCount +
@@ -928,7 +932,16 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
           )}
         </section>
       ) : tab === 'Propostas' ? (
-        <IncomingOffers snapshot={snapshot} club={club} center={center} stadium={stadium} />
+        <>
+          <CoachOffers snapshot={snapshot} club={club} center={center} stadium={stadium} />
+          <IncomingOffers
+            snapshot={snapshot}
+            club={club}
+            center={center}
+            stadium={stadium}
+            hideEmpty={coachProposalCount > 0}
+          />
+        </>
       ) : (
         <>
           {viewMode === 'list' ? (

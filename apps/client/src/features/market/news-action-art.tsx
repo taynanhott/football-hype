@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import type { ClubKit } from '@football/shared';
+import { repairNewsArtMaterials } from './news-art-materials';
 const loadImage = async (src: string) => {
   const img = new Image();
   img.src = src;
@@ -9,7 +10,7 @@ const loadImage = async (src: string) => {
 let assets: Promise<HTMLImageElement[]> | undefined;
 const bases = new Map<number, { base: ImageData; map: ImageData }>();
 const renders = new Map<string, ImageData>();
-/** Each material pixel is authored once. Runtime never classifies scene colors. */
+/** Templates and their repaired material edges are cached across club kits. */
 export function NewsActionArt({
   variant,
   homeKit,
@@ -60,7 +61,7 @@ export function NewsActionArt({
           );
           return brush.getImageData(0, 0, 512, 512);
         });
-        template = { base: frames[0]!, map: frames[1]! };
+        template = { base: frames[0]!, map: repairNewsArtMaterials(frames[0]!, frames[1]!) };
         bases.set(variant, template);
       }
       if (!active) return;
@@ -72,9 +73,8 @@ export function NewsActionArt({
         const material = Math.round(template.map.data[i]! / 50);
         if (!material) continue;
         const shade = template.map.data[i + 1]! / 255;
-        // The neutral atlas is white: blending it into dark kits leaves pale seams.
-        // Material pixels already carry the authored edge shading in the green channel.
-        const coverage = 1;
+        // Keep the original dark ink; apply full kit color to the lighter fabric.
+        const coverage = Math.min(1, Math.max(0, (shade - 0.16) / 0.42));
         const color = colors[material - 1]!;
         for (let c = 0; c < 3; c++)
           out.data[i + c] = Math.round(

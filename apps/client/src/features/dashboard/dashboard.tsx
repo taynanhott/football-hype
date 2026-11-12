@@ -1,3 +1,4 @@
+import { clubCoachProposals } from '../market/club-coach-proposals';
 import { CountryFlag } from '../../ui/country-flag';
 import { useNavigationNotifications } from '../../ui/use-navigation-notifications';
 import { useGameStore } from '../../store/game-store';
@@ -41,6 +42,7 @@ export function Dashboard({ snapshot, club, stadium, center }: ViewProps) {
     return player && renewalTerms(state, player).demand;
   });
   const hasTransferNotifications =
+    clubCoachProposals(state, club.id).length > 0 ||
     (state.management?.offers?.some(
       (offer) => offer.sellerId === club.id && offer.status === 'pending',
     ) ??

@@ -218,6 +218,27 @@ export const cupNodeSchema = z.strictObject({
   scheduledAt: countSchema,
 });
 export const worldStateSchema = z.strictObject({
+  coachOffers: z
+    .array(
+      z.strictObject({
+        id: z.string(),
+        userId: userIdSchema,
+        fromClubId: entityIdSchema,
+        clubId: entityIdSchema,
+        season: countSchema,
+        status: z.enum(['pending', 'accepted', 'rejected', 'expired']),
+        announcement: z
+          .strictObject({
+            at: countSchema,
+            coachName: z.string(),
+            previousCoachName: z.string(),
+            fromClubName: z.string(),
+            clubName: z.string(),
+          })
+          .optional(),
+      }),
+    )
+    .optional(),
   europeanLeagues: europeanLeaguesSchema.optional(),
   id: entityIdSchema,
   name: nameSchema,
@@ -608,6 +629,7 @@ export const gameSnapshotUpdateSchema = gameSnapshotSchema.omit({ state: true })
   patch: gameEventSchema.shape.patch,
 });
 const individualCommandSchema = z.discriminatedUnion('type', [
+  z.strictObject({ type: z.literal('coach-offer'), offerId: z.string(), accept: z.boolean() }),
   z.strictObject({
     type: z.literal('customize'),
     stadiumSkin: z

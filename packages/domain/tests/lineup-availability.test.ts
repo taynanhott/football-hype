@@ -40,6 +40,29 @@ function fixture() {
   return { state, club, starters, bench, calledUp };
 }
 describe('disponibilidade compartilhada da escalação', () => {
+  it('preserva o titular afastado ao salvar ajustes e restaura sua posição no retorno', () => {
+    const { state, club, starters } = fixture();
+    const legal = resolveLineup(state, club, during).map((entry) => entry.player!.id);
+    const bench = resolveBench(state, club, during, legal);
+    const next = unwrap(
+      executeCommand(
+        state,
+        {
+          type: 'lineup',
+          formation: '4-3-3',
+          starters: legal,
+          bench,
+        },
+        IDS.user,
+        during,
+        eventId,
+      ),
+    );
+    expect(next.patch.tactics?.[club.id]?.starters[0]).toBe(starters[0]);
+    expect(resolveLineup({ ...state, ...next.patch }, club, after)[0]?.player?.id).toBe(
+      starters[0],
+    );
+  });
   it('permite escalar antes da janela e revalida a convocação na data efetiva do jogo', () => {
     const { state, club, starters, bench, calledUp } = fixture();
     const before = { ...state, lastProcessedAt: Date.parse('2026-03-22T18:00:00-03:00') };

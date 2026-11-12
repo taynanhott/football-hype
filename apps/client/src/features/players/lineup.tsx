@@ -66,12 +66,20 @@ export function LineupEditor({ snapshot, club, center }: ViewProps) {
     const measure = () => {
       const card = pitch.querySelector('.tactics-player')?.getBoundingClientRect();
       if (!card) return;
-      setPitchSize({
+      const next = {
         width: pitch.clientWidth,
         height: pitch.clientHeight,
         cardWidth: card.width,
         cardHeight: card.height,
-      });
+      };
+      setPitchSize((current) =>
+        current.width === next.width &&
+        current.height === next.height &&
+        current.cardWidth === next.cardWidth &&
+        current.cardHeight === next.cardHeight
+          ? current
+          : next,
+      );
     };
     const observer = new ResizeObserver(measure);
     observer.observe(pitch);

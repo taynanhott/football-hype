@@ -1,3 +1,4 @@
+import { coachNews } from './coach-news';
 import { awardNews } from './award-news';
 import type { WorldState, Negotiation } from '@football/shared';
 import { uniqueTransferStories, transferStoryKey } from './transfer-stories';
@@ -27,6 +28,9 @@ export function listedNewsOffers(state: WorldState): Negotiation[] {
 export function ownNewsKeys(state: WorldState, clubId: string) {
   const name = state.clubs.byId[clubId]?.name;
   return [
+    ...coachNews(state)
+      .filter((n) => n.homeId === clubId || n.awayId === clubId)
+      .map((n) => n.id),
     ...awardNews(state)
       .filter((n) => n.homeId === clubId)
       .map((n) => n.id),

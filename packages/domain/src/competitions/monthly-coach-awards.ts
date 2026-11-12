@@ -11,7 +11,7 @@ const OFFSET = 10_800_000;
  */
 export function finalizeMonthlyCoachAward(state: WorldState, boundary: number): WorldState {
   const date = new Date(boundary - OFFSET);
-  if (date.getUTCDate() !== 1 || date.getUTCHours() !== 0) return state;
+  if (date.getUTCMonth() === 0 || date.getUTCDate() !== 1 || date.getUTCHours() !== 0) return state;
   const month = new Date(boundary - OFFSET - 1).toISOString().slice(0, 7);
   if (state.monthlyCoachAwards?.some((a) => a.season === state.season && a.month === month))
     return state;

@@ -28,3 +28,26 @@ describe('stadium skin unlock', () => {
     expect(resolvedStadiumSkin(stadium('Estádio Mirassol', 4, 'morumbi'))).toBe('morumbi');
   });
 });
+
+describe('modelos 3D após atualização dos nomes dos estádios', () => {
+  it.each([
+    ['Maracanã', 'maracana'],
+    ['Arena MRV', 'arena-mrv'],
+    ['Mineirão', 'mineirao'],
+    ['Neo Química Arena', 'neo-quimica'],
+    ['São Januário', 'sao-januario'],
+    ['Beira-Rio', 'beira-rio'],
+    ['Arena do Grêmio', 'arena-gremio'],
+    ['Estádio Olímpico Nilton Santos', 'nilton-santos'],
+    ['Nubank Parque', 'palmeiras-park'],
+    ['Allianz Parque', 'palmeiras-park'],
+    ['MorumBIS', 'morumbi'],
+    ['Vila Belmiro', 'vila-belmiro'],
+    ['Arena da Baixada', 'arena-baixada'],
+  ])('%s mantém o modelo %s em todos os níveis', (name, skin) => {
+    for (const level of [1, 2, 3, 4, 5])
+      expect(resolvedStadiumSkin(stadium(name, level))).toBe(skin);
+    expect(resolvedStadiumSkin(stadium(name, 3, 'morumbi'))).toBe(skin);
+    expect(resolvedStadiumSkin(stadium(name, 4, 'morumbi'))).toBe('morumbi');
+  });
+});

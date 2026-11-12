@@ -63,6 +63,26 @@ function games(
   return home.id;
 }
 describe('técnico do mês', () => {
+  it.each([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11])(
+    'entrega no dia 1 do mês de índice %i, pelo desempenho do mês anterior',
+    (month) => {
+      const state = world();
+      games(state, 'A', 2, 0, 3, month - 1);
+      const at = Date.UTC(2026, month, 1, 3);
+      const award = finalizeMonthlyCoachAward(state, at).monthlyCoachAwards?.[0];
+      expect(award?.awardedAt).toBe(at);
+      expect(award?.month).toBe(`2026-${String(month).padStart(2, '0')}`);
+      expect(finalizeMonthlyCoachAward(state, at + 86_400_000)).toBe(state);
+    },
+  );
+  it('não entrega em janeiro, mesmo com partidas elegíveis em dezembro', () => {
+    const state = world();
+    games(state, 'A', 2, 0, 3, 11);
+    const january = Date.UTC(2027, 0, 1, 3);
+    state.lastProcessedAt = january - 86_400_000;
+    expect(finalizeMonthlyCoachAward(state, january)).toBe(state);
+    expect(advanceGameDays(state, january).monthlyCoachAwards).toEqual(state.monthlyCoachAwards);
+  });
   it('usa o peso das ligas, sem substituir desempenho por prestígio', () => {
     const state = world();
     const a = games(state, 'A'),

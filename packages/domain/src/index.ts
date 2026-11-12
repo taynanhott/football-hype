@@ -86,3 +86,5 @@ export { finalizeSeasonAwards } from './competitions/season-awards.js';
 export { SEASON_EVENT_GAP_MS, seasonClosingDates } from './competitions/season-closing.js';
 
 export { pendingSeasonClosingDates } from './competitions/season-closing.js';
+
+export { coachTable, pendingCoachOffers } from './game/coach-offers.js';

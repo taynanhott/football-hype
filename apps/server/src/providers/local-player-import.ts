@@ -98,7 +98,17 @@ export function convertLocalPlayers(
   metadata: unknown,
   excludedIds: readonly number[] = [],
   extras?: unknown,
+  clubDetails?: unknown,
 ): { dataset: WorldDataset; report: Record<string, unknown> } {
+  const details = z
+    .record(
+      z.string(),
+      z.object({
+        coachName: z.string().trim().min(1).max(100).optional(),
+        stadiumName: z.string().trim().min(1).max(100).optional(),
+      }),
+    )
+    .parse(clubDetails ?? {});
   const exported = z
     .object({
       registrosJogadores: z
@@ -349,6 +359,7 @@ export function convertLocalPlayers(
       ...templateClub,
       id,
       name,
+      ...(details[name]?.coachName ? { coachName: details[name].coachName } : {}),
       country,
       division,
       abbreviation: (
@@ -375,7 +386,7 @@ export function convertLocalPlayers(
       ...templateStadium,
       id: stadiumId,
       clubId: id,
-      name: 'Estádio ' + name,
+      name: details[name]?.stadiumName ?? 'Estádio ' + name,
       pitchLevel: level,
       surroundingsLevel: level,
       sectors: templateStadium.sectors.map((s) => ({ ...s, level, capacity: 1800 * level })),

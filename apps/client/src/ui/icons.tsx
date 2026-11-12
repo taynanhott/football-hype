@@ -65,7 +65,15 @@ export function Icon({ name, size = 20 }: { name: string; size?: number }) {
       strokeLinejoin="round"
       aria-hidden="true"
     >
-      <path d={PATHS[name] ?? PATHS.ball} />
+      {name === 'coach-transfer' ? (
+        <g fill="currentColor" stroke="none">
+          <path d="M6.3 0C3.8 0 2.8 1.9 2.8 3.6c0 2.4 1.6 4.4 3.5 4.4s3.5-2 3.5-4.4C9.8 1.9 8.8 0 6.3 0ZM3.4 8.8C1.3 9 0 10.8 0 13v2h12.6v-2c0-2.2-1.3-4-3.4-4.2L6.9 13l-.3-1.4.5-1.9c.2-.5 0-.7-.4-.7h-.8c-.4 0-.6.2-.4.7l.5 1.9-.3 1.4Z" />
+          <path d="M17.7 9C15.2 9 14.2 10.9 14.2 12.6c0 2.4 1.6 4.4 3.5 4.4s3.5-2 3.5-4.4C21.2 10.9 20.2 9 17.7 9ZM14.8 17.8c-2.1.2-3.4 2-3.4 4.2v2H24v-2c0-2.2-1.3-4-3.4-4.2l-2.3 4.2-.3-1.4.5-1.9c.2-.5 0-.7-.4-.7h-.8c-.4 0-.6.2-.4.7l.5 1.9-.3 1.4Z" />
+          <path d="M10 2.5c4.9-2.7 9.1-.4 10.7 3.5H22l-2.2 3-2-3h1.3c-1.4-3.3-4.9-4.4-9.1-3.5Z" />
+        </g>
+      ) : (
+        <path d={PATHS[name] ?? PATHS.ball} />
+      )}
     </svg>
   );
 }

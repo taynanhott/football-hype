@@ -1,3 +1,4 @@
+import { clubCoachProposals } from '../features/market/club-coach-proposals';
 import { useEffect, useMemo, useState } from 'react';
 import type { WorldState } from '@football/shared';
 import { renewalTerms } from '@football/domain';
@@ -33,6 +34,7 @@ function signature(world: WorldState, clubId: string, kind: Kind) {
             (o) => o.sellerId === clubId && o.status === 'pending',
           ),
           ...world.negotiations.filter((o) => o.sellerId === clubId && o.status === 'review'),
+          ...clubCoachProposals(world, clubId).map((o) => ['coach', o.id]),
         ],
   );
 }

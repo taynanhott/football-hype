@@ -22,6 +22,40 @@ const metadata = JSON.parse(
 );
 afterEach(() => vi.unstubAllGlobals());
 describe('base local fornecida', () => {
+  it('distribui técnicos e estádios pesquisados para todos os clubes da base', async () => {
+    const dataset = worldDatasetSchema.parse(JSON.parse(await readFile(file, 'utf8')));
+    const details = JSON.parse(
+      await readFile(
+        fileURLToPath(new URL('../../../data/club-details.json', import.meta.url)),
+        'utf8',
+      ),
+    );
+    for (const club of Object.values(dataset.clubs.byId)) {
+      const entry = details[club.name];
+      expect(entry?.coachName, club.name).toBeTruthy();
+      expect(entry?.stadiumName, club.name).toBeTruthy();
+      expect(entry?.coachSource, club.name).toMatch(/^https:\/\//);
+      expect(entry?.stadiumSource, club.name).toMatch(/^https:\/\//);
+      expect(club.coachName, club.name).toBe(entry.coachName);
+      expect(dataset.stadiums.byId[club.stadiumId]!.name, club.name).toBe(entry.stadiumName);
+    }
+  });
+  it('aplica os nomes pesquisados sem alterar jogadores, dinheiro ou instalações', () => {
+    const original = convertLocalPlayers(source, metadata).dataset;
+    const updated = convertLocalPlayers(source, metadata, [], undefined, {
+      Flamengo: { coachName: 'Leonardo Jardim', stadiumName: 'Maracanã' },
+    }).dataset;
+    const club = Object.values(updated.clubs.byId).find((club) => club.name === 'Flamengo')!;
+    expect(club.coachName).toBe('Leonardo Jardim');
+    expect(updated.stadiums.byId[club.stadiumId]!.name).toBe('Maracanã');
+    expect(updated.players).toEqual(original.players);
+    expect(updated.centers).toEqual(original.centers);
+    expect(club).toEqual({ ...original.clubs.byId[club.id], coachName: 'Leonardo Jardim' });
+    expect(updated.stadiums.byId[club.stadiumId]).toEqual({
+      ...original.stadiums.byId[club.stadiumId],
+      name: 'Maracanã',
+    });
+  });
   it('preserves exported mv and multiplies exported sal by 30 without using mvE or career progress', () => {
     const { dataset, report } = convertLocalPlayers(source, metadata, [], {
       registrosJogadores: {

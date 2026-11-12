@@ -1,3 +1,4 @@
+import { resolveCoachOffer } from './coach-offers.js';
 import { initializeStartingChemistry, playerAvailable, clubAvailabilityAt } from './tactics.js';
 import { exchangeCandidates } from './player-exchange.js';
 import { formatMoney } from '@football/shared';
@@ -76,6 +77,8 @@ export function handleCommand(input: CommandContext): Result<CommandOutcome> {
   };
   const { command } = context;
   switch (command.type) {
+    case 'coach-offer':
+      return resolveCoachOffer(input.state, input.userId, command.offerId, command.accept);
     case 'financial-plan': {
       const { state, club } = context;
       if (command.transfer + command.salaries > Math.max(0, club.balance.cents))
@@ -274,6 +277,18 @@ export function handleCommand(input: CommandContext): Result<CommandOutcome> {
       });
     }
     case 'lineup': {
+      const preferredStarters = [...command.starters];
+      const previous = context.state.tactics[context.club.id];
+      if (previous?.formation === command.formation) {
+        previous.starters.forEach((id, slot) => {
+          if (
+            context.state.players.byId[id]?.clubId === context.club.id &&
+            !playerAvailable(context.state, id, clubAvailabilityAt(context.state, context.club)) &&
+            !preferredStarters.includes(id)
+          )
+            preferredStarters[slot] = id;
+        });
+      }
       if (
         command.instructions?.substitutions.some((plan) =>
           command.instructions?.protected.includes(plan.out),
@@ -309,7 +324,7 @@ export function handleCommand(input: CommandContext): Result<CommandOutcome> {
             [context.club.id]: {
               formation: command.formation,
               ...(command.instructions ? { instructions: command.instructions } : {}),
-              starters: command.starters,
+              starters: preferredStarters,
               bench: command.bench ?? [],
               ...(command.style ? { style: command.style } : {}),
             },

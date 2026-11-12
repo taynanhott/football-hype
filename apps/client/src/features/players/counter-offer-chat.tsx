@@ -4,6 +4,8 @@ import { GeneratedPerson } from '../../ui/person-avatar';
 import { MoneyRange } from '../../ui/money-range';
 import { currency as offerMoney } from '../../ui/format';
 import { openModalPreservingScroll } from '../../ui/modal-scroll';
+import { clubCoachName } from '@football/domain';
+import { useGameStore } from '../../store/game-store';
 
 export function CounterOfferChat({
   buyer,
@@ -29,6 +31,10 @@ export function CounterOfferChat({
   onSend: () => void;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
+  const participants = useGameStore((store) => store.snapshot?.state.participants);
+  const coachName = buyer
+    ? clubCoachName({ participants: participants ?? [] }, buyer)
+    : 'Técnico do clube';
   const [initialFee] = useState(originalFee);
   const step = MONEY_STEPS.transfer;
   const minimum = ceilMoney(initialFee + step, step);
@@ -70,10 +76,10 @@ export function CounterOfferChat({
               ←
             </button>
             <span className="chat-avatar" aria-hidden="true">
-              <GeneratedPerson name={buyer?.coachName ?? 'Técnico do clube'} />
+              <GeneratedPerson name={coachName} />
             </span>
             <div>
-              <strong>{buyer?.coachName ?? `Técnico do ${buyer?.name ?? 'clube'}`}</strong>
+              <strong>{coachName}</strong>
               <small>{buyer?.name} · Negociação de jogador</small>
             </div>
             <span className="chat-contact-menu" aria-hidden="true">

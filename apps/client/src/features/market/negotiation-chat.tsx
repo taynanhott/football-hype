@@ -4,7 +4,13 @@ import { openModalPreservingScroll } from '../../ui/modal-scroll';
 import { GeneratedPerson } from '../../ui/person-avatar';
 import { useEffect, useRef, useState } from 'react';
 import type { ViewProps } from '../../ui/view-props';
-import { transferContext, interestLabel, loanTerms, exchangeCandidates } from '@football/domain';
+import {
+  transferContext,
+  interestLabel,
+  loanTerms,
+  exchangeCandidates,
+  clubCoachName,
+} from '@football/domain';
 import type { PlayerSnapshot } from '@football/shared';
 import { MONEY_STEPS, ceilMoney } from '@football/shared';
 import { currency } from '../../ui/format';
@@ -42,6 +48,7 @@ export function NegotiationChat({
     return () => window.clearInterval(timer);
   }, []);
   const seller = snapshot.state.clubs.byId[player.clubId ?? ''];
+  const sellerCoachName = seller ? clubCoachName(snapshot.state, seller) : 'Técnico do clube';
   const loan = loanTerms(snapshot.state, player, club);
   const [dealType, setDealType] = useState<'buy' | 'loan' | null>(
     maximum <= 0 && loan.available ? 'loan' : 'buy',
@@ -178,12 +185,10 @@ export function NegotiationChat({
               ←
             </button>
             <span className="chat-avatar" aria-hidden="true">
-              <GeneratedPerson name={seller?.coachName ?? 'Técnico do clube'} />
+              <GeneratedPerson name={sellerCoachName} />
             </span>
             <div>
-              <strong id="chat-contact">
-                {seller?.coachName ?? `Técnico do ${seller?.name ?? 'clube'}`}
-              </strong>
+              <strong id="chat-contact">{sellerCoachName}</strong>
               <small>
                 {seller?.name} · {typing ? 'digitando…' : 'Negociação de jogador'}
               </small>

@@ -1,3 +1,4 @@
+import { generateCoachOffers } from './coach-offers.js';
 import { accrueSponsorship } from '../finance/calendar-sponsorship.js';
 import { finalizeMonthlyCoachAward } from '../competitions/monthly-coach-awards.js';
 import { resetTransferredEffects, settleContractDecisions } from './contract-lifecycle.js';
@@ -413,15 +414,17 @@ export function realTimeGameDate(state: WorldState, nextGameAt: number, realNow:
 }
 
 export function advanceGameDays(state: WorldState, target: number): WorldState {
-  return settleContractDecisions(
-    resetTransferredEffects(
-      state,
-      realizeCompetitionDraws(
-        advanceEuropeanLeagues(
-          returnLoans(advanceGameDaysInternal(normalizeRoundCalendar(state), target), target),
+  return generateCoachOffers(
+    settleContractDecisions(
+      resetTransferredEffects(
+        state,
+        realizeCompetitionDraws(
+          advanceEuropeanLeagues(
+            returnLoans(advanceGameDaysInternal(normalizeRoundCalendar(state), target), target),
+            target,
+          ),
           target,
         ),
-        target,
       ),
     ),
   );

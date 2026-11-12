@@ -29,3 +29,4 @@ export * from './config/stadium-identity.js';
 export * from './snapshot-sync.js';
 export * from './config/european-leagues.js';
 export * from './schemas/european-leagues.js';
+export * from './config/club-coaches.js';

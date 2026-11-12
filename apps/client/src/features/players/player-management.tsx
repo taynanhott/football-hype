@@ -467,8 +467,9 @@ export function IncomingOffers({
   snapshot,
   club,
   playerId,
+  hideEmpty = false,
 }: Pick<ViewProps, 'snapshot' | 'club'> &
-  Partial<Pick<ViewProps, 'center' | 'stadium'>> & { playerId?: string }) {
+  Partial<Pick<ViewProps, 'center' | 'stadium'>> & { playerId?: string; hideEmpty?: boolean }) {
   const [counter, setCounter] = useState<{ id: string; fee: number; submitted?: boolean } | null>(
     null,
   );
@@ -580,7 +581,7 @@ export function IncomingOffers({
           <span className="offer-status">{offers.length} pendentes</span>
         </div>
       )}
-      {!offers.length && !renewals.length && !humanOffers.length && (
+      {!hideEmpty && !offers.length && !renewals.length && !humanOffers.length && (
         <div className="offers-empty-state">
           <span className="offers-empty-icon">
             <Icon name="handshake" size={30} />

@@ -1,3 +1,4 @@
+import { coachNews } from './coach-news';
 import { awardNews } from './award-news';
 import { transferStoryKey } from './transfer-stories';
 import { useGameStore } from '../../store/game-store';
@@ -258,6 +259,7 @@ export function TransferNews({ state }: { state: WorldState }) {
     awayId?: string | undefined;
   }[] = [
     ...marketNews,
+    ...coachNews(state).map((item) => ({ ...item, reporter: REPORTERS[0]! })),
     ...awardNews(state).map((item) => ({ ...item, reporter: REPORTERS[0]! })),
     ...roundNews(state).map((item) => ({
       ...item,

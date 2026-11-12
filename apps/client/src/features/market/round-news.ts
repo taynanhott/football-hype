@@ -2,6 +2,10 @@ import { scheduledFixtures } from '@football/domain';
 import type { WorldState } from '@football/shared';
 
 const JOKES = [
+  'O auxiliar pediu um tablet novo. O antigo já decorou todos os passes para trás.',
+  'O zagueiro chamou a bola de minha. A bola pediu uma segunda opinião.',
+  'O massagista foi eleito craque do treino: foi o único que desatou um nó.',
+  'O clube contratou um especialista em bola parada. Na entrevista, ele não saiu do lugar.',
   'O roupeiro pediu direito de imagem: apareceu mais na transmissão que o centroavante.',
   'A bola do treino sumiu. O lateral garante que o cruzamento ainda está descendo.',
   'A diretoria prometeu um reforço de peso. Chegou uma geladeira nova ao vestiário.',
@@ -12,6 +16,10 @@ const JOKES = [
   'A torcida pediu raça. O mascote interpretou literalmente e entrou com um cachorro.',
 ];
 const NETO_JOKES = [
+  'O atacante está esperando a bola perfeita. Meu filho, ela já vem redonda da fábrica!',
+  'O treinador falou que faltou detalhe. O detalhe era botar a bola dentro do gol!',
+  'Esse meio-campo troca tanto passe que daqui a pouco pede comprovante de transferência!',
+  'Porra, o cara marcou a sombra! E ainda perdeu a sombra no segundo tempo!',
   'Porra, Corinthians! Eu pedi uma jogada ensaiada, não um ensaio de como perder a bola na lateral!',
   'Caralho, o atacante recebeu livre e resolveu dar mais um toque. Era para finalizar, não para parcelar a jogada!',
   'Puta que pariu, esse escanteio não passou do primeiro homem! Se a ideia era acertar o marcador, foi uma cobrança perfeita.',
@@ -23,6 +31,10 @@ const NETO_JOKES = [
 ];
 
 const PILHADO_JOKES = [
+  'A mesa pediu uma análise fria. O replay esquentou a discussão de novo.',
+  'O time está construindo desde o primeiro minuto. Falta avisar quando fica pronto.',
+  'O treinador disse que o grupo está fechado. Pela dificuldade de entrar na área, eu acredito.',
+  'Porra, esse contra-ataque tinha endereço! O último passe conseguiu errar até o bairro!',
   'Eu vim debater futebol com calma. A calma viu a primeira substituição e foi embora do estúdio.',
   'O time prometeu intensidade. Quem terminou suando fui eu explicando a escalação.',
   'Tem treinador que guarda substituição como se desse para levar para o próximo campeonato.',
@@ -34,6 +46,10 @@ const PILHADO_JOKES = [
 ];
 
 const CAZE_JOKES = [
+  'O Vasco ganhou um escanteio e eu já sentei diferente. A esperança tem ajuste de postura.',
+  'Pedi para acompanhar o Vasco de forma racional. Meu coração recusou os termos de uso.',
+  'O Vasco tem treino de recuperação amanhã. Eu precisava de um hoje, depois do apito.',
+  'Meteu essa? Disseram que o Vasco estava administrando. Aqui em casa ninguém autorizou esse sofrimento.',
   'O Vasco ainda vai me fazer comemorar lateral no campo de ataque como se fosse título. É uma construção emocional por etapas.',
   'O cara falou que acompanha o Vasco sem passar nervoso. Meteu essa? Eu fico tenso até na divulgação dos relacionados.',
   'Fui assistir ao Vasco tranquilo. Durou até a primeira bola recuada para o goleiro.',
@@ -55,6 +71,10 @@ const CAZE_JOKES = [
   'O Vasco entra em campo com onze. Aqui em casa entram mais três: esperança, ansiedade e o vizinho reclamando do grito.',
 ];
 const FORMIGA_JOKES = [
+  'O Flamengo não demorou a finalizar. Estendeu a fase de elaboração da hipótese ofensiva.',
+  'A bola saiu pela lateral, mas a intenção permaneceu em campo. Precisamos separar os indicadores.',
+  'O Flamengo ocupou todos os espaços. Infelizmente, alguns eram os mesmos.',
+  'A arbitragem não interrompeu o ritmo. Sugeriu uma pausa para contemplar a dinâmica do jogo.',
   'O Flamengo não perdeu a bola. Transferiu temporariamente a responsabilidade da construção para o adversário. É diferente.',
   'Antes de reclamar do passe para trás do Flamengo, precisamos entender a progressão territorial em sentido filosófico.',
   'A finalização do Flamengo foi para fora, mas o conceito entrou. Falta o placar incorporar essa métrica.',
@@ -68,6 +88,22 @@ const FORMIGA_JOKES = [
   'Não foi um cruzamento errado do Flamengo. Foi uma inversão tão ambiciosa que saiu do campo de análise.',
   'O apito interrompeu uma boa jogada, mas precisamos valorizar a participação do árbitro na circulação da bola.',
 ];
+
+function mix(value: number) {
+  value = Math.imul(value ^ (value >>> 16), 0x45d9f3b);
+  value = Math.imul(value ^ (value >>> 16), 0x45d9f3b);
+  return (value ^ (value >>> 16)) >>> 0;
+}
+
+function shuffled<T>(items: readonly T[], seed: number): T[] {
+  const result = [...items];
+  for (let i = result.length - 1; i > 0; i--) {
+    seed = mix(seed + i);
+    const j = seed % (i + 1);
+    [result[i], result[j]] = [result[j]!, result[i]!];
+  }
+  return result;
+}
 
 export function roundNews(state: WorldState) {
   const fixtures = new Map(scheduledFixtures(state).map((f) => [f.id, f]));
@@ -94,11 +130,12 @@ export function roundNews(state: WorldState) {
   const appearances = new Map<string | undefined, number>();
   const selections = new Map<number, { column: (typeof columns)[number]; body: string }[]>();
   for (const day of [...rounds.keys()].sort((a, b) => a - b)) {
-    const seed = Math.abs(Math.floor(day / 86400000));
+    const seed = mix(Math.floor(day / 86400000));
+    const dailyColumns = shuffled(columns, seed);
     selections.set(
       day,
       Array.from({ length: 2 + (seed % 3) }, (_, index) => {
-        const column = columns[(seed + index) % columns.length]!;
+        const column = dailyColumns[index]!;
         const occurrence = appearances.get(column.reporterName) ?? 0;
         appearances.set(column.reporterName, occurrence + 1);
         let pool = column.pool;
@@ -119,7 +156,12 @@ export function roundNews(state: WorldState) {
             ? Math.floor(occurrence / 3)
             : occurrence - Math.floor(occurrence / 3);
         }
-        return { column, body: pool[turn % pool.length]! };
+        // Exhaust a shuffled category before repeating; reconnects preserve the feed.
+        const randomPool = shuffled(
+          pool,
+          mix((columns.indexOf(column) + 1) * 7919 + column.pool.indexOf(pool[0]!)),
+        );
+        return { column, body: randomPool[turn % randomPool.length]! };
       }),
     );
   }

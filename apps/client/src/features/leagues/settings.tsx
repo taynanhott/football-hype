@@ -8,6 +8,7 @@ import { Select, Option } from '../../ui/select';
 import { useEffect, useState } from 'react';
 import { ClubInspection } from '../clubs/club-inspection';
 import { COMPETITIONS } from '@football/shared';
+import { clubCoachName } from '@football/domain';
 import type { ViewProps } from '../../ui/view-props';
 import { useGameStore } from '../../store/game-store';
 import { request } from './api';
@@ -390,7 +391,7 @@ function TrophyGalleryContent({
             )}
             <div className="club-profile-identity">
               <strong>{selected?.name}</strong>
-              <span>{selected?.coachName ?? 'Treinador do clube'}</span>
+              <span>{selected ? clubCoachName(state, selected) : 'Treinador do clube'}</span>
             </div>
             <div className="club-profile-facts">
               <span>

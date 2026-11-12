@@ -1,6 +1,28 @@
 import type { StadiumSnapshot } from '../types/snapshots.js';
 export function linkedStadiumSkin(stadium: StadiumSnapshot) {
   const name = stadium.name.toLowerCase();
+  const normalized = name
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[-–—]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const stadiumModels: Array<[RegExp, NonNullable<StadiumSnapshot['skin']>]> = [
+    [/maracana|jornalista mario filho/, 'maracana'],
+    [/mineirao|governador magalhaes pinto/, 'mineirao'],
+    [/arena mrv/, 'arena-mrv'],
+    [/neo quimica|arena corinthians|itaquerao/, 'neo-quimica'],
+    [/sao januario/, 'sao-januario'],
+    [/beira rio|jose pinheiro borda/, 'beira-rio'],
+    [/arena (do )?gremio/, 'arena-gremio'],
+    [/nilton santos|engenhao/, 'nilton-santos'],
+    [/allianz (parque|park)|nubank (parque|park)|palestra italia/, 'palmeiras-park'],
+    [/morumbi|morumbis|cicero pompeu de toledo/, 'morumbi'],
+    [/vila belmiro|urbano caldeira/, 'vila-belmiro'],
+    [/arena (da )?baixada|ligga arena|joaquim americo/, 'arena-baixada'],
+  ];
+  const official = stadiumModels.find(([pattern]) => pattern.test(normalized));
+  if (official) return official[1];
   return (
     (name.includes('palmeiras')
       ? 'palmeiras-park'

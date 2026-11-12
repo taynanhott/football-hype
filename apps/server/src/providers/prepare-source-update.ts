@@ -63,6 +63,7 @@ const { dataset, report } = convertLocalPlayers(
   clubs,
   bundle.excluidos,
   bundle.dadosExtras,
+  JSON.parse(await readFile(join(root, 'data/club-details.json'), 'utf8')),
 );
 if (!dataset.players.ids.length || !dataset.clubs.ids.length)
   throw Error('A exportação não produziu jogadores e clubes válidos.');

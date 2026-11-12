@@ -31,11 +31,26 @@ export function NewsMedia({
   homeClub?: ClubSnapshot | undefined;
   awayClub?: ClubSnapshot | undefined;
 }) {
+  if (id.startsWith('coach-change:'))
+    return (
+      <figure className="news-media news-media-illustrated news-coach-press-image">
+        <img
+          src="/images/news/coach-press-conference-pixel.png"
+          alt="Coletiva de imprensa de apresentação do novo treinador"
+          loading="lazy"
+          decoding="async"
+          width={1672}
+          height={941}
+        />
+      </figure>
+    );
   const seed = Array.from(id).reduce((sum, char) => (sum * 31 + char.charCodeAt(0)) >>> 0, 7);
   const text = `${title} ${body}`;
   const serious = /les[ãõ]|expuls|elimina|rebaix|suspens/i.test(text);
   const trophy = /campe[ãõ]|conquist.*título|ergue.*taça/i.test(text);
   const score = id.startsWith('score:');
+  const scoreStart = score && homeClub ? title.indexOf(homeClub.name) : -1;
+  const caption = scoreStart >= 0 ? title.slice(scoreStart) : title;
   if ((!score && !serious && !trophy) || seed % 3 === 0) return null;
   const mode = serious ? 'tv' : trophy ? 'trophy' : seed % 2 ? 'action' : 'stadium';
   const capacity = stadium?.sectors.reduce((sum, sector) => sum + sector.capacity, 0) ?? 0;
@@ -92,10 +107,8 @@ export function NewsMedia({
         />
       )}
       <figcaption className={serious ? 'is-tv' : ''}>
-        <small>
-          {serious ? 'GIRO DO FUTEBOL' : trophy ? 'CONQUISTA' : 'FIM DE JOGO'} · ILUSTRAÇÃO
-        </small>
-        <strong>{title}</strong>
+        <small>{score ? 'FIM DE JOGO' : serious ? 'GIRO DO FUTEBOL' : 'CONQUISTA'}</small>
+        <strong>{caption}</strong>
         {mode === 'stadium' && stadium && <small>{stadium.name}</small>}
       </figcaption>
     </figure>

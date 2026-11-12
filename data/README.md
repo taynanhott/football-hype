@@ -19,3 +19,11 @@ Para extrair novamente, execute pnpm data:extract seguido do caminho do HTML; de
 No servidor, DATASET_FILE=../../data/player-database.json seleciona esta base. Ela também é o padrão fora do modo de testes. O importador cria o calendário ao criar cada liga, incluindo Série A, Série B e copas; não reutiliza datas de outra carreira. Competições nacionais não incluem clubes estrangeiros, e as copas continentais selecionam clubes sul-americanos com elenco suficiente.
 
 Carreiras já salvas mantêm seu snapshot. Não há migração ou substituição automática de elencos existentes.
+
+## Técnicos e estádios
+
+`club-details.json` mantém os nomes pesquisados dos técnicos e estádios, com fonte por campo e data de consulta. A pesquisa foi realizada em 11/11/2026, usando páginas dos clubes e das competições e notícias mais recentes encontradas para corrigir informações desatualizadas. `club-details-corrections.json` preserva essas correções sobre a coleta das páginas da Wikipédia; cargos comprovadamente vagos são identificados como `Sem técnico`.
+
+Os nomes são aplicados por `pnpm data:local` e pelo fluxo de atualização da fonte. Para atualizar somente nomes na base normalizada, use `node scripts/apply-club-details.mjs`; esse comando também copia a base para os assets locais do Worker. Ele não acessa nem altera carreiras persistidas, jogadores, saldos, instalações ou capacidades dos estádios. A pesquisa é manutenção local explícita, sem consultas externas durante o jogo ou novas chamadas à Cloudflare.
+
+Em clubes comandados por participantes, a interface prioriza o nome do perfil do treinador humano. O técnico real da base é usado nos clubes sem participante.

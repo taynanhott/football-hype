@@ -13,6 +13,7 @@ const { dataset, report } = convertLocalPlayers(
   JSON.parse(await readFile(resolve(root, 'data/clubs-source.json'), 'utf8')),
   JSON.parse(await readFile(resolve(root, 'data/player-exclusions.json'), 'utf8')),
   extras,
+  JSON.parse(await readFile(resolve(root, 'data/club-details.json'), 'utf8')),
 );
 await writeFile(resolve(root, 'data/player-database.json'), JSON.stringify(dataset));
 await mkdir(resolve(root, 'apps/worker/assets'), { recursive: true });

@@ -93,6 +93,11 @@ export function startCardPointerDrag(event: ReactPointerEvent<HTMLElement>, play
   const begin = () => {
     if (!active) {
       active = true;
+      if (touch) {
+        document.removeEventListener('pointermove', move);
+        document.addEventListener('pointermove', move, { passive: false });
+        document.addEventListener('touchmove', preventTouchScroll, { passive: false });
+      }
       shield = document.createElement('div');
       shield.className = 'card-drag-shield';
       document.body.appendChild(shield);
