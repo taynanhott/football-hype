@@ -68,10 +68,11 @@ export function isRival(a: ClubSnapshot, b: ClubSnapshot) {
 export function contractEnd(state: WorldState, player: PlayerSnapshot) {
   return contractExpires(state, player);
 }
-/** Remaining monthly wages, prorated by day, in cents. */
+/** Half the remaining prorated wages, rounded to the nearest HC$ 50, in cents. */
 export function contractTerminationCost(state: WorldState, player: PlayerSnapshot) {
   const remaining = Math.max(0, contractEnd(state, player) - state.lastProcessedAt);
-  return Math.ceil((player.salary.cents * remaining) / (30 * 86400000));
+  const remainingWages = Math.ceil((player.salary.cents * remaining) / (30 * 86400000));
+  return Math.round(remainingWages / 2 / 5000) * 5000;
 }
 export function interestLabel(score: number) {
   return score <= 0

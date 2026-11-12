@@ -3,15 +3,15 @@ import { roundSponsorship } from '../src/finance/sponsorship.js';
 import { it, expect } from 'vitest';
 import type { WorldState } from '@football/shared';
 import fs from 'node:fs';
-import { facilityCosts } from '../src/finance/facility-costs.ts';
-import { TICKET_TIERS, projectTicketDemand } from '../src/finance/match-demand.ts';
+import { facilityCosts } from '../src/finance/facility-costs.js';
+import { TICKET_TIERS, projectTicketDemand } from '../src/finance/match-demand.js';
 it('sustenta os clubes na melhor faixa com dois jogos em casa e quatro rodadas de patrocínio', () => {
   const data = JSON.parse(fs.readFileSync('data/player-database.json', 'utf8')) as WorldState;
   const rows = Object.values(data.clubs.byId).map((club) => {
-    const stadium = data.stadiums.byId[club.stadiumId];
+    const stadium = data.stadiums.byId[club.stadiumId]!;
     const capacity = stadium.sectors.reduce((sum, s) => sum + s.capacity, 0);
     const expenses =
-      club.playerIds.reduce((sum, id) => sum + data.players.byId[id].salary.cents, 0) +
+      club.playerIds.reduce((sum, id) => sum + data.players.byId[id]!.salary.cents, 0) +
       facilityCosts(data, club).reduce((sum, item) => sum + item.cost, 0);
     const gate = Math.max(
       ...TICKET_TIERS.map(
@@ -28,7 +28,7 @@ it('sustenta os clubes na melhor faixa com dois jogos em casa e quatro rodadas d
           ).revenue,
       ),
     );
-    const marketing = data.centers.byId[club.trainingCenterId].levels.marketing;
+    const marketing = data.centers.byId[club.trainingCenterId]!.levels.marketing;
     const sponsor = roundSponsorship(club, marketing);
     const income = gate * 2 + sponsor * 4;
     return {

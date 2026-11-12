@@ -1,7 +1,7 @@
 import { DatabaseSync } from 'node:sqlite';
 import { expect, it } from 'vitest';
 import { createWorld, playNextBatch, recordEvent } from '@football/domain';
-import { worldStateSchema } from '@football/shared';
+import { worldStateSchema, type WorldState } from '@football/shared';
 import { DurableLeagueRepository, type SqlStore } from '../src/repository';
 
 it('anexa somente jogos novos e recupera o mesmo histórico completo após reiniciar', async () => {
@@ -57,7 +57,7 @@ it('anexa somente jogos novos e recupera o mesmo histórico completo após reini
           amount: 0,
         }),
       );
-      state = { ...state, ...event.patch, revision: event.sequence };
+      state = { ...state, ...event.patch, revision: event.sequence } as WorldState;
       resultWrites = 0;
       await repo.append(state.id, previous.revision, state, event);
       const suffixSize = JSON.stringify(state.results.slice(previous.results.length)).length;
@@ -88,7 +88,7 @@ it('anexa somente jogos novos e recupera o mesmo histórico completo após reini
         amount: 0,
       }),
     );
-    state = { ...state, ...event.patch, revision: event.sequence };
+    state = { ...state, ...event.patch, revision: event.sequence } as WorldState;
     await repo.append(state.id, previous.revision, state, event);
     expect((await new DurableLeagueRepository(sql, atomic, false).load(state.id))!.state).toEqual(
       worldStateSchema.parse(JSON.parse(JSON.stringify(state))),

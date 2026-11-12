@@ -55,10 +55,16 @@ function testWorld() {
   const member = state.participants[0]!;
   const targets = state.clubs.ids.filter((id) => id !== member.clubId).slice(0, 2);
   for (const [index, id] of targets.entries())
-    state.clubs.byId[id] = {
-      ...state.clubs.byId[id]!,
-      name: index === 0 ? 'Atlético-MG' : 'Flamengo',
-      coachName: 'Técnico visitante',
+    state.clubs = {
+      ...state.clubs,
+      byId: {
+        ...state.clubs.byId,
+        [id]: {
+          ...state.clubs.byId[id]!,
+          name: index === 0 ? 'Atlético-MG' : 'Flamengo',
+          coachName: 'Técnico visitante',
+        },
+      },
     };
   return { state, member, targets };
 }

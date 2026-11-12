@@ -133,7 +133,11 @@ it.skipIf(process.env.FOOTBALL_PROFILE_LOADING !== '1')(
               }),
             ),
           );
-          const applied: WorldState = { ...before, ...event.patch, revision: event.sequence };
+          const applied: WorldState = {
+            ...before,
+            ...event.patch,
+            revision: event.sequence,
+          } as WorldState;
           statements = 0;
           writtenBytes = 0;
           writeMs = 0;

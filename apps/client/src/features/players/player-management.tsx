@@ -396,7 +396,7 @@ export function PlayerManagement({
         <div className="contract-termination">
           <div>
             <strong>Rescisão de contrato</strong>
-            <small>Indenização: {currency(terminationCost)} · salários restantes</small>
+            <small>Indenização: {currency(terminationCost)} · metade dos salários restantes</small>
             {terminationReason && <small className="negative">{terminationReason}</small>}
           </div>
           <button

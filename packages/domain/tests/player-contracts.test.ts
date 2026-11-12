@@ -3,7 +3,7 @@ import {
   settleContractDecisions,
 } from '../src/game/contract-lifecycle.js';
 import { renewalPatience } from '../src/game/player-contracts.js';
-import { matchResultSchema, worldStateSchema } from '@football/shared';
+import { matchResultSchema, worldStateSchema, type WorldState } from '@football/shared';
 import { describe, it, expect } from 'vitest';
 import {
   createWorld,
@@ -342,14 +342,14 @@ describe('renovação voluntária e lesões por partida', () => {
       ),
     );
     let next = unwrap(applyEvent(state, event));
-    expect(next.management.contractHistory?.[player.id]?.valuedGames).toBe(5);
+    expect(next.management!.contractHistory?.[player.id]?.valuedGames).toBe(5);
     expect(
       temporaryModifiers(next, next.players.byId[player.id]!).find(
         (effect) => effect.label === 'Sentido-se valorizado',
       )?.value,
     ).toBe(2);
     const rested = advanceGameDays(next, now + 86400000);
-    expect(rested.management.contractHistory?.[player.id]?.valuedGames).toBe(5);
+    expect(rested.management!.contractHistory?.[player.id]?.valuedGames).toBe(5);
     const opponent = state.clubs.ids.find((id) => id !== club.id)!;
     next = {
       ...next,
@@ -378,7 +378,7 @@ describe('renovação voluntária e lesões por partida', () => {
         },
       };
       next = unwrap(playNextBatch(next, now));
-      expect(next.management.contractHistory?.[player.id]?.valuedGames).toBe(4 - i);
+      expect(next.management!.contractHistory?.[player.id]?.valuedGames).toBe(4 - i);
     }
     expect(
       temporaryModifiers(next, next.players.byId[player.id]!).some(
@@ -433,7 +433,7 @@ describe('renovação voluntária e lesões por partida', () => {
       ),
     );
     expect(
-      unwrap(applyEvent(world, event)).management.contractHistory?.[player.id]?.valuedGames,
+      unwrap(applyEvent(world, event)).management?.contractHistory?.[player.id]?.valuedGames,
     ).toBe(0);
   });
 });
@@ -483,7 +483,7 @@ describe('recusas e mudança de clube', () => {
     it('insiste e respeita o limite de recusas com contrato de ' + days + ' dias', () => {
       const initial = setup();
       const { player } = initial;
-      let state = {
+      let state: WorldState = {
         ...initial.state,
         management: {
           ...initial.state.management,

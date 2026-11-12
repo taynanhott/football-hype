@@ -1,3 +1,4 @@
+import type { WorldState } from '@football/shared';
 import { describe, expect, it } from 'vitest';
 import {
   createWorld,
@@ -59,9 +60,9 @@ describe('disponibilidade compartilhada da escalação', () => {
       ),
     );
     expect(next.patch.tactics?.[club.id]?.starters[0]).toBe(starters[0]);
-    expect(resolveLineup({ ...state, ...next.patch }, club, after)[0]?.player?.id).toBe(
-      starters[0],
-    );
+    expect(
+      resolveLineup({ ...state, ...next.patch } as WorldState, club, after)[0]?.player?.id,
+    ).toBe(starters[0]);
   });
   it('permite escalar antes da janela e revalida a convocação na data efetiva do jogo', () => {
     const { state, club, starters, bench, calledUp } = fixture();

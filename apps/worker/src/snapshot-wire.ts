@@ -67,7 +67,7 @@ export async function encodeSnapshotMessage(
   }
   if (complete) return buffer;
   const encoder = new TextEncoder();
-  const stream = new ReadableStream<Uint8Array>({
+  const stream = new ReadableStream<BufferSource>({
     pull(controller) {
       while (buffer.length < 32768 && !complete) {
         const part = parts.next();

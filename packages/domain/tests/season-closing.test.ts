@@ -57,7 +57,7 @@ it('reserva pelo menos sete dias antes da Intercontinental e encerra a temporada
     leftId: null,
     rightId: null,
     scheduledAt: state.lastProcessedAt,
-    legs: 1,
+    legs: 1 as const,
   };
   const scheduled = scheduleIntercontinental({
     ...state,

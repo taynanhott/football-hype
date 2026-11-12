@@ -62,7 +62,10 @@ describe('empréstimos', () => {
       },
     };
     for (const id of buyer.playerIds)
-      state.players.byId[id] = { ...state.players.byId[id]!, overall: 30 };
+      state.players = {
+        ...state.players,
+        byId: { ...state.players.byId, [id]: { ...state.players.byId[id]!, overall: 30 } },
+      };
     expect(loanTerms(state, player, weakBuyer).eligible).toBe(true);
     expect(loanTerms(state, player, weakBuyer).available).toBe(false);
     expect(

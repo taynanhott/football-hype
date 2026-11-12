@@ -2,7 +2,7 @@ import { it, expect } from 'vitest';
 import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { createWorld, importDataset, executeCommand, stableId } from '../src/index.js';
-import { worldDatasetSchema } from '@football/shared';
+import { worldDatasetSchema, type WorldState } from '@football/shared';
 
 it.skipIf(process.env.CALENDAR_PERFORMANCE !== '1')(
   'measures twenty advances using the production player database in both modes',
@@ -35,7 +35,7 @@ it.skipIf(process.env.CALENDAR_PERFORMANCE !== '1')(
         );
         if (!ev.ok) throw Error(ev.error.message);
         // LeagueService applies events validated by executeCommand without parsing them again.
-        state = { ...state, ...ev.value.patch, revision: ev.value.sequence };
+        state = { ...state, ...ev.value.patch, revision: ev.value.sequence } as WorldState;
         samples.push(performance.now() - start);
       }
       const sorted = [...samples].sort((a, b) => a - b);

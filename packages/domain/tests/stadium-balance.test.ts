@@ -5,9 +5,16 @@ import type { StadiumSnapshot } from '@football/shared';
 
 const stadium = (level: number) =>
   ({
+    id: 'stadium',
+    clubId: 'club',
+    name: 'Estádio',
     pitchLevel: level,
     surroundingsLevel: level,
-    sectors: Array.from({ length: 4 }, () => ({ level })),
+    sectors: (['north', 'south', 'east', 'west'] as const).map((id) => ({
+      id,
+      level,
+      capacity: 5000,
+    })),
     commerce: { foodLevel: level, shirtsLevel: level, hospitalityLevel: level },
   }) as StadiumSnapshot;
 

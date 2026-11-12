@@ -1,3 +1,4 @@
+import type { WorldState } from '@football/shared';
 import { expect, it } from 'vitest';
 import { createWorld, playNextBatch, recordEvent } from '../src/index.js';
 import { gameEventSchema } from '@football/shared';
@@ -50,6 +51,6 @@ it('equivale à validação completa, preserva jogadores intactos e rejeita alte
         metadata(),
       ).ok,
     ).toBe(false);
-    state = { ...state, ...event.patch, revision: event.sequence };
+    state = { ...state, ...event.patch, revision: event.sequence } as WorldState;
   }
 });

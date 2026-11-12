@@ -761,12 +761,12 @@ const individualCommandSchema = z.discriminatedUnion('type', [
   z.strictObject({ type: z.literal('new-season') }),
 ]);
 const clubSettingSchema = z.discriminatedUnion('type', [
-  individualCommandSchema.options[0]!, // appearance
-  individualCommandSchema.options[2]!, // financial plan
-  individualCommandSchema.options[5]!, // default ticket price
-  individualCommandSchema.options[6]!, // fixture ticket price
-  individualCommandSchema.options[7]!, // lineup
-  individualCommandSchema.options[13]!.extend({
+  individualCommandSchema.options[1]!, // appearance
+  individualCommandSchema.options[3]!, // financial plan
+  individualCommandSchema.options[6]!, // default ticket price
+  individualCommandSchema.options[7]!, // fixture ticket price
+  individualCommandSchema.options[8]!, // lineup
+  individualCommandSchema.options[14]!.extend({
     action: z.enum(['policy', 'renew', 'reject-renewal']),
   }), // squad planning, committed atomically
 ]);

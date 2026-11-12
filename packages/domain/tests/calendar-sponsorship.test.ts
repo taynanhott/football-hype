@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { worldStateSchema } from '@football/shared';
+import { worldStateSchema, type WorldState } from '@football/shared';
 import fs from 'node:fs';
 import {
   createWorld,
@@ -23,7 +23,14 @@ const original = unwrap(
   }),
 );
 const data = JSON.parse(fs.readFileSync('data/player-database.json', 'utf8'));
-const state = { ...original, ...data, fixtures: [], cups: [], results: [], lastProcessedAt: start };
+const state: WorldState = {
+  ...original,
+  ...data,
+  fixtures: [],
+  cups: [],
+  results: [],
+  lastProcessedAt: start,
+};
 const club = state.clubs.byId[state.clubs.ids[0]!]!;
 describe('patrocínio mensal calibrado', () => {
   it('migra uma carreira sem os novos campos e mantém o estado válido', () => {

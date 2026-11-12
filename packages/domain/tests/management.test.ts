@@ -15,6 +15,7 @@ import {
   contractEnd,
   signingSalary,
   maxContractYears,
+  contractTerminationCost,
 } from '../src/index.js';
 import { unwrap } from '../../../tests/fixtures/domain.js';
 const now = Date.parse('2026-01-15T15:00:00Z');
@@ -24,6 +25,19 @@ beforeEach(() => {
     createWorld({ id: stableId(91, 1), name: 'Gestão', mode: 'offline', userId: 'host', now }),
   );
 });
+function addReserve(clubId: string) {
+  const club = state.clubs.byId[clubId]!;
+  const original = state.players.byId[club.playerIds[0]!]!;
+  const id = stableId(999, state.players.ids.length);
+  state.players = {
+    ids: [...state.players.ids, id],
+    byId: { ...state.players.byId, [id]: { ...original, id, clubId } },
+  };
+  state.clubs = {
+    ...state.clubs,
+    byId: { ...state.clubs.byId, [clubId]: { ...club, playerIds: [...club.playerIds, id] } },
+  };
+}
 const own = () => state.clubs.byId[state.participants[0]!.clubId]!;
 function act(command: Parameters<typeof executeCommand>[1]) {
   return unwrap(
@@ -42,7 +56,7 @@ describe('gestão financeira mensal', () => {
       ),
       maintenance = maintenanceBreakdown(state, club).reduce((sum, item) => sum + item.cost, 0);
     expect(
-      settleMonthly(state, Date.parse('2026-02-01T02:59:59Z')).management?.charges,
+      settleMonthly(state, Date.parse('2026-02-01T02:59:59Z')).management?.charges ?? [],
     ).toHaveLength(0);
     const settled = settleMonthly(state, Date.parse('2026-03-01T03:00:00Z'));
     expect(settled.management?.charges?.filter((c) => c.clubId === club.id)).toHaveLength(2);
@@ -129,6 +143,17 @@ describe('contratos e negociação', () => {
       ...state.players,
       byId: { ...state.players.byId, [player.id]: { ...player, age: 25, morale: 80 } },
     };
+    state.clubs = {
+      ...state.clubs,
+      byId: {
+        ...state.clubs.byId,
+        [club.id]: { ...club, balance: { ...club.balance, cents: 100000000000 } },
+      },
+    };
+    state.management = {
+      ...state.management,
+      financialPlans: { [club.id]: { transfer: 0, salaries: 1000000000 } },
+    };
     const end = contractEnd(state, player);
     state = act({
       type: 'management',
@@ -156,6 +181,7 @@ describe('contratos e negociação', () => {
     ).toBe(false);
   });
   it('bloqueia jogadores humanos indisponíveis e torna preço e salário sensíveis aos interesses', () => {
+    addReserve(own().id);
     const seller = own(),
       player = state.players.byId[seller.playerIds[0]!]!,
       buyer = Object.values(state.clubs.byId).find((c) => c.id !== seller.id)!;
@@ -184,6 +210,7 @@ describe('contratos e negociação', () => {
     expect(transferContext(state, { ...player, clubId: null }, buyer).minimumFee).toBe(0);
   });
   it('gera proposta conforme necessidade, reserva financeira e transfere atomicamente', () => {
+    addReserve(own().id);
     const seller = own(),
       player = state.players.byId[seller.playerIds[0]!]!,
       buyer = Object.values(state.clubs.byId).find((c) => c.id !== seller.id)!;
@@ -394,6 +421,7 @@ it('dispensas compartilham as três reposições e encerram a negociação salar
 
 describe('contraofertas recebidas', () => {
   it('retira a oferta do bot quando o aumento ultrapassa sua tolerância', () => {
+    addReserve(own().id);
     const club = own();
     const player = state.players.byId[club.playerIds[0]!]!;
     const buyer = state.clubs.ids.find((id) => id !== club.id)!;
@@ -429,6 +457,8 @@ describe('contraofertas recebidas', () => {
 
 describe('trocas de jogadores', () => {
   it('transfere os atletas e movimenta somente a parcela em dinheiro', () => {
+    addReserve(own().id);
+    addReserve(state.clubs.ids.find((id) => id !== own().id)!);
     const buyer = own();
     const seller = state.clubs.byId[state.clubs.ids.find((id) => id !== buyer.id)!]!;
     const target = state.players.byId[seller.playerIds[0]!]!;
@@ -454,7 +484,7 @@ describe('trocas de jogadores', () => {
     const next = act({
       type: 'salary',
       negotiationId: stableId(99, 1),
-      salary: target.salary.cents,
+      salary: signingSalary(target.salary.cents, 3),
     });
     expect(next.players.byId[exchange.id]?.clubId).toBe(seller.id);
     expect(next.players.byId[target.id]?.clubId).toBe(buyer.id);
@@ -463,4 +493,21 @@ describe('trocas de jogadores', () => {
     expect(next.clubs.byId[seller.id]?.balance.cents).toBe(seller.balance.cents + 100000);
     expect(worldStateSchema.safeParse(next).success).toBe(true);
   });
+});
+
+it.each([
+  [10001, 5000],
+  [14999, 5000],
+  [15000, 10000],
+  [0, 0],
+])('arredonda metade de %i centavos para %i na rescisão', (salary, expected) => {
+  const player = {
+    ...state.players.byId[own().playerIds[0]!]!,
+    salary: { cents: salary, currency: 'BRL' as const },
+  };
+  state.management = {
+    ...state.management,
+    contracts: { [player.id]: state.lastProcessedAt + 30 * 86400000 },
+  };
+  expect(contractTerminationCost(state, player)).toBe(expected);
 });

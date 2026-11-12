@@ -38,7 +38,7 @@ describe('premiações dos campeonatos', () => {
       rightId: null,
       winnerId: clubId,
       scheduledAt: s.lastProcessedAt,
-      legs: 1,
+      legs: 1 as const,
     };
     const state = {
       ...s,
