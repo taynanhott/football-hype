@@ -1,3 +1,4 @@
+import { presentationGameMinute } from './match-presentation';
 /* eslint-disable react-hooks/immutability -- Three.js animation buffers are updated in place each frame. */
 import type { OrbitControls } from 'three-stdlib';
 import { runnerMotion } from './runner-motion';
@@ -22,7 +23,8 @@ import {
   type WorldState,
 } from '@football/shared';
 
-import { buildPlayback, samplePlayback } from './match-playback';
+import { buildPlayback, samplePlayback, playbackBallHeight } from './match-playback';
+import { MatchAtmosphere, MatchReferee } from './match-atmosphere';
 
 export function MatchActors({
   result,
@@ -35,7 +37,10 @@ export function MatchActors({
   elapsed: number;
   followCamera?: boolean;
 }) {
-  const minute = Math.min(90, (elapsed / MATCH_DURATION_MS) * 90);
+  const minute = presentationGameMinute(
+    result.actions ?? [],
+    Math.min(90, (elapsed / MATCH_DURATION_MS) * 90),
+  );
   const home = state.clubs.byId[result.homeId ?? ''];
   const away = state.clubs.byId[result.awayId ?? ''];
   const kits = matchKits(home, away);
@@ -59,7 +64,10 @@ export function MatchActors({
   // Update scene objects each frame without re-rendering the React interface.
   useFrame(({ clock }) => {
     const time = anchor.current.elapsed + (clock.elapsedTime - anchor.current.at) * 1000;
-    renderedView.current = samplePlayback(timeline, Math.min(90, (time / MATCH_DURATION_MS) * 90));
+    renderedView.current = samplePlayback(
+      timeline,
+      presentationGameMinute(result.actions ?? [], Math.min(90, (time / MATCH_DURATION_MS) * 90)),
+    );
   });
   const wall = (view.frame?.action.wallIds ?? []).flatMap((id) =>
     view.positions[id] ? [view.positions[id]!] : [],
@@ -167,6 +175,8 @@ export function MatchActors({
         </mesh>
       )}
       <PlaybackBall renderedView={renderedView} />
+      <MatchReferee renderedView={renderedView} ended={elapsed >= MATCH_DURATION_MS} />
+      {elapsed < MATCH_DURATION_MS && <MatchAtmosphere renderedView={renderedView} />}
       {elapsed >= MATCH_DURATION_MS &&
         elapsed < MATCH_DURATION_MS + 6000 &&
         result.homeGoals > result.awayGoals && (
@@ -285,9 +295,23 @@ function Runner({
     const nextX = point?.x ?? x;
     const nextZ = point?.z ?? z;
     const distance = Math.hypot(nextX - group.current.position.x, nextZ - group.current.position.z);
-    group.current.position.set(nextX, Math.abs(dive) * 0.85 + jump, nextZ);
     const playback = renderedView.current;
     const action = playback.frame?.action;
+    const keeperAction = action?.keeperId === playerId && ['shot', 'save'].includes(action.type);
+    const reach = keeperAction
+      ? action.type === 'shot'
+        ? Math.sin((Math.max(0, Math.min(1, (playback.progress - 0.18) / 0.78)) * Math.PI) / 2)
+        : Math.max(0, 1 - playback.progress * 1.35)
+      : 0;
+    const keeperDive =
+      reach * (action?.keeperDive === 'left' ? -1 : action?.keeperDive === 'center' ? 0.15 : 1);
+    const jumpLift =
+      action?.header && action.playerId === playerId
+        ? Math.sin(playback.progress * Math.PI) * 0.9
+        : action?.type === 'shot' && action.wallIds?.includes(playerId)
+          ? Math.sin(Math.max(0, Math.min(1, (playback.progress - 0.1) / 0.7)) * Math.PI) * 0.55
+          : jump;
+    group.current.position.set(nextX, jumpLift + Math.sin(reach * Math.PI) * 0.45, nextZ);
     const takingKick =
       action?.playerId === playerId &&
       ['pass', 'cross', 'shot'].includes(action.type) &&
@@ -302,9 +326,9 @@ function Runner({
         : undefined,
     );
     if (body.current) {
-      body.current.rotation.z = -dive * (side === 'home' ? 1 : -1) * 1.2;
+      body.current.rotation.z = -keeperDive * (side === 'home' ? 1 : -1) * 1.3;
       body.current.rotation.x = motion.lean;
-      body.current.position.y = 1.05 + motion.bounce;
+      body.current.position.y = 1.05 + motion.bounce - Math.abs(keeperDive) * 0.15;
     }
     if (distance > 0.02)
       group.current.rotation.y = Math.atan2(
@@ -313,7 +337,7 @@ function Runner({
       );
     group.current.userData.lastX = nextX;
     group.current.userData.lastZ = nextZ;
-    if (Math.abs(dive) > 0.01) group.current.rotation.y = side === 'home' ? 0 : Math.PI;
+    if (reach > 0.01) group.current.rotation.y = side === 'home' ? 0 : Math.PI;
     if (takingKick || kicking)
       group.current.rotation.y = action
         ? Math.atan2((action.endX ?? action.x) - action.x, (action.endZ ?? action.z) - action.z)
@@ -324,6 +348,14 @@ function Runner({
     if (rightKnee.current) rightKnee.current.rotation.x = motion.rightKnee;
     if (leftArm.current) leftArm.current.rotation.x = motion.leftArm;
     if (rightArm.current) rightArm.current.rotation.x = motion.rightArm;
+    for (const [arm, sign] of [
+      [leftArm.current, -1],
+      [rightArm.current, 1],
+    ] as const)
+      if (arm) {
+        arm.rotation.z = sign * (0.15 + reach * 1.35);
+        if (keeperAction) arm.rotation.x = -reach * 0.8;
+      }
   });
   const primary = kit.primary;
   const secondary = kit.secondary;
@@ -389,6 +421,12 @@ function Runner({
                 <boxGeometry args={[0.28, 1, 0.35]} />
                 <meshStandardMaterial color={jersey} />
               </mesh>
+              {slot === 0 && (
+                <mesh position={[0, -1.04, 0.04]}>
+                  <boxGeometry args={[0.34, 0.3, 0.4]} />
+                  <meshStandardMaterial color="#e9efbf" />
+                </mesh>
+              )}
             </group>
           ))}
           {[-1, 1].map((leg) => (
@@ -492,14 +530,16 @@ function PlaybackBall({
 }: {
   renderedView: RefObject<ReturnType<typeof samplePlayback>>;
 }) {
+  const radius = 0.25;
   const ball = useRef<Mesh>(null);
   useFrame(() => {
     const view = renderedView.current;
-    ball.current?.position.set(view.ball.x, view.height, view.ball.z);
+    // Playback heights use the former radius as their ground baseline.
+    ball.current?.position.set(view.ball.x, playbackBallHeight(view.height, radius), view.ball.z);
   });
   return (
     <mesh ref={ball} castShadow>
-      <sphereGeometry args={[0.45, 12, 8]} />
+      <sphereGeometry args={[radius, 12, 8]} />
       <meshStandardMaterial color="white" />
     </mesh>
   );

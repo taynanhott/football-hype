@@ -360,7 +360,7 @@ export function StadiumSurroundings({
     'beira-rio': [123, 129, false],
     'arena-mrv': [93, 113, true],
     'arena-gremio': [113, 150, false],
-    'nilton-santos': [113, 150, false],
+    'nilton-santos': [120, 143, false],
   };
   const [width, depth, rect] = dimensions[skin ?? ''] ?? [
     structure >= 4 ? 100 : 72,

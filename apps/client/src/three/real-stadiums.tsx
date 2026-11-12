@@ -1,4 +1,14 @@
+import { NiltonSantos } from './nilton-santos';
+import { ArenaMrv } from './arena-mrv';
+import { SaoJanuario } from './sao-januario';
+import { Mineirao } from './mineirao';
+import { ArenaGremio } from './arena-gremio';
+import { Maracana } from './maracana';
+import { ArenaBaixada } from './arena-baixada';
+import { Morumbi } from './morumbi';
+import { NeoQuimicaArena } from './neo-quimica-arena';
 import { STADIUM_SKINS } from './stadium-catalog';
+import { VilaBelmiro } from './vila-belmiro';
 import { BufferGeometry, Float32BufferAttribute, CatmullRomCurve3, Vector3 } from 'three';
 import { useMemo, useCallback } from 'react';
 function Ribbon({
@@ -8,6 +18,7 @@ function Ribbon({
   color,
   rect = false,
   bottom,
+  outerY,
   start = 0,
   end = Math.PI * 2,
 }: {
@@ -17,6 +28,7 @@ function Ribbon({
   color: string;
   rect?: boolean;
   bottom?: number;
+  outerY?: number;
   start?: number;
   end?: number;
 }) {
@@ -38,6 +50,8 @@ function Ribbon({
         q = point(b, inner),
         r = point(a, outer),
         t = point(b, outer);
+      r[1] = outerY ?? y;
+      t[1] = outerY ?? y;
       vertices.push(...p, ...r, ...q, ...q, ...r, ...t);
       if (bottom !== undefined) {
         const low = (v: number[]) => [v[0]!, bottom, v[2]!];
@@ -49,7 +63,7 @@ function Ribbon({
     g.setAttribute('position', new Float32BufferAttribute(vertices, 3));
     g.computeVertexNormals();
     return g;
-  }, [inner, outer, y, rect, bottom, start, end]);
+  }, [inner, outer, y, rect, bottom, outerY, start, end]);
   return (
     <mesh geometry={geometry} receiveShadow castShadow>
       <meshStandardMaterial color={color} side={2} roughness={0.65} />
@@ -147,309 +161,41 @@ function LeafRoof({ angle }: { angle: number }) {
   );
 }
 
-function CorinthiansArena() {
+function PalmeirasCladding() {
+  const geometry = useMemo(() => {
+    const vertices: number[] = [],
+      colors: number[] = [];
+    const point = (a: number, y: number, offset: number) => [
+      (82 + offset) * Math.sign(Math.cos(a)) * Math.abs(Math.cos(a)) ** 0.45,
+      y,
+      (102 + offset) * Math.sign(Math.sin(a)) * Math.abs(Math.sin(a)) ** 0.45,
+    ];
+    // Staggered metal scales are batched into one mesh instead of hundreds of boxes.
+    for (let row = 0; row < 32; row++) {
+      const bulge = Math.sin((row / 31) * Math.PI) * 0.8;
+      for (let i = 0; i < 256; i++) {
+        const a = ((i + (row % 2) * 0.5) / 256) * Math.PI * 2;
+        const b = a + ((Math.PI * 2) / 256) * 0.92;
+        const y = 4 + row * 0.78;
+        const p = point(a, y, bulge),
+          q = point(b, y, bulge);
+        const r = point(a, y + 0.7, bulge + 0.15),
+          s = point(b, y + 0.7, bulge + 0.15);
+        vertices.push(...p, ...r, ...q, ...q, ...r, ...s);
+        const shade = 0.42 + (((i * 17 + row * 31) % 11) / 11) * 0.3;
+        for (let v = 0; v < 6; v++) colors.push(shade * 0.97, shade, shade * 1.02);
+      }
+    }
+    const g = new BufferGeometry();
+    g.setAttribute('position', new Float32BufferAttribute(vertices, 3));
+    g.setAttribute('color', new Float32BufferAttribute(colors, 3));
+    g.computeVertexNormals();
+    return g;
+  }, []);
   return (
-    <group name="Neo Química Arena — tribunas independentes">
-      {[-1, 1].map((side) => (
-        <group key={side}>
-          <mesh position={[side * 69, 14, 0]} castShadow>
-            <boxGeometry args={[16, 28, 143]} />
-            <meshStandardMaterial color={side === 1 ? '#d9e2e0' : '#f1f1e9'} metalness={0.15} />
-          </mesh>
-          {Array.from({ length: 32 }, (_, row) => (
-            <mesh key={row} position={[side * (40 + row * 0.75), 1 + row * 0.7, 0]} receiveShadow>
-              <boxGeometry args={[0.82, 0.8, 114]} />
-              <meshStandardMaterial color={row % 8 === 0 ? '#929994' : '#e0e2dd'} />
-            </mesh>
-          ))}
-          <mesh position={[side * 58, 29, 0]} castShadow>
-            <boxGeometry args={[43, 2.2, 155]} />
-            <meshStandardMaterial color="#f2f3ed" metalness={0.25} />
-          </mesh>
-          {Array.from({ length: 15 }, (_, n) => (
-            <Beam
-              key={n}
-              a={[side * 78, 28, -70 + n * 10]}
-              b={[side * 37, 28, -70 + n * 10]}
-              r={0.25}
-            />
-          ))}
-          {Array.from({ length: 16 }, (_, n) => (
-            <mesh key={'glass' + n} position={[side * 77.1, 15, -65 + n * 8.6]}>
-              <boxGeometry args={[0.2, 19, 7.6]} />
-              <meshStandardMaterial
-                color={side === 1 ? '#93afb4' : '#dce2de'}
-                metalness={0.4}
-                roughness={0.3}
-              />
-            </mesh>
-          ))}
-          <group position={[0, 0, side * 60]}>
-            {Array.from({ length: 21 }, (_, row) => (
-              <mesh key={row} position={[0, 1 + row * 0.6, side * row * 0.8]}>
-                <boxGeometry args={[79, 0.7, 0.9]} />
-                <meshStandardMaterial color={row % 7 === 0 ? '#929994' : '#d8ded9'} />
-              </mesh>
-            ))}
-            <mesh position={[0, 7, side * 19]}>
-              <boxGeometry args={[83, 14, 3]} />
-              <meshStandardMaterial color="#cdd2cc" />
-            </mesh>
-          </group>
-        </group>
-      ))}
-    </group>
-  );
-}
-
-function SaoJanuario({ accent }: { accent: string }) {
-  return (
-    <group name="São Januário — ferradura e tribuna histórica">
-      {/* Curved north end joins two straight touchline terraces. The south end stays open. */}
-      {Array.from({ length: 24 }, (_, row) => {
-        const y = 1 + row * 0.48,
-          x = 46 + row * 0.8,
-          z = 79 + row * 0.8;
-        return (
-          <group key={row}>
-            {[-1, 1].map((side) => (
-              <mesh key={side} position={[side * x, y, 0]} receiveShadow>
-                <boxGeometry args={[0.9, 0.65, 116]} />
-                <meshStandardMaterial color={side === -1 ? '#e5e4db' : '#252b2d'} />
-              </mesh>
-            ))}
-            <Ribbon
-              inner={[x, z]}
-              outer={[x + 0.85, z + 0.85]}
-              y={y}
-              bottom={y - 0.55}
-              color={row < 9 ? '#e1e1d8' : '#252b2d'}
-              start={Math.PI}
-              end={Math.PI * 2}
-            />
-          </group>
-        );
-      })}
-      <Ribbon
-        inner={[65, 98]}
-        outer={[68, 101]}
-        y={12.8}
-        bottom={0}
-        color="#c8c8b9"
-        start={Math.PI}
-        end={Math.PI * 2}
-      />
-      <Ribbon
-        inner={[46, 79]}
-        outer={[65, 98]}
-        y={12.9}
-        color="#f1f0e4"
-        start={Math.PI * 1.36}
-        end={Math.PI * 1.64}
-      />
-      {/* Red cross on the white northern seating mosaic. */}
-      <group position={[0, 13.1, -88]} rotation={[-Math.PI / 2, 0, 0]}>
-        <mesh>
-          <planeGeometry args={[5, 17]} />
-          <meshStandardMaterial color="#b81626" side={2} />
-        </mesh>
-        <mesh>
-          <planeGeometry args={[15, 5]} />
-          <meshStandardMaterial color="#b81626" side={2} />
-        </mesh>
-      </group>
-      <mesh position={[68, 6, 0]}>
-        <boxGeometry args={[2, 12, 118]} />
-        <meshStandardMaterial color="#dad9ca" />
-      </mesh>
-      <mesh position={[-60, 8, 0]}>
-        <boxGeometry args={[8, 16, 118]} />
-        <meshStandardMaterial color="#e5dfcd" />
-      </mesh>
-      <mesh position={[-52, 17, 0]} castShadow>
-        <boxGeometry args={[26, 1.2, 124]} />
-        <meshStandardMaterial color="#535a56" />
-      </mesh>
-      {Array.from({ length: 16 }, (_, i) => (
-        <group key={i}>
-          <Beam a={[-64, 0, -57 + i * 7.6]} b={[-64, 17, -57 + i * 7.6]} r={0.3} />
-          <Beam a={[-64, 17, -57 + i * 7.6]} b={[-39, 17, -57 + i * 7.6]} r={0.25} />
-        </group>
-      ))}
-      {/* Historic pale facade, repeated arched windows and raised central entrance. */}
-      <mesh position={[-65, 5, 0]}>
-        <boxGeometry args={[3, 10, 122]} />
-        <meshStandardMaterial color="#ede4ce" />
-      </mesh>
-      {Array.from({ length: 19 }, (_, i) => (
-        <group key={i} position={[-66.6, 0, -54 + i * 6]}>
-          <mesh position={[0, 5, 0]}>
-            <boxGeometry args={[0.15, 4, 2.4]} />
-            <meshStandardMaterial color="#41605a" />
-          </mesh>
-          <mesh position={[-0.1, 7.1, 0]} rotation={[0, 0, Math.PI / 2]}>
-            <cylinderGeometry args={[1.2, 1.2, 0.2, 12, 1, false, 0, Math.PI]} />
-            <meshStandardMaterial color="#47655c" />
-          </mesh>
-        </group>
-      ))}
-      <mesh position={[-67, 8, 0]}>
-        <boxGeometry args={[5, 16, 12]} />
-        <meshStandardMaterial color="#efe6cd" />
-      </mesh>
-      <mesh position={[-67, 17, 0]} rotation={[0, Math.PI / 4, 0]}>
-        <coneGeometry args={[8, 4, 4]} />
-        <meshStandardMaterial color="#916f54" />
-      </mesh>
-      <mesh position={[0, 0.1, 66]}>
-        <boxGeometry args={[79, 0.2, 12]} />
-        <meshStandardMaterial color="#9b9e8b" />
-      </mesh>
-      <group position={[0, 12, 72]}>
-        <mesh>
-          <boxGeometry args={[17, 7, 1]} />
-          <meshStandardMaterial color="#172a2d" />
-        </mesh>
-        {[-6, 6].map((x) => (
-          <Beam key={x} a={[x, -12, 0]} b={[x, -3.5, 0]} r={0.35} />
-        ))}
-      </group>
-      {[-1, 1].map((side) => (
-        <group key={side} position={[side * 28, 0, 64]}>
-          <mesh position={[0, 1.8, 0]}>
-            <boxGeometry args={[12, 3.6, 4]} />
-            <meshStandardMaterial color="#7e9a94" transparent opacity={0.6} />
-          </mesh>
-          <mesh position={[0, 3.8, 0]}>
-            <boxGeometry args={[13, 0.3, 5]} />
-            <meshStandardMaterial color={accent} />
-          </mesh>
-        </group>
-      ))}
-      <mesh position={[68, 12.3, 0]}>
-        <boxGeometry args={[0.5, 0.6, 120]} />
-        <meshStandardMaterial color="#b91b2d" />
-      </mesh>
-    </group>
-  );
-}
-
-function HistoricBrazilianStadium({ kind, accent }: { kind: string; accent: string }) {
-  const morumbi = kind === 'morumbi',
-    baixada = kind === 'arena-baixada';
-  if (morumbi)
-    return (
-      <group name="Morumbi — três anéis descobertos">
-        <Ribbon inner={[39, 57]} outer={[54, 79]} y={0.15} color="#8c4547" />
-        {Array.from({ length: 57 }, (_, i) => {
-          const tier = Math.floor(i / 19),
-            row = i % 19,
-            d = tier * 16 + row * 0.75;
-          return (
-            <Ribbon
-              key={i}
-              inner={[54 + d, 79 + d]}
-              outer={[54.85 + d, 79.85 + d]}
-              y={1 + tier * 12 + row * 0.55}
-              bottom={tier * 12 + row * 0.55}
-              color={row === 0 ? '#bfbcb0' : i % 3 === 0 ? '#c1b5a2' : '#a54446'}
-            />
-          );
-        })}
-        <Ribbon inner={[98, 123]} outer={[101, 126]} y={35} bottom={0} color="#a7aaa1" />
-        {[8, 20, 32].map((y) => (
-          <Ribbon
-            key={y}
-            inner={[99, 124]}
-            outer={[101, 126]}
-            y={y}
-            bottom={y - 2}
-            color="#bfc0b5"
-          />
-        ))}
-        {Array.from({ length: 48 }, (_, i) => {
-          const a = (i / 48) * Math.PI * 2;
-          return (
-            <Beam
-              key={i}
-              a={[100 * Math.cos(a), 0, 125 * Math.sin(a)]}
-              b={[100 * Math.cos(a), 35, 125 * Math.sin(a)]}
-              r={0.6}
-            />
-          );
-        })}
-        {[-1, 1].map((side) => (
-          <group key={side} position={[0, 38, side * 122]}>
-            <mesh>
-              <boxGeometry args={[24, 10, 1]} />
-              <meshStandardMaterial color="#1d292d" />
-            </mesh>
-            <Beam a={[-10, -9, 0]} b={[-10, -5, 0]} r={0.5} />
-            <Beam a={[10, -9, 0]} b={[10, -5, 0]} r={0.5} />
-          </group>
-        ))}
-      </group>
-    );
-  const rows = baixada ? 30 : 22;
-  return (
-    <group name={baixada ? 'Arena da Baixada — cobertura metálica' : 'Vila Belmiro — alçapão'}>
-      {[-1, 1].map((side) => (
-        <group key={side}>
-          {Array.from({ length: rows }, (_, r) => (
-            <group key={r}>
-              <mesh position={[side * (40 + r * 0.72), 1 + r * 0.58, 0]}>
-                <boxGeometry args={[0.8, 0.65, 116]} />
-                <meshStandardMaterial color={baixada ? '#bc2634' : '#303638'} />
-              </mesh>
-              <mesh position={[0, 1 + r * 0.58, side * (59 + r * 0.72)]}>
-                <boxGeometry args={[79, 0.65, 0.8]} />
-                <meshStandardMaterial color={baixada ? '#bc2634' : '#353a3b'} />
-              </mesh>
-            </group>
-          ))}
-          <mesh position={[side * (baixada ? 66 : 58), 10, 0]}>
-            <boxGeometry args={[5, 20, baixada ? 174 : 158]} />
-            <meshStandardMaterial color="#e4e6de" />
-          </mesh>
-          <mesh position={[0, 10, side * (baixada ? 85 : 77)]}>
-            <boxGeometry args={[baixada ? 138 : 122, 20, 4]} />
-            <meshStandardMaterial color="#e4e6de" />
-          </mesh>
-          {[5, 12].map((y) => (
-            <mesh key={y} position={[side * (baixada ? 68.6 : 60.6), y, 0]}>
-              <boxGeometry args={[0.2, 2, 150]} />
-              <meshStandardMaterial color={baixada ? '#657776' : '#202a2d'} />
-            </mesh>
-          ))}
-          <mesh position={[side * (baixada ? 53 : 52), baixada ? 26 : 19, 0]} castShadow>
-            <boxGeometry args={[baixada ? 34 : 15, 1.2, baixada ? 174 : 120]} />
-            <meshStandardMaterial color={baixada ? '#9da7a5' : '#e4e5d8'} />
-          </mesh>
-          {baixada && (
-            <mesh position={[0, 26, side * 74]} castShadow>
-              <boxGeometry args={[74, 1.2, 30]} />
-              <meshStandardMaterial color="#a8afac" />
-            </mesh>
-          )}
-          {Array.from({ length: 13 }, (_, i) => (
-            <group key={i}>
-              <Beam
-                a={[side * (baixada ? 69 : 61), 0, -72 + i * 12]}
-                b={[side * (baixada ? 69 : 61), baixada ? 26 : 20, -72 + i * 12]}
-                r={0.35}
-              />
-              {baixada && (
-                <Beam a={[side * 37, 24, -72 + i * 12]} b={[side * 68, 24, -72 + i * 12]} r={0.4} />
-              )}
-            </group>
-          ))}
-          <mesh position={[side * (baixada ? 69 : 61), 18, 0]}>
-            <boxGeometry args={[0.3, 0.8, 145]} />
-            <meshStandardMaterial color={accent} />
-          </mesh>
-        </group>
-      ))}
-    </group>
+    <mesh geometry={geometry} castShadow receiveShadow>
+      <meshStandardMaterial vertexColors metalness={0.65} roughness={0.48} side={2} />
+    </mesh>
   );
 }
 
@@ -472,118 +218,80 @@ function PalmeirasPark({ accent }: { accent: string }) {
           />
         );
       })}
-      <Ribbon inner={[73, 93]} outer={[81, 101]} y={26.8} bottom={0} color="#777f7b" rect />
-      <Ribbon inner={[42, 62]} outer={[84, 104]} y={30} bottom={29} color="#e4e8e1" rect />
-      {Array.from({ length: 88 }, (_, i) => {
-        const a = (i / 88) * Math.PI * 2,
-          c = Math.cos(a),
-          z = Math.sin(a),
-          x = 82 * Math.sign(c) * Math.pow(Math.abs(c), 0.45),
-          depth = 102 * Math.sign(z) * Math.pow(Math.abs(z), 0.45);
+      <Ribbon inner={[73, 93]} outer={[81.8, 101.8]} y={28.5} bottom={3.5} color="#414b48" rect />
+      <Ribbon inner={[53, 73]} outer={[84, 104]} y={30.8} outerY={29.3} color="#eeeee8" rect />
+      <Ribbon inner={[44, 64]} outer={[53, 73]} y={29.6} outerY={30.8} color="#b8c5c5" rect />
+      <Ribbon inner={[54.5, 74.5]} outer={[57, 77]} y={13.6} bottom={11.8} color="#303b37" rect />
+      <PalmeirasCladding />
+      {Array.from({ length: 64 }, (_, i) => {
+        const a = (i / 64) * Math.PI * 2;
+        const x = Math.sign(Math.cos(a)) * Math.abs(Math.cos(a)) ** 0.45;
+        const z = Math.sign(Math.sin(a)) * Math.abs(Math.sin(a)) ** 0.45;
         return (
-          <group key={i} position={[x, 0, depth]} rotation={[0, -a, 0]}>
-            {Array.from({ length: 7 }, (_, j) => (
-              <mesh key={j} position={[0, 2 + j * 4, 0]} castShadow>
-                <boxGeometry args={[5.7, 3.6, 0.7]} />
-                <meshStandardMaterial
-                  color={i % 3 === 0 ? '#a1aaa7' : i % 3 === 1 ? '#d2d7d2' : '#bcc3bd'}
-                  metalness={0.55}
-                  roughness={0.45}
-                />
-              </mesh>
-            ))}
+          <group key={i}>
+            <Beam a={[x * 44, 30.2, z * 64]} b={[x * 84, 30.2, z * 104]} r={0.1} />
+            <Beam a={[x * 44, 27.5, z * 64]} b={[x * 57, 29.3, z * 77]} r={0.15} />
           </group>
         );
       })}
       {[-1, 1].flatMap((sx) =>
         [-1, 1].map((sz) => (
           <group key={sx + ':' + sz}>
-            <Beam a={[sx * 64, 30, sz * 81]} b={[sx * 43, 39, sz * 61]} r={0.65} />
-            <Beam a={[sx * 43, 39, sz * 61]} b={[sx * 25, 30, sz * 63]} r={0.65} />
-            <Beam a={[sx * 64, 30, sz * 81]} b={[sx * 25, 30, sz * 63]} r={0.45} />
+            <mesh
+              position={[sx * 73, 15, sz * 89]}
+              rotation={[0, (-sx * sz * Math.PI) / 4, 0]}
+              castShadow
+            >
+              <boxGeometry args={[5, 30, 14]} />
+              <meshStandardMaterial color="#087447" />
+            </mesh>
+            {[-1, 1].map((edge) => {
+              const a: [number, number, number] = [sx * (73 + edge * 4), 30, sz * (91 - edge * 4)];
+              const b: [number, number, number] = [sx * (43 + edge * 4), 30, sz * (64 - edge * 4)];
+              const peak: [number, number, number] = [
+                sx * (63 + edge * 4),
+                39,
+                sz * (82 - edge * 4),
+              ];
+              return (
+                <group key={edge}>
+                  <Beam a={a} b={b} r={0.25} />
+                  <Beam a={a} b={peak} r={0.3} />
+                  <Beam a={peak} b={b} r={0.3} />
+                  {Array.from({ length: 5 }, (_, j) => {
+                    const t = (j + 1) / 6;
+                    const base = a.map((v, k) => v + (b[k]! - v) * t) as [number, number, number];
+                    return <Beam key={j} a={base} b={peak} r={0.13} />;
+                  })}
+                </group>
+              );
+            })}
+            <Beam a={[sx * 59, 39, sz * 86]} b={[sx * 67, 39, sz * 78]} r={0.25} />
           </group>
         )),
       )}
       <mesh position={[0, 18, 102.8]}>
         <boxGeometry args={[29, 6, 0.4]} />
-        <meshStandardMaterial color="#8020c8" />
+        <meshStandardMaterial color="#e4efeb" />
       </mesh>
       <Ribbon inner={[81, 101]} outer={[82, 102]} y={3.5} bottom={2.5} color={accent} rect />
     </group>
   );
 }
 
-function MrvCladding() {
-  const panels = useMemo(() => {
-    const outline = new CatmullRomCurve3(
-      Array.from({ length: 129 }, (_, i) => {
-        const a = (i / 128) * Math.PI * 2;
-        return new Vector3(
-          80 * Math.sign(Math.cos(a)) * Math.pow(Math.abs(Math.cos(a)), 0.45),
-          0,
-          100 * Math.sign(Math.sin(a)) * Math.pow(Math.abs(Math.sin(a)), 0.45),
-        );
-      }),
-      true,
-    );
-    return Array.from({ length: 48 }, (_, stripe) => {
-      const vertices: number[] = [];
-      const pt = (u: number, t: number) => {
-        const p = outline.getPointAt(u % 1);
-        // Vertical wall, quarter-round eave, then a flat roof: one skin.
-        let inset = 0,
-          height = 1;
-        if (t <= 0.55) height = 1 + (t / 0.55) * 24;
-        else if (t <= 0.8) {
-          const angle = (((t - 0.55) / 0.25) * Math.PI) / 2;
-          inset = 8 * (1 - Math.cos(angle));
-          height = 25 + 8 * Math.sin(angle);
-        } else {
-          inset = 8 + ((t - 0.8) / 0.2) * 30;
-          height = 33;
-        }
-        return [p.x * (1 - inset / 80), height, p.z * (1 - inset / 100)];
-      };
-      for (let j = 0; j < 40; j++)
-        for (let k = 0; k < 4; k++) {
-          const u = (stripe + k / 4) / 48,
-            v = (stripe + (k + 1) / 4) / 48,
-            t = j / 40,
-            w = (j + 1) / 40;
-          const a = pt(u, t),
-            b = pt(v, t),
-            c = pt(u, w),
-            d = pt(v, w);
-          vertices.push(...a, ...c, ...b, ...b, ...c, ...d);
-        }
-      const g = new BufferGeometry();
-      g.setAttribute('position', new Float32BufferAttribute(vertices, 3));
-      g.computeVertexNormals();
-      return g;
-    });
-  }, []);
-  return (
-    <group name="MRV — faixas contínuas de largura uniforme">
-      {panels.map((g, i) => (
-        <mesh key={i} geometry={g} castShadow>
-          <meshStandardMaterial
-            color={i % 2 ? '#606468' : '#e6e8e3'}
-            side={2}
-            roughness={0.65}
-            metalness={0.2}
-          />
-        </mesh>
-      ))}
-    </group>
-  );
-}
 export function RealStadium({ skin }: { skin: string }) {
+  if (skin === 'nilton-santos') return <NiltonSantos />;
+  if (skin === 'arena-mrv') return <ArenaMrv />;
+  if (skin === 'mineirao') return <Mineirao />;
+  if (skin === 'arena-gremio') return <ArenaGremio />;
+  if (skin === 'maracana') return <Maracana />;
+  if (skin === 'morumbi') return <Morumbi />;
+  if (skin === 'vila-belmiro') return <VilaBelmiro />;
   const accent = STADIUM_SKINS.find((model) => model[0] === skin)?.[2] ?? '#315d55';
   if (skin === 'palmeiras-park') return <PalmeirasPark accent={accent} />;
-  if (['morumbi', 'vila-belmiro', 'arena-baixada'].includes(skin))
-    return <HistoricBrazilianStadium kind={skin} accent={accent} />;
-  if (skin === 'sao-januario') return <SaoJanuario accent={accent} />;
-  if (skin === 'neo-quimica') return <CorinthiansArena />;
+  if (skin === 'arena-baixada') return <ArenaBaixada />;
+  if (skin === 'sao-januario') return <SaoJanuario />;
+  if (skin === 'neo-quimica') return <NeoQuimicaArena />;
   const model = STADIUM_SKINS.find((s) => s[0] === skin) ?? STADIUM_SKINS[0];
   const rect = ['arena-mrv', 'neo-quimica'].includes(skin),
     open = skin === 'sao-januario';
@@ -605,7 +313,6 @@ export function RealStadium({ skin }: { skin: string }) {
     end = open ? Math.PI * 1.85 : Math.PI * 2;
   return (
     <group name={model[1]}>
-      {skin === 'arena-mrv' && <MrvCladding />}
       {skin !== 'arena-mrv' && (
         <Ribbon
           inner={[x - 0.6, z - 0.6]}

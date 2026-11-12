@@ -1,3 +1,19 @@
+import { STAND_AISLE_WIDTH } from './stand-aisle';
+import { segmentCrowdCount } from './crowd-sampling';
+import { NILTON_TIERS, NILTON_SEGMENTS, niltonPoint } from './nilton-santos-layout';
+import { MRV_TIERS, MRV_SEGMENTS, mrvPoint } from './arena-mrv-layout';
+import {
+  SAO_JANUARIO_ROWS,
+  SAO_JANUARIO_STEP,
+  saoJanuarioOutline,
+  saoJanuarioHeight,
+} from './sao-januario-layout';
+import { MINEIRAO_TIERS, MINEIRAO_SEGMENTS, mineiraoPoint } from './mineirao-layout';
+import { GREMIO_TIERS, GREMIO_SEGMENTS, gremioPoint } from './arena-gremio-layout';
+import { MARACANA_TIERS, MARACANA_SEGMENTS, maracanaPoint } from './maracana-layout';
+import { BAIXADA_TIERS, baixadaOutline } from './arena-baixada-layout';
+import { MORUMBI_TIERS, morumbiPoint } from './morumbi-layout';
+import { vilaOutline, vilaAisles, VILA_ROWS } from './vila-belmiro-layout';
 export type CrowdSeat = { x: number; y: number; z: number; rotation: number };
 
 export function crowdNoise(seed: number): number {
@@ -31,15 +47,23 @@ export function occupiedCrowdSeats(seats: readonly CrowdSeat[], occupancy: numbe
  * Keep this map in stadium coordinates, independently of facility upgrade level. */
 export function realStadiumSeats(skin: string): CrowdSeat[] {
   const seats: CrowdSeat[] = [];
-  const add = (x: number, surface: number, z: number) => {
-    seats.push({ x, y: surface + 0.425, z, rotation: Math.atan2(-x, -z) });
+  const add = (x: number, surface: number, z: number, rotation = Math.atan2(-x, -z)) => {
+    if (Math.abs(x) <= 34 && Math.abs(z) <= 53) return;
+    seats.push({ x, y: surface + 0.425, z, rotation });
   };
   const straight = (side: number, radius: number, surface: number, length: number, end = false) => {
     const count = Math.floor(length / 1.35);
     for (let i = 0; i < count; i++) {
       if (i % 24 === 0) continue;
-      const along = ((i + 0.5) / count - 0.5) * length + Math.sin(surface * 17.3) * 0.3;
-      add(end ? along : side * radius, surface, end ? side * radius : along);
+      const along =
+        ((i + 0.5 + (crowdNoise(seats.length + 301) - 0.5) * 0.6) / count - 0.5) * length +
+        Math.sin(surface * 17.3) * 0.3;
+      add(
+        end ? along : side * radius,
+        surface,
+        end ? side * radius : along,
+        end ? (side === 1 ? Math.PI : 0) : (-side * Math.PI) / 2,
+      );
     }
   };
   const ring = (x: number, z: number, y: number, rect = false, start = 0, end = Math.PI * 2) => {
@@ -55,8 +79,13 @@ export function realStadiumSeats(skin: string): CrowdSeat[] {
         Math.floor(Math.hypot(b[0] - a[0], b[1] - a[1]) / (skin === 'morumbi' ? 1.95 : 1.7)),
       );
       for (let i = 0; i < count; i++) {
-        const f = (i + 0.5) / count;
-        add(a[0] + (b[0] - a[0]) * f, y, a[1] + (b[1] - a[1]) * f);
+        const f = (i + 0.5 + (crowdNoise(seats.length + 301) - 0.5) * 0.6) / count;
+        add(
+          a[0] + (b[0] - a[0]) * f,
+          y,
+          a[1] + (b[1] - a[1]) * f,
+          Math.atan2(-(b[1] - a[1]), b[0] - a[0]),
+        );
       }
     }
   };
@@ -68,25 +97,204 @@ export function realStadiumSeats(skin: string): CrowdSeat[] {
         if (r % 7 !== 0) straight(side, 60 + r * 0.8, 1.35 + r * 0.6, 79, true);
     }
   } else if (skin === 'sao-januario') {
-    for (let r = 0; r < 24; r++) {
-      const x = 46 + r * 0.8,
-        z = 79 + r * 0.8,
-        y = 1 + r * 0.48;
-      for (const side of [-1, 1]) straight(side, x, y + 0.325, 116);
-      ring(x + 0.425, z + 0.425, y, false, Math.PI, Math.PI * 2);
-    }
-  } else if (skin === 'vila-belmiro' || skin === 'arena-baixada') {
-    for (let r = 0; r < (skin === 'arena-baixada' ? 30 : 22); r++) {
-      for (const side of [-1, 1]) {
-        straight(side, 40 + r * 0.72, 1.325 + r * 0.58, 116);
-        straight(side, 59 + r * 0.72, 1.325 + r * 0.58, 79, true);
+    for (let row = 0; row < SAO_JANUARIO_ROWS; row++) {
+      const outline = saoJanuarioOutline((row + 0.5) * SAO_JANUARIO_STEP, saoJanuarioHeight(row));
+      for (let i = 0; i < outline.length - 1; i++) {
+        const a = outline[i]!,
+          b = outline[i + 1]!;
+        const count = segmentCrowdCount(Math.hypot(b[0] - a[0], b[2] - a[2]), 1.7, a);
+        for (let j = 0; j < count; j++) {
+          const t = (j + 0.5 + (crowdNoise(seats.length + 301) - 0.5) * 0.6) / count;
+          add(
+            a[0] + (b[0] - a[0]) * t,
+            a[1],
+            a[2] + (b[2] - a[2]) * t,
+            Math.atan2(-(b[2] - a[2]), b[0] - a[0]),
+          );
+        }
       }
     }
+  } else if (skin === 'vila-belmiro') {
+    for (let r = 0; r < VILA_ROWS; r++) {
+      const outline = vilaOutline(r / (VILA_ROWS - 1));
+      for (let i = 0; i < outline.length; i++) {
+        const a = outline[i]!,
+          b = outline[(i + 1) % outline.length]!;
+        const count = segmentCrowdCount(Math.hypot(b[0] - a[0], b[2] - a[2]), 1.7, a);
+        for (let j = 0; j < count; j++) {
+          const t = (j + 0.5 + (crowdNoise(seats.length + 301) - 0.5) * 0.6) / count;
+          if (i % 17 === 16 && vilaAisles(i).some((aisle) => Math.abs(t - aisle) < 0.018)) continue;
+          add(
+            a[0] + (b[0] - a[0]) * t,
+            a[1] + (b[1] - a[1]) * t,
+            a[2] + (b[2] - a[2]) * t,
+            Math.atan2(-(b[2] - a[2]), b[0] - a[0]),
+          );
+        }
+      }
+    }
+  } else if (skin === 'arena-baixada') {
+    for (const tier of BAIXADA_TIERS)
+      for (let r = 0; r < tier.rows; r++) {
+        const outline = baixadaOutline(tier.front + (r + 0.5) * 0.72, tier.y + r * tier.rise);
+        for (let i = 0; i < outline.length; i++) {
+          const a = outline[i]!,
+            b = outline[(i + 1) % outline.length]!;
+          const count = segmentCrowdCount(Math.hypot(b[0] - a[0], b[2] - a[2]), 1.7, a);
+          for (let j = 0; j < count; j++) {
+            const t = (j + 0.5 + (crowdNoise(seats.length + 301) - 0.5) * 0.6) / count;
+            if (i % 13 === 12 && [0.18, 0.39, 0.61, 0.82].some((v) => Math.abs(t - v) < 0.017))
+              continue;
+            add(
+              a[0] + (b[0] - a[0]) * t,
+              a[1],
+              a[2] + (b[2] - a[2]) * t,
+              Math.atan2(-(b[2] - a[2]), b[0] - a[0]),
+            );
+          }
+        }
+      }
+  } else if (skin === 'maracana') {
+    for (const [tierIndex, tier] of MARACANA_TIERS.entries())
+      for (let row = 0; row < tier.rows; row++) {
+        const x = tier.x + (row + 0.5) * tier.stepX,
+          z = tier.z + (row + 0.5) * tier.stepZ,
+          y = tier.y + row * tier.rise;
+        for (let block = 0; block < MARACANA_SEGMENTS; block++) {
+          if (block % 8 === 0 || (tierIndex === 1 && row >= 10 && row < 14 && block % 16 === 5))
+            continue;
+          const a = maracanaPoint((block / MARACANA_SEGMENTS) * Math.PI * 2, x, z, y),
+            b = maracanaPoint(((block + 1) / MARACANA_SEGMENTS) * Math.PI * 2, x, z, y);
+          const count = segmentCrowdCount(Math.hypot(b[0] - a[0], b[2] - a[2]), 1.95, a);
+          for (let i = 0; i < count; i++) {
+            const t = (i + 0.5 + (crowdNoise(seats.length + 301) - 0.5) * 0.6) / count;
+            add(
+              a[0] + (b[0] - a[0]) * t,
+              y,
+              a[2] + (b[2] - a[2]) * t,
+              Math.atan2(-(b[2] - a[2]), b[0] - a[0]),
+            );
+          }
+        }
+      }
+  } else if (skin === 'arena-gremio') {
+    for (const [tierIndex, tier] of GREMIO_TIERS.entries())
+      for (let row = 0; row < tier.rows; row++) {
+        const d = tier.front + (row + 0.5) * tier.step,
+          y = tier.y + row * tier.rise;
+        for (let block = 0; block < GREMIO_SEGMENTS; block++) {
+          if (tierIndex === 2 && row >= 9 && row < 13 && block % 16 === 5) continue;
+          const a = gremioPoint((block / GREMIO_SEGMENTS) * Math.PI * 2, 40 + d, 59 + d, y),
+            b = gremioPoint(((block + 1) / GREMIO_SEGMENTS) * Math.PI * 2, 40 + d, 59 + d, y);
+          const count = segmentCrowdCount(Math.hypot(b[0] - a[0], b[2] - a[2]), 1.8, a);
+          for (let i = 0; i < count; i++) {
+            const t = (i + 0.5 + (crowdNoise(seats.length + 301) - 0.5) * 0.6) / count;
+            if (
+              block % 8 === 0 &&
+              Math.abs(t - 0.5) * Math.hypot(b[0] - a[0], b[2] - a[2]) < STAND_AISLE_WIDTH / 2 + 0.4
+            )
+              continue;
+            add(
+              a[0] + (b[0] - a[0]) * t,
+              y,
+              a[2] + (b[2] - a[2]) * t,
+              Math.atan2(-(b[2] - a[2]), b[0] - a[0]),
+            );
+          }
+        }
+      }
+  } else if (skin === 'mineirao') {
+    for (const [tierIndex, tier] of MINEIRAO_TIERS.entries())
+      for (let row = 0; row < tier.rows; row++) {
+        const x = tier.x + (row + 0.5) * tier.stepX,
+          z = tier.z + (row + 0.5) * tier.stepZ,
+          y = tier.y + row * tier.rise;
+        for (let block = 0; block < MINEIRAO_SEGMENTS; block++) {
+          if (block % 11 === 0 || (tierIndex === 1 && row >= 5 && row < 10 && block % 22 === 8))
+            continue;
+          const a = mineiraoPoint((block / MINEIRAO_SEGMENTS) * Math.PI * 2, x, z, y),
+            b = mineiraoPoint(((block + 1) / MINEIRAO_SEGMENTS) * Math.PI * 2, x, z, y);
+          const count = segmentCrowdCount(Math.hypot(b[0] - a[0], b[2] - a[2]), 1.8, a);
+          for (let i = 0; i < count; i++) {
+            const t = (i + 0.5 + (crowdNoise(seats.length + 301) - 0.5) * 0.6) / count;
+            add(
+              a[0] + (b[0] - a[0]) * t,
+              y,
+              a[2] + (b[2] - a[2]) * t,
+              Math.atan2(-(b[2] - a[2]), b[0] - a[0]),
+            );
+          }
+        }
+      }
+  } else if (skin === 'arena-mrv') {
+    for (const [tierIndex, tier] of MRV_TIERS.entries())
+      for (let row = 0; row < tier.rows; row++) {
+        const d = tier.front + (row + 0.5) * tier.step,
+          y = tier.y + row * tier.rise;
+        for (let block = 0; block < MRV_SEGMENTS; block++) {
+          if (tierIndex === 2 && row >= 6 && row < 10 && block % 16 === 5) continue;
+          const a = mrvPoint((block / MRV_SEGMENTS) * Math.PI * 2, 41 + d, 61 + d, y),
+            b = mrvPoint(((block + 1) / MRV_SEGMENTS) * Math.PI * 2, 41 + d, 61 + d, y);
+          const count = segmentCrowdCount(Math.hypot(b[0] - a[0], b[2] - a[2]), 1.8, a);
+          for (let i = 0; i < count; i++) {
+            const t = (i + 0.5 + (crowdNoise(seats.length + 301) - 0.5) * 0.6) / count;
+            if (
+              block % 8 === 0 &&
+              Math.abs(t - 0.5) * Math.hypot(b[0] - a[0], b[2] - a[2]) < STAND_AISLE_WIDTH / 2 + 0.4
+            )
+              continue;
+            add(
+              a[0] + (b[0] - a[0]) * t,
+              y,
+              a[2] + (b[2] - a[2]) * t,
+              Math.atan2(-(b[2] - a[2]), b[0] - a[0]),
+            );
+          }
+        }
+      }
+  } else if (skin === 'nilton-santos') {
+    for (const [tierIndex, tier] of NILTON_TIERS.entries())
+      for (let row = 0; row < tier.rows; row++) {
+        const x = tier.x + (row + 0.5) * tier.stepX,
+          z = tier.z + (row + 0.5) * tier.stepZ,
+          y = tier.y + row * tier.rise;
+        for (let block = 0; block < NILTON_SEGMENTS; block++) {
+          if (block % 16 === 0 || (tierIndex === 1 && row >= 6 && row < 10 && block % 32 === 10))
+            continue;
+          const a = niltonPoint((block / NILTON_SEGMENTS) * Math.PI * 2, x, z, y),
+            b = niltonPoint(((block + 1) / NILTON_SEGMENTS) * Math.PI * 2, x, z, y),
+            count = segmentCrowdCount(Math.hypot(b[0] - a[0], b[2] - a[2]), 1.95, a);
+          for (let i = 0; i < count; i++) {
+            const t = (i + 0.5 + (crowdNoise(seats.length + 301) - 0.5) * 0.6) / count;
+            add(
+              a[0] + (b[0] - a[0]) * t,
+              y,
+              a[2] + (b[2] - a[2]) * t,
+              Math.atan2(-(b[2] - a[2]), b[0] - a[0]),
+            );
+          }
+        }
+      }
   } else if (skin === 'morumbi') {
-    for (let tier = 0; tier < 3; tier++)
-      for (let r = 1; r < 19; r++) {
-        const d = tier * 16 + r * 0.75;
-        ring(54.425 + d, 79.425 + d, 1 + tier * 12 + r * 0.55);
+    for (const tier of MORUMBI_TIERS)
+      for (let row = 0; row < tier.rows; row++) {
+        const d = (row + 0.5) * tier.step,
+          y = tier.y + row * tier.rise;
+        for (let block = 0; block < 192; block++) {
+          if (block % 12 === 0) continue;
+          const a = morumbiPoint((block / 192) * Math.PI * 2, tier.x + d, tier.z + d, y);
+          const b = morumbiPoint(((block + 1) / 192) * Math.PI * 2, tier.x + d, tier.z + d, y);
+          const count = segmentCrowdCount(Math.hypot(b[0] - a[0], b[2] - a[2]), 2.4, a);
+          for (let i = 0; i < count; i++) {
+            const t = (i + 0.5 + (crowdNoise(seats.length + 301) - 0.5) * 0.6) / count;
+            add(
+              a[0] + (b[0] - a[0]) * t,
+              y,
+              a[2] + (b[2] - a[2]) * t,
+              Math.atan2(-(b[2] - a[2]), b[0] - a[0]),
+            );
+          }
+        }
       }
   } else if (skin === 'palmeiras-park') {
     for (let tier = 0; tier < 2; tier++)

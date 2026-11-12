@@ -115,4 +115,27 @@ describe('coerência e variedade das jogadas', () => {
       }
     expect(returns / passes.length).toBeLessThan(0.05);
   });
+  it('registra encaixes, espalmadas e rebotes sem entregar a posse do encaixe ao rival', () => {
+    const kinds = new Set<string>();
+    for (const game of games)
+      for (const [i, action] of game.actions!.entries()) {
+        if (action.type !== 'save' || !action.saveKind) continue;
+        kinds.add(action.saveKind);
+        expect(action.playerId).toBe(action.keeperId);
+        if (action.saveKind === 'parried') {
+          expect(Math.abs(action.endZ!)).toBeGreaterThan(52.5);
+          if (game.actions![i + 1]) {
+            expect(game.actions![i + 1]?.type).toBe('corner');
+            expect(game.actions![i + 1]?.side).not.toBe(action.side);
+          }
+        } else if (action.saveKind === 'held') {
+          const next = game.actions![i + 1];
+          if (next && next.type !== 'kickoff') expect(next.side).toBe(action.side);
+        } else {
+          expect(game.actions![i + 1]?.type).toBe('dribble');
+          expect(game.actions![i + 1]?.side).not.toBe(action.side);
+        }
+      }
+    expect([...kinds].sort()).toEqual(['held', 'parried', 'rebound']);
+  });
 });

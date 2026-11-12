@@ -1,3 +1,4 @@
+import { presentationGameMinute } from '../../three/match-presentation';
 import { clubKit, MATCH_DURATION_MS, type MatchResult } from '@football/shared';
 import { lazy, Suspense, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { PixelBadge } from '../../ui/pixel-badge';
@@ -50,6 +51,46 @@ function cheer(context: AudioContext) {
   source.connect(filter).connect(gain).connect(context.destination);
   source.start();
 }
+function whistle(context: AudioContext, final = false) {
+  const at = context.currentTime;
+  for (let pulse = 0; pulse < (final ? 3 : 1); pulse++) {
+    const duration = final && pulse === 2 ? 0.52 : 0.28;
+    const buffer = context.createBuffer(
+        1,
+        Math.ceil(context.sampleRate * duration),
+        context.sampleRate,
+      ),
+      samples = buffer.getChannelData(0);
+    let phase = 0;
+    for (let i = 0; i < samples.length; i++) {
+      const t = i / context.sampleRate,
+        envelope = Math.min(1, t / 0.018, (duration - t) / 0.055);
+      phase +=
+        (Math.PI * 2 * (2850 + 16 * Math.sin(t * 91) + 8 * Math.sin(t * 213))) / context.sampleRate;
+      const flutter = 0.65 + 0.35 * Math.sin(t * Math.PI * 2 * 32);
+      samples[i] =
+        envelope *
+        (Math.sin(phase) * 0.55 * flutter +
+          Math.sin(phase * 1.17) * 0.13 +
+          (Math.random() * 2 - 1) * 0.12);
+    }
+    const source = context.createBufferSource(),
+      filter = context.createBiquadFilter(),
+      gain = context.createGain();
+    source.buffer = buffer;
+    filter.type = 'bandpass';
+    filter.frequency.value = 3000;
+    filter.Q.value = 1.2;
+    gain.gain.value = 0.13;
+    source.connect(filter).connect(gain).connect(context.destination);
+    source.start(at + pulse * 0.32);
+    source.onended = () => {
+      source.disconnect();
+      filter.disconnect();
+      gain.disconnect();
+    };
+  }
+}
 function subscribeReportLayout(listener: () => void) {
   const query = window.matchMedia('(min-width: 901px)');
   query.addEventListener('change', listener);
@@ -97,7 +138,10 @@ export function Matches({ snapshot, club }: ViewProps) {
     setNow(time);
     frameContent(scene);
   };
-  const minute = Math.min(90, (elapsed / MATCH_DURATION_MS) * 90);
+  const minute = presentationGameMinute(
+    result?.actions ?? [],
+    Math.min(90, (elapsed / MATCH_DURATION_MS) * 90),
+  );
   const playing = Boolean(result) && elapsed < MATCH_DURATION_MS;
   const animating = Boolean(result) && elapsed < MATCH_DURATION_MS + 6000;
   useEffect(() => {
@@ -106,7 +150,7 @@ export function Matches({ snapshot, club }: ViewProps) {
     return () => clearInterval(timer);
   }, [animating]);
   useEffect(() => {
-    if (!soundOn || !playing) return;
+    if (!soundOn || !animating) return;
     const context = new AudioContext();
     sound.current = context;
     const buffer = context.createBuffer(2, context.sampleRate * 12, context.sampleRate);
@@ -155,19 +199,29 @@ export function Matches({ snapshot, club }: ViewProps) {
       if (sound.current === context) sound.current = null;
       void context.close();
     };
-  }, [soundOn, playing]);
+  }, [soundOn, animating]);
   useEffect(() => {
-    if (!result || !soundOn || elapsed >= MATCH_DURATION_MS) return;
+    if (!result || !soundOn || !sound.current) return;
+    for (const boundary of [0, 45, 90]) {
+      const key = `${result.fixtureId}:${start}:whistle:${boundary}`;
+      if (minute >= boundary && minute - boundary < 1 && !heard.current.has(key)) {
+        heard.current.add(key);
+        whistle(sound.current, boundary === 90);
+      }
+    }
     for (const [index, event] of (result.actions ?? []).entries()) {
       const key = `${result.fixtureId}:${start}:${index}`;
       if (
-        event.type === 'goal' &&
+        ['goal', 'foul'].includes(event.type) &&
         visibleActionMinute(result.actions ?? [], index) <= minute &&
         minute - visibleActionMinute(result.actions ?? [], index) < 1 &&
         !heard.current.has(key)
       ) {
         heard.current.add(key);
-        if (sound.current) cheer(sound.current);
+        if (sound.current) {
+          whistle(sound.current);
+          if (event.type === 'goal') cheer(sound.current);
+        }
       }
     }
   }, [result, minute, elapsed, start, soundOn]);

@@ -16,6 +16,9 @@ const mix = (a: Point, b: Point, t: number): Point => ({
   x: a.x + (b.x - a.x) * t,
   z: a.z + (b.z - a.z) * t,
 });
+export function playbackBallHeight(height: number, radius = 0.25) {
+  return 0.12 + radius + Math.max(0, height - 0.45);
+}
 export function buildPlayback(
   actions: readonly Action[],
   home: string[],
@@ -241,11 +244,17 @@ export function samplePlayback(frames: readonly PlaybackFrame[], minute: number)
     ? Math.min(1, progress / 0.25)
     : frame.action.type === 'dribble'
       ? movement
-      : Math.max(0, Math.min(1, (progress - 0.12) / 0.72));
+      : Math.max(0, Math.min(1, (progress - 0.12) / (frame.action.throughBall ? 0.54 : 0.72)));
   const positions = Object.fromEntries(
     Object.entries(frame.from).map(([id, point]) => [
       id,
-      mix(point, frame.to[id] ?? point, movement),
+      mix(
+        point,
+        frame.to[id] ?? point,
+        frame.action.throughBall && frame.action.targetId === id
+          ? Math.min(1, progress / 0.96)
+          : movement,
+      ),
     ]),
   );
   const anchors = [frame.action.playerId, ...Object.keys(frame.keeperEnds)];

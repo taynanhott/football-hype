@@ -1,3 +1,9 @@
+import { visitorCrowdSeat } from './flare-layout';
+import { PitchEquipment } from './pitch-equipment';
+import { CrowdFlares } from './match-atmosphere';
+import { clearCrowdSeats } from './crowd-clearance';
+import { LevelTwoStadium } from './level-two-stadium';
+import { levelTwoCrowdSeats } from './level-two-layout';
 /* eslint-disable react-hooks/immutability -- Three.js instance transforms and buffers require in-place updates in animation callbacks. */
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { ContactShadows, OrbitControls, Sky, useGLTF, Clone } from '@react-three/drei';
@@ -119,17 +125,21 @@ function Crowd({
   const mesh = useRef<InstancedMesh>(null);
   const heads = useRef<InstancedMesh>(null);
   const shirts = useRef<InstancedMesh>(null);
-  const mappedSeats = useMemo(() => (skin ? realStadiumSeats(skin) : null), [skin]);
+  const mappedSeats = useMemo(
+    () => (skin ? realStadiumSeats(skin) : level === 2 ? levelTwoCrowdSeats() : null),
+    [skin, level],
+  );
   const count =
     mappedSeats?.length ??
     (level >= 4 ? (level === 5 ? 3 * 13 : 2 * 10) * 384 : 4 * (5 + level * 2) * 100);
   const dummy = useMemo(() => new Object3D(), []);
-  const occupiedSeats = useMemo(
-    () => (mappedSeats ? occupiedCrowdSeats(mappedSeats, occupancy) : null),
-    [mappedSeats, occupancy],
-  );
+  const scene = useThree((state) => state.scene);
   useLayoutEffect(() => {
     if (!mesh.current || !heads.current || !shirts.current) return;
+    const architecture = scene.getObjectByName('stadium-structure');
+    const clearSeats =
+      mappedSeats && architecture ? clearCrowdSeats(architecture, mappedSeats) : mappedSeats;
+    const occupiedSeats = clearSeats ? occupiedCrowdSeats(clearSeats, occupancy) : null;
     const skin = ['#e2ac80', '#b77b51', '#754a36', '#f0c8a0'];
     const neutral = ['#d7d8cd', '#49534c', '#a4aaa3', '#38434b'];
     for (let index = 0; index < count; index++) {
@@ -148,7 +158,7 @@ function Crowd({
         const block = Math.floor(seatIndex / 4);
         const angle = (block / 96) * Math.PI * 2;
         const nextAngle = ((block + 1) / 96) * Math.PI * 2;
-        const fraction = ((seatIndex % 4) + 0.5) / 4;
+        const fraction = ((seatIndex % 4) + 0.5 + (crowdNoise(index + 301) - 0.5) * 0.48) / 4;
         const rowIndex = Math.floor(index / 384) % rows;
         const tier = Math.floor(index / (384 * rows));
         const distance = tier * 10 + rowIndex * 0.88;
@@ -163,7 +173,7 @@ function Crowd({
           0,
         );
       }
-      const mapped = mappedSeats?.[index];
+      const mapped = clearSeats?.[index];
       if (mapped) {
         dummy.position.set(mapped.x, mapped.y, mapped.z);
         dummy.rotation.set(0, mapped.rotation, 0);
@@ -174,7 +184,7 @@ function Crowd({
       const variation = crowdNoise(index + 29);
       const stature = 0.94 + crowdNoise(index + 53) * 0.12;
       const visitor = mapped
-        ? (Math.atan2(mapped.z, mapped.x) + Math.PI) / (2 * Math.PI) < 0.3
+        ? visitorCrowdSeat(mapped)
         : level >= 4
           ? index % 384 < 115
           : seat < 30;
@@ -186,7 +196,7 @@ function Crowd({
       // Jitter along the tread, never through the step or into the next row.
       const tangentX = Math.cos(dummy.rotation.y),
         tangentZ = -Math.sin(dummy.rotation.y);
-      const jitter = (crowdNoise(index + 71) - 0.5) * 0.18;
+      const jitter = mapped ? 0 : (crowdNoise(index + 71) - 0.5) * 0.7;
       dummy.position.x += tangentX * jitter;
       dummy.position.z += tangentZ * jitter;
       dummy.position.y -= 0.425 - 0.36 * stature;
@@ -200,7 +210,7 @@ function Crowd({
       dummy.scale.set(
         occupied ? 0.62 * stature : 0,
         occupied ? 0.72 * stature : 0,
-        occupied ? 0.4 : 0,
+        occupied ? 0.28 : 0,
       );
       dummy.updateMatrix();
       mesh.current.setMatrixAt(index, dummy.matrix);
@@ -208,7 +218,7 @@ function Crowd({
       dummy.scale.set(
         occupied ? 0.15 * stature : 0,
         occupied ? 0.72 * stature : 0,
-        occupied ? 0.42 : 0,
+        occupied ? 0.3 : 0,
       );
       dummy.updateMatrix();
       shirts.current.setMatrixAt(index, dummy.matrix);
@@ -238,10 +248,16 @@ function Crowd({
     awayKit.primary,
     awayKit.secondary,
     mappedSeats,
-    occupiedSeats,
+    scene,
   ]);
   return (
     <group name={skin ? `Torcida: ${skin}` : 'Torcida: arquibancada padrão'}>
+      <CrowdFlares
+        seats={mappedSeats}
+        homeColor={homeKit.primary}
+        awayColor={awayKit.primary}
+        occupancy={occupancy}
+      />
       <instancedMesh ref={mesh} args={[undefined, undefined, count]}>
         <boxGeometry />
         <meshStandardMaterial roughness={0.9} />
@@ -258,21 +274,51 @@ function Crowd({
   );
 }
 class ParticlePool {
-  readonly particles = Array.from({ length: 60 }, (_, index) => ({
-    x: Math.sin(index * 13) * 38,
-    y: index % 18,
-    z: Math.cos(index * 7) * 55,
-    speed: 1 + (index % 4),
-  }));
+  readonly particles: {
+    x: number;
+    y: number;
+    z: number;
+    speed: number;
+    driftX: number;
+    driftZ: number;
+    tiltX: number;
+    tiltY: number;
+    tiltZ: number;
+    size: number;
+    phase: number;
+  }[];
+  constructor(count: number) {
+    this.particles = Array.from({ length: count }, (_, index) => ({
+      x: (crowdNoise(index + 171) - 0.5) * 76,
+      y: crowdNoise(index + 511) * 24,
+      z: (crowdNoise(index + 881) - 0.5) * 110,
+      speed: 0.65 + crowdNoise(index + 19) * 0.85,
+      driftX: (crowdNoise(index + 27) - 0.5) * 0.6,
+      driftZ: (crowdNoise(index + 37) - 0.5) * 0.5,
+      tiltX: crowdNoise(index + 41) * 1.4,
+      tiltY: crowdNoise(index + 43) * Math.PI,
+      tiltZ: crowdNoise(index + 47) * 1.2,
+      size: 0.65 + crowdNoise(index + 51) * 0.7,
+      phase: crowdNoise(index + 59) * Math.PI * 2,
+    }));
+  }
   update(delta: number): void {
     for (const particle of this.particles) {
+      particle.phase += delta * 0.5;
       particle.y -= delta * particle.speed;
-      if (particle.y < 0) particle.y = 20;
+      particle.x += delta * (particle.driftX + Math.sin(particle.phase) * 0.12);
+      particle.z += delta * particle.driftZ;
+      if (particle.y < 0) {
+        particle.y = 22;
+        particle.x = Math.max(-38, Math.min(38, particle.x));
+        particle.z = Math.max(-55, Math.min(55, particle.z));
+      }
     }
   }
 }
 function Atmosphere({ enabled }: { enabled: boolean }) {
-  const pool = useMemo(() => new ParticlePool(), []);
+  const compact = useThree((s) => s.size.width < 900);
+  const pool = useMemo(() => new ParticlePool(compact ? 72 : 160), [compact]);
   const mesh = useRef<InstancedMesh>(null);
   const dummy = useMemo(() => new Object3D(), []);
   useFrame((_, delta) => {
@@ -280,15 +326,20 @@ function Atmosphere({ enabled }: { enabled: boolean }) {
     pool.update(delta);
     pool.particles.forEach((particle, index) => {
       dummy.position.set(particle.x, particle.y, particle.z);
-      dummy.rotation.z += delta;
+      dummy.rotation.set(particle.tiltX, particle.tiltY, particle.tiltZ);
+      dummy.scale.setScalar(particle.size);
       dummy.updateMatrix();
       mesh.current?.setMatrixAt(index, dummy.matrix);
     });
     mesh.current.instanceMatrix.needsUpdate = true;
   });
   return enabled ? (
-    <instancedMesh ref={mesh} args={[undefined, undefined, pool.particles.length]}>
-      <planeGeometry args={[0.3, 0.7]} />
+    <instancedMesh
+      name="Confetes de campo"
+      ref={mesh}
+      args={[undefined, undefined, pool.particles.length]}
+    >
+      <planeGeometry args={[0.09, 0.16]} />
       <meshBasicMaterial color="#f3d471" side={2} />
     </instancedMesh>
   ) : null;
@@ -346,48 +397,35 @@ function StadiumWorld({
       <GroundMist />
       <Pitch level={stadium.pitchLevel} />
       {children}
-      {[-1, 1].map((side) => (
-        <group key={side} position={[0, 0, side * 51]}>
-          <mesh position={[0, 2.4, 0]}>
-            <boxGeometry args={[7.3, 0.15, 0.2]} />
-            <meshStandardMaterial color="white" />
-          </mesh>
-          {[-3.6, 3.6].map((x) => (
-            <mesh key={x} position={[x, 1.2, 0]}>
-              <boxGeometry args={[0.15, 2.4, 0.2]} />
-              <meshStandardMaterial color="white" />
-            </mesh>
-          ))}
-          <mesh position={[0, 1.2, side * 1.3]}>
-            <boxGeometry args={[7.3, 2.4, 0.1]} />
-            <meshStandardMaterial color="#e4e4da" wireframe />
-          </mesh>
-        </group>
-      ))}
-      {stadiumSkin(stadium) ? (
-        <RealStadium skin={stadiumSkin(stadium)!} />
-      ) : level >= 4 ? (
-        <ModernArena level={level} color={color} />
-      ) : (
-        <>
-          {entities.map((entity) => (
-            <group key={entity.id}>
-              <Stand entity={entity} />
-              {level === 3 && (
-                <group position={[0, 10, 0]}>
-                  <Stand
-                    entity={{
-                      ...entity,
-                      position: [entity.position[0] * 1.12, 0, entity.position[2] * 1.08],
-                    }}
-                  />
-                </group>
-              )}
-            </group>
-          ))}
-          <TraditionalDetails level={level} color={color} />
-        </>
-      )}
+      <PitchEquipment />
+      <group name="stadium-structure">
+        {stadiumSkin(stadium) ? (
+          <RealStadium skin={stadiumSkin(stadium)!} />
+        ) : level === 2 ? (
+          <LevelTwoStadium />
+        ) : level >= 4 ? (
+          <ModernArena level={level} color={color} />
+        ) : (
+          <>
+            {entities.map((entity) => (
+              <group key={entity.id}>
+                <Stand entity={entity} />
+                {level === 3 && (
+                  <group position={[0, 10, 0]}>
+                    <Stand
+                      entity={{
+                        ...entity,
+                        position: [entity.position[0] * 1.12, 0, entity.position[2] * 1.08],
+                      }}
+                    />
+                  </group>
+                )}
+              </group>
+            ))}
+            <TraditionalDetails level={level} color={color} />
+          </>
+        )}
+      </group>
       {matchView && (
         <Crowd
           skin={stadiumSkin(stadium)}
@@ -397,7 +435,7 @@ function StadiumWorld({
           {...(awayKit ? { awayKit } : {})}
         />
       )}
-      <Atmosphere enabled={Boolean(matchView) && occupancy > 0.85} />
+      <Atmosphere enabled={Boolean(matchView) && occupancy > 0.5 && level >= 4} />
       <group visible={showNeighborhood}>
         <StadiumNeighborhood seed={parseInt(stadium.clubId.slice(-4), 16) || 17} />
       </group>

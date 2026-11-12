@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { MATCH_DURATION_MS } from '@football/shared';
-import { buildPlayback, samplePlayback, visibleActionMinute } from '../src/three/match-playback';
+import {
+  buildPlayback,
+  samplePlayback,
+  visibleActionMinute,
+  playbackBallHeight,
+} from '../src/three/match-playback';
 describe('passes na reprodução 3D', () => {
   it('mapeia as coordenadas do reserva para a vaga do titular substituído', () => {
     const timeline = buildPlayback(
@@ -215,5 +220,54 @@ describe('passes na reprodução 3D', () => {
     const next = samplePlayback(frames, 1);
     expect(next.ball).toEqual(previous.ball);
     expect(next.positions.b).toEqual(previous.positions.b);
+  });
+});
+
+describe('bola e corrida para o passe no espaço', () => {
+  it('mantém toda a bola acima do gramado, inclusive em alturas antigas baixas', () => {
+    for (const height of [0, 0.3, 0.45, 1.5])
+      expect(playbackBallHeight(height) - 0.25).toBeGreaterThanOrEqual(0.12);
+  });
+  it('a bola chega ao espaço antes do recebedor, que termina a corrida depois', () => {
+    const frames = buildPlayback(
+      [
+        {
+          minute: 0,
+          type: 'kickoff',
+          side: 'home',
+          x: 0,
+          z: 0,
+          positions: { a: { x: 0, z: 0 }, b: { x: 10, z: 12 } },
+        },
+        {
+          minute: 1,
+          type: 'pass',
+          side: 'home',
+          playerId: 'a',
+          targetId: 'b',
+          x: 0,
+          z: 0,
+          endX: 10,
+          endZ: 24,
+          throughBall: true,
+          positions: { a: { x: 0, z: 0 }, b: { x: 10, z: 24 } },
+        },
+        {
+          minute: 2,
+          type: 'dribble',
+          side: 'home',
+          playerId: 'b',
+          x: 10,
+          z: 24,
+          positions: { a: { x: 0, z: 0 }, b: { x: 10, z: 24 } },
+        },
+      ],
+      ['a', 'b'],
+      [],
+    );
+    const view = samplePlayback(frames, 1.7);
+    expect(view.ball.z).toBe(24);
+    expect(view.positions.b!.z).toBeLessThan(23);
+    expect(samplePlayback(frames, 1.99).positions.b!.z).toBe(24);
   });
 });

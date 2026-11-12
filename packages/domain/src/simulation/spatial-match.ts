@@ -545,6 +545,7 @@ export function spatialMatch(
     if (
       !forceShot &&
       !forcePass &&
+      carrier.position !== 'GK' &&
       minute < 90 &&
       presser &&
       pressure <
@@ -643,6 +644,9 @@ export function spatialMatch(
             ? 'saved'
             : 'wide';
       const onTarget: boolean = outcome === 'goal' || outcome === 'saved';
+      const saveRoll = outcome === 'saved' ? random() : 0;
+      const saveKind: Action['saveKind'] =
+        saveRoll < 0.45 ? 'held' : saveRoll < 0.75 ? 'parried' : 'rebound';
       const goalie = keeper(opposite),
         gp = goalie ? poses[goalie.id]! : { x: 0, z: dir * 46 };
       const shotX = clamp(ball.x * 0.12 + (random() - 0.5) * 2, -3, 3);
@@ -661,6 +665,7 @@ export function spatialMatch(
       const shotMeta: Partial<Action> = {
         outcome,
         onTarget,
+        ...(outcome === 'saved' ? { saveKind } : {}),
         xg,
         ...(onTarget ? lastDive : {}),
         ...(forceShot ? { setPiece, wallIds: [...wallIds], header: setPiece === 'corner' } : {}),
@@ -712,6 +717,46 @@ export function spatialMatch(
         ball = { x: random() < 0.5 ? -32 : 32, z: dir * 50 };
         phase = 'corner';
         setup = false;
+      } else if (outcome === 'saved' && goalie) {
+        const deflection =
+          saveKind === 'parried'
+            ? { x: shotX < 0 ? -7 : 7, z: dir * 54 }
+            : saveKind === 'rebound'
+              ? round({ x: clamp(endpoint.x + (shotX < 0 ? -3 : 3), -12, 12), z: dir * 39 })
+              : { x: endpoint.x, z: gp.z };
+        emit(minute + 0.15, 'save', goalie, endpoint, deflection, {
+          ...lastDive,
+          side: opposite,
+          saveKind,
+          startHeight: 1.5,
+          endHeight: saveKind === 'held' ? 1.3 : 0.45,
+          arc: saveKind === 'held' ? 0 : 0.8,
+        });
+        assist = undefined;
+        if (saveKind === 'parried') {
+          statistics[side].corners++;
+          ball = { x: deflection.x < 0 ? -32 : 32, z: dir * 50 };
+          phase = 'corner';
+          setup = false;
+          carrier = undefined;
+        } else if (saveKind === 'rebound') {
+          ball = deflection;
+          carrier = field(side).sort(
+            (a, b) => distance(poses[a.id]!, ball) - distance(poses[b.id]!, ball),
+          )[0];
+          if (carrier) {
+            poses[carrier.id] = { ...ball };
+            separate(carrier.id);
+            emit(minute + 0.35, 'dribble', carrier, ball, ball);
+          }
+          phase = 'play';
+        } else {
+          side = opposite;
+          carrier = goalie;
+          ball = deflection;
+          poses[goalie.id] = { ...ball };
+          phase = 'play';
+        }
       } else {
         side = opposite;
         ball = endpoint;
@@ -757,6 +802,14 @@ export function spatialMatch(
         return { player: p, point, length, score };
       })
       .filter((c) => c.length >= 3 && c.length < 48)
+      .filter(
+        (c) =>
+          carrier?.position !== 'GK' ||
+          field(opposite).every((p) => {
+            const lane = projection(poses[p.id]!, ball, c.point);
+            return lane.t < 0.1 || lane.t > 0.95 || lane.gap > 3;
+          }),
+      )
       .sort((a, b) => b.score - a.score);
     const target = candidates[0];
     const passerId = carrier.id;
@@ -782,13 +835,14 @@ export function spatialMatch(
       const through =
         !crossing &&
         target.player.position !== 'GK' &&
-        (target.point.z - ball.z) * dir > 8 &&
-        random() < 0.35;
+        (target.point.z - ball.z) * dir > 6 &&
+        target.point.z * dir < 38 &&
+        random() < 0.55;
       if (through) {
         target.point = move(
           target.point,
-          { x: target.point.x, z: clamp(target.point.z + dir * 4, -45, 45) },
-          4,
+          { x: target.point.x, z: clamp(target.point.z + dir * 8, -46, 46) },
+          8,
         );
         poses[target.player.id] = { ...target.point };
       }
@@ -831,6 +885,7 @@ export function spatialMatch(
           targetId: target.player.id,
           outcome: 'complete',
           arc,
+          ...(through ? { throughBall: true } : {}),
         });
         recentPasses.push({ from: carrier.id, to: target.player.id, step });
         if (recentPasses.length > 8) recentPasses.shift();
