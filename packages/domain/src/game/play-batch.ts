@@ -1,11 +1,18 @@
 import { seasonClosingDates, pendingSeasonClosingDates } from '../competitions/season-closing.js';
+import { changeChemistry, hasNoMatchSequence } from './chemistry.js';
+import { syncIndividualTraining } from './individual-training.js';
 import { settleCompetitionPrizes } from '../competitions/competition-prizes.js';
 import { finalizeSeasonAwards } from '../competitions/season-awards.js';
 import { settleMatchDiscipline } from './discipline.js';
 import { settleContractDecisions } from './contract-lifecycle.js';
 import { lineupTacticalBonus, canLearnPosition, masteredPositions } from './tactics.js';
 import { FORMATIONS } from '@football/shared';
-import { ageFatigueFactor, moraleSensitivity, developmentPaused } from './player-contracts.js';
+import {
+  ageFatigueFactor,
+  positionFatigueFactor,
+  moraleSensitivity,
+  developmentPaused,
+} from './player-contracts.js';
 import { upgradeUnstartedCompetitions } from '../competitions/upgrade-formats.js';
 import { resolveRegionalQualifiers } from '../competitions/regional-qualifiers.js';
 import { advanceGameDays } from './daily-calendar.js';
@@ -19,6 +26,7 @@ import {
   type WorldState,
   type PlayStyle,
   type Formation,
+  type MatchResult,
 } from '@football/shared';
 import {
   applyPreLibertadores,
@@ -198,6 +206,15 @@ export function playNextBatch(state: WorldState, processedAt: number): Result<Wo
   };
   const playedClubs = new Set<string>();
   const results = [...state.results];
+  const clubHistories = new Map<string, MatchResult[]>();
+  for (const game of results) {
+    for (const id of new Set([game.homeId, game.awayId])) {
+      if (!id) continue;
+      const games = clubHistories.get(id) ?? [];
+      games.push(game);
+      clubHistories.set(id, games);
+    }
+  }
   let cups = state.cups;
   const revenue = new Map<string, number>();
   const appeared = new Set<string>();
@@ -305,6 +322,18 @@ export function playNextBatch(state: WorldState, processedAt: number): Result<Wo
             side,
             {
               plan,
+              positionExperience,
+              fatigueScale: Object.fromEntries(
+                club.playerIds.map((id) => [
+                  id,
+                  (1 +
+                    Math.min(10, Math.max(0, (workload[id]?.consecutiveMatches ?? 0) - 1) * 2) /
+                      GAMEPLAY.fitnessCost) /
+                    (1 +
+                      ((centers[club.trainingCenterId]?.levels.fitness ?? 1) - 1) *
+                        GAMEPLAY.fitnessFatigueReductionPerLevel),
+                ]),
+              ),
               bench: resolveBench(
                 selectionState,
                 club,
@@ -356,6 +385,11 @@ export function playNextBatch(state: WorldState, processedAt: number): Result<Wo
     };
     result.startedAt = processedAt;
     results.push(result);
+    for (const id of [home.id, away.id]) {
+      const games = clubHistories.get(id) ?? [];
+      games.push(result);
+      clubHistories.set(id, games);
+    }
     discipline = settleMatchDiscipline(selectionState, fixture, result).discipline;
     const redCardActions = result.actions?.filter((action) => action.type === 'red');
     const gate = shareMatchRevenue(demand.ticketRevenue, result.revenue);
@@ -365,8 +399,13 @@ export function playNextBatch(state: WorldState, processedAt: number): Result<Wo
     for (const team of [home, away]) {
       const medical = centers[team.trainingCenterId]?.operations?.medical ?? [];
       for (const id of team.playerIds)
-        if ((injuries[id] ?? 0) > 0)
+        if ((injuries[id] ?? 0) > 0) {
           injuries[id] = Math.max(0, injuries[id]! - (medical.includes(id) ? 2 : 1));
+          if (injuries[id] === 0) {
+            const clubChemistry = (chemistry[team.id] ??= {});
+            clubChemistry[id] = changeChemistry(clubChemistry[id] ?? 0, -5);
+          }
+        }
     }
     const random = mulberry32(result.seed);
     for (const player of [
@@ -403,7 +442,10 @@ export function playNextBatch(state: WorldState, processedAt: number): Result<Wo
             ),
           };
         const matches = chemistry[player.clubId] ?? {};
-        chemistry[player.clubId] = { ...matches, [player.id]: (matches[player.id] ?? 0) + 1 };
+        chemistry[player.clubId] = {
+          ...matches,
+          [player.id]: changeChemistry(matches[player.id] ?? 0, 20),
+        };
       }
       const center = player.clubId
         ? centers[clubs[player.clubId]?.trainingCenterId ?? '']
@@ -413,7 +455,12 @@ export function playNextBatch(state: WorldState, processedAt: number): Result<Wo
         development[player.id] ?? 0,
         center?.operations?.progression?.[player.id] ?? emptyTrainingProgression(),
         center?.levels.coaching ?? 1,
-        Boolean(center?.operations?.individual.some((plan) => plan.playerId === player.id)),
+        !(state.injuries[player.id] ?? 0) &&
+          Boolean(
+            center?.operations?.individual.some(
+              (plan) => plan.playerId === player.id && plan.pausedAt === undefined,
+            ),
+          ),
         developmentPaused(state, player.id),
       );
       const trainingHistory = currentTrainingHistory(
@@ -472,27 +519,30 @@ export function playNextBatch(state: WorldState, processedAt: number): Result<Wo
           0,
           player.fitness -
             Math.ceil(
-              ((GAMEPLAY.fitnessCost + Math.min(10, Math.max(0, consecutive - 2) * 2)) *
-                ((player.clubId
-                  ? result.tacticalPlans?.[player.clubId === home.id ? 'home' : 'away']?.style
-                  : undefined) === 'all-out-press'
-                  ? 1.5
-                  : (player.clubId
-                        ? result.tacticalPlans?.[player.clubId === home.id ? 'home' : 'away']?.style
-                        : undefined) === 'gegenpress'
-                    ? 1.25
-                    : 1) *
-                ageFatigueFactor(player.age) *
-                redCardFatigueFactor(
-                  player.id,
-                  player.clubId === home.id ? 'home' : 'away',
-                  result.substitutions?.find((sub) => sub.in === player.id)?.minute ?? 0,
-                  result.minutesPlayed?.[player.id] ?? 90,
-                  redCardActions,
-                ) *
-                ((result.minutesPlayed?.[player.id] ?? 90) / 90)) /
-                (1 +
-                  ((center?.levels.fitness ?? 1) - 1) * GAMEPLAY.fitnessFatigueReductionPerLevel),
+              result.fitnessSpent?.[player.id] ??
+                ((GAMEPLAY.fitnessCost + Math.min(10, Math.max(0, consecutive - 2) * 2)) *
+                  ((player.clubId
+                    ? result.tacticalPlans?.[player.clubId === home.id ? 'home' : 'away']?.style
+                    : undefined) === 'all-out-press'
+                    ? 1.5
+                    : (player.clubId
+                          ? result.tacticalPlans?.[player.clubId === home.id ? 'home' : 'away']
+                              ?.style
+                          : undefined) === 'gegenpress'
+                      ? 1.25
+                      : 1) *
+                  ageFatigueFactor(player.age) *
+                  positionFatigueFactor(player.position) *
+                  redCardFatigueFactor(
+                    player.id,
+                    player.clubId === home.id ? 'home' : 'away',
+                    result.substitutions?.find((sub) => sub.in === player.id)?.minute ?? 0,
+                    result.minutesPlayed?.[player.id] ?? 90,
+                    redCardActions,
+                  ) *
+                  ((result.minutesPlayed?.[player.id] ?? 90) / 90)) /
+                  (1 +
+                    ((center?.levels.fitness ?? 1) - 1) * GAMEPLAY.fitnessFatigueReductionPerLevel),
             ),
         ),
         morale: Math.round(
@@ -520,6 +570,16 @@ export function playNextBatch(state: WorldState, processedAt: number): Result<Wo
           1,
           Math.ceil((random() * GAMEPLAY.injuryMaxMatches) / (center?.levels.medical ?? 1)),
         );
+    }
+    for (const team of [home, away]) {
+      const games = clubHistories.get(team.id) ?? [];
+      for (const id of team.playerIds) {
+        const offset = contractHistory[id]?.effectsClubGames ?? 0;
+        if (games.length - offset >= 6 && hasNoMatchSequence(games.slice(-6), id)) {
+          const clubChemistry = (chemistry[team.id] ??= {});
+          clubChemistry[id] = changeChemistry(clubChemistry[id] ?? 0, -1);
+        }
+      }
     }
     const node = cups.find((candidate) => candidate.id === fixture.id);
     if (node) {
@@ -634,6 +694,7 @@ export function playNextBatch(state: WorldState, processedAt: number): Result<Wo
       lastProcessedAt: scheduledAt,
     }),
   );
+  next = syncIndividualTraining(next, scheduledAt);
   next = resolveRegionalQualifiers(next);
   if (!pendingFixtures(next).length) next = scheduleIntercontinental(next);
   next = normalizeRoundCalendar(next);

@@ -7,6 +7,32 @@ import {
   playbackBallHeight,
 } from '../src/three/match-playback';
 describe('passes na reprodução 3D', () => {
+  it('preserva o goleiro original no passado e passa a função ao improvisado na expulsão', () => {
+    const frames = buildPlayback(
+      [
+        { minute: 10, type: 'pass', side: 'home', x: 0, z: 0, playerId: 'field' },
+        { minute: 70, type: 'red', side: 'home', x: 0, z: -47, playerId: 'keeper' },
+        {
+          minute: 71,
+          type: 'shot',
+          side: 'away',
+          x: 0,
+          z: -30,
+          outcome: 'saved',
+          keeperId: 'field',
+        },
+      ],
+      ['keeper', 'field'],
+      ['opponent'],
+      ['keeper'],
+      [],
+      [{ side: 'home', minute: 70, playerId: 'field', improvised: true }],
+    );
+    expect(frames[0]!.keeperEnds).toEqual({ keeper: -1 });
+    expect(frames[1]!.keeperEnds).toEqual({ field: -1 });
+    expect(frames[2]!.keeperEnds).toEqual({ field: -1 });
+    expect(frames[1]!.dismissed).toContain('keeper');
+  });
   it('mapeia as coordenadas do reserva para a vaga do titular substituído', () => {
     const timeline = buildPlayback(
       [

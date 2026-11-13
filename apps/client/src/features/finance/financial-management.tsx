@@ -4,7 +4,6 @@ import {
   clubPayroll,
   defaultFinancialPlan,
   monthlyFinancialReport,
-  maintenanceBreakdown,
   monthlyStructureCost,
   seasonFinancialReport,
 } from '@football/domain';
@@ -153,57 +152,19 @@ export function BudgetEditor({ snapshot, club }: Props) {
         </span>
       </div>
       <p className="financial-budget-note">
-        A área tracejada indica salários e manutenção mensal das estruturas. Mais espaço para
-        salários deixa menos dinheiro para contratações.
+        Tracejado: folha e manutenção mensal. Aumentar a verba salarial reduz a verba de compras.
       </p>
       <p className="financial-budget-note">
-        Caixa total: {formatMoneyFull(cash)} · Estruturas e dívidas previstas:{' '}
-        {formatMoneyFull(operations)} (sem reserva automática). A divisão é salva ao soltar a barra
-        e aplicada às negociações.
+        Caixa: {formatMoneyFull(cash)} · Manutenção: {formatMoneyFull(operations)}/mês, sem reserva
+        automática. Solte a barra para salvar os limites das negociações.
       </p>
     </section>
   );
 }
 export function FinancialHistory({ snapshot, club }: Props) {
-  const chartRef = useRef<HTMLDivElement>(null);
-  const [chartWidth, setChartWidth] = useState(720);
-  useEffect(() => {
-    const element = chartRef.current;
-    if (!element) return;
-    const observer = new ResizeObserver((entries) => {
-      const width = entries[0]?.contentRect.width;
-      if (width) setChartWidth(Math.round(width));
-    });
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, []);
   const report = monthlyFinancialReport(snapshot.state, club.id, snapshot.ledger);
   const forecast = currentMonthForecast(snapshot.state, club, snapshot.ledger);
-  const months = report.months.slice(-12),
-    current = report.current;
-  const fixed =
-    clubPayroll(snapshot.state, club) +
-    maintenanceBreakdown(snapshot.state, club).reduce((sum, item) => sum + item.cost, 0);
-  const highest = Math.max(
-      1,
-      ...months.flatMap((r) => [r.income, r.expenses, r.fixedCosts, Math.max(0, r.profit)]),
-    ),
-    lowest = Math.min(0, ...months.map((r) => r.profit));
-  const width = Math.max(560, chartWidth, months.length * 66 + 70),
-    height = 160,
-    top = 20,
-    bottom = 130,
-    plot = bottom - top;
-  const y = (value: number) => top + ((highest - value) / (highest - lowest)) * plot,
-    zero = y(0),
-    group = (width - 80) / Math.max(1, months.length),
-    bar = Math.min(12, group / 5);
-  const series = [
-    { key: 'income' as const, label: 'Receitas', color: COLORS.income },
-    { key: 'expenses' as const, label: 'Despesas pagas', color: COLORS.expenses },
-    { key: 'fixedCosts' as const, label: 'Custo fixo do mês', color: COLORS.fixed },
-    { key: 'profit' as const, label: 'Lucro / prejuízo', color: COLORS.profit },
-  ];
+  const current = report.current;
   return (
     <section className="panel financial-history">
       <header className="section-header">
@@ -233,92 +194,6 @@ export function FinancialHistory({ snapshot, club }: Props) {
           </div>
         ))}
       </div>
-      <p className="financial-budget-note">
-        Estimativa: receitas registradas, público previsto por partida, participação na bilheteria,
-        patrocínios e custos do mês. Média de público:{' '}
-        <strong>{forecast.averageAttendance.toLocaleString('pt-BR')}</strong>; ingresso médio:{' '}
-        <strong>{currency(forecast.averageTicketPrice)}</strong>. Considera os jogos conhecidos no
-        calendário e os preços atuais. Custo fixo mensal atual: <strong>{currency(fixed)}</strong>.
-        Média calculada desde o início da carreira, incluindo meses sem movimentação e excluindo o
-        mês atual.
-      </p>
-      {months.some(
-        (month) => month.income || month.expenses || month.fixedCosts || month.profit,
-      ) ? (
-        <>
-          <div className="financial-chart-legend">
-            {series.map((item) => (
-              <span key={item.key}>
-                <i style={{ background: item.color }} />
-                {item.label}
-              </span>
-            ))}
-          </div>
-          <div className="financial-chart-scroll" ref={chartRef}>
-            <svg
-              className="financial-bars"
-              viewBox={`0 0 ${width} ${height}`}
-              style={{ minWidth: width }}
-              role="img"
-              aria-label="Gráfico mensal de receitas, despesas, custo fixo e lucro"
-            >
-              {[0, 0.5, 1].map((t) => {
-                const value = lowest + (highest - lowest) * t;
-                return (
-                  <g key={t}>
-                    <line x1="65" x2={width - 10} y1={y(value)} y2={y(value)} stroke="#e3eae3" />
-                    <text x="58" y={y(value) + 4} textAnchor="end" fill="#728174" fontSize="11">
-                      {compact(value)}
-                    </text>
-                  </g>
-                );
-              })}
-              <line x1="65" x2={width - 10} y1={zero} y2={zero} stroke="#829b89" />
-              {months.map((month, index) => {
-                const center = 70 + group * (index + 0.5);
-                return (
-                  <g key={month.month}>
-                    {series.map((item, j) => {
-                      const value = month[item.key],
-                        point = y(value);
-                      return (
-                        <rect
-                          key={item.key}
-                          x={center + (j - 2) * bar}
-                          y={Math.min(point, zero)}
-                          width={bar - 2}
-                          height={Math.abs(point - zero)}
-                          rx="2"
-                          fill={value < 0 ? '#b85043' : item.color}
-                        >
-                          <title>
-                            {month.month} · {item.label}: {currency(value)}
-                          </title>
-                        </rect>
-                      );
-                    })}
-                    <text x={center} y="150" textAnchor="middle" fill="#536d5b" fontSize="12">
-                      {new Date(month.month + '-02T12:00:00Z').toLocaleDateString('pt-BR', {
-                        month: 'short',
-                        year: '2-digit',
-                        timeZone: 'America/Sao_Paulo',
-                      })}
-                    </text>
-                  </g>
-                );
-              })}
-            </svg>
-          </div>
-        </>
-      ) : (
-        <p className="financial-empty">Sem movimentações no período.</p>
-      )}
-      {report.legacy && (
-        <p className="financial-budget-note">
-          Movimentações antigas usam a variação líquida do caixa. Os novos registros separam
-          receitas e pagamentos.
-        </p>
-      )}
     </section>
   );
 }

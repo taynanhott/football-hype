@@ -181,32 +181,6 @@ export function Finance({ snapshot, club }: ViewProps) {
             </small>
           </div>
         </header>
-        <div className="finance-scoreboard">
-          {[
-            { label: 'Folha mensal', value: payroll, note: 'Compromisso com o elenco' },
-            { label: 'Estruturas / mês', value: maintenance, note: 'Cada nível tem seu custo' },
-            {
-              label: 'Contas em atraso',
-              value: debt,
-              note: debt ? 'Prioridade de pagamento' : 'Sem pendências',
-              negative: debt > 0,
-            },
-            {
-              label: 'Fôlego de caixa',
-              text: coverage.toFixed(1).replace('.', ',') + ' meses',
-              note: 'Folha + estruturas',
-              negative: coverage < 1,
-            },
-          ].map((item) => (
-            <article key={item.label}>
-              <span>{item.label}</span>
-              <strong className={item.negative ? 'negative' : ''}>
-                {item.text ?? currency(item.value ?? 0)}
-              </strong>
-              <small>{item.note}</small>
-            </article>
-          ))}
-        </div>
         <SeasonResults snapshot={snapshot} club={club} />
         <section className={'finance-director ' + status}>
           <div className="finance-director-person">
@@ -277,6 +251,32 @@ export function Finance({ snapshot, club }: ViewProps) {
         <BudgetEditor key={club.id} snapshot={snapshot} club={club} />
         <TicketPricing state={state} clubId={club.id} />
         <FinancialHistory snapshot={snapshot} club={club} />
+        <div className="finance-scoreboard">
+          {[
+            { label: 'Folha mensal', value: payroll, note: 'Compromisso com o elenco' },
+            { label: 'Estruturas / mês', value: maintenance, note: 'Cada nível tem seu custo' },
+            {
+              label: 'Contas em atraso',
+              value: debt,
+              note: debt ? 'Prioridade de pagamento' : 'Sem pendências',
+              negative: debt > 0,
+            },
+            {
+              label: 'Fôlego de caixa',
+              text: coverage.toFixed(1).replace('.', ',') + ' meses',
+              note: 'Folha + estruturas',
+              negative: coverage < 1,
+            },
+          ].map((item) => (
+            <article key={item.label}>
+              <span>{item.label}</span>
+              <strong className={item.negative ? 'negative' : ''}>
+                {item.text ?? currency(item.value ?? 0)}
+              </strong>
+              <small>{item.note}</small>
+            </article>
+          ))}
+        </div>
       </div>
       <div className="finance-fill-column finance-fill-records">
         {[

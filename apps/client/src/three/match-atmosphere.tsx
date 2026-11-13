@@ -1,4 +1,4 @@
-import { illustratedAppearance, type ClubKit } from '@football/shared';
+import { illustratedAppearance, type ClubKit, type MatchResult } from '@football/shared';
 import { PlayerFigure } from './player-figure';
 import { playerBuild } from './player-build';
 import { runnerMotion } from './runner-motion';
@@ -23,7 +23,15 @@ import { crowdNoise, occupiedCrowdSeats } from './stadium-seating';
 import { clearCrowdSeats, smokePlumeLimit } from './crowd-clearance';
 type View = RefObject<ReturnType<typeof samplePlayback>>;
 
-export function MatchReferee({ renderedView, ended }: { renderedView: View; ended: boolean }) {
+export function MatchReferee({
+  renderedView,
+  ended,
+  card,
+}: {
+  renderedView: View;
+  ended: boolean;
+  card: NonNullable<MatchResult['actions']>[number] | undefined;
+}) {
   const referee = useRef<Group>(null),
     arm = useRef<Group>(null);
   const leftArm = useRef<Group>(null),
@@ -48,15 +56,18 @@ export function MatchReferee({ renderedView, ended }: { renderedView: View; ende
       dz = desiredZ - referee.current.position.z,
       distance = Math.hypot(dx, dz);
     const step = Math.min(distance, delta * 7);
-    const moving = distance > 0.4;
+    const moving = distance > 0.4 && !card;
     if (moving) {
       referee.current.position.x += (dx / distance) * step;
       referee.current.position.z += (dz / distance) * step;
       stride.current += step * 2.4;
     }
-    referee.current.rotation.y = moving
-      ? Math.atan2(dx, dz)
-      : Math.atan2(ball.x - referee.current.position.x, ball.z - referee.current.position.z);
+    const offender = card ? (view.positions[card.playerId ?? ''] ?? card) : ball;
+    referee.current.rotation.y = card
+      ? Math.atan2(offender.x - referee.current.position.x, offender.z - referee.current.position.z)
+      : moving
+        ? Math.atan2(dx, dz)
+        : Math.atan2(ball.x - referee.current.position.x, ball.z - referee.current.position.z);
     const motion = runnerMotion(stride.current, moving && !ended ? 0.8 : 0);
     if (leftLeg.current) leftLeg.current.rotation.x = motion.leftLeg;
     if (rightLeg.current) rightLeg.current.rotation.x = motion.rightLeg;
@@ -76,7 +87,8 @@ export function MatchReferee({ renderedView, ended }: { renderedView: View; ende
       (currentMinute >= 45 && currentMinute < 45.25) ||
       (view.frame?.action.outcome === 'goal' && view.progress > 0.84) ||
       (view.progress < 0.3 && ['foul', 'kickoff', 'goal'].includes(view.frame?.action.type ?? ''));
-    if (arm.current) arm.current.rotation.x = whistling ? -1.8 : motion.rightArm;
+    if (arm.current)
+      arm.current.rotation.x = card ? -Math.PI + 0.35 : whistling ? -1.8 : motion.rightArm;
     let lift = 0;
     for (const boot of [leftBoot.current, rightBoot.current]) {
       if (!boot) continue;
@@ -105,6 +117,14 @@ export function MatchReferee({ renderedView, ended }: { renderedView: View; ende
           rightKnee={rightKnee}
           leftBoot={leftBoot}
           rightBoot={rightBoot}
+          rightHand={
+            card ? (
+              <mesh name={card.type === 'red' ? 'Cartão vermelho' : 'Cartão amarelo'}>
+                <boxGeometry args={[0.32, 0.46, 0.035]} />
+                <meshBasicMaterial color={card.type === 'red' ? '#ff2525' : '#ffe500'} />
+              </mesh>
+            ) : null
+          }
         />
       </group>
     </group>

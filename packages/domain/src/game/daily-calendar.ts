@@ -15,7 +15,10 @@ import {
 } from './player-contracts.js';
 import { normalizeRoundCalendar } from '../competitions/round-calendar.js';
 import { realizeCompetitionDraws } from '../competitions/competition-draws.js';
-import { GAMEPLAY, TACTICS, type Fixture, type WorldState } from '@football/shared';
+import { GAMEPLAY, type Fixture, type WorldState } from '@football/shared';
+import { changeChemistry } from './chemistry.js';
+import { syncIndividualTraining } from './individual-training.js';
+import { resolveLineup } from './tactics.js';
 import { scheduledFixtures } from '../competitions/fixtures.js';
 import { revalueGrowth } from '../players/development.js';
 import { hashSeed, mulberry32 } from '../simulation/random.js';
@@ -55,6 +58,7 @@ function routineAt(dates: Set<number>, day: number): DayRoutine {
 
 /** Complete each elapsed game day once; manual and real-time advancement share this path. */
 function advanceGameDaysInternal(state: WorldState, target: number): WorldState {
+  state = syncIndividualTraining(state, state.lastProcessedAt);
   const start = gameDayStart(state.lastProcessedAt);
   const end = gameDayStart(target);
   if (end <= start) return finishIndividualCycles(state, target);
@@ -106,14 +110,31 @@ function advanceGameDaysInternal(state: WorldState, target: number): WorldState 
       state = drawn;
       if (changed) refreshDates();
     }
+    const trainingState = { ...state, injuries };
     for (const center of Object.values(centers)) {
       const routine = routineAt(dates.get(center.clubId) ?? new Set(), day);
-      const ops = center.operations ?? {
+      const club = state.clubs.byId[center.clubId];
+      const starters = new Set(
+        routine === 'training' && club
+          ? resolveLineup(trainingState, club, day, players).flatMap((entry) =>
+              entry.player ? [entry.player.id] : [],
+            )
+          : [],
+      );
+      const rawOps = center.operations ?? {
         load: 'moderate' as const,
         fitness: [],
         medical: [],
         individual: [],
         syringe: false,
+      };
+      const ops = {
+        ...rawOps,
+        individual: rawOps.individual.map((plan) =>
+          (injuries[plan.playerId] ?? 0) > 0 && plan.pausedAt === undefined
+            ? { ...plan, pausedAt: Math.max(day, plan.startedAt) }
+            : plan,
+        ),
       };
       const recovery =
         routine === 'rest' ? 1.8 : routine === 'recovery' ? 2 : routine === 'eve' ? 1.3 : 1;
@@ -127,10 +148,7 @@ function advanceGameDaysInternal(state: WorldState, target: number): WorldState 
       for (const id of state.clubs.byId[center.clubId]?.playerIds ?? []) {
         const player = players[id];
         if (!player) continue;
-        if (routine === 'rest') {
-          players[id] = { ...player, fitness: 100 };
-          continue;
-        }
+        const injured = (injuries[id] ?? 0) > 0;
         const officialDay = ops.lastOfficialTrainingAt?.[id];
         const setting =
           officialDay !== undefined && gameDayStart(officialDay) === day
@@ -142,7 +160,7 @@ function advanceGameDaysInternal(state: WorldState, target: number): WorldState 
           Math.min(
             12,
             (effort[id] ?? 0) +
-              (routine === 'training'
+              (routine === 'training' && !injured
                 ? setting === 'intense'
                   ? 1
                   : setting === 'moderate'
@@ -152,9 +170,8 @@ function advanceGameDaysInternal(state: WorldState, target: number): WorldState 
           ),
         );
         const ageFatigue = ageFatigueFactor(player.age);
-        const injured = (injuries[id] ?? 0) > 0;
         const history = currentTrainingHistory(trainingHistory[id], state.season);
-        history.days++;
+        if (!injured) history.days++;
         const previousProgress = progression[id] ?? emptyTrainingProgression();
         const individual = ops.individual.find((plan) => plan.playerId === id);
         let next = {
@@ -165,7 +182,7 @@ function advanceGameDaysInternal(state: WorldState, target: number): WorldState 
               Math.floor(
                 (((GAMEPLAY.fitnessRecovery + center.levels.fitness * GAMEPLAY.recoveryPerLevel) *
                   recovery *
-                  (routine === 'training'
+                  (routine === 'training' && !injured
                     ? setting === 'light'
                       ? 1
                       : setting === 'moderate'
@@ -180,13 +197,10 @@ function advanceGameDaysInternal(state: WorldState, target: number): WorldState 
           ),
         };
         if (!injured && routine === 'training') {
-          const clubChemistry = (chemistry[center.clubId] ??= {});
-          const current = clubChemistry[id] ?? 0;
-          if (current < TACTICS.chemistryMatches)
-            clubChemistry[id] = Math.min(
-              TACTICS.chemistryMatches,
-              current + TACTICS.chemistryMatches / 100,
-            );
+          if (starters.has(id)) {
+            const clubChemistry = (chemistry[center.clubId] ??= {});
+            clubChemistry[id] = changeChemistry(clubChemistry[id] ?? 0, 1);
+          }
           const growth =
             (development[id] ?? 0) +
             0.003 *
@@ -219,15 +233,17 @@ function advanceGameDaysInternal(state: WorldState, target: number): WorldState 
           )
             injuries[id] = Math.max(1, Math.ceil(3 / center.levels.medical));
         }
-        const trained = progressTraining(
-          player,
-          progression[id] ?? emptyTrainingProgression(),
-          injured ? 'light' : setting,
-          center.levels.coaching,
-          !injured && routine === 'training',
-          individual ? 1.5 : 1,
-          Boolean(individual),
-        );
+        const trained = injured
+          ? { progress: previousProgress, overall: player.overall }
+          : progressTraining(
+              player,
+              progression[id] ?? emptyTrainingProgression(),
+              injured ? 'light' : setting,
+              center.levels.coaching,
+              !injured && routine === 'training',
+              individual ? 1.5 : 1,
+              Boolean(individual),
+            );
         history.bonus +=
           trained.progress.buff -
           previousProgress.buff +
@@ -245,7 +261,12 @@ function advanceGameDaysInternal(state: WorldState, target: number): WorldState 
         progression[id] = trained.progress;
         trainingHistory[id] = history;
         if (player.age > 33) next = { ...next, overall: trained.overall };
-        if (individual && day + GAME_DAY_MS >= individual.endsAt) {
+        if (
+          individual &&
+          !injured &&
+          individual.pausedAt === undefined &&
+          day + GAME_DAY_MS >= individual.endsAt
+        ) {
           if (player.age < 33) {
             if (next.overall >= next.potential) cycleBonuses[id] = { games: 15 };
           }
@@ -370,7 +391,10 @@ function finishIndividualCycles(state: WorldState, at: number): WorldState {
   }
 
   const expired = Object.values(state.centers.byId).filter((center) =>
-    center.operations?.individual.some((plan) => plan.endsAt <= at),
+    center.operations?.individual.some(
+      (plan) =>
+        plan.pausedAt === undefined && !(state.injuries[plan.playerId] ?? 0) && plan.endsAt <= at,
+    ),
   );
   if (!expired.length) return state;
   const players = { ...state.players.byId };
@@ -378,7 +402,9 @@ function finishIndividualCycles(state: WorldState, at: number): WorldState {
   for (const center of expired) {
     const ops = center.operations!;
     const cycleBonuses = { ...ops.cycleBonuses };
-    for (const plan of ops.individual.filter((plan) => plan.endsAt <= at)) {
+    const completed = (plan: (typeof ops.individual)[number]) =>
+      plan.pausedAt === undefined && !(state.injuries[plan.playerId] ?? 0) && plan.endsAt <= at;
+    for (const plan of ops.individual.filter(completed)) {
       const player = players[plan.playerId];
       if (!player || player.clubId !== center.clubId || player.age >= 33) continue;
       if (player.overall >= player.potential) cycleBonuses[player.id] = { games: 15 };
@@ -388,7 +414,7 @@ function finishIndividualCycles(state: WorldState, at: number): WorldState {
       operations: {
         ...ops,
         cycleBonuses,
-        individual: ops.individual.filter((plan) => plan.endsAt > at),
+        individual: ops.individual.filter((plan) => !completed(plan)),
       },
     };
   }

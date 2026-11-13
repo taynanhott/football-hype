@@ -7,6 +7,7 @@ import type { ViewProps } from '../../ui/view-props';
 import { useGameStore } from '../../store/game-store';
 import { visibleActionMinute } from '../../three/match-playback';
 import { MatchActors } from '../../three/match-actors';
+import { GoalCelebration, recentMatchEvent } from '../../three/match-celebration';
 import { GoalsAndCards, MatchStatistics, PlayerRatings, RoundResults } from './match-summary';
 const StadiumScene = lazy(() => import('../../three/stadium-scene'));
 const labels: Record<string, string> = {
@@ -35,21 +36,6 @@ function actionLabel(action: NonNullable<MatchResult['actions']>[number]) {
   if (action.type === 'shot' && action.outcome === 'saved') return 'Chute defendido';
   if (action.type === 'shot' && action.outcome === 'blocked') return 'Chute bloqueado';
   return labels[action.type];
-}
-function cheer(context: AudioContext) {
-  const buffer = context.createBuffer(1, context.sampleRate * 1.5, context.sampleRate);
-  const samples = buffer.getChannelData(0);
-  for (let i = 0; i < samples.length; i++)
-    samples[i] = (Math.random() * 2 - 1) * Math.sin((i / samples.length) * Math.PI);
-  const source = context.createBufferSource();
-  source.buffer = buffer;
-  const filter = context.createBiquadFilter();
-  filter.type = 'lowpass';
-  filter.frequency.value = 1300;
-  const gain = context.createGain();
-  gain.gain.value = 0.3;
-  source.connect(filter).connect(gain).connect(context.destination);
-  source.start();
 }
 function whistle(context: AudioContext, final = false) {
   const at = context.currentTime;
@@ -127,6 +113,22 @@ export function Matches({ snapshot, club }: ViewProps) {
   const sound = useRef<AudioContext | null>(null);
   const heard = useRef(new Set<string>());
   const [soundOn, setSoundOn] = useState(true);
+  const goalAudio = useRef<HTMLAudioElement | null>(null);
+  const [cheerDuration, setCheerDuration] = useState(10724);
+  useEffect(() => {
+    const audio = new Audio('/audio/stadium-goal-cheer.mp3');
+    audio.preload = 'auto';
+    goalAudio.current = audio;
+    const metadata = () => {
+      if (Number.isFinite(audio.duration)) setCheerDuration(audio.duration * 1000);
+    };
+    audio.addEventListener('loadedmetadata', metadata);
+    return () => {
+      audio.pause();
+      audio.removeEventListener('loadedmetadata', metadata);
+      goalAudio.current = null;
+    };
+  }, []);
   const isReplay = replay?.id === result?.fixtureId && replay !== null;
   const start = isReplay ? replay.start : (result?.startedAt ?? 0);
   const elapsed = Math.max(0, now + (isReplay ? 0 : clockOffset) - start);
@@ -148,6 +150,9 @@ export function Matches({ snapshot, club }: ViewProps) {
   );
   const playing = Boolean(result) && elapsed < MATCH_DURATION_MS;
   const animating = Boolean(result) && elapsed < MATCH_DURATION_MS + 6000;
+  useEffect(() => {
+    goalAudio.current?.pause();
+  }, [soundOn, start, result?.fixtureId]);
   useEffect(() => {
     if (!animating) return;
     let timer: ReturnType<typeof setInterval> | undefined;
@@ -235,7 +240,15 @@ export function Matches({ snapshot, club }: ViewProps) {
         heard.current.add(key);
         if (sound.current) {
           whistle(sound.current);
-          if (event.type === 'goal') cheer(sound.current);
+          if (event.type === 'goal' && goalAudio.current) {
+            const audio = goalAudio.current;
+            audio.currentTime = Math.max(
+              0,
+              (((minute - actionMinutes[index]!) / 90) * MATCH_DURATION_MS) / 1000,
+            );
+            audio.volume = event.side === 'home' ? 1 : 0.45;
+            void audio.play().catch(() => {});
+          }
         }
       }
     }
@@ -293,31 +306,42 @@ export function Matches({ snapshot, club }: ViewProps) {
         <div className="match-scene" ref={scene}>
           {stadium && center ? (
             <Suspense fallback={<p>Carregando estádio…</p>}>
-              <StadiumScene
-                showNeighborhood
-                matchView
-                paused={!animating}
-                {...(home ? { homeClub: home } : {})}
-                {...(away ? { awayClub: away } : {})}
-                homeKit={clubKit(home ?? { name: '' })}
-                awayKit={clubKit(away ?? { name: '' })}
-                stadium={stadium}
-                center={center}
-                occupancy={
-                  result.attendance /
-                  Math.max(
-                    1,
-                    stadium.sectors.reduce((s, v) => s + v.capacity, 0),
-                  )
+              <GoalCelebration.Provider
+                value={
+                  recentMatchEvent(
+                    result.actions ?? [],
+                    (elapsed / MATCH_DURATION_MS) * 90,
+                    ['goal'],
+                    cheerDuration,
+                  )?.side ?? null
                 }
               >
-                <MatchActors
-                  key={`${result.fixtureId}:${start}`}
-                  state={state}
-                  result={result}
-                  elapsed={elapsed}
-                />
-              </StadiumScene>
+                <StadiumScene
+                  showNeighborhood
+                  matchView
+                  paused={!animating}
+                  {...(home ? { homeClub: home } : {})}
+                  {...(away ? { awayClub: away } : {})}
+                  homeKit={clubKit(home ?? { name: '' })}
+                  awayKit={clubKit(away ?? { name: '' })}
+                  stadium={stadium}
+                  center={center}
+                  occupancy={
+                    result.attendance /
+                    Math.max(
+                      1,
+                      stadium.sectors.reduce((s, v) => s + v.capacity, 0),
+                    )
+                  }
+                >
+                  <MatchActors
+                    key={`${result.fixtureId}:${start}`}
+                    state={state}
+                    result={result}
+                    elapsed={elapsed}
+                  />
+                </StadiumScene>
+              </GoalCelebration.Provider>
             </Suspense>
           ) : (
             <p>Estádio indisponível para esta partida.</p>

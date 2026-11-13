@@ -246,15 +246,49 @@ export function CenterManagement({
                         <div key={id}>
                           <strong>{state.players.byId[id]?.name ?? 'Jogador'}</strong>
                           <span>Plus ativo · recuperação +50%</span>
+                          <button
+                            type="button"
+                            disabled={busy}
+                            onClick={() =>
+                              send({
+                                type: 'management',
+                                action: 'center',
+                                target: `remove-${sector}`,
+                                playerId: id,
+                              })
+                            }
+                          >
+                            Remover
+                          </button>
                         </div>
                       ))
                     : ops?.individual.map((t) => (
                         <div key={t.playerId}>
                           <strong>{state.players.byId[t.playerId]?.name ?? 'Jogador'}</strong>
                           <span>
-                            {Math.max(0, Math.ceil((t.endsAt - state.lastProcessedAt) / 86400000))}{' '}
-                            dias restantes · evolução acelerada
+                            {Math.max(
+                              0,
+                              Math.ceil(
+                                (t.endsAt - (t.pausedAt ?? state.lastProcessedAt)) / 86400000,
+                              ),
+                            )}{' '}
+                            dias restantes ·{' '}
+                            {t.pausedAt !== undefined ? 'Pausado por lesão' : 'evolução acelerada'}
                           </span>
+                          <button
+                            type="button"
+                            disabled={busy}
+                            onClick={() =>
+                              send({
+                                type: 'management',
+                                action: 'center',
+                                target: 'remove-individual',
+                                playerId: t.playerId,
+                              })
+                            }
+                          >
+                            Remover
+                          </button>
                         </div>
                       ))}
                 </div>

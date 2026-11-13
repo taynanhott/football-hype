@@ -154,7 +154,7 @@ export function IndividualTrainingRoster({
                       key={value}
                       data-load={value}
                       aria-pressed={load === value}
-                      disabled={busy}
+                      disabled={busy || injured}
                       onClick={() => onLoadChange(id, value)}
                     >
                       {label}
@@ -163,7 +163,7 @@ export function IndividualTrainingRoster({
                   <button
                     type="button"
                     className="start-individual-training"
-                    disabled={busy || Boolean(cycle) || activeCount >= slots}
+                    disabled={busy || injured || Boolean(cycle) || activeCount >= slots}
                     title={
                       cycle
                         ? 'Ciclo individual em andamento'
@@ -173,8 +173,26 @@ export function IndividualTrainingRoster({
                     }
                     onClick={() => setConfirmId(id)}
                   >
-                    {cycle ? 'Em treino' : 'Individual'}
+                    {cycle ? (injured ? 'Pausado por lesão' : 'Em treino') : 'Individual'}
                   </button>
+                  {cycle && (
+                    <button
+                      type="button"
+                      disabled={busy}
+                      aria-label={`Remover ${player.name} do treino individual`}
+                      title="Libera a vaga sem devolver o pagamento realizado."
+                      onClick={() =>
+                        send({
+                          type: 'management',
+                          action: 'center',
+                          target: 'remove-individual',
+                          playerId: id,
+                        })
+                      }
+                    >
+                      Remover
+                    </button>
+                  )}
                 </div>
               </div>
               <div className="training-player-meters">
@@ -201,9 +219,11 @@ export function IndividualTrainingRoster({
                   title="Projeção até o fim da temporada pela média real de todos os treinos e jogos registrados; trocar a carga não altera o histórico"
                 >
                   <span>
-                    {(projected >= 0 ? '+' : '−') +
-                      Math.abs(projected).toFixed(1).replace('.', ',') +
-                      '/temp.'}
+                    {injured
+                      ? 'Pausado por lesão'
+                      : (projected >= 0 ? '+' : '−') +
+                        Math.abs(projected).toFixed(1).replace('.', ',') +
+                        '/temp.'}
                   </span>
                   <meter
                     min="0"
@@ -282,6 +302,7 @@ export function IndividualTrainingRoster({
                 className="primary"
                 disabled={
                   busy ||
+                  (state.injuries[confirmPlayer.id] ?? 0) > 0 ||
                   club.balance.cents < cost ||
                   activeCount >= slots ||
                   Boolean(center.operations?.individual.some((plan) => plan.playerId === confirmId))

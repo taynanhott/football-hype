@@ -2,6 +2,16 @@ import { describe, expect, it } from 'vitest';
 import { actionChance, actionQuality } from '../src/simulation/action-quality.js';
 
 describe('individual action quality', () => {
+  it('reduz todas as ações com a condição atual, preservando o overall base', () => {
+    const player = { overall: 90, position: 'ST' as const };
+    for (const skill of ['passing', 'finishing', 'defending', 'dribbling', 'keeping'] as const) {
+      expect(actionQuality(player, skill, 60)).toBeLessThan(actionQuality(player, skill, 90));
+    }
+    expect(player.overall).toBe(90);
+    expect(actionQuality({ overall: 90, position: 'ST' }, 'finishing', 30)).toBeLessThan(
+      actionQuality({ overall: 80, position: 'ST' }, 'finishing', 100),
+    );
+  });
   it('rewards stronger attackers and counters them with stronger defenders', () => {
     const strong = actionQuality({ overall: 90, position: 'ST' }, 'finishing');
     const weak = actionQuality({ overall: 55, position: 'ST' }, 'finishing');

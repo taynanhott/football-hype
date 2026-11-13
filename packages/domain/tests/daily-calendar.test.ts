@@ -44,9 +44,67 @@ function world() {
   return { state, club, player };
 }
 describe('dias da temporada', () => {
+  it('folga recupera gradualmente e preserva o peso da idade e da estrutura', () => {
+    const simulate = (age: number, level: number, targeted = false) => {
+      const { state, club, player } = world();
+      const center = state.centers.byId[club.trainingCenterId]!;
+      state.players = {
+        ...state.players,
+        byId: { ...state.players.byId, [player.id]: { ...player, age, fitness: 60 } },
+      };
+      state.centers = {
+        ...state.centers,
+        byId: {
+          ...state.centers.byId,
+          [center.id]: {
+            ...center,
+            levels: { ...center.levels, fitness: level },
+            operations: {
+              ...(center.operations ?? {
+                load: 'moderate' as const,
+                medical: [],
+                individual: [],
+                syringe: false,
+              }),
+              fitness: targeted ? [player.id] : [],
+            },
+          },
+        },
+      };
+      const recovered = advanceGameDays(state, at(14));
+      expect(advanceGameDays(recovered, at(14))).toBe(recovered);
+      return recovered.players.byId[player.id]!.fitness;
+    };
+    const young = simulate(20, 1);
+    const veteran = simulate(35, 1);
+    expect(young).toBeLessThan(100);
+    expect(veteran).toBeLessThan(young);
+    expect(veteran).toBeGreaterThan(60);
+    expect(simulate(35, 5)).toBeGreaterThan(veteran);
+    expect(simulate(35, 1, true)).toBeGreaterThan(veteran);
+  });
+  it('reservas não ganham entrosamento pelo treino, mas passam a ganhar quando viram titulares', () => {
+    const { state, club, player } = world();
+    state.lastProcessedAt = at(13);
+    const starters = club.playerIds.filter((id) => id !== player.id).slice(0, 11);
+    state.tactics[club.id] = { formation: '4-3-3', starters };
+    state.chemistry = { [club.id]: { [player.id]: 2.5 } };
+    const reserve = advanceGameDays(state, at(14));
+    expect(reserve.chemistry[club.id]?.[player.id]).toBe(2.5);
+    reserve.tactics = {
+      ...reserve.tactics,
+      [club.id]: { formation: '4-3-3', starters: [player.id, ...starters.slice(0, 10)] },
+    };
+    const starter = advanceGameDays(reserve, at(15));
+    expect(starter.chemistry[club.id]?.[player.id]).toBeCloseTo(2.55);
+  });
   it('ganha 1% de entrosamento por dia de treino, uma única vez e até 100%', () => {
     const { state, club, player } = world();
     state.lastProcessedAt = at(13);
+    state.tactics[club.id] = {
+      formation: '4-3-3',
+      starters: [player.id, ...club.playerIds.filter((id) => id !== player.id).slice(0, 10)],
+    };
     state.chemistry = { [club.id]: { [player.id]: 2.5 } };
     const trained = advanceGameDays(state, at(14));
     expect(trained.chemistry[club.id]?.[player.id]).toBeCloseTo(2.55);

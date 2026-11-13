@@ -14,7 +14,10 @@ export function contractExpires(state: WorldState, player: PlayerSnapshot) {
   );
 }
 export const ageFatigueFactor = (age: number) =>
-  Math.max(0.8, Math.min(1.6, 0.8 + Math.max(0, age - 20) * 0.025 + Math.max(0, age - 30) * 0.025));
+  Math.max(0.8, Math.min(1.9, 0.8 + Math.max(0, age - 20) * 0.03 + Math.max(0, age - 30) * 0.05));
+/** Gameplay workload calibration: keepers cover less ground than outfield players. */
+export const positionFatigueFactor = (position: PlayerSnapshot['position']) =>
+  position === 'GK' ? 0.4 : 1;
 export const moraleSensitivity = (player: PlayerSnapshot) =>
   player.age <= 23 && player.overall < 75 ? 0.15 : 1;
 export const maxContractYears = (age: number) => (age >= 35 ? 1 : age >= 32 ? 2 : 5);

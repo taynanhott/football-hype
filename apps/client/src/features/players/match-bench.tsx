@@ -172,7 +172,14 @@ export function MatchBench({
                         : playerSuspension(state, player.id)
                           ? 'Suspenso'
                           : 'Convocado'}
-                    {available(player) && <i style={{ width: `${player.fitness}%` }} />}
+                    {available(player) && (
+                      <i
+                        style={{
+                          width: `${player.fitness}%`,
+                          backgroundColor: conditionColor(player.fitness),
+                        }}
+                      />
+                    )}
                   </span>
                 </button>
               ))}
@@ -267,3 +274,4 @@ export function MatchBench({
     </section>
   );
 }
+import { conditionColor } from './condition-color';

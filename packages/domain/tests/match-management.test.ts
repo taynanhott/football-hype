@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { matchManagement } from '../src/simulation/match-management.js';
+import { matchManagement, type MatchOptions } from '../src/simulation/match-management.js';
 import { playerInput } from '../../../tests/fixtures/domain.js';
 import { spatialMatch } from '../src/simulation/spatial-match.js';
 import { mulberry32 } from '../src/simulation/random.js';
@@ -17,10 +17,11 @@ function setup(instructions?: MatchInstructions, fitness = 90, rating = 6) {
   const dismissed = new Set<string>();
   const styles = { home: 'balanced', away: 'balanced' } as const;
   const reshapes: string[] = [];
+  const options: MatchOptions = {
+    home: { bench, plan: { formation: '4-3-3', starters: home.map((p) => p.id), instructions } },
+  };
   const manager = matchManagement(
-    {
-      home: { bench, plan: { formation: '4-3-3', starters: home.map((p) => p.id), instructions } },
-    },
+    options,
     teams,
     styles,
     ratings,
@@ -28,12 +29,144 @@ function setup(instructions?: MatchInstructions, fitness = 90, rating = 6) {
     () => {},
     (_, f) => reshapes.push(f),
   );
-  return { manager, teams, bench, ratings, dismissed, styles, reshapes };
+  return { manager, teams, bench, ratings, dismissed, styles, reshapes, options };
 }
 const instructions = (
   substitutions: MatchInstructions['substitutions'] = [],
 ): MatchInstructions => ({ substitutions, protected: [], situations: [] });
 describe('gestão durante a partida', () => {
+  it('goleiro acumula apenas 40% do desgaste da linha nas mesmas condições', () => {
+    const { manager, teams } = setup(undefined, 100, 7);
+    manager.update(90, 0, 0);
+    const keeper = teams.home[0]!;
+    const outfield = teams.home[1]!;
+    expect(manager.fitnessSpent[keeper.id]).toBeCloseTo(manager.fitnessSpent[outfield.id]! * 0.4);
+    expect(manager.fitness(keeper)).toBeGreaterThan(manager.fitness(outfield));
+    expect(keeper.fitness).toBe(100);
+  });
+  it('prioriza reserva natural mesmo quando outro improvisado tem overall maior', () => {
+    const { manager, bench } = setup(undefined, 20, 7);
+    bench.splice(
+      0,
+      bench.length,
+      playerInput({ id: 'natural', position: 'CM', overall: 70, fitness: 100 }),
+      playerInput({ id: 'improvised', position: 'AM', overall: 90, fitness: 100 }),
+    );
+    manager.update(60, 0, 0);
+    expect(manager.substitutions[0]?.in).toBe('natural');
+  });
+  it('entre atletas com cansaço parecido tira primeiro a pior nota, depois o menor overall', () => {
+    const { manager, teams, bench, ratings } = setup(undefined, 20, 7);
+    bench.splice(1);
+    teams.home[1] = { ...teams.home[1]!, fitness: 22, overall: 90 };
+    ratings['starter-1'] = 5;
+    manager.update(60, 0, 0);
+    expect(manager.substitutions[0]?.out).toBe('starter-1');
+    const second = setup(undefined, 20, 7);
+    second.bench.splice(1);
+    second.teams.home[2] = { ...second.teams.home[2]!, overall: 60 };
+    second.manager.update(60, 0, 0);
+    expect(second.manager.substitutions[0]?.out).toBe('starter-2');
+  });
+  it('não tira um jogador sem reposição compatível e considera outro cansado', () => {
+    const { manager, teams, bench, ratings } = setup(undefined, 90, 7);
+    teams.home[1] = { ...teams.home[1]!, position: 'CB', fitness: 20 };
+    teams.home[2] = { ...teams.home[2]!, position: 'ST', fitness: 22 };
+    ratings['starter-1'] = 4;
+    bench.splice(0, bench.length, playerInput({ id: 'midfielder', position: 'ST', fitness: 100 }));
+    manager.update(60, 0, 0);
+    expect(manager.substitutions).toEqual([
+      expect.objectContaining({ out: 'starter-2', in: 'midfielder' }),
+    ]);
+  });
+  it.each([0, 7, 15])('aplica adaptação de %i jogos ao reserva fora de posição', (matches) => {
+    const { manager, teams, bench, options } = setup(
+      instructions([{ out: 'starter-1', in: 'reserve-0', when: 60, score: 'always' }]),
+    );
+    bench[0] = { ...bench[0]!, position: 'AM', overall: 90 };
+    options.home!.positionExperience = { 'reserve-0': { CM: matches } };
+    manager.update(60, 0, 0);
+    const incoming = teams.home.find((p) => p.id === 'reserve-0')!;
+    expect(incoming.position).toBe('CM');
+    expect(incoming.overall).toBe(Math.floor(90 * (0.97 + (0.03 * matches) / 15)));
+    expect(bench[0]!.overall).toBe(90);
+    expect(bench[0]!.position).toBe('AM');
+  });
+  it('evita trocar veterano ainda superior por um reserva muito inferior', () => {
+    const { manager, teams, bench } = setup(undefined, 90, 7);
+    teams.home[1] = { ...teams.home[1]!, age: 38, overall: 95 };
+    bench.splice(
+      0,
+      bench.length,
+      playerInput({ id: 'weak', position: 'CM', fitness: 100, overall: 40 }),
+    );
+    manager.update(85, 0, 0);
+    expect(manager.substitutions).toEqual([]);
+  });
+  it('salva o desgaste real sem alterar os jogadores originais e repete a mesma simulação', () => {
+    const { teams } = setup(undefined, 90, 7);
+    const home = teams.home.map((p) => ({ ...p, age: 38 }));
+    const away = teams.home.map((p, i) => ({ ...p, id: `away-${i}`, age: 20 }));
+    const before = structuredClone({ home, away });
+    const simulate = () =>
+      spatialMatch(home, away, mulberry32(42), 0, undefined, {
+        scenarioOnlyScheduledDismissals: true,
+      });
+    const result = simulate();
+    expect(result.fitnessSpent[home[1]!.id]).toBeGreaterThan(result.fitnessSpent[away[1]!.id]!);
+    expect(result.fitnessSpent[home[1]!.id]).toBeCloseTo(28 * 1.74);
+    expect({ home, away }).toEqual(before);
+    expect(simulate()).toEqual(result);
+  });
+  it('veteranos perdem mais condição e podem sair por cansaço mesmo com nota boa', () => {
+    const { manager, teams } = setup(undefined, 90, 7);
+    teams.home[1] = { ...teams.home[1]!, age: 38 };
+    teams.home[2] = { ...teams.home[2]!, age: 20 };
+    manager.update(0, 0, 0);
+    manager.update(55, 0, 0);
+    expect(manager.fitness(teams.home[1]!)).toBeLessThan(manager.fitness(teams.home[2]!));
+    for (let minute = 60; minute <= 85; minute += 5) manager.update(minute, 0, 0);
+    expect(manager.substitutions).toContainEqual(
+      expect.objectContaining({ out: 'starter-1', reason: 'fatigue' }),
+    );
+    expect(manager.substitutions.some((s) => s.out === 'starter-2')).toBe(false);
+  });
+  it('acumula a intensidade por período sem recalcular retroativamente o desgaste', () => {
+    const { manager, teams, styles } = setup(
+      {
+        protected: [],
+        substitutions: [],
+        situations: [{ trigger: 'losing-60', style: 'gegenpress' }],
+      },
+      100,
+      7,
+    );
+    const p = teams.home[1]!;
+    manager.update(60, 0, 1);
+    const at60 = manager.fitness(p);
+    expect(styles.home).toBe('gegenpress');
+    manager.update(90, 0, 1);
+    expect(at60).toBeCloseTo(100 - (28 * 0.8 * 60) / 90);
+    expect(manager.fitness(p)).toBeCloseTo(at60 - (28 * 0.8 * 1.25 * 30) / 90);
+    const loss = manager.fitnessSpent[p.id];
+    manager.update(90, 0, 1);
+    expect(manager.fitnessSpent[p.id]).toBe(loss);
+    expect(p.fitness).toBe(100);
+  });
+  it('o reserva entra descansado e só acumula os minutos que joga', () => {
+    const { manager, teams } = setup(
+      instructions([{ out: 'starter-1', in: 'reserve-0', when: 60, score: 'always' }]),
+      100,
+      7,
+    );
+    manager.update(60, 0, 0);
+    const reserve = teams.home.find((p) => p.id === 'reserve-0')!;
+    const outgoingLoss = manager.fitnessSpent['starter-1'];
+    expect(manager.fitness(reserve)).toBe(100);
+    manager.update(90, 0, 0);
+    expect(manager.fitness(reserve)).toBeCloseTo(100 - (28 * 0.8) / 3);
+    expect(manager.fitnessSpent['starter-1']).toBe(outgoingLoss);
+  });
   it('não executa uma troca planejada antiga para um jogador protegido', () => {
     const plan = instructions([{ out: 'starter-1', in: 'reserve-0', when: 60, score: 'always' }]);
     plan.protected = ['starter-1'];

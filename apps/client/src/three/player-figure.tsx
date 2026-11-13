@@ -1,4 +1,4 @@
-import type { RefObject } from 'react';
+import type { ReactNode, RefObject } from 'react';
 import type { Group, Mesh } from 'three';
 import type { ClubKit, illustratedAppearance } from '@football/shared';
 
@@ -93,6 +93,7 @@ export function PlayerFigure({
   rightKnee,
   leftBoot,
   rightBoot,
+  rightHand,
 }: {
   kit: ClubKit;
   appearance: Appearance;
@@ -106,6 +107,7 @@ export function PlayerFigure({
   rightKnee: Joint;
   leftBoot: RefObject<Mesh | null>;
   rightBoot: RefObject<Mesh | null>;
+  rightHand?: ReactNode;
 }) {
   const shirt = keeper ? (kit.tertiary ?? kit.secondary) : kit.primary;
   const skin = appearance.skinTone;
@@ -206,6 +208,7 @@ export function PlayerFigure({
               scale={keeper ? [0.13, 0.16, 0.085] : [0.08, 0.12, 0.065]}
               color={keeper ? '#e9efbf' : skin}
             />
+            {side === 1 && <group position={[0, -0.44, 0]}>{rightHand}</group>}
           </group>
         </group>
       ))}

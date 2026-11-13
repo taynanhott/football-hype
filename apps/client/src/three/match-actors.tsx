@@ -28,6 +28,7 @@ import {
 
 import { buildPlayback, samplePlayback, playbackBallHeight } from './match-playback';
 import { MatchAtmosphere, MatchReferee } from './match-atmosphere';
+import { recentMatchEvent } from './match-celebration';
 
 export function MatchActors({
   result,
@@ -55,6 +56,7 @@ export function MatchActors({
       result.lineups?.away ?? ids.filter((id) => state.players.byId[id]?.clubId === away?.id),
       ids.filter((id) => state.players.byId[id]?.position === 'GK'),
       result.substitutions,
+      result.goalkeeperChanges,
     );
   }, [result, state.players, home?.id, away?.id]);
   const view = samplePlayback(timeline, minute);
@@ -117,7 +119,15 @@ export function MatchActors({
                 : illustratedAppearance(id)
             }
             side={side}
-            slot={state.players.byId[id]?.position === 'GK' ? 0 : slot + 1}
+            slot={
+              (
+                view.frame
+                  ? view.frame.keeperEnds[id] !== undefined
+                  : state.players.byId[id]?.position === 'GK'
+              )
+                ? 0
+                : slot + 1
+            }
             stopped={elapsed >= MATCH_DURATION_MS}
             moving={Boolean(
               view.frame &&
@@ -178,7 +188,16 @@ export function MatchActors({
         </mesh>
       )}
       <PlaybackBall renderedView={renderedView} />
-      <MatchReferee renderedView={renderedView} ended={elapsed >= MATCH_DURATION_MS} />
+      <MatchReferee
+        renderedView={renderedView}
+        ended={elapsed >= MATCH_DURATION_MS}
+        card={recentMatchEvent(
+          result.actions ?? [],
+          (elapsed / MATCH_DURATION_MS) * 90,
+          ['yellow', 'red'],
+          2500,
+        )}
+      />
       {elapsed < MATCH_DURATION_MS && <MatchAtmosphere renderedView={renderedView} />}
       {elapsed >= MATCH_DURATION_MS &&
         elapsed < MATCH_DURATION_MS + 6000 &&
@@ -538,7 +557,7 @@ function PlaybackBall({
 }: {
   renderedView: RefObject<ReturnType<typeof samplePlayback>>;
 }) {
-  const radius = 0.1716;
+  const radius = 0.1716 * 1.2;
   const ball = useRef<Mesh>(null);
   useFrame(() => {
     const view = renderedView.current;

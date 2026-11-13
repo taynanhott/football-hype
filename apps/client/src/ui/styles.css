@@ -30,6 +30,19 @@
 }
 * {
   box-sizing: border-box;
+  -webkit-user-select: none;
+  user-select: none;
+}
+input,
+textarea,
+[contenteditable=''],
+[contenteditable='true'],
+[contenteditable='plaintext-only'],
+[contenteditable=''] *,
+[contenteditable='true'] *,
+[contenteditable='plaintext-only'] * {
+  -webkit-user-select: text;
+  user-select: text;
 }
 body {
   margin: 0;
@@ -8231,6 +8244,17 @@ dialog.modal {
   }
 }
 
+.fitness-gym-station .facility-remove-player {
+  margin: 4px 0 0;
+  padding: 5px 9px;
+  min-height: 30px;
+  font-size: 11px;
+  line-height: 1.2;
+  color: #fff3dc;
+  background: #71362e;
+  border: 1px solid #c49162;
+  border-radius: 5px;
+}
 .fitness-gym-station .card-label {
   padding: 18px 5px 8px;
   background: linear-gradient(transparent, var(--card-band) 45%);
@@ -39662,6 +39686,45 @@ html body dialog.game-loading-screen[open] {
   }
 }
 
+/* Compact score reserves the entire right column for match controls. */
+@media (max-width: 760px) {
+  .match-center .match-score-overlay {
+    top: 10px;
+    left: 8px;
+    max-width: calc(100% - 60px);
+  }
+  .match-center .broadcast-scoreboard {
+    align-items: flex-start;
+  }
+  .match-center .broadcast-team {
+    min-width: 0;
+    padding: 5px;
+    gap: 0;
+    border-width: 3px;
+    font-size: 13px;
+  }
+  .match-center .broadcast-team .pixel-badge {
+    display: none;
+  }
+  .match-center .broadcast-goals {
+    min-width: 48px;
+    gap: 6px;
+    padding: 5px 7px;
+    border-radius: 5px;
+    font-size: 20px;
+  }
+  .match-center .broadcast-divider {
+    height: 14px;
+    width: 1px;
+  }
+  .match-center .broadcast-clock {
+    align-self: center;
+    gap: 5px;
+    padding: 3px 7px;
+    border-radius: 0 0 5px 5px;
+    font-size: 11px;
+  }
+}
 /* Broadcast controls share one aligned mobile column. */
 @media (max-width: 760px) {
   .match-center .match-scene .scene-camera-lock {
@@ -43757,6 +43820,125 @@ dialog.modal.player-management-modal.facility-bonus-modal[open] {
   box-shadow: none !important;
 }
 
+/* Training stations reserve separate space for the portrait, countdown and action. */
+.individual-coaching-modal .center-management-content {
+  overflow-y: auto;
+}
+.individual-coaching-modal .center-management-content > .management-block:has(.training-ground) {
+  flex: 0 0 auto;
+  min-height: min-content;
+}
+.individual-coaching-modal .center-management-content .training-ground.fitness-gym {
+  flex: 0 0 auto;
+  height: auto;
+  min-height: 0;
+}
+.individual-coaching-modal .center-management-content .training-ground .fitness-gym-players {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  height: auto;
+  min-height: 0;
+  padding: 40px 10px 12px;
+  gap: 10px;
+  align-items: start;
+}
+.individual-coaching-modal .center-management-content .training-ground .fitness-gym-station {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+}
+.individual-coaching-modal
+  .center-management-content
+  .training-ground
+  .fitness-gym-station
+  > .player-card {
+  width: min(100%, 96px);
+  max-width: 96px;
+  height: auto;
+  aspect-ratio: 0.66;
+  flex: 0 0 auto;
+  align-self: center;
+  margin: 0;
+  container-type: inline-size;
+}
+.individual-coaching-modal .training-ground .card-front .portrait {
+  height: 68%;
+  bottom: 22%;
+}
+.individual-coaching-modal .training-ground .card-rank {
+  top: 7px;
+  left: 7px;
+  align-items: flex-start;
+  gap: 2px;
+  text-align: left;
+}
+.individual-coaching-modal .training-ground .card-rank strong {
+  font-size: clamp(18px, 25cqw, 24px);
+  line-height: 1;
+  letter-spacing: -0.5px;
+}
+.individual-coaching-modal .training-ground .card-rank strong .overall-value {
+  font-size: inherit;
+  margin: 0;
+}
+.individual-coaching-modal .training-ground .card-rank > span {
+  font-size: 7px;
+  margin: 0;
+  line-height: 1;
+}
+.individual-coaching-modal .training-ground .card-country {
+  top: 7px;
+  right: 6px;
+}
+.individual-coaching-modal .training-ground .card-label {
+  padding: 5px 3px 6px;
+  background: linear-gradient(transparent, var(--card-band) 15%);
+}
+.individual-coaching-modal .training-ground .card-label h3 {
+  margin: 0 0 3px;
+  font-size: clamp(8px, 10cqw, 10px);
+  line-height: 1.15;
+}
+.individual-coaching-modal .training-ground .card-label p {
+  margin: 0;
+  font-size: 7px;
+  line-height: 1.2;
+}
+.individual-coaching-modal .training-ground .card-label > span {
+  display: none;
+}
+.individual-coaching-modal .training-ground .fitness-gym-status {
+  margin: 0;
+  padding: 4px 7px;
+  box-sizing: border-box;
+  border: 1px solid #789064;
+  border-radius: 20px;
+  background: #edf4df;
+  color: #304b28;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  max-width: 100%;
+  white-space: normal;
+  text-align: center;
+  font-size: 10px;
+  line-height: 1.25;
+}
+.individual-coaching-modal .training-ground .facility-remove-player {
+  position: static;
+  align-self: center;
+  flex: 0 0 auto;
+  width: auto;
+  max-width: 100%;
+  margin: 0;
+}
+.individual-coaching-modal .training-ground .fitness-gym-empty {
+  width: min(100%, 96px);
+  align-self: center;
+}
 /* Shared empty slots: readable labels with breathing room in every department. */
 .fitness-gym-empty {
   box-sizing: border-box;
@@ -44681,4 +44863,69 @@ dialog.modal.player-management-modal.facility-bonus-modal[open] {
 .twitter-news::-webkit-scrollbar-thumb:hover,
 .twitter-news *::-webkit-scrollbar-thumb:hover {
   background: #58afe0 !important;
+}
+/* Financial summaries replace the monthly chart without changing the metric cards. */
+.finance-hub .finance-fill-controls > .finance-scoreboard {
+  display: grid;
+  width: 100%;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0;
+}
+.finance-hub .finance-fill-controls > .finance-scoreboard article {
+  min-width: 0;
+}
+.finance-hub .finance-fill-controls > .finance-scoreboard :is(span, strong, small) {
+  overflow-wrap: anywhere;
+}
+@media (max-width: 760px) {
+  .finance-hub.finance-equal-columns .finance-fill-controls > .finance-scoreboard {
+    order: 8;
+  }
+  .finance-hub.finance-equal-columns > .finance-fill-records {
+    order: 9;
+  }
+}
+.finance-hub.finance-equal-columns .finance-director {
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  gap: 12px;
+  padding: 16px;
+}
+.finance-hub.finance-equal-columns .finance-director-person {
+  margin: 0;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #ffffff18;
+}
+.finance-hub.finance-equal-columns .finance-director-person span {
+  font-size: 11px;
+  letter-spacing: 1px;
+}
+.finance-hub.finance-equal-columns .finance-director-person h2 {
+  font-size: 18px;
+  margin: 4px 0 6px;
+}
+.finance-hub.finance-equal-columns .finance-director-person b {
+  font-size: 12px;
+}
+.finance-hub.finance-equal-columns .finance-director-advice h3 {
+  font-size: 17px;
+  line-height: 1.35;
+  margin: 0 0 8px;
+}
+.finance-hub.finance-equal-columns .finance-director-advice :is(p, li) {
+  font-size: 15px;
+  line-height: 1.5;
+  margin: 0;
+}
+.finance-hub.finance-equal-columns .finance-director-advice ul {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0 0;
+  padding-left: 18px;
+}
+.finance-hub.finance-equal-columns .split-budget .financial-budget-note {
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 8px 0 0;
+  color: #344b38;
 }

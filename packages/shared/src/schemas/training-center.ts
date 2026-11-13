@@ -44,7 +44,14 @@ export const trainingCenterSchema = z
         medical: z.array(z.string()).default([]),
         medicalProgress: z.record(z.string(), z.number()).optional(),
         individual: z
-          .array(z.object({ playerId: z.string(), startedAt: z.number(), endsAt: z.number() }))
+          .array(
+            z.object({
+              playerId: z.string(),
+              startedAt: z.number(),
+              endsAt: z.number(),
+              pausedAt: z.number().optional(),
+            }),
+          )
           .default([]),
         syringe: z.boolean().default(false),
         syringeAvailableAt: z.number().int().nonnegative().optional(),

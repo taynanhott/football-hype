@@ -147,6 +147,17 @@ export const matchResultSchema = z.strictObject({
     .max(10)
     .optional(),
   minutesPlayed: z.record(entityIdSchema, z.number().min(0).max(90)).optional(),
+  goalkeeperChanges: z
+    .array(
+      z.strictObject({
+        side: z.enum(['home', 'away']),
+        minute: z.number().min(0).max(90),
+        playerId: entityIdSchema,
+        improvised: z.boolean(),
+      }),
+    )
+    .optional(),
+  fitnessSpent: z.record(entityIdSchema, z.number().min(0).max(100)).optional(),
   ratings: z.record(entityIdSchema, z.number().min(0).max(10)).optional(),
   scorers: z.array(
     z.strictObject({

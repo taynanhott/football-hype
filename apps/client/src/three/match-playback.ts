@@ -25,6 +25,7 @@ export function buildPlayback(
   away: string[],
   keepers: string[] = [],
   substitutions: NonNullable<MatchResult['substitutions']> = [],
+  goalkeeperChanges: NonNullable<MatchResult['goalkeeperChanges']> = [],
 ): PlaybackFrame[] {
   const bases: Record<string, Point> = {};
   for (const [ids, direction] of [
@@ -69,8 +70,21 @@ export function buildPlayback(
   }
   let restart = false;
   let holder: string | undefined;
+  const keeperChanges = [...goalkeeperChanges].sort((a, b) => a.minute - b.minute);
+  let keeperChangeIndex = 0;
   return groups.map(([, events], index) => {
     const minute = presentationMinutes[index]!;
+    while (
+      keeperChangeIndex < keeperChanges.length &&
+      keeperChanges[keeperChangeIndex]!.minute <= minute
+    ) {
+      const change = keeperChanges[keeperChangeIndex++]!;
+      const end = change.side === 'home' ? -1 : 1;
+      for (const id of Object.keys(keeperEnds)) {
+        if (keeperEnds[id] === end) delete keeperEnds[id];
+      }
+      keeperEnds[change.playerId] = end;
+    }
     let action =
       events.find((a) => a.type === 'shot') ??
       events.find((a) => a.type === 'pass') ??
@@ -176,7 +190,7 @@ export function buildPlayback(
         ballFrom: { x: action.x, z: action.z },
         ballTo: { x: action.endX ?? action.x, z: action.endZ ?? action.z },
         dismissed: [...dismissed],
-        keeperEnds,
+        keeperEnds: { ...keeperEnds },
       };
       positions = to;
       return frame;
@@ -249,7 +263,7 @@ export function buildPlayback(
       ballFrom,
       ballTo,
       dismissed: [...dismissed],
-      keeperEnds,
+      keeperEnds: { ...keeperEnds },
     };
     positions = to;
     ball = ballTo;

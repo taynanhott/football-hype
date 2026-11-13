@@ -7,8 +7,9 @@ import {
   type PlayStyle,
 } from '@football/shared';
 import { matchManagement, type MatchOptions } from './match-management.js';
-import { actionChance, actionQuality } from './action-quality.js';
+import { actionChance, actionQuality as baseActionQuality } from './action-quality.js';
 import { redCardEffects, redCardFatigueFactor } from './red-card-effects.js';
+import { positionFactor } from '../game/tactics.js';
 export type { MatchOptions } from './match-management.js';
 type Side = 'home' | 'away';
 type Point = { x: number; z: number };
@@ -59,9 +60,21 @@ export function spatialMatch(
     fouls: 0,
   });
   const statistics = { home: stats(), away: stats() };
+  const initialStrength = (team: readonly PlayerSnapshot[]) =>
+    team.reduce(
+      (sum, p) =>
+        sum +
+        p.overall *
+          (GAMEPLAY.fitnessBaseWeight + p.fitness / GAMEPLAY.fitnessScale) *
+          (GAMEPLAY.moraleBaseWeight + p.morale / GAMEPLAY.moraleScale),
+      0,
+    ) / GAMEPLAY.lineupSize;
+  const strengthOffset = strength - initialStrength(home) + initialStrength(away);
   const actions: Action[] = [];
   const redCards: Action[] = [];
   const scorers: MatchResult['scorers'] = [];
+  const goalkeeperChanges: NonNullable<MatchResult['goalkeeperChanges']> = [];
+  const improvisedKeepers = new Set<string>();
   let homeGoals = 0,
     awayGoals = 0;
   let side: Side = random() < 0.5 ? 'home' : 'away';
@@ -252,6 +265,11 @@ export function spatialMatch(
     },
     (team, formation) => {
       teams[team].forEach((p, i) => {
+        if (dismissed.has(p.id)) return;
+        if (improvisedKeepers.has(p.id)) {
+          bases[p.id] = { x: 0, z: -47 * direction(team) };
+          return;
+        }
         const slot = FORMATIONS[formation][i];
         if (!slot) return;
         p.position = slot.position;
@@ -260,12 +278,42 @@ export function spatialMatch(
     },
     (team, entered, played, id) => redCardFatigueFactor(id, team, entered, played, redCards),
   );
+  const actionQuality = (player: PlayerSnapshot, skill: Parameters<typeof baseActionQuality>[1]) =>
+    baseActionQuality(player, skill, management.fitness(player));
+  const movementFitness = (player: PlayerSnapshot) => 0.75 + management.fitness(player) / 400;
   // Movement and the ball share the same pitch coordinates on the server and in 3D.
   const dismiss = (player: PlayerSnapshot, minute: number) => {
     if (dismissed.has(player.id)) return;
     dismissed.add(player.id);
     dismissalTimes.set(player.id, minute);
     management.dismiss(player.id, minute);
+    const team: Side = teams.home.some((p) => p.id === player.id) ? 'home' : 'away';
+    if (!keeper(team)) {
+      // Reassign an active player, never replace the dismissed one or add a twelfth player.
+      const replacement = eligible(team).sort(
+        (a, b) =>
+          b.overall * positionFactor(b.position, 'GK') * (0.5 + management.fitness(b) / 200) -
+            a.overall * positionFactor(a.position, 'GK') * (0.5 + management.fitness(a) / 200) ||
+          a.id.localeCompare(b.id),
+      )[0];
+      if (replacement) {
+        replacement.overall = Math.max(
+          1,
+          Math.floor(replacement.overall * positionFactor(replacement.position, 'GK')),
+        );
+        replacement.position = 'GK';
+        improvisedKeepers.add(replacement.id);
+        bases[replacement.id] = { x: 0, z: -47 * direction(team) };
+        poses[replacement.id] = { ...bases[replacement.id]! };
+        goalkeeperChanges.push({
+          side: team,
+          minute: Math.min(90, minute),
+          playerId: replacement.id,
+          improvised: true,
+        });
+        if (carrier?.id === replacement.id) carrier = undefined;
+      }
+    }
   };
   for (let step = 0; step < 196; step++) {
     if (step === 180)
@@ -278,6 +326,7 @@ export function spatialMatch(
       ].includes(phase);
     if (step >= 180 && !closingRestart) break;
     const minute = (step * 90) / 180;
+    management.update(Math.min(90, minute), homeGoals, awayGoals);
     for (const event of options.scenarioDismissals ?? []) {
       const player = teams[event.side].find((p) => p.id === event.playerId);
       if (player && !dismissed.has(player.id) && minute >= event.minute) {
@@ -311,21 +360,18 @@ export function spatialMatch(
           ),
         }
       : evenNumbers;
-    const removedStrength = (team: Side) =>
+    const teamStrength = (team: Side) =>
       teams[team]
-        .filter((p) => dismissed.has(p.id))
+        .filter((p) => !dismissed.has(p.id))
         .reduce(
           (sum, p) =>
             sum +
             p.overall *
-              (GAMEPLAY.fitnessBaseWeight + p.fitness / GAMEPLAY.fitnessScale) *
+              (GAMEPLAY.fitnessBaseWeight + management.fitness(p) / GAMEPLAY.fitnessScale) *
               (GAMEPLAY.moraleBaseWeight + p.morale / GAMEPLAY.moraleScale),
           0,
         ) / GAMEPLAY.lineupSize;
-    const liveStrength = dismissed.size
-      ? strength - removedStrength('home') + removedStrength('away')
-      : strength;
-    management.update(Math.min(90, minute), homeGoals, awayGoals);
+    const liveStrength = strengthOffset + teamStrength('home') - teamStrength('away');
     const opposite: Side = side === 'home' ? 'away' : 'home';
     const dir = direction(side);
     statistics[side].possession++;
@@ -512,7 +558,7 @@ export function spatialMatch(
               x: clamp(ball.x * 0.16, -5, 5),
               z: -d * (46 - clamp((-ball.z * d - 20) * 0.1, 0, 3)),
             },
-            1.2,
+            1.2 * movementFitness(p),
           );
           continue;
         }
@@ -537,7 +583,8 @@ export function spatialMatch(
           poses[p.id]!,
           desired,
           (styles[team] === 'all-out-press' ? 3.9 : styles[team] === 'gegenpress' ? 3.7 : 3.5) *
-            effects[team].movement,
+            effects[team].movement *
+            movementFitness(p),
         );
       }
     separate(carrier.id);
@@ -867,7 +914,7 @@ export function spatialMatch(
         target.point = move(
           target.point,
           { x: target.point.x, z: clamp(target.point.z + dir * 8, -46, 46) },
-          8,
+          8 * movementFitness(target.player),
         );
         poses[target.player.id] = { ...target.point };
       }
@@ -891,7 +938,7 @@ export function spatialMatch(
         poses[interception.player.id] = move(
           poses[interception.player.id]!,
           interception.contact,
-          2.4,
+          2.4 * movementFitness(interception.player),
         );
         separate(carrier.id);
         const endpoint = { ...poses[interception.player.id]! };
@@ -935,7 +982,7 @@ export function spatialMatch(
       const destination = move(
         ball,
         { x: clamp(ball.x + lateral, -29, 29), z: clamp(ball.z + dir * 5, -45, 45) },
-        4,
+        4 * movementFitness(carrier),
       );
       poses[carrier.id] = destination;
       separate();
@@ -975,7 +1022,14 @@ export function spatialMatch(
     ratings[id] = Math.round(clamp(ratings[id] ?? 6, 0, 10) * 10) / 10;
   return {
     substitutions: management.substitutions,
+    ...(goalkeeperChanges.length ? { goalkeeperChanges } : {}),
     minutesPlayed: management.finish(),
+    fitnessSpent: Object.fromEntries(
+      Object.entries(management.fitnessSpent).map(([id, spent]) => [
+        id,
+        Math.round(spent * 1e9) / 1e9,
+      ]),
+    ),
     actions,
     scorers,
     statistics,

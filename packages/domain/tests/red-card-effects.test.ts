@@ -3,8 +3,73 @@ import { simulateMatch } from '../src/index.js';
 import { redCardEffects, redCardFatigueFactor } from '../src/simulation/red-card-effects.js';
 import { FORMATIONS, type MatchResult } from '@football/shared';
 import { playerInput, stadiumInput } from '../../../tests/fixtures/domain.js';
+import { spatialMatch } from '../src/simulation/spatial-match.js';
+import { mulberry32 } from '../src/simulation/random.js';
 
 describe('numerical disadvantage after a red card', () => {
+  it('improvisa um atleta ativo no gol após esgotar cinco trocas, sem repor o expulso', () => {
+    const home = FORMATIONS['4-3-3'].map((slot, i) =>
+      playerInput({ id: `home-${i}`, position: slot.position, fitness: i === 0 ? 100 : 20 }),
+    );
+    const away = FORMATIONS['4-3-3'].map((slot, i) =>
+      playerInput({ id: `away-${i}`, position: slot.position }),
+    );
+    const bench = Array.from({ length: 5 }, (_, i) =>
+      playerInput({ id: `reserve-${i}`, position: 'CM', fitness: 100 }),
+    );
+    const before = structuredClone({ home, away, bench });
+    const simulate = () =>
+      spatialMatch(home, away, mulberry32(42), 0, undefined, {
+        home: { bench, plan: { formation: '4-3-3', starters: home.map((p) => p.id) } },
+        scenarioOnlyScheduledDismissals: true,
+        scenarioDismissals: [{ side: 'home', playerId: 'home-0', minute: 70 }],
+      });
+    const result = simulate();
+    expect(result.substitutions).toHaveLength(5);
+    expect(result.substitutions.every((s) => s.minute < 70)).toBe(true);
+    expect(result.goalkeeperChanges).toEqual([
+      expect.objectContaining({ side: 'home', minute: 70, improvised: true }),
+    ]);
+    const emergency = result.goalkeeperChanges![0]!.playerId;
+    expect(emergency).not.toBe('home-0');
+    expect(result.substitutions.some((s) => s.out === 'home-0' || s.minute >= 70)).toBe(false);
+    expect(result.minutesPlayed['home-0']).toBe(70);
+    expect(result.actions.filter((a) => a.minute > 70 && a.playerId === 'home-0')).toEqual([]);
+    expect(
+      result.actions
+        .filter((a) => a.minute > 70 && a.type === 'shot' && a.side === 'away' && a.onTarget)
+        .every((a) => a.keeperId === emergency),
+    ).toBe(true);
+    expect(
+      result.actions.some((a) => a.minute > 70 && a.playerId === emergency && a.type === 'shot'),
+    ).toBe(false);
+    expect({ home, away, bench }).toEqual(before);
+    expect(simulate()).toEqual(result);
+  });
+  it('designa outro atleta se o próprio goleiro improvisado também for expulso', () => {
+    const home = FORMATIONS['4-3-3'].map((slot, i) =>
+      playerInput({ id: `home-${i}`, position: slot.position }),
+    );
+    const away = FORMATIONS['4-3-3'].map((slot, i) =>
+      playerInput({ id: `away-${i}`, position: slot.position }),
+    );
+    const first = spatialMatch(home, away, mulberry32(42), 0, undefined, {
+      scenarioOnlyScheduledDismissals: true,
+      scenarioDismissals: [{ side: 'home', playerId: 'home-0', minute: 20 }],
+    });
+    const emergency = first.goalkeeperChanges![0]!.playerId;
+    const result = spatialMatch(home, away, mulberry32(42), 0, undefined, {
+      scenarioOnlyScheduledDismissals: true,
+      scenarioDismissals: [
+        { side: 'home', playerId: 'home-0', minute: 20 },
+        { side: 'home', playerId: emergency, minute: 40 },
+      ],
+    });
+    expect(result.goalkeeperChanges).toHaveLength(2);
+    expect(result.goalkeeperChanges![1]!.playerId).not.toBe(emergency);
+    expect(result.substitutions).toEqual([]);
+    expect(result.minutesPlayed[emergency]).toBe(40);
+  });
   it('penalizes attack and coverage increasingly with time and additional dismissals', () => {
     expect(redCardEffects(11, 11, 0)).toEqual({ attack: 1, exposure: 1, movement: 1 });
     const early = redCardEffects(10, 11, 0);

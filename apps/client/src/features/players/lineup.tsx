@@ -3,6 +3,8 @@ import { MatchInstructionsEditor } from './match-instructions';
 import { FormationIcon } from './formation-icon';
 import { showDraggedCard, startCardPointerDrag } from '../../ui/card-drag';
 import { SquadAverages } from './squad-averages';
+import { fitnessOverall } from './lineup-overall';
+import { conditionColor } from './condition-color';
 import { PlayStylePicker } from './play-style-picker';
 import { TacticalAnalysis } from './tactical-analysis';
 import { positionLabel } from '../../ui/position-label';
@@ -11,7 +13,6 @@ import { PlayerCard } from './player-card';
 import { Overall } from './overall';
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import {
-  GAMEPLAY,
   clubKit,
   formationSchema,
   FORMATION_LINKS,
@@ -219,11 +220,6 @@ export function LineupEditor({ snapshot, club, center }: ViewProps) {
   const pitchBottom = 97;
   const pitchMiddle = (pitchTop + pitchBottom) / 2;
   const penaltyDepth = (pitchBottom - pitchTop) * 0.18;
-  const fitnessOverall = (overall: number, fitness: number) => {
-    const fatigue = 100 - Math.min(100, Math.max(0, fitness));
-    const penalty = Math.round((overall * fatigue) / (GAMEPLAY.fitnessScale * 2));
-    return Math.max(1, overall - penalty);
-  };
   const ids = entries.flatMap((entry) => (entry.player ? [entry.player.id] : []));
   const reserves = resolveBench(state, club, availabilityAt, ids, bench);
   const activeInstructions = {
@@ -564,7 +560,12 @@ export function LineupEditor({ snapshot, club, center }: ViewProps) {
                       className="chemistry-meter"
                       aria-label={`Condicionamento físico ${Math.round(entry.player?.fitness ?? 0)}%`}
                     >
-                      <i style={{ width: `${entry.player?.fitness ?? 0}%` }} />
+                      <i
+                        style={{
+                          width: `${entry.player?.fitness ?? 0}%`,
+                          backgroundColor: conditionColor(entry.player?.fitness ?? 0),
+                        }}
+                      />
                       <span>{Math.round(entry.player?.fitness ?? 0)}% COND</span>
                     </span>
                   </button>

@@ -4,6 +4,7 @@ import { PlayerDetails } from '../players/player-details';
 import { PlayerCard } from '../players/player-card';
 import { clubKit } from '@football/shared';
 import type { ViewProps } from '../../ui/view-props';
+import { useGameStore } from '../../store/game-store';
 
 export function FitnessGym({
   club,
@@ -19,6 +20,8 @@ export function FitnessGym({
   coaching?: boolean;
 }) {
   const [detailPlayerId, setDetailPlayerId] = useState<string | null>(null);
+  const send = useGameStore((state) => state.send);
+  const busy = useGameStore((state) => state.busy);
   const detailPlayer = snapshot.state.players.byId[detailPlayerId ?? ''];
   return (
     <div className={`fitness-gym ${medical ? 'medical-room' : coaching ? 'training-ground' : ''}`}>
@@ -157,7 +160,12 @@ export function FitnessGym({
               )
             : undefined;
           const remainingDays = cycle
-            ? Math.max(0, Math.ceil((cycle.endsAt - snapshot.state.lastProcessedAt) / 86400000))
+            ? Math.max(
+                0,
+                Math.ceil(
+                  (cycle.endsAt - (cycle.pausedAt ?? snapshot.state.lastProcessedAt)) / 86400000,
+                ),
+              )
             : 0;
           return (
             <div className="fitness-gym-station" key={index}>
@@ -171,7 +179,10 @@ export function FitnessGym({
                   />
                   <span className="fitness-gym-status">
                     {coaching ? (
-                      remainingDays > 0 ? (
+                      cycle?.pausedAt !== undefined ||
+                      (snapshot.state.injuries[player.id] ?? 0) > 0 ? (
+                        <>Pausado por lesão · {remainingDays} dias restantes</>
+                      ) : remainingDays > 0 ? (
                         <>
                           Falta{remainingDays === 1 ? '' : 'm'} {remainingDays} dia
                           {remainingDays === 1 ? '' : 's'}
@@ -201,6 +212,27 @@ export function FitnessGym({
                       <span style={{ width: `${Math.min(100, Math.max(0, player.fitness))}%` }} />
                     </div>
                   )}
+                  <button
+                    type="button"
+                    className="facility-remove-player"
+                    disabled={busy}
+                    aria-label={`Remover ${player.name} ${coaching ? 'do treino individual' : 'do tratamento'}`}
+                    title="Encerra o atendimento e libera a vaga. O pagamento realizado não é devolvido."
+                    onClick={() =>
+                      send({
+                        type: 'management',
+                        action: 'center',
+                        target: coaching
+                          ? 'remove-individual'
+                          : medical
+                            ? 'remove-medical'
+                            : 'remove-fitness',
+                        playerId: player.id,
+                      })
+                    }
+                  >
+                    Remover
+                  </button>
                 </>
               ) : (
                 <div className="fitness-gym-empty">

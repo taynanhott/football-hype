@@ -1,5 +1,6 @@
 import type { ClubSnapshot, WorldState } from '@football/shared';
 import { effectiveOverall, lineupTacticalBonus, resolveLineup } from '@football/domain';
+import { fitnessOverall } from './lineup-overall';
 
 export function SquadAverages({
   state,
@@ -14,14 +15,25 @@ export function SquadAverages({
 }) {
   const players = lineup
     ? lineup.flatMap((e) =>
-        e.player ? [{ ...e.player, position: e.position, overall: e.effectiveOverall }] : [],
+        e.player
+          ? [
+              {
+                ...e.player,
+                position: e.position,
+                overall: fitnessOverall(e.effectiveOverall, e.player.fitness),
+              },
+            ]
+          : [],
       )
     : club.playerIds.flatMap((id) =>
         state.players.byId[id]
           ? [
               {
                 ...state.players.byId[id]!,
-                overall: effectiveOverall(state, state.players.byId[id]!),
+                overall: fitnessOverall(
+                  effectiveOverall(state, state.players.byId[id]!),
+                  state.players.byId[id]!.fitness,
+                ),
               },
             ]
           : [],
@@ -66,7 +78,7 @@ export function SquadAverages({
                       : 'diamond'
             }
             key={group.label}
-            title={`Média de overall · ${members.length} jogadores`}
+            title={`Média com buffs, debuffs e condição física${lineup ? ' + bônus coletivo' : ''} · ${members.length} jogadores`}
           >
             <span>{group.label}</span>
             <strong

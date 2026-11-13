@@ -5,10 +5,22 @@ import {
   type MatchResult,
   type PlayerSnapshot,
   type PlayStyle,
+  type WorldState,
 } from '@football/shared';
 import { positionFactor } from '../game/tactics.js';
+import { ageFatigueFactor, positionFatigueFactor } from '../game/player-contracts.js';
 type Side = 'home' | 'away';
-export type MatchOptions = Partial<Record<Side, { bench: PlayerSnapshot[]; plan: Lineup }>> & {
+export type MatchOptions = Partial<
+  Record<
+    Side,
+    {
+      bench: PlayerSnapshot[];
+      plan: Lineup;
+      fatigueScale?: Record<string, number>;
+      positionExperience?: WorldState['positionExperience'];
+    }
+  >
+> & {
   /** Controlled referee events for simulations; never populated by player commands. */
   scenarioDismissals?: readonly { side: Side; playerId: string; minute: number }[];
   /** Audit isolation only: keep the number of dismissals exactly as scheduled. */
@@ -27,20 +39,33 @@ export function matchManagement(
   const substitutions: NonNullable<MatchResult['substitutions']> = [];
   const entered = Object.fromEntries([...teams.home, ...teams.away].map((p) => [p.id, 0]));
   const minutesPlayed: Record<string, number> = {};
+  const fitnessSpent: Record<string, number> = {};
+  let lastMinute = 0;
   const baseStyles = { ...styles };
   const currentFormations = {
     home: options.home?.plan.formation,
     away: options.away?.plan.formation,
   };
-  const fitness = (p: PlayerSnapshot, minute: number, side: Side) =>
-    Math.max(
-      0,
-      p.fitness -
-        ((GAMEPLAY.fitnessCost * (minute - (entered[p.id] ?? 0))) / 90) *
-          (styles[side] === 'all-out-press' ? 1.5 : styles[side] === 'gegenpress' ? 1.25 : 1) *
-          fatigueFactor(side, entered[p.id] ?? 0, minute - (entered[p.id] ?? 0), p.id),
-    );
+  const fitness = (p: PlayerSnapshot) => Math.max(0, p.fitness - (fitnessSpent[p.id] ?? 0));
+  const fatigued = (p: PlayerSnapshot) =>
+    fitness(p) < 30 || (fitness(p) < 75 && (fitnessSpent[p.id] ?? 0) >= GAMEPLAY.fitnessCost);
   const update = (minute: number, homeGoals: number, awayGoals: number) => {
+    const at = Math.max(lastMinute, Math.min(90, minute));
+    const played = at - lastMinute;
+    for (const side of ['home', 'away'] as const) {
+      for (const p of teams[side]) {
+        if (dismissed.has(p.id)) continue;
+        const loss =
+          ((GAMEPLAY.fitnessCost * played) / 90) *
+          ageFatigueFactor(p.age) *
+          positionFatigueFactor(p.position) *
+          (styles[side] === 'all-out-press' ? 1.5 : styles[side] === 'gegenpress' ? 1.25 : 1) *
+          fatigueFactor(side, lastMinute, played, p.id) *
+          (options[side]?.fatigueScale?.[p.id] ?? 1);
+        fitnessSpent[p.id] = Math.min(p.fitness, (fitnessSpent[p.id] ?? 0) + loss);
+      }
+    }
+    lastMinute = at;
     for (const side of ['home', 'away'] as const) {
       const config = options[side];
       if (!config) continue;
@@ -65,6 +90,16 @@ export function matchManagement(
         currentFormations[side] = desiredFormation;
       }
       const available = () => config.bench.filter((p) => entered[p.id] === undefined);
+      const adaptation = (reserve: PlayerSnapshot, out: PlayerSnapshot) =>
+        positionFactor(
+          reserve.position,
+          out.position,
+          config.positionExperience?.[reserve.id]?.[out.position] ?? 0,
+        );
+      const reserveOverall = (reserve: PlayerSnapshot, out: PlayerSnapshot) =>
+        Math.max(1, Math.floor(reserve.overall * adaptation(reserve, out)));
+      const currentOverall = (player: PlayerSnapshot) =>
+        player.overall * (GAMEPLAY.fitnessBaseWeight + fitness(player) / GAMEPLAY.fitnessScale);
       const swap = (
         out: PlayerSnapshot,
         reserve: PlayerSnapshot,
@@ -75,10 +110,7 @@ export function matchManagement(
         const incoming = {
           ...reserve,
           position: out.position,
-          overall: Math.max(
-            1,
-            Math.floor(reserve.overall * positionFactor(reserve.position, out.position)),
-          ),
+          overall: reserveOverall(reserve, out),
         };
         const index = teams[side].findIndex((p) => p.id === out.id);
         if (index < 0) return;
@@ -100,9 +132,7 @@ export function matchManagement(
           out &&
           reserve &&
           score &&
-          (plan.when === 'fatigue'
-            ? minute >= 60 && fitness(out, minute, side) < 30
-            : minute >= plan.when)
+          (plan.when === 'fatigue' ? minute >= 60 && fatigued(out) : minute >= plan.when)
         )
           swap(out, reserve, 'planned');
       }
@@ -115,12 +145,18 @@ export function matchManagement(
             !(instructions?.protected ?? []).includes(p.id) &&
             !(instructions?.substitutions ?? []).some((s) => s.out === p.id),
         )
-        .filter((p) => fitness(p, minute, side) < 30 || (ratings[p.id] ?? 6) < 5.8)
-        .sort(
-          (a, b) =>
-            fitness(a, minute, side) - fitness(b, minute, side) ||
-            (ratings[a.id] ?? 6) - (ratings[b.id] ?? 6),
-        );
+        .filter((p) => fatigued(p) || (ratings[p.id] ?? 6) < 5.8);
+      const lowestFitness = Math.min(...candidates.map(fitness));
+      candidates.sort(
+        (a, b) =>
+          // Compare similarly tired players together before sacrificing the better performer.
+          Math.floor((fitness(a) - lowestFitness) / 5) -
+            Math.floor((fitness(b) - lowestFitness) / 5) ||
+          (ratings[a.id] ?? 6) - (ratings[b.id] ?? 6) ||
+          currentOverall(a) - currentOverall(b) ||
+          fitness(a) - fitness(b) ||
+          a.id.localeCompare(b.id),
+      );
       for (const out of candidates) {
         // Reserve capacity and players for every pending mandatory substitution.
         const pending = (instructions?.substitutions ?? []).filter(
@@ -135,21 +171,30 @@ export function matchManagement(
             (p) =>
               p.position !== 'GK' &&
               !pending.some((s) => s.in === p.id) &&
-              fitness(out, minute, side) + 5 < p.fitness &&
-              positionFactor(p.position, out.position) >= 0.85,
+              fitness(out) + 5 < p.fitness &&
+              adaptation(p, out) >= 0.85 &&
+              reserveOverall(p, out) *
+                (GAMEPLAY.fitnessBaseWeight + p.fitness / GAMEPLAY.fitnessScale) >=
+                currentOverall(out) * ((ratings[out.id] ?? 6) < 5.8 ? 0.85 : 1),
           )
           .sort(
             (a, b) =>
-              b.overall * positionFactor(b.position, out.position) -
-              a.overall * positionFactor(a.position, out.position),
+              Number(b.position === out.position) - Number(a.position === out.position) ||
+              Number(adaptation(b, out) === 1) - Number(adaptation(a, out) === 1) ||
+              reserveOverall(b, out) *
+                (GAMEPLAY.fitnessBaseWeight + b.fitness / GAMEPLAY.fitnessScale) -
+                reserveOverall(a, out) *
+                  (GAMEPLAY.fitnessBaseWeight + a.fitness / GAMEPLAY.fitnessScale) ||
+              a.id.localeCompare(b.id),
           )[0];
-        if (reserve)
-          swap(out, reserve, fitness(out, minute, side) < 30 ? 'fatigue' : 'performance');
+        if (reserve) swap(out, reserve, fatigued(out) ? 'fatigue' : 'performance');
       }
     }
   };
   return {
     update,
+    fitness,
+    fitnessSpent,
     dismiss: (id: string, minute: number) => {
       if (entered[id] !== undefined && minutesPlayed[id] === undefined)
         minutesPlayed[id] = Math.max(0, minute - entered[id]!);

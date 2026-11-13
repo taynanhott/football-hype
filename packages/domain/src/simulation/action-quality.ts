@@ -1,4 +1,4 @@
-import type { PlayerSnapshot } from '@football/shared';
+import { GAMEPLAY, type PlayerSnapshot } from '@football/shared';
 type Skill = 'passing' | 'finishing' | 'defending' | 'dribbling' | 'keeping';
 const specialists: Record<Skill, readonly string[]> = {
   passing: ['CM', 'AM', 'DM', 'LM', 'RM'],
@@ -7,11 +7,17 @@ const specialists: Record<Skill, readonly string[]> = {
   dribbling: ['LW', 'RW', 'AM', 'LM', 'RM'],
   keeping: ['GK'],
 };
-export function actionQuality(player: Pick<PlayerSnapshot, 'overall' | 'position'>, skill: Skill) {
+export function actionQuality(
+  player: Pick<PlayerSnapshot, 'overall' | 'position'>,
+  skill: Skill,
+  fitness = 100,
+) {
   const positionBonus = specialists[skill].includes(player.position) ? 4 : 0;
   const keeperPenalty =
     player.position === 'GK' && skill !== 'keeping' && skill !== 'passing' ? 12 : 0;
-  return Math.max(1, Math.min(99, player.overall + positionBonus - keeperPenalty));
+  const physical =
+    GAMEPLAY.fitnessBaseWeight + Math.max(0, Math.min(100, fitness)) / GAMEPLAY.fitnessScale;
+  return Math.max(1, Math.min(99, (player.overall + positionBonus - keeperPenalty) * physical));
 }
 /** Bounded odds multiplier: quality helps without guaranteeing the outcome. */
 export function actionChance(base: number, quality: number, opposition = 65) {

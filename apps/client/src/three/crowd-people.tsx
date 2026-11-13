@@ -1,6 +1,7 @@
 /* eslint-disable react-hooks/set-state-in-effect -- Occupied poses require clearance from the mounted stadium geometry. */
 /* eslint-disable react-hooks/immutability -- Instance matrices and animation uniforms are GPU buffers. */
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { GoalCelebration } from './match-celebration';
 import { useFrame, useThree } from '@react-three/fiber';
 import {
   BufferAttribute,
@@ -102,6 +103,11 @@ function PeopleBatch({
   homeKit: Kit;
   awayKit: Kit;
 }) {
+  const celebrating = useContext(GoalCelebration);
+  const celebration = useMemo(() => ({ value: 0 }), []);
+  useLayoutEffect(() => {
+    celebration.value = celebrating === 'home' ? 1 : celebrating === 'away' ? -1 : 0;
+  }, [celebrating, celebration]);
   const homePrimary = homeKit.primary,
     homeSecondary = homeKit.secondary;
   const awayPrimary = awayKit.primary,
@@ -113,8 +119,9 @@ function PeopleBatch({
     const m = new MeshStandardMaterial({ roughness: 0.95, vertexColors: true });
     m.onBeforeCompile = (shader) => {
       shader.uniforms.crowdTime = time;
+      shader.uniforms.goalCelebration = celebration;
       shader.vertexShader =
-        'attribute float tintKind; attribute vec3 shirtTint; attribute vec3 skinTint; attribute vec3 crowdMotion; uniform float crowdTime;\n' +
+        'attribute float tintKind; attribute vec3 shirtTint; attribute vec3 skinTint; attribute vec3 crowdMotion; attribute float crowdSide; uniform float crowdTime; uniform float goalCelebration;\n' +
         shader.vertexShader;
       shader.vertexShader = shader.vertexShader.replace(
         '#include <color_vertex>',
@@ -122,11 +129,11 @@ function PeopleBatch({
       );
       shader.vertexShader = shader.vertexShader.replace(
         '#include <begin_vertex>',
-        '#include <begin_vertex>\n transformed.y += pow(max(0.0,sin(crowdTime*crowdMotion.y+crowdMotion.x)),2.0)*crowdMotion.z;',
+        '#include <begin_vertex>\n float jumping = abs(goalCelebration) < 0.5 || crowdSide == goalCelebration ? 1.0 : 0.0; transformed.y += pow(max(0.0,sin(crowdTime*crowdMotion.y+crowdMotion.x)),2.0)*crowdMotion.z*jumping;',
       );
     };
     return m;
-  }, [time]);
+  }, [time, celebration]);
   const scene = useThree((s) => s.scene);
   useLayoutEffect(() => {
     const mesh = ref.current;
@@ -135,7 +142,8 @@ function PeopleBatch({
       clear = root ? crowdBoxClearance(root) : null;
     const shirt = new Float32Array(seats.length * 3),
       skin = new Float32Array(seats.length * 3),
-      motion = new Float32Array(seats.length * 3);
+      motion = new Float32Array(seats.length * 3),
+      sides = new Float32Array(seats.length);
     const dummy = new Object3D(),
       tint = new Color();
     seats.forEach((seat, i) => {
@@ -152,6 +160,7 @@ function PeopleBatch({
       mesh.setMatrixAt(i, dummy.matrix);
       const visitor = visitorCrowdSeat(seat),
         variation = crowdNoise(i + 29);
+      sides[i] = visitor ? -1 : 1;
       tint.set(
         variation < 0.12
           ? '#b6b8b1'
@@ -178,6 +187,7 @@ function PeopleBatch({
     geometry.setAttribute('shirtTint', new InstancedBufferAttribute(shirt, 3));
     geometry.setAttribute('skinTint', new InstancedBufferAttribute(skin, 3));
     geometry.setAttribute('crowdMotion', new InstancedBufferAttribute(motion, 3));
+    geometry.setAttribute('crowdSide', new InstancedBufferAttribute(sides, 1));
     mesh.instanceMatrix.needsUpdate = true;
     mesh.computeBoundingSphere();
   }, [

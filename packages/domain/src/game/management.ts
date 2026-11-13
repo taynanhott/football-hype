@@ -1,6 +1,7 @@
 import { careerAmbition, divisionStrength } from './career-ambition.js';
 import { europeanTransferPressure } from '../competitions/european-leagues.js';
 import { clubResults, playerRatings } from './history-index.js';
+import { hasNoMatchSequence } from './chemistry.js';
 import { formatMoney } from '@football/shared';
 import {
   averageMonthlySalary,
@@ -354,18 +355,7 @@ export function temporaryModifiers(state: WorldState, player: PlayerSnapshot) {
     effects.push({ label: 'Vitória importante', value: 2, until: 'Até a próxima partida' });
   if ((state.workload[player.id]?.consecutiveMatches ?? 0) >= 3)
     effects.push({ label: 'Sequência de jogos', value: 1, until: 'Até deixar de atuar' });
-  if (
-    games.length >= 6 &&
-    games
-      .slice(-6)
-      .every(
-        (r) =>
-          !r.lineups?.home.includes(player.id) &&
-          !r.lineups?.away.includes(player.id) &&
-          !(r.minutesPlayed?.[player.id] ?? 0) &&
-          !r.substitutions?.some((substitution) => substitution.in === player.id),
-      )
-  )
+  if (hasNoMatchSequence(games, player.id))
     effects.push({ label: 'Sem sequência', value: -1, until: 'Até voltar a jogar' });
   const trophy = [...state.trophies]
     .reverse()
@@ -733,6 +723,15 @@ export function manageClub({
         if (!fixture) return fail('Nenhuma partida pendente');
         operations.syringe = false;
         operations.clearance = { playerId: player.id, fixtureId: fixture.id };
+      } else if (['remove-fitness', 'remove-medical', 'remove-individual'].includes(target)) {
+        if (target === 'remove-individual') {
+          operations.individual = operations.individual.filter(
+            (plan) => plan.playerId !== player.id,
+          );
+        } else {
+          const service = target === 'remove-fitness' ? 'fitness' : 'medical';
+          operations[service] = operations[service].filter((id) => id !== player.id);
+        }
       } else if (target === 'fitness' || target === 'medical') {
         const slots = Math.max(0, center.levels[target] - 2);
         if (operations[target].includes(player.id) || operations[target].length >= slots)
@@ -747,6 +746,8 @@ export function manageClub({
             : CENTER_SERVICES.medicalPerDay * (state.injuries[player.id] ?? 0);
         operations[target] = [...operations[target], player.id];
       } else if (target === 'individual') {
+        if ((state.injuries[player.id] ?? 0) > 0)
+          return fail('O jogador precisa se recuperar da lesão antes de treinar');
         if (
           operations.individual.length >= Math.min(3, center.levels.coaching) ||
           operations.individual.some((t) => t.playerId === player.id)
