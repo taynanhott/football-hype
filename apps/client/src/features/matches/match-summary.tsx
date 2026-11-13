@@ -365,8 +365,8 @@ export const PlayerRatings = memo(
                               {substitution && (
                                 <span
                                   className="rating-substitution"
-                                  aria-label={`Entrou aos ${substitution.minute} minutos`}
-                                  title={`Entrou aos ${substitution.minute}′`}
+                                  aria-label={`Entrou aos ${Math.ceil(substitution.minute)} minutos`}
+                                  title={`Entrou aos ${Math.ceil(substitution.minute)}′`}
                                 >
                                   <MatchPlayerIcon kind="substitution" />
                                 </span>
@@ -431,7 +431,7 @@ export const PlayerRatings = memo(
               <article className="match-substitution" data-side={s.side} key={s.out}>
                 <span className="substitution-team-minute">
                   <Badge state={state} id={s.side === 'home' ? result.homeId : result.awayId} />
-                  <strong>{s.minute}′</strong>
+                  <strong>{Math.ceil(s.minute)}′</strong>
                 </span>
                 <span className="substitution-in">
                   <span>Entra</span>

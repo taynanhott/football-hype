@@ -114,7 +114,7 @@ describe('gestão durante a partida', () => {
       });
     const result = simulate();
     expect(result.fitnessSpent[home[1]!.id]).toBeGreaterThan(result.fitnessSpent[away[1]!.id]!);
-    expect(result.fitnessSpent[home[1]!.id]).toBeCloseTo(28 * 1.74);
+    expect(result.fitnessSpent[home[1]!.id]).toBeCloseTo(36 * 1.74);
     expect({ home, away }).toEqual(before);
     expect(simulate()).toEqual(result);
   });
@@ -146,8 +146,8 @@ describe('gestão durante a partida', () => {
     const at60 = manager.fitness(p);
     expect(styles.home).toBe('gegenpress');
     manager.update(90, 0, 1);
-    expect(at60).toBeCloseTo(100 - (28 * 0.8 * 60) / 90);
-    expect(manager.fitness(p)).toBeCloseTo(at60 - (28 * 0.8 * 1.25 * 30) / 90);
+    expect(at60).toBeCloseTo(100 - (36 * 0.8 * 60) / 90);
+    expect(manager.fitness(p)).toBeCloseTo(at60 - (36 * 0.8 * 1.25 * 30) / 90);
     const loss = manager.fitnessSpent[p.id];
     manager.update(90, 0, 1);
     expect(manager.fitnessSpent[p.id]).toBe(loss);
@@ -164,7 +164,7 @@ describe('gestão durante a partida', () => {
     const outgoingLoss = manager.fitnessSpent['starter-1'];
     expect(manager.fitness(reserve)).toBe(100);
     manager.update(90, 0, 0);
-    expect(manager.fitness(reserve)).toBeCloseTo(100 - (28 * 0.8) / 3);
+    expect(manager.fitness(reserve)).toBeCloseTo(100 - (36 * 0.8) / 3);
     expect(manager.fitnessSpent['starter-1']).toBe(outgoingLoss);
   });
   it('não executa uma troca planejada antiga para um jogador protegido', () => {

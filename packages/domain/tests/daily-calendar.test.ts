@@ -44,6 +44,34 @@ function world() {
   return { state, club, player };
 }
 describe('dias da temporada', () => {
+  it('mantém desgaste relevante após recuperação, folga e treino entre partidas próximas', () => {
+    const { state, club, player } = world();
+    const center = state.centers.byId[club.trainingCenterId]!;
+    state.players = {
+      ...state.players,
+      byId: { ...state.players.byId, [player.id]: { ...player, age: 30, fitness: 67 } },
+    };
+    state.centers = {
+      ...state.centers,
+      byId: {
+        ...state.centers.byId,
+        [center.id]: {
+          ...center,
+          levels: { ...center.levels, fitness: 3 },
+          operations: {
+            load: 'moderate',
+            fitness: [],
+            medical: [],
+            individual: [],
+            syringe: false,
+          },
+        },
+      },
+    };
+    const recovered = advanceGameDays(state, at(14));
+    expect(recovered.players.byId[player.id]!.fitness).toBe(79);
+    expect(advanceGameDays(recovered, at(14))).toBe(recovered);
+  });
   it('folga recupera gradualmente e preserva o peso da idade e da estrutura', () => {
     const simulate = (age: number, level: number, targeted = false) => {
       const { state, club, player } = world();
