@@ -21,4 +21,10 @@
 
 Serviços existentes: `football-hype` (interface) e `football-hype-game` (servidor). Sem novos serviços, bindings ou migrações. Observabilidade desativada e `USAGE_METRICS=false` preservados. A lógica usa os eventos e a sincronização existentes; nenhuma chamada por quadro ou heartbeat periódico foi adicionado. O histórico opcional de desgaste e goleiros aumenta o tamanho dos resultados proporcionalmente às partidas; não se infere custo ou capacidade de produção pelos testes locais. Nenhuma carreira de produção foi apagada ou usada para teste de escrita.
 
-A confirmação de versões e respostas públicas será registrada após a publicação.
+## Produção verificada
+
+- Interface: https://football-hype.taynanzhott.workers.dev — versão `eed73480-fdee-41d8-9ef5-6c671b554727`.
+- Servidor: https://football-hype-game.taynanzhott.workers.dev — versão `224c0c2d-8ef2-4895-bbaa-fb111707bfe7`.
+- Página pública, JavaScript `index-D49lF58-.js`, CSS `index-BuBfInzQ.css` e áudio de gol respondem HTTP 200. O HTML referencia o novo JavaScript.
+- `/health` responde HTTP 200 com `status: ok`, `persistence: durable-sqlite` e `demo: false`.
+- Código da entrega registrado no commit `948c549`.
