@@ -39789,7 +39789,10 @@ html body dialog.game-loading-screen[open] {
   }
 }
 .match-ratings-body .match-player-ratings {
-  grid-template-rows: minmax(0, 1fr) auto auto;
+  grid-template-rows: minmax(0, 1fr) auto;
+}
+.match-event-substitution {
+  padding: 10px 0;
 }
 .match-ratings-body .match-substitution-report {
   display: grid;

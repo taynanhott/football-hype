@@ -11,6 +11,7 @@ export default tseslint.config(
       '**/dist/**',
       '**/node_modules/**',
       '**/.turbo/**',
+      '**/.wrangler/**',
       'coverage/**',
       'playwright-report/**',
       'test-results/**',

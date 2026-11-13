@@ -424,27 +424,6 @@ export const PlayerRatings = memo(
         <p className="ratings-key">
           Notas: <span>7–10</span> boa · 5–6,9 regular · abaixo de 5 baixa
         </p>
-        <div className="match-substitution-report">
-          {(result.substitutions ?? [])
-            .filter((s) => s.minute <= minute)
-            .map((s) => (
-              <article className="match-substitution" data-side={s.side} key={s.out}>
-                <span className="substitution-team-minute">
-                  <Badge state={state} id={s.side === 'home' ? result.homeId : result.awayId} />
-                  <strong>{Math.ceil(s.minute)}′</strong>
-                </span>
-                <span className="substitution-in">
-                  <span>Entra</span>
-                  <strong>{state.players.byId[s.in]?.name ?? 'Jogador'}</strong>
-                </span>
-                <span className="substitution-out">
-                  <span>Sai</span>
-                  <strong>{state.players.byId[s.out]?.name ?? 'Jogador'}</strong>
-                  <small>Nota: {ratings[s.out]?.toFixed(1).replace('.', ',') ?? '—'}</small>
-                </span>
-              </article>
-            ))}
-        </div>
       </section>
     );
   },
@@ -454,57 +433,92 @@ export const PlayerRatings = memo(
     Math.floor((previous.minute ?? 90) * 2) === Math.floor((next.minute ?? 90) * 2),
 );
 export function GoalsAndCards({ state, result, minute }: ReportProps & { minute: number }) {
-  const events = (result.actions ?? []).filter(
-    (action, index) =>
+  const ratings = livePlayerRatings(result, minute, state.players.byId);
+  const events = [
+    ...(result.actions ?? []).flatMap((action, index) =>
       ['goal', 'yellow', 'red'].includes(action.type) &&
-      visibleActionMinute(result.actions ?? [], index) <= minute,
-  );
+      visibleActionMinute(result.actions ?? [], index) <= minute
+        ? [{ kind: 'action' as const, minute: action.minute, action }]
+        : [],
+    ),
+    ...(result.substitutions ?? [])
+      .filter((swap) => swap.minute <= minute)
+      .map((swap) => ({ kind: 'substitution' as const, minute: swap.minute, swap })),
+  ].sort((a, b) => a.minute - b.minute);
   return (
     <section className="goals-cards report-dark">
       <header>
-        <h2>Gols e cartões</h2>
+        <h2>Lance a lance</h2>
         <span>{events.length} ocorrência(s)</span>
       </header>
       {events.length === 0 ? (
         <p className="events-empty">
-          Nenhum gol ou cartão registrado{minute < 90 ? ' até o momento' : ''}.
+          Nenhum lance registrado{minute < 90 ? ' até o momento' : ''}.
         </p>
       ) : (
         <ol className="match-event-list">
-          {events.map((action, index) => (
-            <li key={index} className={`match-event-item event-${action.side}`}>
-              <time>{Math.ceil(action.minute)}′</time>
-              <span
-                className={`event-symbol event-symbol-${action.type}`}
-                aria-label={
-                  action.type === 'goal'
-                    ? 'Gol'
-                    : action.type === 'red'
-                      ? 'Cartão vermelho'
-                      : 'Cartão amarelo'
-                }
-              >
-                {action.type === 'goal' && <Icon name="ball" size={16} />}
-              </span>
-              <div>
-                <strong>{state.players.byId[action.playerId ?? '']?.name ?? 'Jogador'}</strong>
-                <span>
-                  {action.type === 'goal'
-                    ? 'Gol'
-                    : action.type === 'red'
-                      ? 'Cartão vermelho'
-                      : 'Cartão amarelo'}{' '}
-                  ·{' '}
-                  {state.clubs.byId[(action.side === 'home' ? result.homeId : result.awayId) ?? '']
-                    ?.name ?? 'Clube'}
+          {events.map((event, index) => {
+            if (event.kind === 'substitution') {
+              const s = event.swap;
+              return (
+                <li key={index} className="match-event-substitution">
+                  <article className="match-substitution" data-side={s.side}>
+                    <span className="substitution-team-minute">
+                      <Badge state={state} id={s.side === 'home' ? result.homeId : result.awayId} />
+                      <strong>{Math.ceil(s.minute)}′</strong>
+                    </span>
+                    <span className="substitution-in">
+                      <span>Entra</span>
+                      <strong>{state.players.byId[s.in]?.name ?? 'Jogador'}</strong>
+                    </span>
+                    <span className="substitution-out">
+                      <span>Sai</span>
+                      <strong>{state.players.byId[s.out]?.name ?? 'Jogador'}</strong>
+                      <small>Nota: {ratings[s.out]?.toFixed(1).replace('.', ',') ?? '—'}</small>
+                    </span>
+                  </article>
+                </li>
+              );
+            }
+            const action = event.action;
+            return (
+              <li key={index} className={`match-event-item event-${action.side}`}>
+                <time>{Math.ceil(action.minute)}′</time>
+                <span
+                  className={`event-symbol event-symbol-${action.type}`}
+                  aria-label={
+                    action.type === 'goal'
+                      ? 'Gol'
+                      : action.type === 'red'
+                        ? 'Cartão vermelho'
+                        : 'Cartão amarelo'
+                  }
+                >
+                  {action.type === 'goal' && <Icon name="ball" size={16} />}
                 </span>
-                {action.assistId && (
-                  <span>Assistência: {state.players.byId[action.assistId]?.name ?? 'Jogador'}</span>
-                )}
-              </div>
-              <Badge state={state} id={action.side === 'home' ? result.homeId : result.awayId} />
-            </li>
-          ))}
+                <div>
+                  <strong>{state.players.byId[action.playerId ?? '']?.name ?? 'Jogador'}</strong>
+                  <span>
+                    {action.type === 'goal'
+                      ? 'Gol'
+                      : action.type === 'red'
+                        ? 'Cartão vermelho'
+                        : 'Cartão amarelo'}{' '}
+                    ·{' '}
+                    {state.clubs.byId[
+                      (action.side === 'home' ? result.homeId : result.awayId) ?? ''
+                    ]?.name ?? 'Clube'}
+                  </span>
+                  {action.assistId && (
+                    <span>
+                      Assistência: {state.players.byId[action.assistId]?.name ?? 'Jogador'}
+                    </span>
+                  )}
+                </div>
+                <Badge state={state} id={action.side === 'home' ? result.homeId : result.awayId} />
+              </li>
+            );
+          })}
         </ol>
       )}
     </section>

@@ -9,6 +9,8 @@ import { visibleActionMinute } from '../../three/match-playback';
 import { MatchActors } from '../../three/match-actors';
 import { GoalCelebration, recentMatchEvent } from '../../three/match-celebration';
 import { GoalsAndCards, MatchStatistics, PlayerRatings, RoundResults } from './match-summary';
+const GOAL_CHEER_DURATION_MS = 5500;
+const GOAL_CHEER_FADE_MS = 2000;
 const StadiumScene = lazy(() => import('../../three/stadium-scene'));
 const labels: Record<string, string> = {
   interception: 'Interceptação',
@@ -114,17 +116,44 @@ export function Matches({ snapshot, club }: ViewProps) {
   const heard = useRef(new Set<string>());
   const [soundOn, setSoundOn] = useState(true);
   const goalAudio = useRef<HTMLAudioElement | null>(null);
-  const [cheerDuration, setCheerDuration] = useState(10724);
+  const goalVolume = useRef(1);
+  const [cheerDuration, setCheerDuration] = useState(GOAL_CHEER_DURATION_MS);
   useEffect(() => {
     const audio = new Audio('/audio/stadium-goal-cheer.mp3');
     audio.preload = 'auto';
     goalAudio.current = audio;
-    const metadata = () => {
-      if (Number.isFinite(audio.duration)) setCheerDuration(audio.duration * 1000);
+    let frame = 0;
+    const duration = () =>
+      Number.isFinite(audio.duration)
+        ? Math.min(GOAL_CHEER_DURATION_MS, audio.duration * 1000)
+        : GOAL_CHEER_DURATION_MS;
+    const metadata = () => setCheerDuration(duration());
+    const fade = () => {
+      const remaining = duration() - audio.currentTime * 1000;
+      const progress = Math.max(0, Math.min(1, remaining / GOAL_CHEER_FADE_MS));
+      // Ease down to silence before stopping, including clips shorter than the cap.
+      audio.volume = goalVolume.current * progress * progress * (3 - 2 * progress);
+      if (remaining <= 0) {
+        audio.pause();
+        return;
+      }
+      if (!audio.paused) frame = requestAnimationFrame(fade);
     };
+    const play = () => {
+      cancelAnimationFrame(frame);
+      fade();
+    };
+    const pause = () => cancelAnimationFrame(frame);
+    audio.addEventListener('play', play);
+    audio.addEventListener('pause', pause);
+    audio.addEventListener('ended', pause);
     audio.addEventListener('loadedmetadata', metadata);
     return () => {
       audio.pause();
+      cancelAnimationFrame(frame);
+      audio.removeEventListener('play', play);
+      audio.removeEventListener('pause', pause);
+      audio.removeEventListener('ended', pause);
       audio.removeEventListener('loadedmetadata', metadata);
       goalAudio.current = null;
     };
@@ -246,7 +275,9 @@ export function Matches({ snapshot, club }: ViewProps) {
               0,
               (((minute - actionMinutes[index]!) / 90) * MATCH_DURATION_MS) / 1000,
             );
-            audio.volume = event.side === 'home' ? 1 : 0.45;
+            audio.pause();
+            goalVolume.current = event.side === 'home' ? 1 : 0.45;
+            audio.volume = goalVolume.current;
             void audio.play().catch(() => {});
           }
         }
@@ -454,7 +485,7 @@ export function Matches({ snapshot, club }: ViewProps) {
               ['stats', 'Estatísticas'],
               ['round', 'Partidas'],
               ['ratings', 'Notas'],
-              ['events', 'Gols e cartões'],
+              ['events', 'Lance a lance'],
             ]
               .filter(([id]) => !desktop || id !== 'ratings')
               .map(([id, label]) => (

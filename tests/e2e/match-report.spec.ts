@@ -71,7 +71,7 @@ test('salva identidade, mostra partida 3D e preserva relatório e notas', async 
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.screenshot({ path: 'test-results/match-ratings.png' });
   await page.getByRole('tab', { name: 'Notas', exact: true }).press('ArrowRight');
-  await expect(page.getByRole('tab', { name: 'Gols e cartões', exact: true })).toBeFocused();
+  await expect(page.getByRole('tab', { name: 'Lance a lance', exact: true })).toBeFocused();
   await expect(page.locator('.goals-cards')).toBeVisible();
   await page.getByRole('tab', { name: 'Partidas', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Placar da rodada', exact: true })).toBeVisible();
