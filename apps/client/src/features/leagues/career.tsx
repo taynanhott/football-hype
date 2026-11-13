@@ -5,9 +5,10 @@ import { Icon, ClubBadge } from '../../ui/icons';
 export function Career({ snapshot, club, trainerId }: ViewProps & { trainerId?: string }) {
   const { state } = snapshot;
   const seasons = [...(state.seasonArchives ?? []), state];
-  const games = seasons.flatMap((season) =>
-    season.results.flatMap((result) => {
-      const fixture = season.fixtures.find((f) => f.id === result.fixtureId);
+  const games = seasons.flatMap((season) => {
+    const fixtures = new Map(season.fixtures.map((fixture) => [fixture.id, fixture]));
+    return season.results.flatMap((result) => {
+      const fixture = fixtures.get(result.fixtureId);
       if (!fixture) return [];
       if (
         trainerId
@@ -31,8 +32,8 @@ export function Career({ snapshot, club, trainerId }: ViewProps & { trainerId?: 
             : false,
         },
       ];
-    }),
-  );
+    });
+  });
   const wins = games.filter((g) => g.goals > g.conceded).length;
   const draws = games.filter((g) => g.goals === g.conceded).length;
   const losses = games.length - wins - draws;

@@ -17,6 +17,36 @@ import { currency } from '../../ui/format';
 import { MoneyRange } from '../../ui/money-range';
 import { useGameStore } from '../../store/game-store';
 
+function PhoneTime() {
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    let timer: number;
+    const update = () => {
+      setNow(new Date());
+      timer = window.setTimeout(update, 60000 - (Date.now() % 60000));
+    };
+    const resume = () => {
+      window.clearTimeout(timer);
+      if (!document.hidden) update();
+    };
+    timer = window.setTimeout(update, 60000 - (Date.now() % 60000));
+    document.addEventListener('visibilitychange', resume);
+    return () => {
+      window.clearTimeout(timer);
+      document.removeEventListener('visibilitychange', resume);
+    };
+  }, []);
+  return (
+    <span>
+      {now.toLocaleTimeString('pt-BR', {
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZone: 'America/Sao_Paulo',
+      })}
+    </span>
+  );
+}
+
 export function NegotiationChat({
   snapshot,
   club,
@@ -42,11 +72,6 @@ export function NegotiationChat({
   const loanCloseTimer = useRef<number | undefined>(undefined);
   useEffect(() => () => window.clearTimeout(loanCloseTimer.current), []);
   useEffect(() => openModalPreservingScroll(dialogRef.current), []);
-  const [phoneTime, setPhoneTime] = useState(() => new Date());
-  useEffect(() => {
-    const timer = window.setInterval(() => setPhoneTime(new Date()), 1000);
-    return () => window.clearInterval(timer);
-  }, []);
   const seller = snapshot.state.clubs.byId[player.clubId ?? ''];
   const sellerCoachName = seller ? clubCoachName(snapshot.state, seller) : 'Técnico do clube';
   const loan = loanTerms(snapshot.state, player, club);
@@ -170,13 +195,7 @@ export function NegotiationChat({
           onClick={(e) => e.stopPropagation()}
         >
           <div className="chat-phone-status" aria-hidden="true">
-            <span>
-              {phoneTime.toLocaleTimeString('pt-BR', {
-                hour: '2-digit',
-                minute: '2-digit',
-                timeZone: 'America/Sao_Paulo',
-              })}
-            </span>
+            <PhoneTime />
             <i />
             <span>▴ ▰ 85% ▮</span>
           </div>

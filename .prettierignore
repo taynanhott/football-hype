@@ -14,4 +14,5 @@ data/player-source.json
 data/player-database.json
 
 .tmp/
+.test-temp/
 outputs/

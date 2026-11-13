@@ -10,24 +10,20 @@ test('filtros têm prévia e só atualizam a listagem após confirmar', async ({
   const apply = () => page.getByRole('button', { name: /Ver resultados/ }).click();
   await open();
   const label = await page.getByRole('button', { name: /Ver resultados/ }).innerText();
-  const buttonSize = await page
-    .getByRole('button', { name: /Ver resultados/ })
-    .evaluate((el) => ({
-      width: el.getBoundingClientRect().width,
-      height: el.getBoundingClientRect().height,
-    }));
+  const buttonSize = await page.getByRole('button', { name: /Ver resultados/ }).evaluate((el) => ({
+    width: el.getBoundingClientRect().width,
+    height: el.getBoundingClientRect().height,
+  }));
   expect(Number(label.match(/\(([\d.]+)\)/)![1]!.replaceAll('.', ''))).toBeGreaterThan(48);
   await page.getByRole('slider', { name: 'Overall mínimo', exact: true }).fill('99');
   await expect(page.getByRole('button', { name: /Ver resultados/ })).toHaveText(
     '(0) Ver resultados',
   );
   expect(
-    await page
-      .getByRole('button', { name: /Ver resultados/ })
-      .evaluate((el) => ({
-        width: el.getBoundingClientRect().width,
-        height: el.getBoundingClientRect().height,
-      })),
+    await page.getByRole('button', { name: /Ver resultados/ }).evaluate((el) => ({
+      width: el.getBoundingClientRect().width,
+      height: el.getBoundingClientRect().height,
+    })),
   ).toEqual(buttonSize);
   await expect(page.locator('.market-player')).toHaveCount(48);
   await page.getByRole('button', { name: 'Fechar filtros' }).click();

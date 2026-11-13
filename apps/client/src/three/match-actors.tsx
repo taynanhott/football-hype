@@ -538,7 +538,7 @@ function PlaybackBall({
 }: {
   renderedView: RefObject<ReturnType<typeof samplePlayback>>;
 }) {
-  const radius = 0.143;
+  const radius = 0.1716;
   const ball = useRef<Mesh>(null);
   useFrame(() => {
     const view = renderedView.current;

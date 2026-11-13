@@ -3,7 +3,7 @@ import { CompetitionDrawCard } from './competition-draw-details';
 import { cupReturnDate, REGIONAL_QUALIFIERS } from '@football/domain';
 import { Icon } from '../../ui/icons';
 import { Select, Option } from '../../ui/select';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { cupGroupTables, standings, europeanLeagueView } from '@football/domain';
 import { CupBracket } from './cup-bracket';
 import { COMPETITIONS, EUROPEAN_LEAGUES, type Fixture } from '@football/shared';
@@ -34,25 +34,33 @@ export function Calendar({ snapshot, club }: ViewProps) {
   const [selectedSeason, setSelectedSeason] = useState<number | null>(null);
   const [roundSelection, setRoundSelection] = useState<{ scope: string; key: string } | null>(null);
   const archive = snapshot.state.seasonArchives?.find((item) => item.season === selectedSeason);
-  const baseState = archive
-    ? { ...snapshot.state, competitionNotes: undefined, ...archive }
-    : liveState;
+  const baseState = useMemo(
+    () => (archive ? { ...snapshot.state, competitionNotes: undefined, ...archive } : liveState),
+    [archive, snapshot.state, liveState],
+  );
   const europeanRule = EUROPEAN_LEAGUES.find((item) => item.id === competition);
   const europe = archive ? archive.europeanLeagues : liveState.europeanLeagues;
   const europeanLeague = europe?.leagues.find((item) => item.competitionId === competition);
-  const europeanView =
-    europeanLeague && europe ? europeanLeagueView(europeanLeague, europe.season) : undefined;
+  const europeanView = useMemo(
+    () =>
+      europeanLeague && europe ? europeanLeagueView(europeanLeague, europe.season) : undefined,
+    [europeanLeague, europe],
+  );
   // Local projection only. Background fixtures never enter the match centre or persisted full results.
-  const state = europeanRule
-    ? {
-        ...baseState,
-        fixtures: europeanView?.fixtures ?? [],
-        results: europeanView?.results ?? [],
-        cups: [],
-        competitionDraws: [],
-        competitionNotes: undefined,
-      }
-    : baseState;
+  const state = useMemo(
+    () =>
+      europeanRule
+        ? {
+            ...baseState,
+            fixtures: europeanView?.fixtures ?? [],
+            results: europeanView?.results ?? [],
+            cups: [],
+            competitionDraws: [],
+            competitionNotes: undefined,
+          }
+        : baseState,
+    [europeanRule, baseState, europeanView],
+  );
   const seasons = [
     snapshot.state.season,
     ...(snapshot.state.seasonArchives ?? []).map((item) => item.season),
@@ -168,7 +176,7 @@ export function Calendar({ snapshot, club }: ViewProps) {
         (draw) => draw.competitionId === competition && draw.completedAt === undefined,
       )
     : undefined;
-  const groups = cupGroupTables(state, competition);
+  const groups = useMemo(() => cupGroupTables(state, competition), [state, competition]);
   const knockoutReady = state.cups.some(
     (node) => node.competitionId === competition && node.homeId && node.awayId,
   );

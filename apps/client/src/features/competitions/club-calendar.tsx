@@ -37,13 +37,23 @@ const competitionColor = (id: string) =>
       COMPETITIONS.findIndex((rule) => rule.id === id),
     ) % palette.length
   ]!;
-const dayKey = (timestamp: number) =>
-  new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'America/Sao_Paulo',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).format(timestamp);
+const dayFormatter = new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'America/Sao_Paulo',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+});
+const dayKey = (timestamp: number) => dayFormatter.format(timestamp);
+function eventsByDay<T extends { scheduledAt: number }>(events: readonly T[]) {
+  const days = new Map<string, T[]>();
+  for (const event of events) {
+    const key = dayKey(event.scheduledAt);
+    const day = days.get(key);
+    if (day) day.push(event);
+    else days.set(key, [event]);
+  }
+  return days;
+}
 const drawThemes: Record<string, { label: string; color: string; surface: string; ink: string }> = {
   'copa-brasil': { label: 'Copa do Brasil', color: '#239358', surface: '#e1efdf', ink: '#185134' },
   libertadores: { label: 'Liberta', color: '#bd9635', surface: '#f4e9be', ink: '#604918' },
@@ -96,6 +106,8 @@ export function ClubCalendar({ state: rawState, clubId }: { state: WorldState; c
   );
   const canOpenAwards = Boolean(seasonAward) && today >= awardsDay;
   const pendingGames = clubCalendarPendingGames(state, clubId);
+  const fixturesByDay = eventsByDay(fixtures);
+  const pendingByDay = eventsByDay(pendingGames);
   const missedGames = selectedFifa
     ? fixtures.filter((fixture) => {
         const day = dayKey(fixture.scheduledAt);
@@ -215,11 +227,9 @@ export function ClubCalendar({ state: rawState, clubId }: { state: WorldState; c
             const drawOnDay = (state.competitionDraws ?? []).filter(
               (draw) => draw.participantIds.includes(clubId) && dayKey(draw.scheduledAt) === key,
             );
-            const matches = fixtures.filter((fixture) => dayKey(fixture.scheduledAt) === key);
-            const cupId =
-              matches[0]?.competitionId ??
-              pendingGames.find((game) => dayKey(game.scheduledAt) === key)?.competitionId;
-            const pendingOnDay = pendingGames.find((game) => dayKey(game.scheduledAt) === key);
+            const matches = fixturesByDay.get(key) ?? [];
+            const cupId = matches[0]?.competitionId ?? pendingByDay.get(key)?.[0]?.competitionId;
+            const pendingOnDay = pendingByDay.get(key)?.[0];
             const openDay = () => {
               if (key === awardsDay && canOpenAwards)
                 window.dispatchEvent(new Event('football:open-season-awards'));
@@ -242,7 +252,7 @@ export function ClubCalendar({ state: rawState, clubId }: { state: WorldState; c
                   else if (matches[0]) setSelectedGame(matches[0]);
                   else if (drawOnDay[0]) setSelectedDrawId(drawOnDay[0].id);
                   else {
-                    const game = pendingGames.find((item) => dayKey(item.scheduledAt) === key);
+                    const game = pendingByDay.get(key)?.[0];
                     if (game) setPendingGame(game);
                     else if (fifaBoundary?.kind === 'Início') setSelectedFifa(fifaBoundary);
                   }
@@ -357,34 +367,32 @@ export function ClubCalendar({ state: rawState, clubId }: { state: WorldState; c
                     </span>
                   ))}
                 {inMonth &&
-                  pendingGames
-                    .filter((game) => dayKey(game.scheduledAt) === key)
-                    .map((game) => (
-                      <button
-                        type="button"
-                        className="club-calendar-event calendar-pending-event calendar-cup-event"
-                        style={
-                          {
-                            '--cup-accent':
-                              drawThemes[game.competitionId]?.color ??
-                              competitionColor(game.competitionId),
-                            '--cup-light': drawThemes[game.competitionId]?.surface ?? '#e1efdf',
-                          } as CSSProperties
-                        }
-                        key={game.id}
-                        title={`${COMPETITIONS.find((rule) => rule.id === game.competitionId)?.name} · ${game.label} · ${dateTime(game.scheduledAt)}`}
-                        onClick={() => setPendingGame(game)}
-                      >
-                        <Icon name="trophy" size={14} />
-                        <strong>
-                          {game.competitionId === 'libertadores'
-                            ? 'Liberta'
-                            : COMPETITIONS.find((rule) => rule.id === game.competitionId)?.name}
-                        </strong>
-                        <small>Adversário a definir</small>
-                        <small>{game.label}</small>
-                      </button>
-                    ))}
+                  (pendingByDay.get(key) ?? []).map((game) => (
+                    <button
+                      type="button"
+                      className="club-calendar-event calendar-pending-event calendar-cup-event"
+                      style={
+                        {
+                          '--cup-accent':
+                            drawThemes[game.competitionId]?.color ??
+                            competitionColor(game.competitionId),
+                          '--cup-light': drawThemes[game.competitionId]?.surface ?? '#e1efdf',
+                        } as CSSProperties
+                      }
+                      key={game.id}
+                      title={`${COMPETITIONS.find((rule) => rule.id === game.competitionId)?.name} · ${game.label} · ${dateTime(game.scheduledAt)}`}
+                      onClick={() => setPendingGame(game)}
+                    >
+                      <Icon name="trophy" size={14} />
+                      <strong>
+                        {game.competitionId === 'libertadores'
+                          ? 'Liberta'
+                          : COMPETITIONS.find((rule) => rule.id === game.competitionId)?.name}
+                      </strong>
+                      <small>Adversário a definir</small>
+                      <small>{game.label}</small>
+                    </button>
+                  ))}
                 {inMonth &&
                   drawOnDay.map((draw) => (
                     <button
@@ -468,8 +476,7 @@ export function ClubCalendar({ state: rawState, clubId }: { state: WorldState; c
                         </button>
                       );
                     })
-                  ) : fifaBoundary ||
-                    pendingGames.some((game) => dayKey(game.scheduledAt) === key) ? null : (
+                  ) : fifaBoundary || pendingByDay.has(key) ? null : (
                     <>
                       <span className="club-calendar-routine-icon" aria-hidden="true">
                         {routine === routines.training || routine === routines.recovery ? (

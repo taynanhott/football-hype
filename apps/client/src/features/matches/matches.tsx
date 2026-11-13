@@ -1,6 +1,6 @@
 import { presentationGameMinute } from '../../three/match-presentation';
 import { clubKit, MATCH_DURATION_MS, type MatchResult } from '@football/shared';
-import { lazy, Suspense, useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { PixelBadge } from '../../ui/pixel-badge';
 import { Icon } from '../../ui/icons';
 import type { ViewProps } from '../../ui/view-props';
@@ -118,6 +118,10 @@ export function Matches({ snapshot, club }: ViewProps) {
   const [reportTab, setReportTab] = useState('round');
   const activeReportTab = desktop && reportTab === 'ratings' ? 'stats' : reportTab;
   const result = state.results.find((r) => r.fixtureId === selected) ?? available.at(-1);
+  const actionMinutes = useMemo(
+    () => (result?.actions ?? []).map((_, index) => visibleActionMinute(result!.actions!, index)),
+    [result],
+  );
   const clockOffset = useGameStore((s) => s.clockOffset);
   const [now, setNow] = useState(() => Date.now());
   const sound = useRef<AudioContext | null>(null);
@@ -146,8 +150,19 @@ export function Matches({ snapshot, club }: ViewProps) {
   const animating = Boolean(result) && elapsed < MATCH_DURATION_MS + 6000;
   useEffect(() => {
     if (!animating) return;
-    const timer = setInterval(() => setNow(Date.now()), 250);
-    return () => clearInterval(timer);
+    let timer: ReturnType<typeof setInterval> | undefined;
+    const resume = () => {
+      clearInterval(timer);
+      if (document.hidden) return;
+      setNow(Date.now());
+      timer = setInterval(() => setNow(Date.now()), 250);
+    };
+    resume();
+    document.addEventListener('visibilitychange', resume);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener('visibilitychange', resume);
+    };
   }, [animating]);
   useEffect(() => {
     if (!soundOn || !animating) return;
@@ -213,8 +228,8 @@ export function Matches({ snapshot, club }: ViewProps) {
       const key = `${result.fixtureId}:${start}:${index}`;
       if (
         ['goal', 'foul'].includes(event.type) &&
-        visibleActionMinute(result.actions ?? [], index) <= minute &&
-        minute - visibleActionMinute(result.actions ?? [], index) < 1 &&
+        actionMinutes[index]! <= minute &&
+        minute - actionMinutes[index]! < 1 &&
         !heard.current.has(key)
       ) {
         heard.current.add(key);
@@ -224,7 +239,7 @@ export function Matches({ snapshot, club }: ViewProps) {
         }
       }
     }
-  }, [result, minute, elapsed, start, soundOn]);
+  }, [result, minute, elapsed, start, soundOn, actionMinutes]);
   if (!result)
     return (
       <section className="matches-empty" aria-label="Nenhuma partida disputada">
@@ -257,7 +272,7 @@ export function Matches({ snapshot, club }: ViewProps) {
   const stadium = state.stadiums.byId[result.stadiumId ?? ''];
   const center = home ? state.centers.byId[home.trainingCenterId] : undefined;
   const shown = (result.actions ?? []).filter(
-    (a, index) => a.minute <= minute && visibleActionMinute(result.actions ?? [], index) <= minute,
+    (a, index) => a.minute <= minute && actionMinutes[index]! <= minute,
   );
   const scores = ['home', 'away'].map(
     (side) => shown.filter((a) => a.type === 'goal' && a.side === side).length,

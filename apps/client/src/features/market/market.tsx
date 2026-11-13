@@ -24,7 +24,15 @@ import {
   financialLimits,
   SearchTrie,
 } from '@football/domain';
-import { useEffect, useMemo, useState, useRef, useTransition, useCallback } from 'react';
+import {
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useState,
+  useRef,
+  useTransition,
+  useCallback,
+} from 'react';
 import type { PlayerSnapshot } from '@football/shared';
 import type { ViewProps } from '../../ui/view-props';
 import { useGameStore } from '../../store/game-store';
@@ -128,9 +136,23 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
     setVisibleCount(48);
   }, []);
   const [loadingMore, startLoadMore] = useTransition();
-  const isOwnPlayer = (player: PlayerSnapshot) =>
-    player.clubId === club.id || snapshot.state.management?.loans?.[player.id]?.ownerId === club.id;
+  const isOwnPlayer = useCallback(
+    (player: PlayerSnapshot) =>
+      player.clubId === club.id ||
+      snapshot.state.management?.loans?.[player.id]?.ownerId === club.id,
+    [club.id, snapshot.state.management?.loans],
+  );
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const previousFiltersOpen = useRef(filtersOpen);
+  useLayoutEffect(() => {
+    const collapsed = previousFiltersOpen.current && !filtersOpen;
+    previousFiltersOpen.current = filtersOpen;
+    if (!collapsed || !window.matchMedia('(max-width: 760px)').matches) return;
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    document.querySelectorAll('.workspace, .main-content').forEach((element) => {
+      element.scrollTo({ top: 0, behavior: 'instant' });
+    });
+  }, [filtersOpen]);
   const [sortBy, setSortBy] = useState('overall');
   const [advancedFilters, setAdvancedFilters] = useState<MarketFilterValues>({
     overall: [1, 99],
@@ -259,16 +281,22 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
     }
     return trie;
   }, [allPlayers]);
-  const found =
-    searchQuery.length > 1
-      ? searchIndex.search(searchQuery).flatMap((id) => {
-          const player = snapshot.state.players.byId[id];
-          return player ? [player] : [];
-        })
-      : allPlayers;
+  const found = useMemo(
+    () =>
+      searchQuery.length > 1
+        ? searchIndex.search(searchQuery).flatMap((id) => {
+            const player = snapshot.state.players.byId[id];
+            return player ? [player] : [];
+          })
+        : allPlayers,
+    [searchQuery, searchIndex, snapshot.state.players.byId, allPlayers],
+  );
   const linkedPlayer = newsPlayerId ? snapshot.state.players.byId[newsPlayerId] : undefined;
   const exactNewsSearch = linkedPlayer && searchQuery === linkedPlayer.name;
-  const searchResults = exactNewsSearch ? [linkedPlayer] : found;
+  const searchResults = useMemo(
+    () => (exactNewsSearch ? [linkedPlayer] : found),
+    [exactNewsSearch, linkedPlayer, found],
+  );
   const transferBudget = financialLimits(snapshot.state, club).transfer;
   const contexts = useMemo(() => {
     if (sortBy !== 'interest' && !bargains && !interestedPlayers && !interestedClubs)
@@ -277,134 +305,180 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
       allPlayers.map((player) => [player.id, transferContext(snapshot.state, player, club)]),
     );
   }, [allPlayers, snapshot.state, club, sortBy, bargains, interestedPlayers, interestedClubs]);
-  const contextFor = (player: PlayerSnapshot) =>
-    contexts.get(player.id) ?? transferContext(snapshot.state, player, club);
-  const candidates = searchResults
-    .filter(
-      (player) =>
-        (!snapshot.state.management?.loans?.[player.id] || isOwnPlayer(player)) &&
-        (exactNewsSearch || !player.academyClubId || !!player.clubId),
-    )
-    .filter((player) => {
-      const seller = snapshot.state.clubs.byId[player.clubId ?? ''];
-      const positions =
-        sector === 'GK'
-          ? ['GK']
-          : sector === 'DEF'
-            ? ['CB', 'RB', 'LB', 'LWB', 'RWB']
-            : sector === 'MEI'
-              ? ['DM', 'CM', 'AM', 'LM', 'RM']
-              : ['ST', 'SS', 'LW', 'RW'];
-      if (sector !== 'ALL' && !positions.includes(player.position)) return false;
-      if (affordable && player.marketValue.cents > transferBudget) return false;
-      if (
-        bargains &&
-        (contextFor(player).blocked || contextFor(player).minimumFee >= player.marketValue.cents)
-      )
-        return false;
-      if (favoritesOnly && !favorites.includes(player.id)) return false;
-      if (prospects) {
-        const reach = player.id.split('').reduce((sum, c) => sum + c.charCodeAt(0), 0) % 5;
-        if (!(
-          player.age <= 23 &&
-          (report(player).hidden || (report(player).maximum ?? 0) >= 70) &&
-          reach < center.levels.scouting
-        ))
-          return false;
-      }
-      if (tab === 'Todos' || tab === 'Propostas') return true;
-      if (tab === 'Livres') return !player.clubId;
-      if (tab === 'Exterior') return Boolean(seller && seller.country !== 'BR');
-      return seller?.country === 'BR' && seller.division === tab;
-    });
-  const filterCandidates = (filters: MarketFilterValues) =>
-    candidates
-      .filter((player) =>
-        matchesMarketRanges(
-          player,
-          report(player).hidden ? [1, 99] : filters.overall,
-          filters.age,
-          filters.price,
-        ),
-      )
-      .filter((player) => {
-        if (filters.position && filters.position !== 'ALL' && player.position !== filters.position)
-          return false;
-        if (
-          filters.continent &&
-          filters.continent !== 'all' &&
-          countryContinent(player.nationality) !== filters.continent
+  const contextFor = useCallback(
+    (player: PlayerSnapshot) =>
+      contexts.get(player.id) ?? transferContext(snapshot.state, player, club),
+    [contexts, snapshot.state, club],
+  );
+  const candidates = useMemo(
+    () =>
+      searchResults
+        .filter(
+          (player) =>
+            (!snapshot.state.management?.loans?.[player.id] || isOwnPlayer(player)) &&
+            (exactNewsSearch || !player.academyClubId || !!player.clubId),
         )
-          return false;
-        const dailySalary = player.salary.cents / 100 / 30;
-        if (
-          filters.salary &&
-          (dailySalary < filters.salary[0]! || dailySalary > filters.salary[1]!)
+        .filter((player) => {
+          const seller = snapshot.state.clubs.byId[player.clubId ?? ''];
+          const positions =
+            sector === 'GK'
+              ? ['GK']
+              : sector === 'DEF'
+                ? ['CB', 'RB', 'LB', 'LWB', 'RWB']
+                : sector === 'MEI'
+                  ? ['DM', 'CM', 'AM', 'LM', 'RM']
+                  : ['ST', 'SS', 'LW', 'RW'];
+          if (sector !== 'ALL' && !positions.includes(player.position)) return false;
+          if (affordable && player.marketValue.cents > transferBudget) return false;
+          if (
+            bargains &&
+            (contextFor(player).blocked ||
+              contextFor(player).minimumFee >= player.marketValue.cents)
+          )
+            return false;
+          if (favoritesOnly && !favorites.includes(player.id)) return false;
+          if (prospects) {
+            const reach = player.id.split('').reduce((sum, c) => sum + c.charCodeAt(0), 0) % 5;
+            if (!(
+              player.age <= 23 &&
+              (report(player).hidden || (report(player).maximum ?? 0) >= 70) &&
+              reach < center.levels.scouting
+            ))
+              return false;
+          }
+          if (tab === 'Todos' || tab === 'Propostas') return true;
+          if (tab === 'Livres') return !player.clubId;
+          if (tab === 'Exterior') return Boolean(seller && seller.country !== 'BR');
+          return seller?.country === 'BR' && seller.division === tab;
+        }),
+    [
+      searchResults,
+      snapshot.state,
+      isOwnPlayer,
+      exactNewsSearch,
+      sector,
+      affordable,
+      transferBudget,
+      bargains,
+      contextFor,
+      favoritesOnly,
+      favorites,
+      prospects,
+      report,
+      center.levels.scouting,
+      tab,
+    ],
+  );
+  const filterCandidates = useCallback(
+    (filters: MarketFilterValues) =>
+      candidates
+        .filter((player) =>
+          matchesMarketRanges(
+            player,
+            report(player).hidden ? [1, 99] : filters.overall,
+            filters.age,
+            filters.price,
+          ),
         )
-          return false;
-        if (filters.situation === 'free' && player.clubId) return false;
-        if (
-          filters.situation === 'sale' &&
-          !snapshot.state.management?.policies?.[player.id]?.available
-        )
-          return false;
-        if (
-          filters.situation === 'loan' &&
-          !snapshot.state.management?.policies?.[player.id]?.loanAvailable
-        )
-          return false;
-        if (
-          filters.situation === 'expiring' &&
-          (!player.clubId ||
-            contractEnd(snapshot.state, player) - snapshot.state.lastProcessedAt > 180 * 86400000)
-        )
-          return false;
-        if (!filters.interestedPlayers && !filters.interestedClubs) return true;
-        const context = contextFor(player);
-        return (
-          (!filters.interestedPlayers || context.playerInterest > 0) &&
-          (!filters.interestedClubs || (!context.blocked && context.clubInterest > 0))
-        );
-      });
-  const matchingPlayers = filterCandidates({
-    ...advancedFilters,
-    overall,
-    age,
-    price,
-    interestedPlayers,
-    interestedClubs,
-  }).sort((a, b) => {
-    let difference = 0;
-    switch (sortBy) {
-      case 'interest':
-        difference = contextFor(b).playerInterest - contextFor(a).playerInterest;
-        break;
-      case 'age':
-        difference = a.age - b.age;
-        break;
-      case 'ageDesc':
-        difference = b.age - a.age;
-        break;
-      case 'price':
-        difference = a.marketValue.cents - b.marketValue.cents;
-        break;
-      case 'priceDesc':
-        difference = b.marketValue.cents - a.marketValue.cents;
-        break;
-      case 'salary':
-        difference = a.salary.cents - b.salary.cents;
-        break;
-      case 'salaryDesc':
-        difference = b.salary.cents - a.salary.cents;
-        break;
-      case 'name':
-        difference = a.name.localeCompare(b.name, 'pt-BR');
-        break;
-      default:
-        difference = (Number(report(b).overall) || 0) - (Number(report(a).overall) || 0);
-    }
-    return difference || a.name.localeCompare(b.name, 'pt-BR');
-  });
+        .filter((player) => {
+          if (
+            filters.position &&
+            filters.position !== 'ALL' &&
+            player.position !== filters.position
+          )
+            return false;
+          if (
+            filters.continent &&
+            filters.continent !== 'all' &&
+            countryContinent(player.nationality) !== filters.continent
+          )
+            return false;
+          const dailySalary = player.salary.cents / 100 / 30;
+          if (
+            filters.salary &&
+            (dailySalary < filters.salary[0]! || dailySalary > filters.salary[1]!)
+          )
+            return false;
+          if (filters.situation === 'free' && player.clubId) return false;
+          if (
+            filters.situation === 'sale' &&
+            !snapshot.state.management?.policies?.[player.id]?.available
+          )
+            return false;
+          if (
+            filters.situation === 'loan' &&
+            !snapshot.state.management?.policies?.[player.id]?.loanAvailable
+          )
+            return false;
+          if (
+            filters.situation === 'expiring' &&
+            (!player.clubId ||
+              contractEnd(snapshot.state, player) - snapshot.state.lastProcessedAt > 180 * 86400000)
+          )
+            return false;
+          if (!filters.interestedPlayers && !filters.interestedClubs) return true;
+          const context = contextFor(player);
+          return (
+            (!filters.interestedPlayers || context.playerInterest > 0) &&
+            (!filters.interestedClubs || (!context.blocked && context.clubInterest > 0))
+          );
+        }),
+    [candidates, report, snapshot.state, contextFor],
+  );
+  const matchingPlayers = useMemo(
+    () =>
+      filterCandidates({
+        ...advancedFilters,
+        overall,
+        age,
+        price,
+        interestedPlayers,
+        interestedClubs,
+      }).sort((a, b) => {
+        let difference = 0;
+        switch (sortBy) {
+          case 'interest':
+            difference = contextFor(b).playerInterest - contextFor(a).playerInterest;
+            break;
+          case 'age':
+            difference = a.age - b.age;
+            break;
+          case 'ageDesc':
+            difference = b.age - a.age;
+            break;
+          case 'price':
+            difference = a.marketValue.cents - b.marketValue.cents;
+            break;
+          case 'priceDesc':
+            difference = b.marketValue.cents - a.marketValue.cents;
+            break;
+          case 'salary':
+            difference = a.salary.cents - b.salary.cents;
+            break;
+          case 'salaryDesc':
+            difference = b.salary.cents - a.salary.cents;
+            break;
+          case 'name':
+            difference = a.name.localeCompare(b.name, 'pt-BR');
+            break;
+          default:
+            difference = (Number(report(b).overall) || 0) - (Number(report(a).overall) || 0);
+        }
+        return difference || a.name.localeCompare(b.name, 'pt-BR');
+      }),
+    [
+      filterCandidates,
+      advancedFilters,
+      overall,
+      age,
+      price,
+      interestedPlayers,
+      interestedClubs,
+      sortBy,
+      contextFor,
+      report,
+    ],
+  );
   const players = matchingPlayers.slice(
     0,
     prospects && searchQuery.length < 2 ? 8 + center.levels.scouting * 8 : visibleCount,
@@ -445,16 +519,16 @@ export function Market({ snapshot, club, center, stadium }: ViewProps) {
     };
     observer.observe(node);
     window.addEventListener('scroll', onScroll, { passive: true, capture: true });
-    window.addEventListener('wheel', arm, { passive: true });
-    window.addEventListener('touchmove', arm, { passive: true });
+    window.addEventListener('wheel', onScroll, { passive: true });
+    window.addEventListener('touchmove', onScroll, { passive: true });
     window.addEventListener('pointerdown', arm, { passive: true });
     window.addEventListener('keydown', key);
     return () => {
       observer.disconnect();
       cancelAnimationFrame(scrollFrame);
       window.removeEventListener('scroll', onScroll, true);
-      window.removeEventListener('wheel', arm);
-      window.removeEventListener('touchmove', arm);
+      window.removeEventListener('wheel', onScroll);
+      window.removeEventListener('touchmove', onScroll);
       window.removeEventListener('pointerdown', arm);
       window.removeEventListener('keydown', key);
     };

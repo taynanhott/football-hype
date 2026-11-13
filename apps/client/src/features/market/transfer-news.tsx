@@ -1,5 +1,6 @@
 import { coachNews } from './coach-news';
 import { awardNews } from './award-news';
+import { newsPlayerMentions } from './news-player-mentions';
 import { transferStoryKey } from './transfer-stories';
 import { useGameStore } from '../../store/game-store';
 import { roundNews } from './round-news';
@@ -98,12 +99,7 @@ export function TransferNews({ state }: { state: WorldState }) {
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
   const selectedPlayer = selectedPlayerId ? state.players.byId[selectedPlayerId] : undefined;
   const mentions = useMemo(() => {
-    const names = new Map<string, { kind: 'club' | 'player'; id: string }>();
-    for (const player of Object.values(state.players.byId)) {
-      if (player.name.length > 2 && !names.has(player.name))
-        names.set(player.name, { kind: 'player', id: player.id });
-      if (/\bNeymar\b/i.test(player.name)) names.set('Neymar', { kind: 'player', id: player.id });
-    }
+    const names = newsPlayerMentions(state.players.byId);
     for (const club of Object.values(state.clubs.byId))
       names.set(club.name, { kind: 'club', id: club.id });
     const escaped = [...names.keys()]
@@ -178,7 +174,9 @@ export function TransferNews({ state }: { state: WorldState }) {
   const [saved, setSaved] = useState<string[]>([]);
   const offers = listedNewsOffers(state);
   const marketNews = offers
-    .map((offer, index) => {
+    .slice(-20)
+    .map((offer, visibleIndex) => {
+      const index = Math.max(0, offers.length - 20) + visibleIndex;
       const buyer = state.clubs.byId[offer.buyerId]?.name ?? 'Clube interessado';
       const seller = state.clubs.byId[offer.sellerId ?? '']?.name ?? 'o clube';
       const player = state.players.byId[offer.playerId]?.name ?? 'o jogador';
@@ -244,7 +242,6 @@ export function TransferNews({ state }: { state: WorldState }) {
         tags: ['#MercadoDaBola'],
       };
     })
-    .slice(-20)
     .reverse();
   const news: {
     id: string;

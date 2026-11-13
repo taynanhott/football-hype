@@ -8,7 +8,7 @@ import {
   playerCategoryHeading,
   playerPositionCategory,
 } from './field-position-order';
-import { useState, useSyncExternalStore } from 'react';
+import { useMemo, useState, useSyncExternalStore } from 'react';
 import { clubKit } from '@football/shared';
 import { renewalTerms, contractEnd, masteredPositions } from '@football/domain';
 import type { ViewProps } from '../../ui/view-props';
@@ -65,6 +65,39 @@ export function SquadPlanning({ snapshot, club }: ViewProps) {
   } | null>(null);
   const locked = useGameStore((s) => s.busy);
   const preview = snapshot;
+  const statistics = useMemo(() => {
+    const rows = new Map<
+      string,
+      { games: number; rating: number; goals: number; assists: number; yellow: number; red: number }
+    >();
+    const rowFor = (id: string) => {
+      let row = rows.get(id);
+      if (!row) {
+        row = { games: 0, rating: 0, goals: 0, assists: 0, yellow: 0, red: 0 };
+        rows.set(id, row);
+      }
+      return row;
+    };
+    if (rosterTab !== 'numbers') return rows;
+    for (const entry of snapshot.state.ratingHistory) {
+      if (entry.season !== snapshot.state.season) continue;
+      const row = rowFor(entry.playerId);
+      row.games++;
+      row.rating += entry.rating;
+    }
+    for (const result of snapshot.state.results) {
+      for (const goal of result.scorers) {
+        rowFor(goal.playerId).goals++;
+        if (goal.assistId) rowFor(goal.assistId).assists++;
+      }
+      for (const action of result.actions ?? []) {
+        if (!action.playerId) continue;
+        if (action.type === 'yellow') rowFor(action.playerId).yellow++;
+        if (action.type === 'red') rowFor(action.playerId).red++;
+      }
+    }
+    return rows;
+  }, [rosterTab, snapshot.state.ratingHistory, snapshot.state.results, snapshot.state.season]);
   const players = club.playerIds
     .flatMap((id) => (snapshot.state.players.byId[id] ? [snapshot.state.players.byId[id]!] : []))
     .filter(
@@ -182,26 +215,10 @@ export function SquadPlanning({ snapshot, club }: ViewProps) {
               </thead>
               <tbody>
                 {players.map((player) => {
-                  const history = snapshot.state.ratingHistory.filter(
-                    (row) => row.playerId === player.id && row.season === snapshot.state.season,
-                  );
-                  let goals = 0,
-                    assists = 0,
-                    yellow = 0,
-                    red = 0;
-                  for (const result of snapshot.state.results) {
-                    goals += result.scorers.filter((goal) => goal.playerId === player.id).length;
-                    assists += result.scorers.filter((goal) => goal.assistId === player.id).length;
-                    yellow += (result.actions ?? []).filter(
-                      (action) => action.playerId === player.id && action.type === 'yellow',
-                    ).length;
-                    red += (result.actions ?? []).filter(
-                      (action) => action.playerId === player.id && action.type === 'red',
-                    ).length;
-                  }
-                  const average = history.length
-                    ? history.reduce((sum, row) => sum + row.rating, 0) / history.length
-                    : null;
+                  const { games, rating, goals, assists, yellow, red } = statistics.get(
+                    player.id,
+                  ) ?? { games: 0, rating: 0, goals: 0, assists: 0, yellow: 0, red: 0 };
+                  const average = games ? rating / games : null;
                   return (
                     <tr key={player.id} onClick={() => setSelectedPlayerId(player.id)}>
                       <td>
@@ -227,7 +244,7 @@ export function SquadPlanning({ snapshot, club }: ViewProps) {
                           </span>
                         </button>
                       </td>
-                      <td>{history.length}</td>
+                      <td>{games}</td>
                       <td>{goals}</td>
                       <td>{assists}</td>
                       <td>{yellow}</td>

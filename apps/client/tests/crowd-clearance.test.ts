@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { BoxGeometry, Group, Mesh, MeshBasicMaterial, PlaneGeometry } from 'three';
+import {
+  BoxGeometry,
+  InstancedMesh,
+  Matrix4,
+  Group,
+  Mesh,
+  MeshBasicMaterial,
+  PlaneGeometry,
+} from 'three';
 import { clearCrowdSeats, smokePlumeLimit, crowdBoxClearance } from '../src/three/crowd-clearance';
 import type { CrowdSeat } from '../src/three/stadium-seating';
 const seat = (x = 0, y = 0.425, z = 0): CrowdSeat => ({ x, y, z, rotation: 0 });
@@ -79,4 +87,17 @@ describe('folga da torcida em relação às estruturas', () => {
     wall.position.z = 10;
     expect(clearCrowdSeats(root, seats)).toEqual(seats);
   });
+});
+
+it('reconhece degraus instanciados e invalida o mapa após mover uma instância', () => {
+  const root = new Group(),
+    mesh = new InstancedMesh(new BoxGeometry(4, 1, 2), new MeshBasicMaterial(), 1);
+  mesh.setMatrixAt(0, new Matrix4().makeTranslation(0, -0.5, 0));
+  mesh.instanceMatrix.needsUpdate = true;
+  root.add(mesh);
+  const seats = [seat()];
+  expect(clearCrowdSeats(root, seats)).toHaveLength(1);
+  mesh.setMatrixAt(0, new Matrix4().makeTranslation(10, -0.5, 0));
+  mesh.instanceMatrix.needsUpdate = true;
+  expect(clearCrowdSeats(root, seats)).toHaveLength(0);
 });

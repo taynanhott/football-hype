@@ -21,30 +21,48 @@ export function FinanceLedger({ snapshot, club }: Pick<ViewProps, 'snapshot' | '
   useEffect(() => () => timers.current.forEach(window.clearTimeout), []);
   const pages = Math.max(1, Math.ceil(entries.length / pageSize));
   const current = Math.min(page, pages - 1);
+  const measurement = useRef<{ entries: typeof entries; key: string; rowHeight: number } | null>(
+    null,
+  );
   useEffect(() => {
     const table = tableRef.current;
     if (!open || !table) return;
     const fit = () => {
-      const probe = document.createElement('div');
       const descriptionWidth = window.matchMedia('(max-width: 650px)').matches ? 0.49 : 0.54;
+      const width = Math.max(1, table.clientWidth * descriptionWidth - 14);
+      const fontFamily = getComputedStyle(table).fontFamily;
+      const key = `${width}:${fontFamily}`;
+      if (measurement.current?.entries === entries && measurement.current.key === key) {
+        setPageSize(
+          Math.max(1, Math.floor((table.clientHeight - 30) / measurement.current.rowHeight)),
+        );
+        return;
+      }
+      const probe = document.createElement('div');
       Object.assign(probe.style, {
         position: 'fixed',
         visibility: 'hidden',
         pointerEvents: 'none',
-        width: `${Math.max(1, table.clientWidth * descriptionWidth - 14)}px`,
-        fontFamily: getComputedStyle(table).fontFamily,
+        width: `${width}px`,
+        fontFamily,
         fontSize: '11px',
         lineHeight: '14px',
         overflowWrap: 'anywhere',
         whiteSpace: 'normal',
       });
+      const descriptions = document.createDocumentFragment();
+      for (const entry of entries) {
+        const description = document.createElement('div');
+        description.textContent = entry.message;
+        descriptions.append(description);
+      }
+      probe.append(descriptions);
       table.append(probe);
       let rowHeight = 32;
-      for (const entry of entries) {
-        probe.textContent = entry.message;
-        rowHeight = Math.max(rowHeight, probe.offsetHeight + 12);
-      }
+      for (const description of probe.children)
+        rowHeight = Math.max(rowHeight, (description as HTMLElement).offsetHeight + 12);
       probe.remove();
+      measurement.current = { entries, key, rowHeight };
       setPageSize(Math.max(1, Math.floor((table.clientHeight - 30) / rowHeight)));
     };
     const observer = new ResizeObserver(fit);

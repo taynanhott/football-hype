@@ -92,11 +92,22 @@ export function Select({
       });
     }
     position();
-    window.addEventListener('resize', position);
-    window.addEventListener('scroll', position, true);
+    let frame = 0;
+    function schedulePosition(event: Event) {
+      // Scrolling options does not move the trigger or the popover.
+      if (event.target instanceof Node && list.contains(event.target)) return;
+      if (frame) return;
+      frame = requestAnimationFrame(() => {
+        frame = 0;
+        position();
+      });
+    }
+    window.addEventListener('resize', schedulePosition);
+    window.addEventListener('scroll', schedulePosition, { capture: true, passive: true });
     return () => {
-      window.removeEventListener('resize', position);
-      window.removeEventListener('scroll', position, true);
+      cancelAnimationFrame(frame);
+      window.removeEventListener('resize', schedulePosition);
+      window.removeEventListener('scroll', schedulePosition, true);
       list.hidePopover();
     };
   }, [open, menuMinWidth]);
@@ -205,10 +216,12 @@ export function Select({
             aria-selected={index === selected}
             aria-disabled={option.disabled || undefined}
             className={`game-select-option ${active === index ? 'is-active' : ''}`}
-            onPointerMove={() => {
-              if (!option.disabled) setActive(index);
+            onPointerMove={(event) => {
+              if (event.pointerType === 'mouse' && !option.disabled) setActive(index);
             }}
-            onPointerDown={(event) => event.preventDefault()}
+            onPointerDown={(event) => {
+              if (event.pointerType === 'mouse') event.preventDefault();
+            }}
             onClick={() => choose(index)}
           >
             <span>{option.children}</span>

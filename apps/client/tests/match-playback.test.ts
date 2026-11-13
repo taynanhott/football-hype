@@ -226,7 +226,7 @@ describe('passes na reprodução 3D', () => {
 describe('bola e corrida para o passe no espaço', () => {
   it('mantém toda a bola acima do gramado, inclusive em alturas antigas baixas', () => {
     for (const height of [0, 0.3, 0.45, 1.5])
-      expect(playbackBallHeight(height) - 0.143).toBeGreaterThanOrEqual(0.12 - 1e-10);
+      expect(playbackBallHeight(height) - 0.1716).toBeGreaterThanOrEqual(0.12 - 1e-10);
   });
   it('a bola chega ao espaço antes do recebedor, que termina a corrida depois', () => {
     const frames = buildPlayback(
@@ -292,10 +292,36 @@ it('mostra contato na trave e retorno da bola ao campo sem converter em gol', ()
     ['a'],
     [],
   );
-  const hit = samplePlayback(frames, 1 + 0.12 + 0.72 * 0.72);
+  const hit = samplePlayback(frames, 1 + 0.08 + 0.8 * 0.72);
   const rebound = samplePlayback(frames, 1.9);
   expect(hit.ball.x).toBeCloseTo(3.66);
   expect(hit.ball.z).toBeCloseTo(52);
   expect(rebound.ball.z).toBeLessThan(hit.ball.z);
   expect(frames[0]!.action.outcome).toBe('wide');
+});
+
+it('dá mais tempo ao chute curto sem atrasar a jogada seguinte nem alterar eventos persistidos', () => {
+  const actions = [
+    {
+      minute: 10,
+      type: 'shot' as const,
+      side: 'home' as const,
+      x: 0,
+      z: 30,
+      endX: 1,
+      endZ: 47,
+      outcome: 'saved' as const,
+    },
+    { minute: 10.15, type: 'save' as const, side: 'away' as const, x: 1, z: 47, endX: 4, endZ: 39 },
+    { minute: 10.35, type: 'dribble' as const, side: 'home' as const, x: 4, z: 39 },
+    { minute: 10.5, type: 'pass' as const, side: 'home' as const, x: 4, z: 39 },
+  ];
+  const frames = buildPlayback(actions, ['a'], ['b']);
+  expect(frames[0]!.endMinute - frames[0]!.minute).toBeCloseTo(0.32);
+  expect(frames[1]!.minute).toBeCloseTo(10.32);
+  expect(frames[2]!.minute).toBeCloseTo(10.42);
+  expect(frames[3]!.minute).toBe(10.5);
+  expect(actions[1]!.minute).toBe(10.15);
+  for (let i = 0; i < frames.length - 1; i++)
+    expect(frames[i]!.endMinute).toBe(frames[i + 1]!.minute);
 });

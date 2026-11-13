@@ -43461,7 +43461,7 @@ dialog.contract-termination-confirm .modal-title {
   }
 }
 
-/* On mobile, keep news controls visible while only the stories scroll. */
+/* On mobile, only the news navigation stays above the scrolling content. */
 @media (max-width: 760px) {
   .workspace:has(.twitter-news) {
     height: 100dvh;
@@ -43480,24 +43480,33 @@ dialog.contract-termination-confirm .modal-title {
     flex: 1 1 0;
     height: auto;
     min-height: 0;
-    overflow: hidden;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
     padding-bottom: 0;
   }
   .twitter-news .news-left-nav,
   .twitter-news .news-discover {
     flex: 0 0 auto;
   }
+  .twitter-news .news-left-nav {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    background: #17232f;
+  }
   .twitter-news .transfer-news-panel {
-    flex: 1 1 0;
+    flex: 0 0 auto;
     min-height: 0;
-    overflow: hidden;
+    overflow: visible;
+  }
+  .twitter-news .news-timeline-header {
+    position: static;
   }
   .twitter-news .transfer-news-feed {
-    flex: 1 1 0;
+    flex: 0 0 auto;
     min-height: 0;
-    overflow-y: auto;
-    overscroll-behavior-y: contain;
-    -webkit-overflow-scrolling: touch;
+    overflow: visible;
   }
 }
 
@@ -44428,14 +44437,18 @@ dialog.modal.player-management-modal.facility-bonus-modal[open] {
 
 /* Keep mobile menu scrolling free of continuous decorative compositing. */
 @media (max-width: 760px), (hover: none) and (pointer: coarse) {
+  :root {
+    --theme-turf: linear-gradient(135deg, #ffffff03, transparent);
+  }
+
   /* A separate fixed surface avoids repainting a filtered SVG background during scroll. */
-  .workspace:has(.lineup-editor) {
+  .workspace {
     isolation: isolate;
     background-image: none;
     background-attachment: scroll;
   }
 
-  .workspace:has(.lineup-editor)::before {
+  .workspace::before {
     content: '';
     position: fixed;
     inset: 0;
@@ -44461,16 +44474,51 @@ dialog.modal.player-management-modal.facility-bonus-modal[open] {
     touch-action: pan-y pinch-zoom;
   }
 
-  .lineup-editor .tactics-player,
-  .lineup-editor .reserve-mini,
-  .lineup-editor .player-card,
-  .lineup-editor .tactics-player::before,
-  .lineup-editor .tactics-player::after,
-  .lineup-editor .reserve-mini::before,
-  .lineup-editor .reserve-mini::after {
+  .tactics-player,
+  .reserve-mini,
+  .player-card,
+  .tactics-player::before,
+  .tactics-player::after,
+  .reserve-mini::before,
+  .reserve-mini::after {
     animation: none !important;
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
+  }
+
+  /* Modal dimming stays intact; avoid sampling the whole moving page for blur. */
+  .modal-backdrop,
+  .career-loading-screen,
+  dialog::backdrop {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  .match-instructions,
+  .match-plan-modal {
+    --match-menu-fabric: linear-gradient(135deg, #ffffff03, transparent);
+  }
+
+  .lobby-clubs .login-welcome {
+    background-image:
+      radial-gradient(ellipse at 76% 25%, #d8bc6130, transparent 48%),
+      radial-gradient(ellipse at 12% 85%, #49494926, transparent 55%),
+      repeating-linear-gradient(125deg, #fff9de05 0 1px, transparent 1px 5px);
+  }
+
+  .lobby-clubs .club-choice {
+    background-image:
+      radial-gradient(ellipse at 25% 0%, #fff9e8bb, transparent 65%),
+      repeating-linear-gradient(125deg, #aa823b0a 0 1px, transparent 1px 5px);
+  }
+
+  .assistant-writing-hand {
+    animation: none !important;
+  }
+
+  .market-negotiation-backdrop .contract-player-seat .portrait,
+  .matches-empty-pitch > .official-club-badge {
+    filter: none;
   }
 
   .game-atmosphere > span,

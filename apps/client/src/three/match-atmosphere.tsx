@@ -1,3 +1,8 @@
+import { illustratedAppearance, type ClubKit } from '@football/shared';
+import { PlayerFigure } from './player-figure';
+import { playerBuild } from './player-build';
+import { runnerMotion } from './runner-motion';
+import { bootGroundLift, PITCH_SURFACE_Y } from './pitch-surface';
 import { flareOrigins, flareEmitter, type FlareOrigin } from './flare-layout';
 /* eslint-disable react-hooks/set-state-in-effect -- Rebuild flare anchors after the stadium geometry mounts. */
 import { useState, useLayoutEffect, useMemo, useRef, useEffect, type RefObject } from 'react';
@@ -8,6 +13,7 @@ import {
   BufferGeometry,
   Float32BufferAttribute,
   Group,
+  Mesh,
   ShaderMaterial,
   NormalBlending,
 } from 'three';
@@ -20,8 +26,18 @@ type View = RefObject<ReturnType<typeof samplePlayback>>;
 export function MatchReferee({ renderedView, ended }: { renderedView: View; ended: boolean }) {
   const referee = useRef<Group>(null),
     arm = useRef<Group>(null);
-  const legs = useRef<(Group | null)[]>([]),
-    stride = useRef(0);
+  const leftArm = useRef<Group>(null),
+    leftLeg = useRef<Group>(null),
+    rightLeg = useRef<Group>(null);
+  const leftKnee = useRef<Group>(null),
+    rightKnee = useRef<Group>(null);
+  const leftBoot = useRef<Mesh>(null),
+    rightBoot = useRef<Mesh>(null),
+    body = useRef<Group>(null);
+  const build = useMemo(() => playerBuild('match-referee'), []);
+  const appearance = useMemo(() => illustratedAppearance('match-referee'), []);
+  const kit: ClubKit = { primary: '#e5009a', secondary: '#17212a', pattern: 'solid' };
+  const stride = useRef(0);
   useFrame((_, delta) => {
     if (!referee.current) return;
     const view = renderedView.current,
@@ -41,11 +57,17 @@ export function MatchReferee({ renderedView, ended }: { renderedView: View; ende
     referee.current.rotation.y = moving
       ? Math.atan2(dx, dz)
       : Math.atan2(ball.x - referee.current.position.x, ball.z - referee.current.position.z);
-    for (let i = 0; i < 2; i++)
-      if (legs.current[i])
-        legs.current[i]!.rotation.x = moving
-          ? Math.sin(stride.current + (i ? Math.PI : 0)) * 0.65
-          : 0;
+    const motion = runnerMotion(stride.current, moving && !ended ? 0.8 : 0);
+    if (leftLeg.current) leftLeg.current.rotation.x = motion.leftLeg;
+    if (rightLeg.current) rightLeg.current.rotation.x = motion.rightLeg;
+    if (leftKnee.current) leftKnee.current.rotation.x = motion.leftKnee;
+    if (rightKnee.current) rightKnee.current.rotation.x = motion.rightKnee;
+    if (leftArm.current) leftArm.current.rotation.x = motion.leftArm;
+    if (body.current) {
+      body.current.rotation.x = motion.lean;
+      body.current.position.y = 1.05 * build.height + motion.bounce;
+    }
+    referee.current.position.y = PITCH_SURFACE_Y;
     const currentMinute = view.frame
       ? view.frame.minute + (view.frame.endMinute - view.frame.minute) * view.progress
       : 0;
@@ -54,44 +76,37 @@ export function MatchReferee({ renderedView, ended }: { renderedView: View; ende
       (currentMinute >= 45 && currentMinute < 45.25) ||
       (view.frame?.action.outcome === 'goal' && view.progress > 0.84) ||
       (view.progress < 0.3 && ['foul', 'kickoff', 'goal'].includes(view.frame?.action.type ?? ''));
-    if (arm.current)
-      arm.current.rotation.x = whistling ? -1.8 : moving ? -Math.sin(stride.current) * 0.5 : 0;
+    if (arm.current) arm.current.rotation.x = whistling ? -1.8 : motion.rightArm;
+    let lift = 0;
+    for (const boot of [leftBoot.current, rightBoot.current]) {
+      if (!boot) continue;
+      boot.updateWorldMatrix(true, false);
+      lift = Math.max(lift, bootGroundLift(boot.matrixWorld));
+    }
+    referee.current.position.y += lift;
   });
   return (
-    <group ref={referee} position={[7, 0.12, -6]} name="Árbitro de magenta">
-      <mesh position={[0, 1.27, 0]}>
-        <boxGeometry args={[0.65, 0.75, 0.35]} />
-        <meshStandardMaterial color="#e5009a" />
-      </mesh>
-      <mesh position={[0, 1.9, 0]}>
-        <sphereGeometry args={[0.24, 8, 6]} />
-        <meshStandardMaterial color="#b27b55" />
-      </mesh>
-      {[-1, 1].map((side) => (
-        <group key={side}>
-          <group
-            ref={(node) => {
-              legs.current[side === -1 ? 0 : 1] = node;
-            }}
-            position={[side * 0.18, 0.95, 0]}
-          >
-            <mesh position={[0, -0.4, 0]}>
-              <boxGeometry args={[0.24, 0.8, 0.28]} />
-              <meshStandardMaterial color="#17212a" />
-            </mesh>
-            <mesh position={[0, -0.86, 0.08]}>
-              <boxGeometry args={[0.26, 0.16, 0.4]} />
-              <meshStandardMaterial color="#101a24" />
-            </mesh>
-          </group>
-          <group ref={side === 1 ? arm : null} position={[side * 0.43, 1.55, 0]}>
-            <mesh position={[0, -0.3, 0]}>
-              <boxGeometry args={[0.18, 0.65, 0.23]} />
-              <meshStandardMaterial color="#e5009a" />
-            </mesh>
-          </group>
-        </group>
-      ))}
+    <group ref={referee} position={[7, PITCH_SURFACE_Y, -6]} name="Árbitro de magenta">
+      <group
+        ref={body}
+        position={[0, 1.05 * build.height, 0]}
+        scale={[0.7 * build.width, 0.7 * build.height, 0.7]}
+      >
+        <PlayerFigure
+          kit={kit}
+          appearance={appearance}
+          build={build}
+          keeper={false}
+          leftArm={leftArm}
+          rightArm={arm}
+          leftLeg={leftLeg}
+          rightLeg={rightLeg}
+          leftKnee={leftKnee}
+          rightKnee={rightKnee}
+          leftBoot={leftBoot}
+          rightBoot={rightBoot}
+        />
+      </group>
     </group>
   );
 }

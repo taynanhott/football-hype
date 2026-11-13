@@ -109,6 +109,7 @@ function Stand({ entity }: { entity: SectorEntity }) {
     </group>
   );
 }
+const noFlares: FlareOrigin[] = [];
 function Crowd({
   homeClub,
   awayClub,
@@ -137,17 +138,19 @@ function Crowd({
       {homeClub && awayClub && (
         <CrowdFlags seats={mappedSeats} occupancy={occupancy} home={homeClub} away={awayClub} />
       )}
-      <CrowdFlares
-        seats={mappedSeats}
-        homeColor={homeKit.primary}
-        awayColor={awayKit.primary}
-        occupancy={occupancy}
-        onOrigins={setFlares}
-      />
+      {level >= 4 && (
+        <CrowdFlares
+          seats={mappedSeats}
+          homeColor={homeKit.primary}
+          awayColor={awayKit.primary}
+          occupancy={occupancy}
+          onOrigins={setFlares}
+        />
+      )}
       <CrowdPeople
         seats={mappedSeats}
         occupancy={occupancy}
-        flares={flares}
+        flares={level >= 4 ? flares : noFlares}
         homeKit={homeKit}
         awayKit={awayKit}
       />

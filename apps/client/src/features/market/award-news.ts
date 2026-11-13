@@ -18,7 +18,10 @@ export function awardNews(state: WorldState) {
           id: `award:${a.season}:${a.category}`,
           at: a.awardedAt,
           title: `${w.name} é ${awardTitles[a.category].toLowerCase()}!`,
-          body: `${w.name}, do ${w.clubName}, venceu a premiação da temporada ${a.season}. O reconhecimento considera desempenho ao longo da temporada, nível das competições, regularidade e títulos.`,
+          body:
+            a.category === 'coach'
+              ? `O prêmio de técnico do ano de ${a.season} tem dono: ${w.name}! À frente do ${w.clubName}, o treinador ganhou os holofotes e fecha a temporada com mais um motivo para comemorar. É dia de celebrar o trabalho de quem comanda o time à beira do campo.`
+              : `${w.name}, do ${w.clubName}, venceu a premiação da temporada ${a.season}. O reconhecimento considera desempenho ao longo da temporada, nível das competições, regularidade e títulos.`,
           tags: ['#Premiação', '#Temporada'],
           homeId: w.clubId,
         },
@@ -34,7 +37,7 @@ export function awardNews(state: WorldState) {
       id: `coach-month:${a.season}:${a.month}`,
       at: a.awardedAt,
       title: `${a.coachName} é eleito técnico do mês de ${month}!`,
-      body: `${a.coachName}, do ${a.clubName}, venceu a premiação nacional com ${a.wins} vitórias, ${a.draws} empates e ${a.losses} derrotas em ${a.games} jogos. A escolha considera o aproveitamento, a regularidade e o peso da liga: Série A (80), B (65), C (50) e D (35), com ao menos três partidas no mês.`,
+      body: `O destaque de ${month} vem do banco do ${a.clubName}: ${a.coachName} leva o prêmio de técnico do mês! Sob seu comando, a equipe somou ${a.wins} ${a.wins === 1 ? 'vitória' : 'vitórias'}, ${a.draws} ${a.draws === 1 ? 'empate' : 'empates'} e ${a.losses} ${a.losses === 1 ? 'derrota' : 'derrotas'} em ${a.games} jogos. Um mês para guardar na memória do treinador e da torcida.`,
       tags: ['#Premiação', '#TécnicoDoMês'],
       homeId: a.clubId,
     };

@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-test('calendário cabe no mobile e apenas as notícias rolam', async ({ page }) => {
+test('calendário cabe no mobile e noticiário rola com os controles', async ({ page }) => {
   test.setTimeout(60000);
   await page.route('**/src/three/stadium-scene.tsx*', (route) =>
     route.fulfill({
@@ -54,10 +54,19 @@ test('calendário cabe no mobile e apenas as notícias rolam', async ({ page }) 
     const feed = page.locator('.transfer-news-feed');
     await expect(feed.locator('.transfer-news-item')).toHaveCount(20);
     const navBefore = await page.locator('.news-left-nav').boundingBox();
+    const searchBefore = await page.locator('.news-search').boundingBox();
     await feed.hover();
     await page.mouse.wheel(0, 600);
-    await expect.poll(() => feed.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
-    expect((await page.locator('.news-left-nav').boundingBox())!.y).toBe(navBefore!.y);
+    const mobile = viewport.width <= 760;
+    const scroller = mobile ? page.locator('.transfer-news-page') : feed;
+    await expect.poll(() => scroller.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
+    const navAfter = (await page.locator('.news-left-nav').boundingBox())!;
+    expect(navAfter.y).toBe(navBefore!.y);
+    if (mobile) {
+      const searchAfter = (await page.locator('.news-search').boundingBox())!;
+      expect(searchAfter.y).toBeLessThan(searchBefore!.y);
+      expect(searchAfter.y + searchAfter.height).toBeLessThanOrEqual(navAfter.y);
+    }
     await page.screenshot({ path: `test-results/news-scroll-${viewport.width}.png` });
   }
   await page.evaluate(() => {

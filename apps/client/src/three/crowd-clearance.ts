@@ -17,10 +17,18 @@ export function clearCrowdSeats(root: Object3D, seats: readonly CrowdSeat[]): re
   root.updateWorldMatrix(true, true);
   const meshes: Mesh[] = [];
   root.traverse((o) => {
-    if (o instanceof Mesh && o.visible && !(o instanceof InstancedMesh)) meshes.push(o);
+    if (o instanceof Mesh && o.visible) meshes.push(o);
   });
   const signature = meshes
-    .map((m) => m.uuid + ':' + m.geometry.uuid + ':' + m.matrixWorld.elements.join(','))
+    .map(
+      (m) =>
+        m.uuid +
+        ':' +
+        m.geometry.uuid +
+        ':' +
+        m.matrixWorld.elements.join(',') +
+        (m instanceof InstancedMesh ? ':' + m.count + ':' + m.instanceMatrix.version : ''),
+    )
     .join('|');
   const existing = cache.get(root);
   if (existing?.signature === signature) return existing.filter(seats);
@@ -34,7 +42,16 @@ export function clearCrowdSeats(root: Object3D, seats: readonly CrowdSeat[]): re
           fn(x, y, z);
   };
   const bounds = new Box3();
-  for (const mesh of meshes) {
+  const structuralMeshes = meshes.flatMap((mesh) => {
+    if (!(mesh instanceof InstancedMesh)) return [mesh];
+    return Array.from({ length: mesh.count }, (_, index) => {
+      const instance = new Mesh(mesh.geometry, mesh.material);
+      mesh.getMatrixAt(index, instance.matrixWorld);
+      instance.matrixWorld.premultiply(mesh.matrixWorld);
+      return instance;
+    });
+  });
+  for (const mesh of structuralMeshes) {
     const geometry = mesh.geometry,
       p = geometry.getAttribute('position');
     if (!p) continue;

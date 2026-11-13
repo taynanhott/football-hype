@@ -281,6 +281,7 @@ export function Facilities(props: ViewProps & { training?: boolean }) {
             key={training ? 'training' : 'stadium'}
             stadium={stadium}
             center={center}
+            paused={Boolean(managing || confirmation || customizationOpen || bonusTarget)}
             {...(training
               ? {
                   focus: 'training' as const,

@@ -17,6 +17,7 @@ export default tseslint.config(
       '.firebase/**',
       '.local/**',
       '.tmp/**',
+      '.test-temp/**',
       'outputs/**',
       'apps/client/public/decoders/**',
     ],

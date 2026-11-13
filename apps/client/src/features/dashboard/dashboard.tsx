@@ -11,7 +11,7 @@ import {
 } from '@football/domain';
 import { clubCalendarFixtures } from '../competitions/club-calendar-fixtures';
 import { clubKit } from '@football/shared';
-import { lazy, Suspense, useState } from 'react';
+import { lazy, Suspense, useMemo, useState } from 'react';
 import type { ViewProps } from '../../ui/view-props';
 import { Icon } from '../../ui/icons';
 import { PixelBadge } from '../../ui/pixel-badge';
@@ -50,11 +50,15 @@ export function Dashboard({ snapshot, club, stadium, center }: ViewProps) {
     state.negotiations.some((offer) => offer.buyerId === club.id && offer.status === 'review');
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
   const selectedPlayer = selectedPlayerId ? state.players.byId[selectedPlayerId] : undefined;
-  const ratings = new Map<string, { sum: number; count: number }>();
-  for (const row of state.ratingHistory.filter((row) => row.season === state.season)) {
-    const rating = ratings.get(row.playerId) ?? { sum: 0, count: 0 };
-    ratings.set(row.playerId, { sum: rating.sum + row.rating, count: rating.count + 1 });
-  }
+  const ratings = useMemo(() => {
+    const ratings = new Map<string, { sum: number; count: number }>();
+    for (const row of state.ratingHistory) {
+      if (row.season !== state.season) continue;
+      const rating = ratings.get(row.playerId) ?? { sum: 0, count: 0 };
+      ratings.set(row.playerId, { sum: rating.sum + row.rating, count: rating.count + 1 });
+    }
+    return ratings;
+  }, [state.ratingHistory, state.season]);
   const players = club.playerIds
     .map((id) => state.players.byId[id])
     .filter((player) => player !== undefined);

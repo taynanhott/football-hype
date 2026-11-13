@@ -16,7 +16,7 @@ const mix = (a: Point, b: Point, t: number): Point => ({
   x: a.x + (b.x - a.x) * t,
   z: a.z + (b.z - a.z) * t,
 });
-export function playbackBallHeight(height: number, radius = 0.143) {
+export function playbackBallHeight(height: number, radius = 0.1716) {
   return 0.12 + radius + Math.max(0, height - 0.45);
 }
 export function buildPlayback(
@@ -46,9 +46,31 @@ export function buildPlayback(
   for (const action of actions)
     grouped.set(action.minute, [...(grouped.get(action.minute) ?? []), action]);
   const groups = [...grouped.entries()].sort((a, b) => a[0] - b[0]);
+  // Let short shot/save/rebound sequences use their existing interval more evenly.
+  // Persisted event times and the overall game clock remain unchanged.
+  const presentationMinutes = groups.map(([minute]) => minute);
+  for (let i = 0; i < groups.length; i++) {
+    if (!groups[i]![1].some((action) => action.type === 'shot')) continue;
+    const start = groups[i]![0];
+    let end = i + 1;
+    while (
+      end < groups.length &&
+      groups[end]![0] < start + 0.49 &&
+      groups[end]![1].some((action) => ['save', 'interception', 'dribble'].includes(action.type))
+    )
+      end++;
+    const count = end - i - 1;
+    if (!count || groups[i + 1]![0] - start >= 0.32) continue;
+    const boundary = Math.min(90, groups[end]?.[0] ?? start + 0.5, start < 45 ? 45 : 90);
+    const desired = 0.32 + (count - 1) * 0.1;
+    const scale = Math.min(1, Math.max(0, boundary - start - 0.06) / desired);
+    for (let offset = 1; offset <= count; offset++)
+      presentationMinutes[i + offset] = start + (0.32 + (offset - 1) * 0.1) * scale;
+  }
   let restart = false;
   let holder: string | undefined;
-  return groups.map(([minute, events], index) => {
+  return groups.map(([, events], index) => {
+    const minute = presentationMinutes[index]!;
     let action =
       events.find((a) => a.type === 'shot') ??
       events.find((a) => a.type === 'pass') ??
@@ -147,7 +169,7 @@ export function buildPlayback(
       // Persisted spatial actions are authoritative: never invent another ball or player path.
       const frame = {
         minute,
-        endMinute: groups[index + 1]?.[0] ?? (minute >= 90 ? minute + 0.5 : 90),
+        endMinute: presentationMinutes[index + 1] ?? (minute >= 90 ? minute + 0.5 : 90),
         action,
         from,
         to,
@@ -220,7 +242,7 @@ export function buildPlayback(
     restart = events.some((a) => a.type === 'goal');
     const frame = {
       minute,
-      endMinute: groups[index + 1]?.[0] ?? 90.5,
+      endMinute: presentationMinutes[index + 1] ?? 90.5,
       action,
       from,
       to,
@@ -251,9 +273,11 @@ export function samplePlayback(frames: readonly PlaybackFrame[], minute: number)
   const movement = Math.min(1, progress / 0.8);
   const flight = ['tackle', 'interception'].includes(frame.action.type)
     ? Math.min(1, progress / 0.25)
-    : frame.action.type === 'dribble'
-      ? movement
-      : Math.max(0, Math.min(1, (progress - 0.12) / (frame.action.throughBall ? 0.54 : 0.72)));
+    : frame.action.type === 'shot'
+      ? Math.max(0, Math.min(1, (progress - 0.08) / 0.8))
+      : frame.action.type === 'dribble'
+        ? movement
+        : Math.max(0, Math.min(1, (progress - 0.12) / (frame.action.throughBall ? 0.54 : 0.72)));
   const positions = Object.fromEntries(
     Object.entries(frame.from).map(([id, point]) => [
       id,
