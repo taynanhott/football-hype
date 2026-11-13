@@ -20,4 +20,11 @@
 
 Publicação nos serviços existentes `football-hype-game` e `football-hype`. Sem novas migrações, bindings ou serviços; sem reset de carreiras ou alterações financeiras. Observabilidade desativada e `USAGE_METRICS=false` preservados. Ajuste numérico nos cálculos existentes, sem novas chamadas, alarmes ou processamento periódico. Os testes locais não comprovam capacidade ou custo em produção.
 
-Versões e verificação pública serão registradas após a publicação.
+## Produção verificada
+
+- Código da entrega: commit `f60410a`.
+- Interface: https://football-hype.taynanzhott.workers.dev — versão `15f00cdc-9917-4d6d-bfce-266a3fa90b12`.
+- Servidor: https://football-hype-game.taynanzhott.workers.dev — versão `de3ee925-dc77-4396-9856-5ce175088376`.
+- Página e JavaScript `index-DZGbyAid.js` respondem HTTP 200. O HTML referencia o novo pacote; seu conteúdo foi comparado por SHA-256 ao build local validado.
+- Saúde do servidor: HTTP 200, `status: ok`, `persistence: durable-sqlite`, `demo: false`.
+- O novo equilíbrio vale para partidas futuras. Não há recálculo retroativo de partidas nem da condição já salva.
