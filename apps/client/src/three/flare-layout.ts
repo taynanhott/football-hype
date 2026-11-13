@@ -1,5 +1,9 @@
 import { crowdNoise, type CrowdSeat } from './stadium-seating';
-export type FlareOrigin = CrowdSeat & { color: string; flow: readonly [number, number, number] };
+export type FlareOrigin = CrowdSeat & {
+  color: string;
+  flow: readonly [number, number, number];
+  travel: number;
+};
 export function visitorCrowdSeat(seat: CrowdSeat): boolean {
   return (Math.atan2(seat.z, seat.x) + Math.PI) / (2 * Math.PI) < 0.3;
 }
@@ -9,6 +13,7 @@ export function flareOrigins(
   homeColor: string,
   awayColor: string,
   limit: number,
+  fit: (seat: CrowdSeat, flow: readonly number[]) => number = () => 1,
 ): FlareOrigin[] {
   const result: FlareOrigin[] = [];
   const visitors = Math.max(1, Math.round(limit * 0.3));
@@ -39,7 +44,9 @@ export function flareOrigins(
         best = score;
         flow = [Math.max(-2.5, Math.min(2.5, dx / dy)), 1, Math.max(-2.5, Math.min(2.5, dz / dy))];
       }
-      result.push({ ...seat, color: visitor ? awayColor : homeColor, flow });
+      const travel = fit(seat, flow);
+      if (travel < 0.06) continue;
+      result.push({ ...seat, color: visitor ? awayColor : homeColor, flow, travel });
       selected++;
     }
   }

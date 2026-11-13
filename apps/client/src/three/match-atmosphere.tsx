@@ -14,7 +14,7 @@ import {
 import type { samplePlayback } from './match-playback';
 import type { CrowdSeat } from './stadium-seating';
 import { crowdNoise, occupiedCrowdSeats } from './stadium-seating';
-import { clearCrowdSeats } from './crowd-clearance';
+import { clearCrowdSeats, smokePlumeLimit } from './crowd-clearance';
 type View = RefObject<ReturnType<typeof samplePlayback>>;
 
 export function MatchReferee({ renderedView, ended }: { renderedView: View; ended: boolean }) {
@@ -104,7 +104,11 @@ function ParticleField({
   rise = 8,
   core = false,
 }: {
-  origins: readonly (CrowdSeat & { color?: string; flow?: readonly [number, number, number] })[];
+  origins: readonly (CrowdSeat & {
+    color?: string;
+    flow?: readonly [number, number, number];
+    travel?: number;
+  })[];
   color: string;
   count: number;
   sparks?: boolean;
@@ -118,18 +122,21 @@ function ParticleField({
       positions = new Float32Array(count * 3),
       phases = new Float32Array(count),
       flows = new Float32Array(count * 3),
-      tints = new Float32Array(count * 3);
+      tints = new Float32Array(count * 3),
+      travels = new Float32Array(count);
     const tint = new Color();
     for (let i = 0; i < count; i++) {
       const origin = origins[i % origins.length];
       if (origin) positions.set([origin.x, origin.y + 1.35, origin.z], i * 3);
       phases[i] = crowdNoise(i + 31);
+      travels[i] = origin?.travel ?? 1;
       flows.set(origin?.flow ?? [0, 1, 0], i * 3);
       tint.set(origin?.color ?? color);
       tints.set([tint.r, tint.g, tint.b], i * 3);
     }
     g.setAttribute('position', new Float32BufferAttribute(positions, 3));
     g.setAttribute('phase', new Float32BufferAttribute(phases, 1));
+    g.setAttribute('travelLimit', new Float32BufferAttribute(travels, 1));
     g.setAttribute('flow', new Float32BufferAttribute(flows, 3));
     g.setAttribute('tintAttribute', new Float32BufferAttribute(tints, 3));
     return g;
@@ -159,11 +166,11 @@ function ParticleField({
         depthWrite={false}
         blending={sparks && !core ? AdditiveBlending : NormalBlending}
         uniforms={uniforms}
-        vertexShader={`attribute float phase; attribute vec3 flow; attribute vec3 tintAttribute; varying vec3 particleTint; uniform float time; uniform float spark; uniform float rise; uniform float core; uniform float pointScale; varying float life;
-          void main(){particleTint=tintAttribute;life=fract(time*(spark>0.5?0.75:0.13)+phase);vec3 p=position;
-          if(core<0.5){p.x+=sin(phase*91.0+life*4.0)*(0.12+life*1.4);p.z+=cos(phase*73.0+life*3.0)*life*1.4;p+=flow*life*rise;}
+        vertexShader={`attribute float phase; attribute float travelLimit; attribute vec3 flow; attribute vec3 tintAttribute; varying vec3 particleTint; uniform float time; uniform float spark; uniform float rise; uniform float core; uniform float pointScale; varying float life;
+          void main(){particleTint=tintAttribute;life=fract(time*(spark>0.5?0.75:0.13)+phase);vec3 p=position;float travel=life*travelLimit;
+          if(core<0.5){p.x+=sin(phase*91.0+travel*4.0)*(0.12+travel*1.4);p.z+=cos(phase*73.0+travel*3.0)*travel*1.4;p+=flow*travel*rise;}
           vec4 mv=modelViewMatrix*vec4(p,1.0);gl_Position=projectionMatrix*mv;
-          float width=core>0.5?2.2+sin(time*18.0+phase)*0.3:(spark>0.5?0.16:4.0+life*15.0);
+          float width=core>0.5?2.2+sin(time*18.0+phase)*0.3:(spark>0.5?0.16:4.0+travel*15.0);
           gl_PointSize=min(110.0,width*pointScale/max(1.0,-mv.z));}`}
         fragmentShader={`varying vec3 particleTint; uniform float spark; uniform float core; varying float life;
           void main(){vec3 tint=particleTint;float d=length(gl_PointCoord-0.5)*2.0;float soft=1.0-smoothstep(0.0,1.0,d);
@@ -208,6 +215,7 @@ export function CrowdFlares({
         homeColor,
         awayColor,
         compact ? 5 : 9,
+        smokePlumeLimit(root),
       ),
     );
   }, [scene, seats, occupancy, compact, homeColor, awayColor]);

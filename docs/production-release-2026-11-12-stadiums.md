@@ -27,3 +27,11 @@
 - Verificação HTTP: interface e arquivo JavaScript esperado respondem 200; `/health` responde 200 com `status: ok` e persistência `durable-sqlite`.
 
 Publicação nos serviços existentes, sem novos bindings, migrações ou serviços. Observabilidade continua desativada e `USAGE_METRICS` permanece `false`. Não foram realizados testes de escrita em carreiras de produção. Testes locais não comprovam consumo faturável nem garantem custo zero.
+
+## Correção da fumaça sob as coberturas
+
+- A seleção dos emissores considera a posição inicial e o volume inteiro da pluma, incluindo largura e dispersão, em relação às folhas de cobertura e tetos da geometria transformada.
+- Emissores sem folga são substituídos por posições viáveis; o percurso e o crescimento ficam limitados e a fumaça se dissipa dentro do espaço disponível.
+- O índice geométrico existente é reutilizado na montagem, sem consultas de colisão por quadro nem chamadas ao servidor.
+- Revisão local dos 13 modelos, testes de teto baixo, origem acima da cobertura, invalidação do cache e arquibancadas: executados. Tipos, lint e build da interface aprovados.
+- Correção publicada apenas na interface, versão `9093f023-629d-43e8-9d72-8a8e6666ce95`; servidor e carreiras preservados.

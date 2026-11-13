@@ -1,11 +1,15 @@
 import { Box3, Matrix4, InstancedMesh, Mesh, Object3D, Ray, Triangle, Vector3 } from 'three';
 import type { CrowdSeat } from './stadium-seating';
-type Surface = { a: Vector3; b: Vector3; c: Vector3 };
+type Surface = { a: Vector3; b: Vector3; c: Vector3; ceiling: boolean };
 type Solid = { inverse: Matrix4; bounds: Box3; world: Box3 };
 const CELL = 4;
 const cache = new WeakMap<
   Object3D,
-  { signature: string; filter: (seats: readonly CrowdSeat[]) => readonly CrowdSeat[] }
+  {
+    signature: string;
+    filter: (seats: readonly CrowdSeat[]) => readonly CrowdSeat[];
+    plume: (seat: CrowdSeat, flow: readonly number[]) => number;
+  }
 >();
 /** Build once per architecture revision, then reuse the result when occupancy changes. */
 export function clearCrowdSeats(root: Object3D, seats: readonly CrowdSeat[]): readonly CrowdSeat[] {
@@ -48,7 +52,17 @@ export function clearCrowdSeats(root: Object3D, seats: readonly CrowdSeat[]): re
           .fromBufferAttribute(p, index ? index.getX(i + k) : i + k)
           .applyMatrix4(mesh.matrixWorld),
       );
-      const surface = { a: vertices[0]!, b: vertices[1]!, c: vertices[2]! };
+      const [a, b, c] = vertices as [Vector3, Vector3, Vector3];
+      const cross = b.clone().sub(a).cross(c.clone().sub(a));
+      const area2 = cross.length(),
+        longest = Math.max(a.distanceTo(b), b.distanceTo(c), c.distanceTo(a));
+      // Broad sloping/horizontal sheets are roofs/ceilings; thin treads and risers are not.
+      const surface: Surface = {
+        a,
+        b,
+        c,
+        ceiling: area2 > 0 && Math.abs(cross.y) / area2 > 0.15 && area2 / longest > 1.05,
+      };
       bounds.setFromPoints(vertices);
       ranges(bounds, (x, y, z) => {
         const key = cellKey(x, y, z),
@@ -127,6 +141,49 @@ export function clearCrowdSeats(root: Object3D, seats: readonly CrowdSeat[]): re
     filtered.set(input, result);
     return result;
   };
-  cache.set(root, { signature, filter });
+  // Reuse the architecture index for the complete plume envelope, once per emitter.
+  const plume = (seat: CrowdSeat, flow: readonly number[]): number => {
+    const center = new Vector3(),
+      nearest = new Vector3(),
+      triangle = new Triangle(),
+      box = new Box3();
+    const candidates = new Set<Surface>();
+    const overhead = new Ray(new Vector3(), new Vector3(0, -1, 0));
+    for (let step = 0; step <= 25; step++) {
+      const t = step / 25;
+      center.set(seat.x + flow[0]! * t * 12, seat.y + 1.35 + t * 12, seat.z + flow[2]! * t * 12);
+      // Half sprite width + worst-case lateral flutter + a safety margin.
+      const radius = 2 + t * 7.5 + Math.SQRT2 * (0.12 + t * 1.4) + 0.4;
+      if (step === 0) overhead.origin.set(seat.x, center.y + radius, seat.z);
+      box.min.copy(center).addScalar(-radius);
+      box.max.copy(center).addScalar(radius);
+      candidates.clear();
+      ranges(box, (x, y, z) => {
+        for (const face of grid.get(cellKey(x, y, z)) ?? []) candidates.add(face);
+      });
+      for (const face of candidates) {
+        if (!face.ceiling) continue;
+        if (
+          step === 0 &&
+          overhead.intersectTriangle(face.a, face.b, face.c, false, nearest) &&
+          nearest.y >= seat.y + 0.2
+        )
+          return 0;
+        triangle.set(face.a, face.b, face.c).closestPointToPoint(center, nearest);
+        // The terrace below the plume is its support; overhead and side structures are obstacles.
+        if (nearest.y >= center.y - 0.05 && nearest.distanceToSquared(center) <= radius * radius)
+          return Math.max(0, (step - 1) / 25 - 0.02);
+      }
+    }
+    return 1;
+  };
+  cache.set(root, { signature, filter, plume });
   return filter(seats);
+}
+
+export function smokePlumeLimit(
+  root: Object3D,
+): (seat: CrowdSeat, flow: readonly number[]) => number {
+  clearCrowdSeats(root, []);
+  return cache.get(root)!.plume;
 }

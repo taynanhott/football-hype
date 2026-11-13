@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { BoxGeometry, Group, Mesh, MeshBasicMaterial, PlaneGeometry } from 'three';
-import { clearCrowdSeats } from '../src/three/crowd-clearance';
+import { clearCrowdSeats, smokePlumeLimit } from '../src/three/crowd-clearance';
 import type { CrowdSeat } from '../src/three/stadium-seating';
 const seat = (x = 0, y = 0.425, z = 0): CrowdSeat => ({ x, y, z, rotation: 0 });
 const box = (root: Group, x: number, y: number, z: number, w: number, h: number, d: number) => {
@@ -10,6 +10,22 @@ const box = (root: Group, x: number, y: number, z: number, w: number, h: number,
   return mesh;
 };
 describe('folga da torcida em relação às estruturas', () => {
+  it('limita a pluma inteira antes do teto e recusa um emissor sem espaço inicial', () => {
+    const root = new Group();
+    box(root, 0, -0.5, 0, 100, 1, 100);
+    const roof = box(root, 0, 12, 0, 100, 0.4, 100);
+    const limit = smokePlumeLimit(root)(seat(), [1.5, 1, 0]);
+    expect(limit).toBeGreaterThan(0.18);
+    expect(limit).toBeLessThan(1);
+    const top = 0.425 + 1.35 + limit * 12 + 2 + limit * 7.5 + Math.SQRT2 * (0.12 + limit * 1.4);
+    expect(top).toBeLessThan(11.8);
+    roof.position.y = 3;
+    expect(smokePlumeLimit(root)(seat(), [1.5, 1, 0])).toBe(0);
+    roof.position.y = 1.5;
+    expect(smokePlumeLimit(root)(seat(), [1.5, 1, 0])).toBe(0);
+    root.remove(roof);
+    expect(smokePlumeLimit(root)(seat(), [1.5, 1, 0])).toBe(1);
+  });
   it('ajusta os pés à inclinação transversal de uma quina sem esvaziar a fileira', () => {
     const root = new Group();
     const tread = new Mesh(new PlaneGeometry(4, 4), new MeshBasicMaterial());
