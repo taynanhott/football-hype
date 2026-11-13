@@ -84,7 +84,6 @@ export function startCardPointerDrag(event: ReactPointerEvent<HTMLElement>, play
     if (preview)
       preview.style.transform = `translate3d(${latestX - startX}px, ${latestY - startY}px, 0) rotate(-3deg)`;
   };
-  const bounds = source.getBoundingClientRect();
   const preventNative = (e: Event) => {
     e.preventDefault();
     e.stopImmediatePropagation();
@@ -92,6 +91,7 @@ export function startCardPointerDrag(event: ReactPointerEvent<HTMLElement>, play
   source.addEventListener('dragstart', preventNative, true);
   const begin = () => {
     if (!active) {
+      const bounds = source.getBoundingClientRect();
       active = true;
       if (touch) {
         document.removeEventListener('pointermove', move);
@@ -240,11 +240,12 @@ export function startCardPointerDrag(event: ReactPointerEvent<HTMLElement>, play
   if (touch) {
     holdTimer = setTimeout(begin, 350);
     source.addEventListener('contextmenu', preventNative, true);
-    document.addEventListener('touchmove', preventTouchScroll, { passive: false });
   }
   cleanup = abort;
   window.addEventListener('blur', abort);
-  document.addEventListener('pointermove', move, { passive: false });
+  // Let the browser scroll immediately while a touch is only a hold candidate.
+  // begin() installs blocking listeners only after the long press activates dragging.
+  document.addEventListener('pointermove', move, { passive: touch });
   document.addEventListener('pointerup', finish);
   document.addEventListener('pointercancel', cancel);
 }

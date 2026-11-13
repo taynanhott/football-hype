@@ -568,7 +568,8 @@ export function spatialMatch(
       const offenderSide = opposite;
       if (random() < 0.4) {
         statistics[offenderSide].fouls++;
-        emit(minute, 'foul', presser, ball, ball, { side: offenderSide });
+        poses[presser.id] = move(poses[presser.id]!, ball, Math.max(0, pressure - 0.8));
+        emit(minute, 'foul', presser, ball, ball, { side: offenderSide, victimId: carrier.id });
         phase = 'free-kick';
         setup = false;
         if (random() < 0.25) {
@@ -602,6 +603,7 @@ export function spatialMatch(
       canShoot &&
       !forcePass &&
       (forceShot ||
+        (goalDistance < 14 && pressure > 3) ||
         ((passesInAttack >= 2 || goalDistance < 14) &&
           random() <
             (goalDistance < 14 ? (pressure > 3 ? 0.88 : 0.62) : goalDistance < 20 ? 0.36 : 0.18)))
@@ -643,10 +645,12 @@ export function spatialMatch(
           : random() < actionChance(0.6, goalkeeper ? actionQuality(goalkeeper, 'keeping') : 35)
             ? 'saved'
             : 'wide';
+      const woodwork =
+        outcome === 'wide' && random() < 0.22 ? (random() < 0.5 ? 'post' : 'crossbar') : undefined;
       const onTarget: boolean = outcome === 'goal' || outcome === 'saved';
       const saveRoll = outcome === 'saved' ? random() : 0;
       const saveKind: Action['saveKind'] =
-        saveRoll < 0.45 ? 'held' : saveRoll < 0.75 ? 'parried' : 'rebound';
+        saveRoll < 0.55 ? 'held' : saveRoll < 0.94 ? 'parried' : 'rebound';
       const goalie = keeper(opposite),
         gp = goalie ? poses[goalie.id]! : { x: 0, z: dir * 46 };
       const shotX = clamp(ball.x * 0.12 + (random() - 0.5) * 2, -3, 3);
@@ -658,19 +662,39 @@ export function spatialMatch(
               x: clamp(gp.x + (dive === 'left' ? -1.7 : dive === 'right' ? 1.7 : 0), -6, 6),
               z: gp.z,
             })
-          : { x: goal ? shotX : random() < 0.5 ? -9 : 9, z: dir * 52 };
+          : {
+              x:
+                woodwork === 'post'
+                  ? shotX < 0
+                    ? -3.66
+                    : 3.66
+                  : woodwork === 'crossbar' || goal
+                    ? shotX
+                    : random() < 0.5
+                      ? -9
+                      : 9,
+              z: dir * 52,
+            };
       statistics[side].shots++;
       statistics[side].xg += xg;
       if (onTarget) statistics[side].shotsOnTarget++;
       const shotMeta: Partial<Action> = {
         outcome,
+        ...(woodwork ? { woodwork } : {}),
         onTarget,
         ...(outcome === 'saved' ? { saveKind } : {}),
         xg,
         ...(onTarget ? lastDive : {}),
         ...(forceShot ? { setPiece, wallIds: [...wallIds], header: setPiece === 'corner' } : {}),
         startHeight: forceShot && setPiece === 'corner' ? 2.7 : 0.45,
-        endHeight: outcome === 'saved' ? 1.5 : goal ? 0.9 : 0.45,
+        endHeight:
+          woodwork === 'crossbar'
+            ? 2.44
+            : outcome === 'saved'
+              ? 0.65 + random() * 1.6
+              : goal
+                ? 0.9
+                : 0.45,
         arc: outcome === 'saved' ? 0.6 : goal ? 0.6 : 0.8,
         ...(outcome === 'blocked' && blockingDefender
           ? { interceptorId: blockingDefender.id }
@@ -728,7 +752,7 @@ export function spatialMatch(
           ...lastDive,
           side: opposite,
           saveKind,
-          startHeight: 1.5,
+          startHeight: shotMeta.endHeight,
           endHeight: saveKind === 'held' ? 1.3 : 0.45,
           arc: saveKind === 'held' ? 0 : 0.8,
         });
@@ -741,9 +765,10 @@ export function spatialMatch(
           carrier = undefined;
         } else if (saveKind === 'rebound') {
           ball = deflection;
-          carrier = field(side).sort(
+          carrier = [...field(side), ...field(opposite)].sort(
             (a, b) => distance(poses[a.id]!, ball) - distance(poses[b.id]!, ball),
           )[0];
+          if (carrier && field(opposite).some((p) => p.id === carrier!.id)) side = opposite;
           if (carrier) {
             poses[carrier.id] = { ...ball };
             separate(carrier.id);

@@ -26,6 +26,24 @@ describe('coerência e variedade das jogadas', () => {
       seed,
     ),
   );
+  it('registra traves e travessão e identifica quem sofreu cada carrinho', () => {
+    const hits = new Set<string>();
+    for (const game of games)
+      for (const action of game.actions!) {
+        if (action.woodwork) {
+          hits.add(action.woodwork);
+          expect(action.outcome).toBe('wide');
+          expect(action.onTarget).toBe(false);
+          if (action.woodwork === 'post') expect(Math.abs(action.endX!)).toBe(3.66);
+          else expect(action.endHeight).toBe(2.44);
+        }
+        if (action.type === 'foul') {
+          expect(action.victimId).toBeTruthy();
+          expect(action.victimId).not.toBe(action.playerId);
+        }
+      }
+    expect([...hits].sort()).toEqual(['crossbar', 'post']);
+  });
   it('atribui o bloqueio a um defensor e mostra o desvio antes do escanteio', () => {
     let checked = 0;
     for (const game of games) {
@@ -133,7 +151,7 @@ describe('coerência e variedade das jogadas', () => {
           if (next && next.type !== 'kickoff') expect(next.side).toBe(action.side);
         } else {
           expect(game.actions![i + 1]?.type).toBe('dribble');
-          expect(game.actions![i + 1]?.side).not.toBe(action.side);
+          expect(game.actions![i + 1]?.playerId).toBeTruthy();
         }
       }
     expect([...kinds].sort()).toEqual(['held', 'parried', 'rebound']);

@@ -1,4 +1,4 @@
-import { flareOrigins, type FlareOrigin } from './flare-layout';
+import { flareOrigins, flareEmitter, type FlareOrigin } from './flare-layout';
 /* eslint-disable react-hooks/set-state-in-effect -- Rebuild flare anchors after the stadium geometry mounts. */
 import { useState, useLayoutEffect, useMemo, useRef, useEffect, type RefObject } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
@@ -103,6 +103,7 @@ function ParticleField({
   sparks = false,
   rise = 8,
   core = false,
+  haze = false,
 }: {
   origins: readonly (CrowdSeat & {
     color?: string;
@@ -114,6 +115,7 @@ function ParticleField({
   sparks?: boolean;
   rise?: number;
   core?: boolean;
+  haze?: boolean;
 }) {
   const material = useRef<ShaderMaterial>(null);
   const pointScale = useThree((s) => s.size.height * s.gl.getPixelRatio() * 0.8);
@@ -131,7 +133,7 @@ function ParticleField({
       phases[i] = crowdNoise(i + 31);
       travels[i] = origin?.travel ?? 1;
       flows.set(origin?.flow ?? [0, 1, 0], i * 3);
-      tint.set(origin?.color ?? color);
+      tint.set(haze ? color : (origin?.color ?? color));
       tints.set([tint.r, tint.g, tint.b], i * 3);
     }
     g.setAttribute('position', new Float32BufferAttribute(positions, 3));
@@ -140,7 +142,7 @@ function ParticleField({
     g.setAttribute('flow', new Float32BufferAttribute(flows, 3));
     g.setAttribute('tintAttribute', new Float32BufferAttribute(tints, 3));
     return g;
-  }, [origins, count, color]);
+  }, [origins, count, color, haze]);
   useEffect(() => () => geometry.dispose(), [geometry]);
   const uniforms = useMemo(
     () => ({
@@ -149,9 +151,10 @@ function ParticleField({
       spark: { value: sparks ? 1 : 0 },
       rise: { value: rise },
       core: { value: core ? 1 : 0 },
+      haze: { value: haze ? 1 : 0 },
       pointScale: { value: pointScale },
     }),
-    [color, sparks, rise, core, pointScale],
+    [color, sparks, rise, core, haze, pointScale],
   );
   // Color is passed as a vec3 by the material below.
   useFrame(({ clock }) => {
@@ -166,15 +169,15 @@ function ParticleField({
         depthWrite={false}
         blending={sparks && !core ? AdditiveBlending : NormalBlending}
         uniforms={uniforms}
-        vertexShader={`attribute float phase; attribute float travelLimit; attribute vec3 flow; attribute vec3 tintAttribute; varying vec3 particleTint; uniform float time; uniform float spark; uniform float rise; uniform float core; uniform float pointScale; varying float life;
-          void main(){particleTint=tintAttribute;life=fract(time*(spark>0.5?0.75:0.13)+phase);vec3 p=position;float travel=life*travelLimit;
+        vertexShader={`attribute float phase; attribute float travelLimit; attribute vec3 flow; attribute vec3 tintAttribute; varying vec3 particleTint; uniform float time; uniform float spark; uniform float rise; uniform float core; uniform float pointScale; uniform float haze; varying float life;
+          void main(){particleTint=tintAttribute;life=fract(time*(spark>0.5?0.75:(haze>0.5?0.055:0.1))+phase);vec3 p=position;float travel=life*travelLimit;
           if(core<0.5){p.x+=sin(phase*91.0+travel*4.0)*(0.12+travel*1.4);p.z+=cos(phase*73.0+travel*3.0)*travel*1.4;p+=flow*travel*rise;}
           vec4 mv=modelViewMatrix*vec4(p,1.0);gl_Position=projectionMatrix*mv;
-          float width=core>0.5?2.2+sin(time*18.0+phase)*0.3:(spark>0.5?0.16:4.0+travel*15.0);
-          gl_PointSize=min(110.0,width*pointScale/max(1.0,-mv.z));}`}
-        fragmentShader={`varying vec3 particleTint; uniform float spark; uniform float core; varying float life;
+          float width=core>0.5?0.45+sin(time*18.0+phase)*0.06:(spark>0.5?0.16:4.0+travel*15.0);
+          gl_PointSize=min(180.0,width*pointScale/max(1.0,-mv.z));}`}
+        fragmentShader={`varying vec3 particleTint; uniform float spark; uniform float core; uniform float haze; varying float life;
           void main(){vec3 tint=particleTint;float d=length(gl_PointCoord-0.5)*2.0;float soft=1.0-smoothstep(0.0,1.0,d);
-          float a=soft*(core>0.5?0.95:(spark>0.5?(1.0-life)*0.95:(1.0-life*0.7)*0.6));
+          float a=soft*(core>0.5?0.95:(spark>0.5?(1.0-life)*0.95:(1.0-life*0.65)*(haze>0.5?0.18:0.36)));
           vec3 color=core>0.5?mix(tint,vec3(1.0,0.95,0.75),pow(soft,5.0)):(spark>0.5?tint:mix(tint,vec3(0.12),life*0.25));
           gl_FragColor=vec4(color,a);}`}
       />
@@ -187,11 +190,13 @@ function colorToRGB(value: string) {
 }
 
 export function CrowdFlares({
+  onOrigins,
   seats,
   homeColor,
   awayColor,
   occupancy,
 }: {
+  onOrigins?: (origins: FlareOrigin[]) => void;
   seats: readonly CrowdSeat[] | null;
   homeColor: string;
   awayColor: string;
@@ -205,33 +210,46 @@ export function CrowdFlares({
     const root = scene.getObjectByName('stadium-structure');
     if (!root || !seats) {
       setOrigins([]);
+      onOrigins?.([]);
       return;
     }
     const safe = clearCrowdSeats(root, seats),
       occupied = occupiedCrowdSeats(safe, occupancy);
-    setOrigins(
-      flareOrigins(
-        safe.filter((_, i) => occupied[i]),
-        homeColor,
-        awayColor,
-        compact ? 5 : 9,
-        smokePlumeLimit(root),
-      ),
+    const plumeLimit = smokePlumeLimit(root);
+    const selected = flareOrigins(
+      safe.filter((_, i) => occupied[i]),
+      homeColor,
+      awayColor,
+      compact ? 10 : 20,
+      (seat, flow) => plumeLimit(flareEmitter(seat), flow),
     );
-  }, [scene, seats, occupancy, compact, homeColor, awayColor]);
+    setOrigins(selected);
+    onOrigins?.(selected);
+  }, [scene, seats, occupancy, compact, homeColor, awayColor, onOrigins]);
+  const emitters = useMemo(
+    () => origins.map((origin) => ({ ...origin, ...flareEmitter(origin) })),
+    [origins],
+  );
   return (
     <group ref={points} name="Sinalizadores da torcida">
       {
         <>
-          <ParticleField origins={origins} color={homeColor} count={origins.length} core />
+          <ParticleField origins={emitters} color={homeColor} count={origins.length} core />
           <ParticleField
-            origins={origins}
+            origins={emitters}
             color={homeColor}
-            count={compact ? 128 : 240}
+            count={compact ? 260 : 560}
             rise={12}
           />
           <ParticleField
-            origins={origins}
+            origins={emitters}
+            color="#a4a6a8"
+            count={compact ? 100 : 200}
+            rise={12}
+            haze
+          />
+          <ParticleField
+            origins={emitters}
             color={homeColor}
             count={compact ? 48 : 100}
             rise={2.4}

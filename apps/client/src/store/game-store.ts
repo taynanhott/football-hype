@@ -58,8 +58,10 @@ let recoveryAttempts = 0;
 let connecting = false;
 
 function endRecovery() {
+  const snapshot = useGameStore.getState().snapshot;
   useGameStore.getState().disconnect();
   useGameStore.setState({
+    snapshot,
     error: 'Não foi possível reconectar após 3 tentativas. Abra sua carreira novamente.',
   });
 }
@@ -255,6 +257,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
       );
       actions = queue;
       let resumeTimer: ReturnType<typeof setTimeout> | undefined;
+      room.onMessage('resumed', () => {
+        if (get().room !== room) return;
+        clearTimeout(resumeTimer);
+      });
       const accept = (snapshot: GameSnapshot) => {
         if (
           get().room !== room ||

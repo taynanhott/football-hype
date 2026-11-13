@@ -1,17 +1,17 @@
-import { visitorCrowdSeat } from './flare-layout';
+import { genericCrowdSeats } from './generic-crowd-seats';
+import type { FlareOrigin } from './flare-layout';
+import { CrowdPeople } from './crowd-people';
 import { PitchEquipment } from './pitch-equipment';
 import { CrowdFlares } from './match-atmosphere';
-import { clearCrowdSeats } from './crowd-clearance';
+import { CrowdFlags, type FlagClub } from './crowd-flags';
 import { LevelTwoStadium } from './level-two-stadium';
 import { levelTwoCrowdSeats } from './level-two-layout';
-/* eslint-disable react-hooks/immutability -- Three.js instance transforms and buffers require in-place updates in animation callbacks. */
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { ContactShadows, OrbitControls, Sky, useGLTF, Clone } from '@react-three/drei';
 import { KTX2Loader } from 'three-stdlib';
 import {
   Component,
   Suspense,
-  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -20,7 +20,7 @@ import {
   useEffect,
   type ReactNode,
 } from 'react';
-import { Color, InstancedMesh, Object3D, Mesh } from 'three';
+import { InstancedMesh, Object3D, Mesh } from 'three';
 import type { StadiumSnapshot, TrainingCenterSnapshot } from '@football/shared';
 
 import { ClubCampus, StadiumSurroundings } from './club-campus';
@@ -29,7 +29,7 @@ import { GroundMist } from './ground-mist';
 import { Pitch } from './pitch';
 import { RealStadium } from './real-stadiums';
 import { stadiumSkin } from './stadium-catalog';
-import { realStadiumSeats, occupiedCrowdSeats, crowdNoise } from './stadium-seating';
+import { realStadiumSeats, crowdNoise } from './stadium-seating';
 import { ModernArena, TraditionalDetails } from './stadium-architecture';
 
 type Position = [number, number, number];
@@ -110,169 +110,51 @@ function Stand({ entity }: { entity: SectorEntity }) {
   );
 }
 function Crowd({
+  homeClub,
+  awayClub,
   skin,
   occupancy,
   level,
   homeKit = { primary: '#315d55', secondary: '#ffffff' },
   awayKit = { primary: '#334f78', secondary: '#ffffff' },
 }: {
+  homeClub?: FlagClub;
+  awayClub?: FlagClub;
   homeKit?: { primary: string; secondary: string };
   awayKit?: { primary: string; secondary: string };
   skin?: string | undefined;
   occupancy: number;
   level: number;
 }) {
-  const mesh = useRef<InstancedMesh>(null);
-  const heads = useRef<InstancedMesh>(null);
-  const shirts = useRef<InstancedMesh>(null);
   const mappedSeats = useMemo(
-    () => (skin ? realStadiumSeats(skin) : level === 2 ? levelTwoCrowdSeats() : null),
+    () =>
+      skin ? realStadiumSeats(skin) : level === 2 ? levelTwoCrowdSeats() : genericCrowdSeats(level),
     [skin, level],
   );
-  const count =
-    mappedSeats?.length ??
-    (level >= 4 ? (level === 5 ? 3 * 13 : 2 * 10) * 384 : 4 * (5 + level * 2) * 100);
-  const dummy = useMemo(() => new Object3D(), []);
-  const scene = useThree((state) => state.scene);
-  useLayoutEffect(() => {
-    if (!mesh.current || !heads.current || !shirts.current) return;
-    const architecture = scene.getObjectByName('stadium-structure');
-    const clearSeats =
-      mappedSeats && architecture ? clearCrowdSeats(architecture, mappedSeats) : mappedSeats;
-    const occupiedSeats = clearSeats ? occupiedCrowdSeats(clearSeats, occupancy) : null;
-    const skin = ['#e2ac80', '#b77b51', '#754a36', '#f0c8a0'];
-    const neutral = ['#d7d8cd', '#49534c', '#a4aaa3', '#38434b'];
-    for (let index = 0; index < count; index++) {
-      const side = index % 4;
-      const row = Math.floor(index / 4) % (5 + level * 2);
-      const seat = Math.floor(index / (4 * (5 + level * 2)));
-      const along = (seat / 100 - 0.5) * (side < 2 ? 72 : 100);
-      dummy.position.set(
-        side < 2 ? along : (side === 2 ? 1 : -1) * (44 + row * 0.95),
-        2.1 + row * 0.7,
-        side < 2 ? (side === 0 ? -1 : 1) * (62 + row * 0.95) : along,
-      );
-      if (level >= 4) {
-        const rows = level === 5 ? 13 : 10;
-        const seatIndex = index % 384;
-        const block = Math.floor(seatIndex / 4);
-        const angle = (block / 96) * Math.PI * 2;
-        const nextAngle = ((block + 1) / 96) * Math.PI * 2;
-        const fraction = ((seatIndex % 4) + 0.5 + (crowdNoise(index + 301) - 0.5) * 0.48) / 4;
-        const rowIndex = Math.floor(index / 384) % rows;
-        const tier = Math.floor(index / (384 * rows));
-        const distance = tier * 10 + rowIndex * 0.88;
-        dummy.position.set(
-          (Math.cos(angle) * (1 - fraction) + Math.cos(nextAngle) * fraction) * (51 + distance),
-          2.05 + tier * 12 + rowIndex * 0.65,
-          (Math.sin(angle) * (1 - fraction) + Math.sin(nextAngle) * fraction) * (73 + distance),
-        );
-        dummy.rotation.set(
-          0,
-          -Math.atan2((73 + distance) * Math.cos(angle), -(51 + distance) * Math.sin(angle)),
-          0,
-        );
-      }
-      const mapped = clearSeats?.[index];
-      if (mapped) {
-        dummy.position.set(mapped.x, mapped.y, mapped.z);
-        dummy.rotation.set(0, mapped.rotation, 0);
-      }
-      const occupied = occupiedSeats
-        ? occupiedSeats[index] === 1
-        : crowdNoise(index + 17) < Math.min(1, Math.max(0, occupancy));
-      const variation = crowdNoise(index + 29);
-      const stature = 0.94 + crowdNoise(index + 53) * 0.12;
-      const visitor = mapped
-        ? visitorCrowdSeat(mapped)
-        : level >= 4
-          ? index % 384 < 115
-          : seat < 30;
-      const kit = {
-        primary: visitor ? awayKit.primary : homeKit.primary,
-        secondary: visitor ? awayKit.secondary : homeKit.secondary,
-      };
-      if (!mapped && level < 4) dummy.rotation.set(0, side < 2 ? 0 : Math.PI / 2, 0);
-      // Jitter along the tread, never through the step or into the next row.
-      const tangentX = Math.cos(dummy.rotation.y),
-        tangentZ = -Math.sin(dummy.rotation.y);
-      const jitter = mapped ? 0 : (crowdNoise(index + 71) - 0.5) * 0.7;
-      dummy.position.x += tangentX * jitter;
-      dummy.position.z += tangentZ * jitter;
-      dummy.position.y -= 0.425 - 0.36 * stature;
-      dummy.rotation.y += (variation - 0.5) * 0.12;
-      const shirtColor =
-        variation < 0.14
-          ? neutral[Math.floor(crowdNoise(index + 31) * neutral.length)]!
-          : variation < 0.35
-            ? kit.secondary
-            : kit.primary;
-      dummy.scale.set(
-        occupied ? 0.62 * stature : 0,
-        occupied ? 0.72 * stature : 0,
-        occupied ? 0.28 : 0,
-      );
-      dummy.updateMatrix();
-      mesh.current.setMatrixAt(index, dummy.matrix);
-      mesh.current.setColorAt(index, new Color(shirtColor));
-      dummy.scale.set(
-        occupied ? 0.15 * stature : 0,
-        occupied ? 0.72 * stature : 0,
-        occupied ? 0.3 : 0,
-      );
-      dummy.updateMatrix();
-      shirts.current.setMatrixAt(index, dummy.matrix);
-      shirts.current.setColorAt(index, new Color(kit.secondary));
-      dummy.position.y += 0.56 * stature;
-      dummy.scale.setScalar(occupied ? 0.23 * stature : 0);
-      dummy.updateMatrix();
-      heads.current.setMatrixAt(index, dummy.matrix);
-      heads.current.setColorAt(
-        index,
-        new Color(skin[Math.floor(crowdNoise(index + 97) * skin.length)]),
-      );
-    }
-    mesh.current.instanceMatrix.needsUpdate = true;
-    if (mesh.current.instanceColor) mesh.current.instanceColor.needsUpdate = true;
-    heads.current.instanceMatrix.needsUpdate = true;
-    shirts.current.instanceMatrix.needsUpdate = true;
-    if (shirts.current.instanceColor) shirts.current.instanceColor.needsUpdate = true;
-    if (heads.current.instanceColor) heads.current.instanceColor.needsUpdate = true;
-  }, [
-    count,
-    dummy,
-    occupancy,
-    level,
-    homeKit.primary,
-    homeKit.secondary,
-    awayKit.primary,
-    awayKit.secondary,
-    mappedSeats,
-    scene,
-  ]);
+  const [flares, setFlares] = useState<FlareOrigin[]>([]);
   return (
     <group name={skin ? `Torcida: ${skin}` : 'Torcida: arquibancada padrão'}>
+      {homeClub && awayClub && (
+        <CrowdFlags seats={mappedSeats} occupancy={occupancy} home={homeClub} away={awayClub} />
+      )}
       <CrowdFlares
         seats={mappedSeats}
         homeColor={homeKit.primary}
         awayColor={awayKit.primary}
         occupancy={occupancy}
+        onOrigins={setFlares}
       />
-      <instancedMesh ref={mesh} args={[undefined, undefined, count]}>
-        <boxGeometry />
-        <meshStandardMaterial roughness={0.9} />
-      </instancedMesh>
-      <instancedMesh ref={heads} args={[undefined, undefined, count]}>
-        <sphereGeometry args={[1, 5, 4]} />
-        <meshStandardMaterial roughness={0.9} />
-      </instancedMesh>
-      <instancedMesh ref={shirts} args={[undefined, undefined, count]}>
-        <boxGeometry />
-        <meshStandardMaterial roughness={0.9} />
-      </instancedMesh>
+      <CrowdPeople
+        seats={mappedSeats}
+        occupancy={occupancy}
+        flares={flares}
+        homeKit={homeKit}
+        awayKit={awayKit}
+      />
     </group>
   );
 }
+
 class ParticlePool {
   readonly particles: {
     x: number;
@@ -354,6 +236,8 @@ function StadiumWorld({
   showNeighborhood = true,
   cameraLocked = false,
   onSelectSector,
+  homeClub,
+  awayClub,
   homeKit,
   awayKit,
 }: {
@@ -367,6 +251,8 @@ function StadiumWorld({
   paused?: boolean;
   showNeighborhood?: boolean;
   cameraLocked?: boolean;
+  homeClub?: FlagClub;
+  awayClub?: FlagClub;
   homeKit?: { primary: string; secondary: string };
   awayKit?: { primary: string; secondary: string };
 }) {
@@ -431,6 +317,8 @@ function StadiumWorld({
           skin={stadiumSkin(stadium)}
           level={level}
           occupancy={occupancy}
+          {...(homeClub ? { homeClub } : {})}
+          {...(awayClub ? { awayClub } : {})}
           {...(homeKit ? { homeKit } : {})}
           {...(awayKit ? { awayKit } : {})}
         />
@@ -503,6 +391,8 @@ export default function StadiumScene(props: {
   matchView?: boolean;
   paused?: boolean;
   showNeighborhood?: boolean;
+  homeClub?: FlagClub;
+  awayClub?: FlagClub;
   homeKit?: { primary: string; secondary: string };
   awayKit?: { primary: string; secondary: string };
 }) {

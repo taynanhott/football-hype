@@ -149,6 +149,10 @@ describe('sincronização do Worker com dez conexões', () => {
         expect(ws.messages.filter((m) => m.type === 'snapshot')).toHaveLength(1);
       }
       for (const ws of sockets) ws.messages.length = 0;
+      await hub.webSocketMessage(sockets[0] as never, JSON.stringify({ type: 'resume' }));
+      await drain();
+      expect(sockets[0]!.messages.map((message) => message.type)).toEqual(['resumed']);
+      sockets[0]!.messages.length = 0;
       const id = randomUUID();
       await hub.webSocketMessage(
         sockets[0] as never,

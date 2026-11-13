@@ -481,6 +481,7 @@ export class GameHubV2 extends DurableObject<Env> {
                 this.queueSnapshot(ws, session);
               }
             } else if (type === 'resume') {
+              this.send(ws, 'resumed', {});
               this.queueSnapshot(ws, session);
             } else if (type === 'sync') {
               delete session.cache;

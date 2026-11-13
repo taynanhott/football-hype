@@ -3,6 +3,13 @@ import { flareOrigins, visitorCrowdSeat } from '../src/three/flare-layout';
 import { realStadiumSeats } from '../src/three/stadium-seating';
 describe('sinalizadores nas torcidas', () => {
   const seats = realStadiumSeats('maracana');
+  it('preenche uma quantidade maior e mantém alternativas sob cobertura baixa', () => {
+    expect(flareOrigins(seats, '#f00', '#0f0', 20)).toHaveLength(20);
+    const sheltered = flareOrigins(seats, '#f00', '#0f0', 20, () => 0.12);
+    expect(sheltered).toHaveLength(20);
+    expect(sheltered.every((s) => s.travel === 0.12)).toBe(true);
+    expect(flareOrigins(seats, '#f00', '#0f0', 20, () => 0)).toHaveLength(0);
+  });
   it('respeita as cores dos dois grupos e limita o total de plumas', () => {
     const origins = flareOrigins(seats, '#ff2233', '#2255ff', 9);
     expect(origins).toHaveLength(9);

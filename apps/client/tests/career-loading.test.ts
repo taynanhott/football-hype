@@ -77,9 +77,11 @@ it('pede os dados completos quando a conexão abre sem carregar a carreira', asy
   fake.send.mockClear();
   (resume as () => void)();
   expect(fake.send).toHaveBeenCalledWith('resume');
-  fake.handlers.get('snapshot')!(snapshot);
+  fake.handlers.get('resumed')!({});
   await vi.advanceTimersByTimeAsync(20000);
   expect(fake.leave).not.toHaveBeenCalled();
+  expect(useGameStore.getState().connected).toBe(true);
+  expect(fake.send).toHaveBeenCalledTimes(1);
 });
 it('encerra o loading se a confirmação chega mas a revisão salva não é recebida', async () => {
   const { useGameStore } = await import('../src/store/game-store');
@@ -121,7 +123,7 @@ it('encerra o carregamento quando os dados recebidos são incompatíveis', async
   expect(useGameStore.getState().error).toContain('ler a carreira');
 });
 
-it('faz apenas três tentativas de reconexão e volta às carreiras após falharem', async () => {
+it('faz apenas três tentativas de reconexão e preserva a tela da carreira após falharem', async () => {
   const { useGameStore } = await import('../src/store/game-store');
   const { connectWorker } = await import('../src/store/worker-transport');
   const state = unwrap(
@@ -145,7 +147,7 @@ it('faz apenas três tentativas de reconexão e volta às carreiras após falhar
   fake.handlers.get('__error')!(undefined);
   await vi.advanceTimersByTimeAsync(10000);
   expect(transport).toHaveBeenCalledTimes(3);
-  expect(useGameStore.getState().snapshot).toBeNull();
+  expect(useGameStore.getState().snapshot?.state).toEqual(state);
   expect(useGameStore.getState().room).toBeNull();
   expect(useGameStore.getState().busy).toBe(false);
   expect(useGameStore.getState().error).toContain('3 tentativas');

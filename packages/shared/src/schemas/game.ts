@@ -73,6 +73,8 @@ export const matchActionSchema = z.strictObject({
   keeperId: entityIdSchema.optional(),
   keeperDive: z.enum(['left', 'right', 'center']).optional(),
   saveKind: z.enum(['held', 'parried', 'rebound']).optional(),
+  woodwork: z.enum(['post', 'crossbar']).optional(),
+  victimId: entityIdSchema.optional(),
   throughBall: z.boolean().optional(),
   wallIds: z.array(entityIdSchema).max(5).optional(),
   setPiece: z.enum(['free-kick', 'corner', 'penalty']).optional(),

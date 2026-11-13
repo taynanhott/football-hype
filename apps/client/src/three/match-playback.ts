@@ -16,7 +16,7 @@ const mix = (a: Point, b: Point, t: number): Point => ({
   x: a.x + (b.x - a.x) * t,
   z: a.z + (b.z - a.z) * t,
 });
-export function playbackBallHeight(height: number, radius = 0.25) {
+export function playbackBallHeight(height: number, radius = 0.143) {
   return 0.12 + radius + Math.max(0, height - 0.45);
 }
 export function buildPlayback(
@@ -75,6 +75,7 @@ export function buildPlayback(
       };
       if (
         outcome !== 'goal' &&
+        !action.woodwork &&
         Math.abs(action.endX ?? 0) < 3.65 &&
         Math.abs(action.endZ ?? 52) > 50
       ) {
@@ -135,6 +136,14 @@ export function buildPlayback(
       );
       const from = resets || penalty ? { ...recorded } : { ...positions };
       const to = { ...recorded };
+      if (action.throughBall && action.targetId && positions[action.targetId]) {
+        from[action.targetId] = { ...positions[action.targetId]! };
+        to[action.targetId] = { x: action.endX ?? action.x, z: action.endZ ?? action.z };
+      }
+      if (action.type === 'foul' && action.playerId && action.victimId) {
+        to[action.playerId] = { x: action.x - 0.7, z: action.z };
+        to[action.victimId] = { x: action.x + 0.4, z: action.z + 0.6 };
+      }
       // Persisted spatial actions are authoritative: never invent another ball or player path.
       const frame = {
         minute,
@@ -265,13 +274,25 @@ export function samplePlayback(frames: readonly PlaybackFrame[], minute: number)
     anchors.filter((id): id is string => Boolean(id)),
     frame.action.type === 'penalty' || frame.action.setPiece === 'penalty' ? {} : frame.keeperEnds,
   );
+  const heightFlight = frame.action.woodwork ? Math.min(1, flight / 0.72) : flight;
   return {
     positions,
-    ball: mix(frame.ballFrom, frame.ballTo, flight),
+    ball:
+      frame.action.woodwork && flight > 0.72
+        ? mix(
+            frame.ballTo,
+            { x: frame.ballTo.x * 0.6, z: frame.ballTo.z - Math.sign(frame.ballTo.z) * 9 },
+            (flight - 0.72) / 0.28,
+          )
+        : mix(
+            frame.ballFrom,
+            frame.ballTo,
+            frame.action.woodwork ? Math.min(1, flight / 0.72) : flight,
+          ),
     height:
-      (frame.action.startHeight ?? 0.45) * (1 - flight) +
-      (frame.action.endHeight ?? 0.45) * flight +
-      Math.sin(flight * Math.PI) *
+      (frame.action.startHeight ?? 0.45) * (1 - heightFlight) +
+      (frame.action.endHeight ?? 0.45) * heightFlight +
+      Math.sin(heightFlight * Math.PI) *
         (frame.action.arc ??
           (frame.action.type === 'cross'
             ? 7

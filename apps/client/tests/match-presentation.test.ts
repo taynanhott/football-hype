@@ -22,13 +22,13 @@ describe('tempo de apresentação das jogadas', () => {
       previous = value;
     }
   });
-  it('dá tempo visível à defesa e ao rebote sem modificar as ações gravadas', () => {
+  it('mantém velocidade uniforme nas defesas e rebotes', () => {
     let saveTime = 0;
     for (let clock = 0; clock < 45; clock += 0.01) {
       const value = presentationGameMinute(actions, clock);
       if (value >= 10.15 && value < 10.35) saveTime += 0.01;
     }
-    expect(saveTime).toBeGreaterThan(0.5);
+    expect(saveTime).toBeCloseTo(0.2, 1);
     expect(actions[2]!.minute).toBe(10.15);
   });
 });

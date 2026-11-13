@@ -24,6 +24,7 @@ export function flareOrigins(
       .sort((a, b) => a.rank - b.rank);
     const quota = visitor ? visitors : limit - visitors;
     let selected = 0;
+    const fallback: FlareOrigin[] = [];
     for (const { seat } of candidates) {
       if (selected >= quota) break;
       if (result.some((s) => Math.hypot(s.x - seat.x, s.z - seat.z) < 13)) continue;
@@ -46,9 +47,34 @@ export function flareOrigins(
       }
       const travel = fit(seat, flow);
       if (travel < 0.06) continue;
-      result.push({ ...seat, color: visitor ? awayColor : homeColor, flow, travel });
+      const origin = { ...seat, color: visitor ? awayColor : homeColor, flow, travel };
+      // Prefer space for substantial clouds, retaining sheltered positions as fallback.
+      if (travel < 0.42) {
+        fallback.push(origin);
+        if (fallback.length < 80) continue;
+        break;
+      }
+      result.push(origin);
+      selected++;
+    }
+    for (const origin of fallback.sort((a, b) => b.travel - a.travel)) {
+      if (selected >= quota) break;
+      if (result.some((s) => Math.hypot(s.x - origin.x, s.z - origin.z) < 13)) continue;
+      result.push(origin);
       selected++;
     }
   }
   return result;
+}
+
+/** ParticleField adds 1.35m; align it with the raised hand's flare tip (2m above the tread). */
+export function flareEmitter(seat: CrowdSeat): CrowdSeat {
+  const c = Math.cos(seat.rotation),
+    s = Math.sin(seat.rotation);
+  return {
+    ...seat,
+    x: seat.x + c * 0.32 + s * 0.08,
+    y: seat.y + 0.225,
+    z: seat.z - s * 0.32 + c * 0.08,
+  };
 }

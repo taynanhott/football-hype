@@ -1,5 +1,6 @@
 import { useEffect, useMemo } from 'react';
 import { CanvasTexture, SRGBColorSpace } from 'three';
+import { PITCH_SURFACE_Y } from './pitch-surface';
 
 export function Pitch({ level }: { level: number }) {
   const texture = useMemo(() => {
@@ -8,52 +9,58 @@ export function Pitch({ level }: { level: number }) {
     canvas.height = 1050;
     const ctx = canvas.getContext('2d');
     if (!ctx) throw new Error('Não foi possível desenhar o gramado');
-    ctx.fillStyle = level <= 2 ? '#617744' : level === 3 ? '#458249' : '#287e43';
-    ctx.fillRect(0, 0, 680, 1050);
-    let seed = 71;
-    const random = () => {
-      seed = (seed * 1664525 + 1013904223) >>> 0;
-      return seed / 4294967296;
+    // Continuous spatial noise avoids stamped circles and concentrates wear in busy areas.
+    const hash = (x: number, y: number) => {
+      let n = Math.imul(x, 374761393) + Math.imul(y, 668265263) + 71;
+      n = Math.imul(n ^ (n >>> 13), 1274126177);
+      return ((n ^ (n >>> 16)) >>> 0) / 4294967295;
     };
-    if (level <= 3) {
-      for (let index = 0; index < 700; index++) {
-        const x = random() * 680,
-          y = random() * 1050;
-        ctx.fillStyle = ['#93a65c', '#39723d', '#5f934f', '#75964f'][index % 4] ?? '#4b8143';
-        ctx.globalAlpha = 0.16;
-        ctx.beginPath();
-        ctx.ellipse(x, y, 8 + random() * 50, 5 + random() * 32, random() * 3, 0, Math.PI * 2);
-        ctx.fill();
+    const noise = (x: number, y: number) => {
+      const ix = Math.floor(x),
+        iy = Math.floor(y);
+      const fx = x - ix,
+        fy = y - iy;
+      const sx = fx * fx * (3 - 2 * fx),
+        sy = fy * fy * (3 - 2 * fy);
+      return (
+        (hash(ix, iy) * (1 - sx) + hash(ix + 1, iy) * sx) * (1 - sy) +
+        (hash(ix, iy + 1) * (1 - sx) + hash(ix + 1, iy + 1) * sx) * sy
+      );
+    };
+    const smooth = (low: number, high: number, value: number) => {
+      const t = Math.max(0, Math.min(1, (value - low) / (high - low)));
+      return t * t * (3 - 2 * t);
+    };
+    const condition = Math.max(1, Math.min(5, level));
+    const damage = [0, 1, 0.62, 0.26, 0.06, 0][condition] ?? 0;
+    const pixels = ctx.createImageData(canvas.width, canvas.height);
+    for (let y = 0; y < canvas.height; y++) {
+      for (let x = 0; x < canvas.width; x++) {
+        const broad = noise(x / 75, y / 85);
+        const detail = noise(x / 15, y / 19);
+        const fine = noise(x / 4, y / 7);
+        const goalTraffic =
+          Math.exp(-(((x - 340) / 105) ** 2)) *
+          (Math.exp(-(((y - 28) / 90) ** 2)) + Math.exp(-(((y - 1022) / 90) ** 2)));
+        const midfieldTraffic = Math.exp(-(((x - 340) / 145) ** 2) - ((y - 525) / 190) ** 2);
+        const traffic = Math.min(1, goalTraffic + midfieldTraffic * 0.45);
+        const soil =
+          smooth(0.56, 0.77, broad * 0.48 + detail * 0.34 + fine * 0.18 + traffic * 0.23) * damage;
+        const dry = smooth(0.3, 0.75, broad * 0.7 + detail * 0.3 + traffic * 0.15) * damage;
+        const stripe =
+          condition >= 3 ? ((Math.floor(y / 52.5) % 2 ? 4 : -4) * (condition - 2)) / 3 : 0;
+        const variation = (broad - 0.5) * 13 + (hash(x, y) - 0.5) * 15 + (fine - 0.5) * 12 + stripe;
+        const grass = [49 + dry * 40, 119 - dry * 9, 58 - dry * 17];
+        const earth = [119 + detail * 23, 99 + detail * 18, 65 + detail * 13];
+        const offset = (y * canvas.width + x) * 4;
+        for (let channel = 0; channel < 3; channel++) {
+          pixels.data[offset + channel] =
+            grass[channel]! * (1 - soil) + earth[channel]! * soil + variation;
+        }
+        pixels.data[offset + 3] = 255;
       }
     }
-    if (level <= 2) {
-      ctx.globalAlpha = 0.8;
-      for (let index = 0; index < (level === 1 ? 115 : 28); index++) {
-        const x = random() * 680,
-          y = random() * 1050;
-        const width = 9 + random() * (level === 1 ? 55 : 24),
-          height = 6 + random() * 30;
-        ctx.save();
-        ctx.translate(x, y);
-        ctx.rotate(random() * 3);
-        ctx.scale(width, height);
-        const soil = ctx.createRadialGradient(0, 0, 0.15, 0, 0, 1);
-        soil.addColorStop(0, index % 3 ? '#a08459' : '#796344');
-        soil.addColorStop(0.6, '#9b8055bb');
-        soil.addColorStop(1, '#9b805500');
-        ctx.fillStyle = soil;
-        ctx.beginPath();
-        ctx.arc(0, 0, 1, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
-      }
-    }
-    ctx.globalAlpha = 1;
-    if (level === 5)
-      for (let stripe = 0; stripe < 20; stripe++) {
-        ctx.fillStyle = stripe % 2 ? '#328e4b' : '#23783d';
-        ctx.fillRect(0, stripe * 52.5, 680, 52.5);
-      }
+    ctx.putImageData(pixels, 0, 0);
     ctx.strokeStyle = level <= 2 ? '#e7dfc3' : '#f3f3e7';
     ctx.lineWidth = level <= 2 ? 2 : 2.5;
     ctx.strokeRect(5, 5, 670, 1040);
@@ -87,7 +94,7 @@ export function Pitch({ level }: { level: number }) {
   }, [level]);
   useEffect(() => () => texture.dispose(), [texture]);
   return (
-    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.12, 0]} receiveShadow>
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, PITCH_SURFACE_Y, 0]} receiveShadow>
       <planeGeometry args={[68, 105]} />
       <meshStandardMaterial
         map={texture}

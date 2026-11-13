@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { BoxGeometry, Group, Mesh, MeshBasicMaterial, PlaneGeometry } from 'three';
-import { clearCrowdSeats, smokePlumeLimit } from '../src/three/crowd-clearance';
+import { clearCrowdSeats, smokePlumeLimit, crowdBoxClearance } from '../src/three/crowd-clearance';
 import type { CrowdSeat } from '../src/three/stadium-seating';
 const seat = (x = 0, y = 0.425, z = 0): CrowdSeat => ({ x, y, z, rotation: 0 });
 const box = (root: Group, x: number, y: number, z: number, w: number, h: number, d: number) => {
@@ -10,6 +10,15 @@ const box = (root: Group, x: number, y: number, z: number, w: number, h: number,
   return mesh;
 };
 describe('folga da torcida em relação às estruturas', () => {
+  it('bloqueia pulos e bandeiras quando há vigas no espaço da animação', () => {
+    const root = new Group();
+    box(root, 0, -0.5, 0, 100, 1, 100);
+    const beam = box(root, 0, 1.55, 0, 5, 0.2, 5);
+    expect(crowdBoxClearance(root)(seat(), 1.05, 1.65, 0.43)).toBe(false);
+    beam.position.y = 4;
+    expect(crowdBoxClearance(root)(seat(), 1.05, 1.65, 0.43)).toBe(true);
+    expect(crowdBoxClearance(root)(seat(), 2.4, 4.85, 1.8)).toBe(false);
+  });
   it('limita a pluma inteira antes do teto e recusa um emissor sem espaço inicial', () => {
     const root = new Group();
     box(root, 0, -0.5, 0, 100, 1, 100);

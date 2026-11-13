@@ -226,7 +226,7 @@ describe('passes na reprodução 3D', () => {
 describe('bola e corrida para o passe no espaço', () => {
   it('mantém toda a bola acima do gramado, inclusive em alturas antigas baixas', () => {
     for (const height of [0, 0.3, 0.45, 1.5])
-      expect(playbackBallHeight(height) - 0.25).toBeGreaterThanOrEqual(0.12);
+      expect(playbackBallHeight(height) - 0.143).toBeGreaterThanOrEqual(0.12 - 1e-10);
   });
   it('a bola chega ao espaço antes do recebedor, que termina a corrida depois', () => {
     const frames = buildPlayback(
@@ -270,4 +270,32 @@ describe('bola e corrida para o passe no espaço', () => {
     expect(view.positions.b!.z).toBeLessThan(23);
     expect(samplePlayback(frames, 1.99).positions.b!.z).toBe(24);
   });
+});
+
+it('mostra contato na trave e retorno da bola ao campo sem converter em gol', () => {
+  const frames = buildPlayback(
+    [
+      {
+        minute: 1,
+        type: 'shot',
+        side: 'home',
+        x: 0,
+        z: 30,
+        endX: 3.66,
+        endZ: 52,
+        woodwork: 'post',
+        outcome: 'wide',
+        coordinates: [0, 300],
+      },
+      { minute: 2, type: 'goal-kick', side: 'away', x: 0, z: 47, coordinates: [0, 300] },
+    ],
+    ['a'],
+    [],
+  );
+  const hit = samplePlayback(frames, 1 + 0.12 + 0.72 * 0.72);
+  const rebound = samplePlayback(frames, 1.9);
+  expect(hit.ball.x).toBeCloseTo(3.66);
+  expect(hit.ball.z).toBeCloseTo(52);
+  expect(rebound.ball.z).toBeLessThan(hit.ball.z);
+  expect(frames[0]!.action.outcome).toBe('wide');
 });

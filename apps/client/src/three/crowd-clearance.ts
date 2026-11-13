@@ -9,6 +9,7 @@ const cache = new WeakMap<
     signature: string;
     filter: (seats: readonly CrowdSeat[]) => readonly CrowdSeat[];
     plume: (seat: CrowdSeat, flow: readonly number[]) => number;
+    clearBox: (seat: CrowdSeat, low: number, high: number, radius: number) => boolean;
   }
 >();
 /** Build once per architecture revision, then reuse the result when occupancy changes. */
@@ -177,7 +178,21 @@ export function clearCrowdSeats(root: Object3D, seats: readonly CrowdSeat[]): re
     }
     return 1;
   };
-  cache.set(root, { signature, filter, plume });
+  const clearBox = (seat: CrowdSeat, low: number, high: number, radius: number): boolean => {
+    const box = new Box3(
+      new Vector3(seat.x - radius, seat.y - 0.425 + low, seat.z - radius),
+      new Vector3(seat.x + radius, seat.y - 0.425 + high, seat.z + radius),
+    );
+    const faces = new Set<Surface>(),
+      triangle = new Triangle();
+    ranges(box, (x, y, z) => {
+      for (const face of grid.get(cellKey(x, y, z)) ?? []) faces.add(face);
+    });
+    for (const face of faces)
+      if (box.intersectsTriangle(triangle.set(face.a, face.b, face.c))) return false;
+    return true;
+  };
+  cache.set(root, { signature, filter, plume, clearBox });
   return filter(seats);
 }
 
@@ -186,4 +201,8 @@ export function smokePlumeLimit(
 ): (seat: CrowdSeat, flow: readonly number[]) => number {
   clearCrowdSeats(root, []);
   return cache.get(root)!.plume;
+}
+export function crowdBoxClearance(root: Object3D) {
+  clearCrowdSeats(root, []);
+  return cache.get(root)!.clearBox;
 }

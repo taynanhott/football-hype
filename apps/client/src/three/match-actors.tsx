@@ -2,6 +2,9 @@ import { presentationGameMinute } from './match-presentation';
 /* eslint-disable react-hooks/immutability -- Three.js animation buffers are updated in place each frame. */
 import type { OrbitControls } from 'three-stdlib';
 import { runnerMotion } from './runner-motion';
+import { PlayerFigure } from './player-figure';
+import { playerBuild } from './player-build';
+import { bootGroundLift, PITCH_SURFACE_Y } from './pitch-surface';
 import { useFrame, useThree } from '@react-three/fiber';
 import { useEffect, useLayoutEffect, useMemo, useRef, type RefObject } from 'react';
 import {
@@ -262,7 +265,6 @@ function Runner({
   kicking,
   moving,
   facing,
-  dive,
   jump,
 }: {
   playerId: string;
@@ -280,13 +282,18 @@ function Runner({
   dive: number;
   jump: number;
 }) {
+  const build = useMemo(() => playerBuild(playerId), [playerId]);
   const group = useRef<Group>(null);
   const leftLeg = useRef<Group>(null);
   const rightLeg = useRef<Group>(null);
   const leftKnee = useRef<Group>(null);
   const rightKnee = useRef<Group>(null);
+  const leftBoot = useRef<Mesh>(null);
+  const rightBoot = useRef<Mesh>(null);
   const leftArm = useRef<Group>(null);
   const rightArm = useRef<Group>(null);
+  const armTarget = useMemo(() => new Vector3(), []);
+  const armDown = useMemo(() => new Vector3(0, -1, 0), []);
   const stride = useRef(slot);
   const body = useRef<Group>(null);
   useFrame((_, delta) => {
@@ -297,6 +304,9 @@ function Runner({
     const distance = Math.hypot(nextX - group.current.position.x, nextZ - group.current.position.z);
     const playback = renderedView.current;
     const action = playback.frame?.action;
+    const sliding = action?.type === 'foul' && action.playerId === playerId;
+    const falling = action?.type === 'foul' && action.victimId === playerId;
+    const contact = Math.sin((Math.min(1, playback.progress / 0.65) * Math.PI) / 2);
     const keeperAction = action?.keeperId === playerId && ['shot', 'save'].includes(action.type);
     const reach = keeperAction
       ? action.type === 'shot'
@@ -311,7 +321,17 @@ function Runner({
         : action?.type === 'shot' && action.wallIds?.includes(playerId)
           ? Math.sin(Math.max(0, Math.min(1, (playback.progress - 0.1) / 0.7)) * Math.PI) * 0.55
           : jump;
-    group.current.position.set(nextX, jumpLift + Math.sin(reach * Math.PI) * 0.45, nextZ);
+    group.current.position.set(
+      keeperAction
+        ? nextX +
+            ((action.type === 'shot' ? (action.endX ?? nextX) : action.x) -
+              nextX -
+              (action.keeperDive === 'left' ? -0.7 : 0.7)) *
+              reach
+        : nextX,
+      PITCH_SURFACE_Y + jumpLift + Math.sin(reach * Math.PI) * 0.45,
+      nextZ,
+    );
     const takingKick =
       action?.playerId === playerId &&
       ['pass', 'cross', 'shot'].includes(action.type) &&
@@ -327,8 +347,12 @@ function Runner({
     );
     if (body.current) {
       body.current.rotation.z = -keeperDive * (side === 'home' ? 1 : -1) * 1.3;
-      body.current.rotation.x = motion.lean;
-      body.current.position.y = 1.05 + motion.bounce - Math.abs(keeperDive) * 0.15;
+      body.current.rotation.x = sliding ? -contact * 1.2 : falling ? contact * 1.25 : motion.lean;
+      body.current.position.y =
+        1.05 * build.height +
+        motion.bounce -
+        Math.abs(keeperDive) * 0.5 -
+        (sliding || falling ? contact * 0.65 : 0);
     }
     if (distance > 0.02)
       group.current.rotation.y = Math.atan2(
@@ -337,11 +361,23 @@ function Runner({
       );
     group.current.userData.lastX = nextX;
     group.current.userData.lastZ = nextZ;
-    if (reach > 0.01) group.current.rotation.y = side === 'home' ? 0 : Math.PI;
     if (takingKick || kicking)
       group.current.rotation.y = action
         ? Math.atan2((action.endX ?? action.x) - action.x, (action.endZ ?? action.z) - action.z)
         : facing;
+    // A keeper shuffles toward the line while still facing the ball, including penalty setup.
+    if (slot === 0 && !takingKick && !kicking) {
+      const target =
+        action?.type === 'penalty' || action?.type === 'shot'
+          ? { x: action.x, z: action.z }
+          : action?.type === 'save'
+            ? { x: nextX, z: 0 }
+            : playback.ball;
+      const dx = target.x - group.current.position.x;
+      const dz = target.z - nextZ;
+      group.current.rotation.y =
+        Math.hypot(dx, dz) > 0.1 ? Math.atan2(dx, dz) : side === 'home' ? 0 : Math.PI;
+    }
     if (leftLeg.current) leftLeg.current.rotation.x = motion.leftLeg;
     if (rightLeg.current) rightLeg.current.rotation.x = motion.rightLeg;
     if (leftKnee.current) leftKnee.current.rotation.x = motion.leftKnee;
@@ -356,102 +392,74 @@ function Runner({
         arm.rotation.z = sign * (0.15 + reach * 1.35);
         if (keeperAction) arm.rotation.x = -reach * 0.8;
       }
+    if (sliding) {
+      if (leftLeg.current) leftLeg.current.rotation.x = -1.15 * contact;
+      if (rightLeg.current) rightLeg.current.rotation.x = -0.5 * contact;
+      if (rightKnee.current) rightKnee.current.rotation.x = 1.5 * contact;
+    }
+    if (keeperAction) {
+      const sign = action.keeperDive === 'left' ? -1 : 1;
+      for (const arm of [leftArm.current, rightArm.current]) {
+        if (!arm) continue;
+        arm.rotation.z = -sign * reach * 2.1;
+        arm.rotation.x = -reach * 0.7;
+      }
+    }
+    // Only raise a penetrating sole; preserve the existing jump and dive trajectory.
+    let groundLift = 0;
+    for (const boot of [leftBoot.current, rightBoot.current]) {
+      if (!boot) continue;
+      boot.updateWorldMatrix(true, false);
+      groundLift = Math.max(groundLift, bootGroundLift(boot.matrixWorld));
+    }
+    group.current.position.y += groundLift;
+    if (keeperAction && reach > 0.05) {
+      group.current.updateWorldMatrix(true, true);
+      for (const arm of [leftArm.current, rightArm.current]) {
+        if (!arm?.parent) continue;
+        armTarget.set(
+          action.type === 'shot' ? (action.endX ?? action.x) : action.x,
+          playbackBallHeight(
+            action.type === 'shot' ? (action.endHeight ?? 1.5) : (action.startHeight ?? 1.5),
+          ),
+          action.type === 'shot' ? (action.endZ ?? action.z) : action.z,
+        );
+        arm.parent.worldToLocal(armTarget);
+        armTarget.sub(arm.position).normalize();
+        arm.quaternion.setFromUnitVectors(armDown, armTarget);
+      }
+    }
   });
-  const primary = kit.primary;
-  const secondary = kit.secondary;
-  const pattern = slot === 0 ? 'solid' : kit.pattern;
-  const jersey = slot === 0 ? (kit.tertiary ?? secondary) : primary;
   return (
-    <group ref={group} rotation={[0, side === 'home' ? 0 : Math.PI, 0]}>
-      <group ref={body} position={[0, 1.05, 0]} scale={0.7}>
-        <group position={[0, -1.5, 0]}>
-          <mesh position={[0, 2.9, 0]} castShadow>
-            <sphereGeometry args={[0.45, 8, 6]} />
-            <meshStandardMaterial color={appearance.skinTone} />
-          </mesh>
-          {appearance.hairStyle !== 'bald' && (
-            <mesh position={[0, 2.96, 0]}>
-              <sphereGeometry args={[0.46, 8, 4, 0, Math.PI * 2, 0, Math.PI / 2]} />
-              <meshStandardMaterial color={appearance.hairColor} />
-            </mesh>
-          )}
-          {appearance.beardStyle !== 'none' && (
-            <mesh position={[0, 2.69, 0.27]}>
-              <boxGeometry args={[0.5, 0.15, 0.18]} />
-              <meshStandardMaterial color={appearance.hairColor} />
-            </mesh>
-          )}
-          <mesh position={[0, 1.9, 0]} castShadow>
-            <boxGeometry args={[1.2, 1.3, 0.65]} />
-            <meshStandardMaterial color={jersey} />
-          </mesh>
-          {pattern === 'sash' &&
-            [-1, 1].map((face) => (
-              <mesh key={face} position={[0, 1.9, face * 0.345]} rotation={[0, 0, face * -0.65]}>
-                <boxGeometry args={[1.3, 0.18, 0.025]} />
-                <meshStandardMaterial color={secondary} />
-              </mesh>
-            ))}
-          {['stripes', 'hoops'].includes(pattern) &&
-            [-0.35, 0, 0.35].map((offset, index) => (
-              <mesh
-                key={index}
-                position={[
-                  pattern === 'stripes' ? offset : 0,
-                  pattern === 'hoops' ? 1.9 + offset : 1.9,
-                  0,
-                ]}
-              >
-                <boxGeometry
-                  args={pattern === 'stripes' ? [0.16, 1.3, 0.675] : [1.215, 0.16, 0.675]}
-                />
-                <meshStandardMaterial
-                  color={kit.tertiary && index === 1 ? kit.tertiary : secondary}
-                />
-              </mesh>
-            ))}
-          {[-1, 1].map((arm) => (
-            <group
-              key={arm}
-              ref={arm < 0 ? leftArm : rightArm}
-              position={[arm * 0.82, 2.4, 0]}
-              rotation={[0, 0, arm * (Math.abs(dive) > 0.1 ? 0.8 : 0.15)]}
-            >
-              <mesh position={[0, -0.5, 0]}>
-                <boxGeometry args={[0.28, 1, 0.35]} />
-                <meshStandardMaterial color={jersey} />
-              </mesh>
-              {slot === 0 && (
-                <mesh position={[0, -1.04, 0.04]}>
-                  <boxGeometry args={[0.34, 0.3, 0.4]} />
-                  <meshStandardMaterial color="#e9efbf" />
-                </mesh>
-              )}
-            </group>
-          ))}
-          {[-1, 1].map((leg) => (
-            <group key={leg} ref={leg < 0 ? leftLeg : rightLeg} position={[leg * 0.32, 1.25, 0]}>
-              <mesh position={[0, -0.3, 0]}>
-                <boxGeometry args={[0.35, 0.6, 0.4]} />
-                <meshStandardMaterial color={secondary} />
-              </mesh>
-              <group ref={leg < 0 ? leftKnee : rightKnee} position={[0, -0.6, 0]}>
-                <mesh position={[0, -0.3, 0]}>
-                  <boxGeometry args={[0.3, 0.6, 0.34]} />
-                  <meshStandardMaterial color={secondary} />
-                </mesh>
-                <mesh position={[0, -0.57, 0.12]}>
-                  <boxGeometry args={[0.35, 0.18, 0.58]} />
-                  <meshStandardMaterial color="#182323" />
-                </mesh>
-              </group>
-            </group>
-          ))}
-        </group>
+    <group
+      ref={group}
+      position={[x, PITCH_SURFACE_Y, z]}
+      rotation={[0, side === 'home' ? 0 : Math.PI, 0]}
+    >
+      <group
+        ref={body}
+        position={[0, 1.05 * build.height, 0]}
+        scale={[0.7 * build.width, 0.7 * build.height, 0.7]}
+      >
+        <PlayerFigure
+          kit={kit}
+          appearance={appearance}
+          build={build}
+          keeper={slot === 0}
+          leftArm={leftArm}
+          rightArm={rightArm}
+          leftLeg={leftLeg}
+          rightLeg={rightLeg}
+          leftKnee={leftKnee}
+          rightKnee={rightKnee}
+          leftBoot={leftBoot}
+          rightBoot={rightBoot}
+        />
       </group>
     </group>
   );
 }
+
 function Fireworks({ color: victoryColor }: { color: string }) {
   const compact = useThree((s) => s.size.width < 900);
   const fireworks = useMemo(() => {
@@ -530,7 +538,7 @@ function PlaybackBall({
 }: {
   renderedView: RefObject<ReturnType<typeof samplePlayback>>;
 }) {
-  const radius = 0.25;
+  const radius = 0.143;
   const ball = useRef<Mesh>(null);
   useFrame(() => {
     const view = renderedView.current;

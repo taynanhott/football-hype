@@ -44428,6 +44428,39 @@ dialog.modal.player-management-modal.facility-bonus-modal[open] {
 
 /* Keep mobile menu scrolling free of continuous decorative compositing. */
 @media (max-width: 760px), (hover: none) and (pointer: coarse) {
+  /* A separate fixed surface avoids repainting a filtered SVG background during scroll. */
+  .workspace:has(.lineup-editor) {
+    isolation: isolate;
+    background-image: none;
+    background-attachment: scroll;
+  }
+
+  .workspace:has(.lineup-editor)::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      repeating-linear-gradient(0deg, #ffffff05 0 110px, #19191918 110px 220px),
+      linear-gradient(135deg, #242424, #191919 75%);
+  }
+
+  .lineup-editor .tactics-field {
+    background-image:
+      repeating-linear-gradient(0deg, #ffffff06 0 14%, #102a1c16 14% 28%),
+      linear-gradient(135deg, #326b47, #245137);
+  }
+
+  .lineup-editor .starter-card-aura {
+    display: none;
+  }
+
+  .lineup-editor .reserve-roster,
+  .lineup-editor .reserve-roster * {
+    touch-action: pan-y pinch-zoom;
+  }
+
   .lineup-editor .tactics-player,
   .lineup-editor .reserve-mini,
   .lineup-editor .player-card,

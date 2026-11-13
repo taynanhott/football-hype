@@ -282,6 +282,8 @@ export function Matches({ snapshot, club }: ViewProps) {
                 showNeighborhood
                 matchView
                 paused={!animating}
+                {...(home ? { homeClub: home } : {})}
+                {...(away ? { awayClub: away } : {})}
                 homeKit={clubKit(home ?? { name: '' })}
                 awayKit={clubKit(away ?? { name: '' })}
                 stadium={stadium}
