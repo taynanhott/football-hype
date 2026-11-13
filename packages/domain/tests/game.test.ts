@@ -1,11 +1,5 @@
 import { beforeAll, describe, expect, it } from 'vitest';
-import {
-  COMPETITIONS,
-  GAMEPLAY,
-  roundMoney,
-  type GameCommand,
-  type WorldState,
-} from '@football/shared';
+import { COMPETITIONS, GAMEPLAY, type GameCommand, type WorldState } from '@football/shared';
 import {
   applyEvent,
   createWorld,
@@ -49,7 +43,8 @@ describe('mundo e autoridade', () => {
       new Set(
         initial.fixtures.filter((fixture) => fixture.group).map((fixture) => fixture.competitionId),
       ).size,
-    ).toBe(3);
+    ).toBe(0);
+    expect(initial.competitionNotes?.['copa-brasil']).toBeDefined();
     const regional = initial.clubs.ids.filter((id) => initial.clubs.byId[id]?.division === 'D');
     expect(
       initial.fixtures.some((fixture) => !fixture.group && regional.includes(fixture.homeId)),
@@ -265,11 +260,11 @@ describe('transferências em duas etapas', () => {
     expect(refused.negotiations[0]?.salaryFirm).toBe(true);
     expect(refused.players.byId[player.id]?.clubId).toBe(player.clubId);
     const salary = transferContext(offered, player, beforeClub).minimumSalary;
-    const signed = act(offered, { type: 'salary', negotiationId: offer.id, salary });
+    const signed = act(offered, { type: 'salary', negotiationId: offer.id, salary, years: 1 });
     expect(signed.players.byId[player.id]?.clubId).toBe(beforeClub.id);
     expect(signed.clubs.byId[beforeClub.id]?.playerIds).toContain(player.id);
     expect(signed.clubs.byId[beforeClub.id]?.balance.cents).toBe(
-      roundMoney(beforeClub.balance.cents - player.marketValue.cents - salary),
+      beforeClub.balance.cents - player.marketValue.cents - salary,
     );
     expect(command(signed, { type: 'salary', negotiationId: offer.id, salary }).ok).toBe(false);
   });

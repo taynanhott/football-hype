@@ -11,6 +11,7 @@ export function penaltyPositions(
   const direction = spot.z >= 0 ? 1 : -1;
   const arranged = { ...positions };
   const waiting = Object.keys(positions).filter((id) => id !== takerId && id !== keeperId);
+  const placed: Point[] = [];
   waiting.forEach((id, index) => {
     if (shootout) {
       // Stagger short rows around the centre circle instead of a rigid straight line.
@@ -23,7 +24,39 @@ export function penaltyPositions(
     } else {
       const current = positions[id]!;
       // Behind the spot, outside both penalty areas, and clear of the penalty arc.
-      arranged[id] = { x: current.x, z: Math.max(-28, Math.min(28, current.z)) };
+      const base = {
+        x: Math.max(-31, Math.min(31, current.x)),
+        z: Math.max(-28, Math.min(28, current.z)),
+      };
+      // Clamping several runners to the area boundary must not stack them.
+      // Search only when occupied; this helper is also used during playback.
+      let point = base;
+      search: for (let radius = 0; radius <= waiting.length; radius++) {
+        for (const [dx, dz] of [
+          [0, 0],
+          [-1, 0],
+          [1, 0],
+          [0, -1],
+          [0, 1],
+          [-1, -1],
+          [1, -1],
+          [-1, 1],
+          [1, 1],
+        ]) {
+          const candidate = {
+            x: Math.max(-31, Math.min(31, base.x + dx! * radius * 2.2)),
+            z: Math.max(-28, Math.min(28, base.z + dz! * radius * 2.2)),
+          };
+          if (
+            placed.every((other) => Math.hypot(other.x - candidate.x, other.z - candidate.z) >= 2)
+          ) {
+            point = candidate;
+            break search;
+          }
+        }
+      }
+      arranged[id] = point;
+      placed.push(point);
     }
   });
   if (takerId) arranged[takerId] = { ...spot };

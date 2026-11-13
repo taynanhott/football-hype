@@ -202,7 +202,7 @@ export function transferContext(
   else if (blocked)
     clubReasons.push({ label: 'Política do treinador impede a venda', value: -100 });
   const playerInterest = Math.max(
-    0,
+    1,
     Math.min(
       100,
       playerReasons.reduce((sum, r) => sum + r.value, 0),
@@ -519,7 +519,7 @@ export function manageClub({
     const buyer = state.clubs.byId[offer.buyerId];
     if (!buyer || state.players.byId[offer.playerId]?.clubId !== club.id)
       return fail('Proposta indisponível');
-    const limits = financialLimits(state, buyer, fee);
+    const limits = financialLimits(state, buyer, fee, offer.id);
     const accepted =
       fee <= offer.fee * 1.15 &&
       fee <= limits.transfer &&
@@ -1096,7 +1096,7 @@ export function manageClub({
         ...stadium,
         commerce: { ...stadium.commerce, [target + 'Level']: level - 1 },
       };
-    const refund = roundMoney(upgradePrice(level - 1, target) * 0.5);
+    const refund = upgradePrice(level - 1, target) / 2;
     return done(
       {
         ...state,
@@ -1155,7 +1155,7 @@ export function manageClub({
     return fail('A proposta não pode mais ser concluída');
   if (buyer.playerIds.length >= MAX_SQUAD_SIZE)
     return fail('O comprador atingiu o limite de 45 jogadores');
-  const buyerLimits = financialLimits(state, buyer, offer.fee);
+  const buyerLimits = financialLimits(state, buyer, offer.fee, offer.id);
   if (offer.fee > buyerLimits.transfer || offer.salary > buyerLimits.salary)
     return fail('O comprador não possui orçamento disponível');
   const buyerPlan = management.financialPlans?.[buyer.id];
@@ -1249,8 +1249,9 @@ export function settleMonthly(state: WorldState, at: number): WorldState {
     const month = new Date(boundary - 10800000).toISOString().slice(0, 7);
     for (const original of Object.values(clubs)) {
       if (charges.some((c) => c.clubId === original.id && c.month === month)) continue;
-      const wages = roundMoney(
-        original.playerIds.reduce((sum, id) => sum + loanWage(state, id, original.id), 0),
+      const wages = original.playerIds.reduce(
+        (sum, id) => sum + loanWage(state, id, original.id),
+        0,
       );
       const retainedWages = Object.entries(state.management?.loans ?? {}).reduce(
         (sum, [id, loan]) =>
@@ -1265,8 +1266,9 @@ export function settleMonthly(state: WorldState, at: number): WorldState {
       const paid = Math.min(original.balance.cents, owed);
       debts[original.id] = owed - paid;
       // Settle old salary arrears first, then this month's salaries, then maintenance.
-      wageDebts[original.id] = roundMoney(
-        Math.max(0, (wageDebts[original.id] ?? 0) + wages + retainedWages - paid),
+      wageDebts[original.id] = Math.max(
+        0,
+        (wageDebts[original.id] ?? 0) + wages + retainedWages - paid,
       );
       clubs[original.id] = {
         ...original,
@@ -1481,7 +1483,7 @@ function acceptLoan(state: WorldState, offerId: string): WorldState | undefined 
     (!state.management?.policies?.[player.id]?.loanAvailable &&
       state.participants.some((p) => p.clubId === owner.id)) ||
     borrower.balance.cents < offer.salary ||
-    offer.salary > financialLimits(state, borrower).salary
+    offer.salary > financialLimits(state, borrower, 0, offer.id).salary
   )
     return;
   return {

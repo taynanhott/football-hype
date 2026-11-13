@@ -4,6 +4,7 @@ import type {
   PlayerSnapshot,
   StadiumSnapshot,
   TrainingCenterSnapshot,
+  WorldState,
 } from '../../packages/shared/src/index.js';
 import type { Result } from '../../packages/domain/src/core/result.js';
 
@@ -24,6 +25,21 @@ export function unwrap<T, E>(result: Result<T, E>): T {
     throw new Error(`Falha inesperada no teste: ${JSON.stringify(result.error)}`);
   }
   return result.value;
+}
+
+/** Market scenarios need a seller above the protected minimum of 18 athletes. */
+export function withTransferReserves(state: WorldState): WorldState {
+  const clubs = { ...state.clubs.byId };
+  const players = { ...state.players.byId };
+  const ids = [...state.players.ids];
+  for (const [index, club] of Object.values(clubs).entries()) {
+    const original = players[club.playerIds.at(-1)!]!;
+    const id = `0000ffff-0000-4000-8000-${(index + 1).toString(16).padStart(12, '0')}`;
+    players[id] = { ...original, id, shirtNumber: 99 };
+    ids.push(id);
+    clubs[club.id] = { ...club, playerIds: [...club.playerIds, id] };
+  }
+  return { ...state, clubs: { ...state.clubs, byId: clubs }, players: { ids, byId: players } };
 }
 
 export function playerInput(overrides: Partial<PlayerSnapshot> = {}): PlayerSnapshot {

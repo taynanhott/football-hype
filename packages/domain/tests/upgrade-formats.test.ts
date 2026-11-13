@@ -3,6 +3,38 @@ import { createWorld } from '../src/game/world-factory.js';
 import { groupFixtures } from '../src/competitions/cup-groups.js';
 import { upgradeUnstartedCompetitions } from '../src/competitions/upgrade-formats.js';
 import { seasonStart } from '../src/competitions/season-calendar.js';
+it.each([1, 2] as const)(
+  'preserva a final já persistida com %i jogo(s), sem invalidar o calendário',
+  (legs) => {
+    const created = createWorld({
+      id: crypto.randomUUID(),
+      userId: 'host',
+      name: 'Final',
+      mode: 'offline',
+      now: seasonStart(2026),
+    });
+    if (!created.ok) throw new Error(created.error.message);
+    const state = {
+      ...created.value,
+      cups: [
+        {
+          id: 'copa-brasil:4:0',
+          competitionId: 'copa-brasil',
+          round: 4,
+          homeId: created.value.clubs.ids[0]!,
+          awayId: created.value.clubs.ids[1]!,
+          leftId: null,
+          rightId: null,
+          winnerId: null,
+          scheduledAt: seasonStart(2026) + 86400000,
+          legs,
+        },
+      ],
+    };
+    expect(upgradeUnstartedCompetitions(state)).toBe(state);
+    expect(upgradeUnstartedCompetitions(state).roundDates).toBe(state.roundDates);
+  },
+);
 it.each(['libertadores', 'sul-americana', 'copa-nordeste', 'copa-verde', 'copa-sul-sudeste'])(
   'converte %s de A–H para A–D e mantém o treinador',
   (competitionId) => {

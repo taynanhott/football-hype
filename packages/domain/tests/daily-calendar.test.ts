@@ -359,7 +359,7 @@ describe('dias da temporada', () => {
     expect(next.players.byId[player.id]!.overall).toBe(75);
     expect(next.centers.byId[center.id]!.operations?.individual).toHaveLength(0);
   });
-  it('ciclo abaixo de 33 dá overall antes do potencial e bônus de 15 jogos no limite', () => {
+  it('ciclo abaixo de 33 preserva overall e concede bônus de 15 jogos no potencial', () => {
     for (const atPotential of [false, true]) {
       const { state, club, player } = world();
       const center = state.centers.byId[club.trainingCenterId]!;
@@ -390,7 +390,7 @@ describe('dias da temporada', () => {
         },
       };
       const next = advanceGameDays(state, at(11) + 2000);
-      expect(next.players.byId[player.id]!.overall).toBe(atPotential ? 75 : 76);
+      expect(next.players.byId[player.id]!.overall).toBe(75);
       expect(next.players.byId[player.id]!.potential).toBe(atPotential ? 75 : 80);
       if (atPotential) {
         expect(next.centers.byId[center.id]!.operations?.cycleBonuses?.[player.id]?.games).toBe(15);

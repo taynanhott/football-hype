@@ -535,7 +535,14 @@ function handleOffer({
     0,
   );
   const totalOffer = command.fee + exchangeValue;
-  if (!command.withdraw && player.clubId && financialLimits(state, club).transfer <= 0)
+  const activeReview = state.negotiations.find(
+    (n) => n.playerId === player.id && n.buyerId === club.id && n.status === 'review',
+  );
+  if (
+    !command.withdraw &&
+    player.clubId &&
+    financialLimits(state, club, 0, activeReview?.id).transfer <= 0
+  )
     return failure(
       domainError(
         'INSUFFICIENT_FUNDS',
@@ -579,7 +586,10 @@ function handleOffer({
       return failure(
         domainError('VALIDATION_ERROR', 'Clube ou atleta indisponível para negociação'),
       );
-    if (command.fee > financialLimits(state, club).transfer || command.fee > club.balance.cents)
+    if (
+      command.fee > financialLimits(state, club, 0, pending?.id).transfer ||
+      command.fee > club.balance.cents
+    )
       return failure(domainError('INSUFFICIENT_FUNDS', 'A proposta ultrapassa seu orçamento'));
     const offer: Negotiation = {
       id: eventId,
@@ -616,9 +626,6 @@ function handleOffer({
     return failure(
       domainError('VALIDATION_ERROR', 'Conversas suspensas por uma semana no calendário do jogo.'),
     );
-  const activeReview = state.negotiations.find(
-    (n) => n.playerId === player.id && n.buyerId === club.id && n.status === 'review',
-  );
   const competing = Math.max(
     0,
     ...state.negotiations
@@ -674,7 +681,7 @@ function handleOffer({
   }
   if (context.blocked)
     return failure(domainError('VALIDATION_ERROR', 'O clube não tem interesse em negociar'));
-  if (command.fee > financialLimits(state, club).transfer)
+  if (command.fee > financialLimits(state, club, 0, activeReview?.id).transfer)
     return failure(
       domainError(
         'INSUFFICIENT_FUNDS',
@@ -817,6 +824,11 @@ function handleSalary({
       transferContext(state, player, club).minimumSalary,
   );
   const minimumSalary = signingSalary(baseMinimumSalary, contractYears);
+  const limits = financialLimits(state, club, negotiation.fee, negotiation.id);
+  if (negotiation.fee > limits.transfer || command.salary > limits.salary)
+    return failure(
+      domainError('INSUFFICIENT_FUNDS', 'A contratação ultrapassa o orçamento disponível'),
+    );
   const roll =
     Array.from(negotiation.id + command.salary).reduce(
       (n, c) => (n * 31 + c.charCodeAt(0)) >>> 0,
@@ -870,7 +882,7 @@ function handleSalary({
       ...club,
       balance: {
         ...club.balance,
-        cents: Math.max(0, roundMoney(club.balance.cents - negotiation.fee - command.salary)),
+        cents: club.balance.cents - negotiation.fee - command.salary,
       },
       playerIds: [...club.playerIds.filter((id) => !exchangeIds.includes(id)), player.id],
     },
@@ -887,7 +899,7 @@ function handleSalary({
       ...state.debts,
       [club.id]:
         (state.debts[club.id] ?? 0) +
-        Math.max(0, roundMoney(negotiation.fee + command.salary - club.balance.cents)),
+        Math.max(0, negotiation.fee + command.salary - club.balance.cents),
     },
     management: {
       ...consumeTransferBudget(state, club.id, negotiation.fee),
@@ -951,7 +963,7 @@ function handleSalary({
     next = prepareAcademy(next, club.id);
   }
   type = 'transfer.completed';
-  amount = roundMoney(-negotiation.fee - command.salary);
+  amount = -negotiation.fee - command.salary;
   message = `${player.name} assinou com ${club.name}`;
   return success({ next, type, message, amount });
 }

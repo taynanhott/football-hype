@@ -231,7 +231,7 @@ describe('payloads grandes das trajetórias', () => {
     await repository.remove(state.id, 'large-state', Date.now());
     expect(db.docs.get(`leagues/${state.id}`)!.payload).toBe(payload);
     expect(db.batchSizes).toHaveLength(batches);
-    expect(db.docs.get('memberships/large-state')?.offline).toBeNull();
+    expect(db.docs.get('memberships/large-state')?.offline).toEqual([]);
     expect(await repository.load(state.id)).toBeUndefined();
     expect(await repository.load(state.id, { eventPatches: false })).toBeUndefined();
     await expect(

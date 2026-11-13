@@ -34,7 +34,7 @@ describe('base real normalizada', () => {
     expect(dataset.players.byId[stableId(12, duplicate.id)]?.clubId).toBe(stableId(11, 1001));
     expect(dataset.players.byId[stableId(12, duplicate.id)]?.age).toBe(28);
     expect(dataset.fixtures?.filter((fixture) => !fixture.group)).toHaveLength(380);
-    expect(dataset.fixtures?.some((fixture) => fixture.group)).toBe(true);
+    expect(dataset.fixtures?.some((fixture) => fixture.group)).toBe(false);
     expect(dataset.license).toContain('não dados oficiais');
     expect(() => convertFootballData(input, now)).toThrow('Vínculo duplicado');
   });
@@ -90,6 +90,10 @@ describe('base real normalizada', () => {
     expect(
       Object.values(event.value.patch.clubs?.byId ?? {}).every((club) => club.division === 'A'),
     ).toBe(true);
-    expect(event.value.patch.cups).toEqual([]);
+    expect(
+      event.value.patch.cups?.every((cup) =>
+        [cup.homeId, cup.awayId].filter(Boolean).every((id) => dataset.clubs.byId[id!]),
+      ),
+    ).toBe(true);
   });
 });

@@ -5,7 +5,7 @@ import type { WorldState } from '@football/shared';
 import fs from 'node:fs';
 import { facilityCosts } from '../src/finance/facility-costs.js';
 import { TICKET_TIERS, projectTicketDemand } from '../src/finance/match-demand.js';
-it('sustenta os clubes na melhor faixa com dois jogos em casa e quatro rodadas de patrocínio', () => {
+it('projeta receitas e despesas sem garantir lucro artificial para todos os clubes', () => {
   const data = JSON.parse(fs.readFileSync('data/player-database.json', 'utf8')) as WorldState;
   const rows = Object.values(data.clubs.byId).map((club) => {
     const stadium = data.stadiums.byId[club.stadiumId]!;
@@ -41,27 +41,29 @@ it('sustenta os clubes na melhor faixa com dois jogos em casa e quatro rodadas d
   });
   rows.sort((a, b) => a.margin - b.margin);
 
-  expect(rows.filter((r) => r.margin < 0)).toEqual([]);
+  expect(rows.every((r) => Number.isFinite(r.margin) && r.expenses > 0 && r.income > 0)).toBe(true);
+  expect(rows.some((r) => r.margin < 0)).toBe(true);
+  expect(rows.some((r) => r.margin > 0)).toBe(true);
 });
 
 it('reduz público nas faixas caras e aumenta renda com a capacidade', () => {
   const parameters = {
     capacity: 7200,
     commerce: 0,
-    selloutPriceCents: 5000,
-    minimumCrowdPriceCents: 20000,
+    selloutPriceCents: 50,
+    minimumCrowdPriceCents: 400,
   };
-  const cheap = projectTicketDemand(parameters, 5000);
-  const normal = projectTicketDemand(parameters, 10000);
-  const expensive = projectTicketDemand(parameters, 20000);
-  const abusive = projectTicketDemand(parameters, 40000);
+  const cheap = projectTicketDemand(parameters, 50);
+  const normal = projectTicketDemand(parameters, 100);
+  const expensive = projectTicketDemand(parameters, 200);
+  const abusive = projectTicketDemand(parameters, 400);
   expect(cheap.attendance).toBeGreaterThan(normal.attendance);
   expect(normal.attendance).toBeGreaterThan(expensive.attendance);
   expect(expensive.attendance).toBeGreaterThan(abusive.attendance);
   expect(normal.revenue).toBeGreaterThan(cheap.revenue);
   expect(expensive.revenue).toBeGreaterThan(normal.revenue);
-  expect(normal.revenue).toBe(abusive.revenue);
-  expect(projectTicketDemand({ ...parameters, capacity: 14400 }, 10000).revenue).toBeGreaterThan(
+  expect(expensive.revenue).toBeGreaterThan(abusive.revenue);
+  expect(projectTicketDemand({ ...parameters, capacity: 14400 }, 100).revenue).toBeGreaterThan(
     normal.revenue,
   );
 });
@@ -74,7 +76,7 @@ it('calcula bilheteria pelo preço individual e público presente', () => {
     minimumCrowdPriceCents: 20000,
     demandFactor: 1.08,
   };
-  const revenue = projectTicketDemand(parameters, 10000);
+  const revenue = projectTicketDemand(parameters, 100);
   expect(revenue.ticketRevenue).toBe(revenue.attendance * revenue.priceCents);
   expect(revenue.consumptionRevenue).toBeLessThan(revenue.ticketRevenue);
   expect(revenue.ticketRevenue % 100).toBe(0);
@@ -82,9 +84,10 @@ it('calcula bilheteria pelo preço individual e público presente', () => {
 });
 
 it('converte preços antigos sem reescalar os preços já corrigidos', () => {
-  expect(ticketAmountSchema.parse(10000000)).toBe(10000);
-  expect(ticketAmountSchema.parse(10000)).toBe(10000);
-  expect(ticketAmountSchema.parse(50000)).toBe(50000);
+  expect(ticketAmountSchema.parse(10000000)).toBe(100);
+  expect(ticketAmountSchema.parse(10000)).toBe(100);
+  expect(ticketAmountSchema.parse(100)).toBe(100);
+  expect(ticketAmountSchema.parse(50000)).toBe(500);
 });
 
 it('oferece preços fixos de 50, 100, 200 e 400 sem multiplicar pelo clube', () => {
@@ -95,6 +98,6 @@ it('oferece preços fixos de 50, 100, 200 e 400 sem multiplicar pelo clube', () 
     minimumCrowdPriceCents: 40000,
     fairPriceCents: 25000,
   };
-  for (const price of [5000, 10000, 20000, 40000])
+  for (const price of [50, 100, 200, 400])
     expect(projectTicketDemand(p, price).priceCents).toBe(price);
 });

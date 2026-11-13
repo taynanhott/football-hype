@@ -26,14 +26,7 @@ export function upgradePrice(level: number, target = 'structure') {
 }
 export function maintenanceForLevel(level: number, target = 'structure') {
   const item = FACILITY_ECONOMY[target] ?? FACILITY_ECONOMY.structure!;
-  return ceilMoney(
-    item.maintenance *
-      (['pitch', 'surroundings', 'structure', 'food', 'shirts', 'hospitality'].includes(target)
-        ? 1.35
-        : 1.65) **
-        Math.max(0, level - 1),
-    10000,
-  );
+  return ceilMoney(item.maintenance * 1.65 ** Math.max(0, level - 1), 10000);
 }
 export function facilityCosts(state: WorldState, club: ClubSnapshot) {
   const stadium = state.stadiums.byId[club.stadiumId],

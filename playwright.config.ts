@@ -11,6 +11,7 @@ export default defineConfig({
   reporter: 'list',
   use: {
     baseURL,
+    actionTimeout: 10000,
     trace: 'retain-on-failure',
     launchOptions: { args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'] },
   },
@@ -32,7 +33,12 @@ export default defineConfig({
       command: `pnpm --filter @football/client dev --host 127.0.0.1 --port ${port} --strictPort --mode test`,
       url: baseURL,
       reuseExistingServer: false,
-      env: { VITE_GAME_SERVER_URL: 'ws://127.0.0.1:2568', VITE_TEST_AUTH: 'true' },
+      env: {
+        VITE_GAME_SERVER_URL: 'ws://127.0.0.1:2568',
+        VITE_GAME_TRANSPORT: 'colyseus',
+        VITE_USE_DEV_GAME_PROXY: 'false',
+        VITE_TEST_AUTH: 'true',
+      },
     },
   ],
 });

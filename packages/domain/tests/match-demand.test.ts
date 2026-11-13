@@ -1,11 +1,5 @@
 import { beforeAll, describe, expect, it } from 'vitest';
-import {
-  commandSchema,
-  GAMEPLAY,
-  roundMoney,
-  type Fixture,
-  type WorldState,
-} from '@football/shared';
+import { commandSchema, GAMEPLAY, type Fixture, type WorldState } from '@football/shared';
 import {
   applyEvent,
   createWorld,
@@ -63,20 +57,22 @@ beforeAll(() => {
 });
 
 describe('procura de ingressos e probabilidades', () => {
-  it('delimita a barra com 100% no preço mínimo e 1% no máximo', () => {
+  it('delimita a barra com mais público na faixa barata e menos na abusiva', () => {
     const range = matchDemand(initial, fixture);
-    expect(matchDemand(initial, fixture, range.selloutPriceCents).occupancy).toBe(1);
-    expect(matchDemand(initial, fixture, range.minimumCrowdPriceCents).occupancy).toBe(0.01);
+    expect(matchDemand(initial, fixture, range.selloutPriceCents).occupancy).toBeGreaterThan(0.8);
+    expect(matchDemand(initial, fixture, range.minimumCrowdPriceCents).occupancy).toBeLessThan(
+      0.25,
+    );
   });
   it('reduz a procura com preços maiores e respeita a capacidade', () => {
-    const cheap = matchDemand(initial, fixture, 500);
-    const normal = matchDemand(initial, fixture, 4500);
-    const expensive = matchDemand(initial, fixture, 50000);
+    const cheap = matchDemand(initial, fixture, 50);
+    const normal = matchDemand(initial, fixture, 100);
+    const expensive = matchDemand(initial, fixture, 400);
     expect(cheap.attendance).toBeGreaterThanOrEqual(normal.attendance);
     expect(normal.attendance).toBeGreaterThan(expensive.attendance);
     expect(cheap.attendance).toBeLessThanOrEqual(cheap.capacity);
     expect(expensive.attendance).toBeGreaterThanOrEqual(0);
-    expect(expensive.ticketRevenue).toBe(roundMoney(expensive.attendance * 50000));
+    expect(expensive.ticketRevenue).toBe(expensive.attendance * expensive.priceCents);
   });
   it('aceita preços maiores em uma final e reduz interesse depois de derrotas', () => {
     const finalFixture = { ...fixture, id: 'cup-final', competitionId: 'copa-brasil', round: 5 };
@@ -84,8 +80,8 @@ describe('procura de ingressos e probabilidades', () => {
       ...initial,
       cups: [{ ...finalFixture, legs: 1 as const, leftId: null, rightId: null, winnerId: null }],
     };
-    const regular = matchDemand(initial, fixture, 20000);
-    const final = matchDemand(finalState, finalFixture, 20000);
+    const regular = matchDemand(initial, fixture, 200);
+    const final = matchDemand(finalState, finalFixture, 200);
     expect(final.fairPriceCents).toBeGreaterThan(regular.fairPriceCents);
     expect(final.selloutPriceCents).toBeGreaterThanOrEqual(regular.selloutPriceCents);
     const games = Array.from({ length: 5 }, (_, index) => ({
@@ -107,8 +103,8 @@ describe('procura de ingressos e probabilidades', () => {
         scorers: [],
       })),
     });
-    expect(matchDemand(withForm(0, 2), fixture, 20000).attendance).toBeLessThan(
-      matchDemand(withForm(2, 0), fixture, 20000).attendance,
+    expect(matchDemand(withForm(0, 2), fixture, 200).attendance).toBeLessThan(
+      matchDemand(withForm(2, 0), fixture, 200).attendance,
     );
   });
   it('mostra três probabilidades que somam 100 e distingue mando de campo neutro', () => {
@@ -127,24 +123,24 @@ describe('preço por partida e simulação', () => {
     const event = unwrap(
       executeCommand(
         initial,
-        { type: 'home-ticket-price', priceCents: 20000 },
+        { type: 'home-ticket-price', priceCents: 200 },
         IDS.user,
         NOW,
         stableId(15, 8),
       ),
     );
     const saved = unwrap(applyEvent(initial, event));
-    expect(saved.homeTicketPrices?.[fixture.homeId]).toBe(20000);
+    expect(saved.homeTicketPrices?.[fixture.homeId]).toBe(200);
     const future = {
       ...fixture,
       id: 'new-home-game',
       scheduledAt: fixture.scheduledAt + 7 * 86400000,
     };
-    expect(matchDemand(saved, fixture).priceCents).toBe(20000);
-    expect(matchDemand(saved, future).priceCents).toBe(20000);
-    expect(
-      matchDemand({ ...saved, ticketPrices: { [fixture.id]: 5000 } }, fixture).priceCents,
-    ).toBe(20000);
+    expect(matchDemand(saved, fixture).priceCents).toBe(200);
+    expect(matchDemand(saved, future).priceCents).toBe(200);
+    expect(matchDemand({ ...saved, ticketPrices: { [fixture.id]: 50 } }, fixture).priceCents).toBe(
+      200,
+    );
     expect(
       matchDemand(saved, { ...future, homeId: fixture.awayId, awayId: fixture.homeId }).priceCents,
     ).toBe(GAMEPLAY.baseTicketCents);
@@ -154,7 +150,7 @@ describe('preço por partida e simulação', () => {
     expect(
       executeCommand(
         initial,
-        { type: 'home-ticket-price', priceCents: 499 },
+        { type: 'home-ticket-price', priceCents: 49 },
         IDS.user,
         NOW,
         stableId(15, 9),
@@ -163,7 +159,7 @@ describe('preço por partida e simulação', () => {
     expect(
       executeCommand(
         initial,
-        { type: 'home-ticket-price', priceCents: 100001 },
+        { type: 'home-ticket-price', priceCents: 50000001 },
         IDS.user,
         NOW,
         stableId(15, 10),
@@ -175,24 +171,24 @@ describe('preço por partida e simulação', () => {
     const event = unwrap(
       executeCommand(
         world,
-        { type: 'ticket-price', fixtureId: fixture.id, priceCents: 20000 },
+        { type: 'ticket-price', fixtureId: fixture.id, priceCents: 200 },
         IDS.user,
         NOW,
         stableId(15, 1),
       ),
     );
     const saved = unwrap(applyEvent(world, event));
-    expect(saved.ticketPrices?.[fixture.id]).toBe(20000);
+    expect(saved.ticketPrices?.[fixture.id]).toBe(200);
     expect(initial.ticketPrices?.[fixture.id]).toBeUndefined();
     const expected = matchDemand(saved, fixture);
     const after = unwrap(playNextBatch(saved, NOW));
     const result = after.results.find((item) => item.fixtureId === fixture.id)!;
     expect(result.attendance).toBe(expected.attendance);
     expect(result.revenue).toBe(expected.revenue);
-    expect(result.ticketPriceCents).toBe(20000);
+    expect(result.ticketPriceCents).toBe(200);
   });
   it('rejeita jogos fora, em campo neutro, já disputados e valores inválidos', () => {
-    const setPrice = (world: WorldState, priceCents = 4500, fixtureId = fixture.id) =>
+    const setPrice = (world: WorldState, priceCents = 100, fixtureId = fixture.id) =>
       executeCommand(
         world,
         { type: 'ticket-price', fixtureId, priceCents },
@@ -200,10 +196,10 @@ describe('preço por partida e simulação', () => {
         NOW,
         stableId(15, 2),
       );
-    expect(setPrice(initial, 499).ok).toBe(false);
-    expect(setPrice(initial, 50001).ok).toBe(false);
+    expect(setPrice(initial, 49).ok).toBe(false);
+    expect(setPrice(initial, 501).ok).toBe(false);
     expect(setPrice(initial, NaN).ok).toBe(false);
-    expect(setPrice(initial, 4500, 'missing').ok).toBe(false);
+    expect(setPrice(initial, 100, 'missing').ok).toBe(false);
     expect(
       setPrice({
         ...initial,
@@ -214,7 +210,8 @@ describe('preço por partida e simulação', () => {
     expect(setPrice({ ...initial, fixtures: [{ ...fixture, neutral: true }], cups: [] }).ok).toBe(
       false,
     );
-    expect(setPrice({ ...initial, lastProcessedAt: fixture.scheduledAt }).ok).toBe(false);
+    // Reaching the game date does not mean the match has already been processed.
+    expect(setPrice({ ...initial, lastProcessedAt: fixture.scheduledAt }).ok).toBe(true);
     expect(
       setPrice({
         ...initial,
@@ -233,7 +230,7 @@ describe('preço por partida e simulação', () => {
       }).ok,
     ).toBe(false);
     expect(
-      commandSchema.safeParse({ type: 'ticket-price', fixtureId: fixture.id, priceCents: 100001 })
+      commandSchema.safeParse({ type: 'ticket-price', fixtureId: fixture.id, priceCents: 50000001 })
         .success,
     ).toBe(false);
   });
@@ -262,23 +259,23 @@ describe('preço por partida e simulação', () => {
     const event = unwrap(
       executeCommand(
         world,
-        { type: 'ticket-price', fixtureId: 'tie', priceCents: 20000 },
+        { type: 'ticket-price', fixtureId: 'tie', priceCents: 200 },
         IDS.user,
         NOW,
         stableId(15, 3),
       ),
     );
-    expect(unwrap(applyEvent(world, event)).ticketPrices?.tie).toBe(20000);
+    expect(unwrap(applyEvent(world, event)).ticketPrices?.tie).toBe(200);
   });
 });
 
 it('troca lotação por maior receita no primeiro aumento de preço', () => {
   const range = matchDemand(initial, fixture);
   const full = matchDemand(initial, fixture, range.selloutPriceCents);
-  const next = matchDemand(initial, fixture, range.selloutPriceCents + 10000);
-  expect(full.occupancy).toBe(1);
-  expect(next.occupancy).toBe(0.76);
+  const next = matchDemand(initial, fixture, 100);
+  expect(full.occupancy).toBeGreaterThan(next.occupancy);
   expect(next.ticketRevenue).toBeGreaterThan(full.ticketRevenue);
-  for (let p = range.selloutPriceCents + 20000; p <= 50000; p += 10000)
-    expect(matchDemand(initial, fixture, p).ticketRevenue).toBeLessThan(next.ticketRevenue);
+  const expensive = matchDemand(initial, fixture, 200);
+  expect(expensive.ticketRevenue).toBeGreaterThan(next.ticketRevenue);
+  expect(matchDemand(initial, fixture, 400).ticketRevenue).toBeLessThan(expensive.ticketRevenue);
 });

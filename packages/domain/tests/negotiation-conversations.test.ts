@@ -2,18 +2,20 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import type { GameCommand, WorldState } from '@football/shared';
 import {
   createWorld,
+  advanceGameDays,
   stableId,
   executeCommand,
   applyEvent,
   transferContext,
 } from '../src/index.js';
-import { unwrap } from '../../../tests/fixtures/domain.js';
+import { unwrap, withTransferReserves } from '../../../tests/fixtures/domain.js';
 const now = Date.parse('2026-01-15T15:00:00Z');
 let state: WorldState;
 beforeEach(() => {
   state = unwrap(
     createWorld({ id: stableId(195, 1), name: 'Negociação', mode: 'offline', userId: 'host', now }),
   );
+  state = withTransferReserves(state);
 });
 function setup() {
   const buyer = state.clubs.byId[state.participants[0]!.clubId]!;
@@ -44,7 +46,7 @@ describe('conversas de transferência', () => {
     for (let n = 0; n < 3; n++) act({ type: 'offer', playerId: player.id, fee: 0 });
     const reply = state.negotiations.at(-1)!;
     expect(reply.lowAttempts).toBe(3);
-    expect(reply.reply).not.toContain('R$');
+    expect(reply.reply).not.toContain('HC$');
     expect(reply.blockedUntil).toBe(state.lastProcessedAt + 7 * 86400000);
     expect(
       executeCommand(
@@ -59,17 +61,18 @@ describe('conversas de transferência', () => {
     act({ type: 'offer', playerId: player.id, fee: 0 });
     expect(state.negotiations.at(-1)?.lowAttempts).toBe(1);
   });
-  it('revela a pedida numa oferta próxima e mantém o acordo por três dias', () => {
+  it('revela a pedida e respeita a análise de sete dias e a validade de quatorze', () => {
     const { buyer, player } = setup();
     const minimum = transferContext(state, player, buyer).minimumFee;
     act({ type: 'offer', playerId: player.id, fee: Math.floor((minimum * 0.8) / 1000) * 1000 });
     expect(state.negotiations.at(-1)?.revealed).toBe(true);
-    expect(state.negotiations.at(-1)?.reply).toContain('R$');
+    expect(state.negotiations.at(-1)?.reply).toContain('HC$');
     act({ type: 'offer', playerId: player.id, fee: minimum });
+    state = advanceGameDays(state, state.lastProcessedAt + 7 * 86400000);
     const agreement = state.negotiations.at(-1)!;
     expect(agreement.status).toBe('salary');
-    expect(agreement.expiresAt).toBe(state.lastProcessedAt + 3 * 86400000);
-    state = { ...state, lastProcessedAt: state.lastProcessedAt + 3 * 86400000 };
+    expect(agreement.expiresAt).toBe(agreement.offeredAt! + 14 * 86400000);
+    state = { ...state, lastProcessedAt: agreement.expiresAt! };
     expect(
       executeCommand(
         state,
@@ -80,7 +83,7 @@ describe('conversas de transferência', () => {
       ).ok,
     ).toBe(false);
     act({ type: 'offer', playerId: player.id, fee: minimum });
-    expect(state.negotiations.at(-1)?.status).toBe('salary');
+    expect(state.negotiations.at(-1)?.status).toBe('review');
   });
   it('fixa a exigência salarial após uma contraproposta recusada', () => {
     const { buyer, player } = setup();
@@ -89,10 +92,16 @@ describe('conversas de transferência', () => {
       playerId: player.id,
       fee: transferContext(state, player, buyer).minimumFee,
     });
+    state = advanceGameDays(state, state.lastProcessedAt + 7 * 86400000);
     const agreement = state.negotiations.at(-1)!;
     act({ type: 'salary', negotiationId: agreement.id, salary: 0 });
     expect(state.negotiations.at(-1)?.salaryFirm).toBe(true);
-    act({ type: 'salary', negotiationId: agreement.id, salary: agreement.minimumSalary! });
+    act({
+      type: 'salary',
+      negotiationId: agreement.id,
+      salary: agreement.minimumSalary!,
+      years: 1,
+    });
     expect(state.negotiations.at(-1)?.status).toBe('completed');
     expect(state.players.byId[player.id]?.clubId).toBe(buyer.id);
   });
@@ -128,7 +137,7 @@ it('bloqueia a saída de um astro de elite para um elenco e liga muito inferiore
     state.clubs.byId[buyer.id]!,
   );
   expect(context.clubInterest).toBe(0);
-  expect(context.playerInterest).toBe(0);
+  expect(context.playerInterest).toBe(1);
   expect(context.blocked).toBe(true);
   expect(
     executeCommand(
@@ -152,7 +161,7 @@ it('recupera valor de mercado ausente sem alterar avaliações positivas', async
   expect(playerSchema.parse(player).marketValue.cents).toBe(player.marketValue.cents);
 });
 
-it('conclui a compra com todo o caixa e registra o primeiro salário como dívida', () => {
+it('recusa compra que consumiria a reserva da próxima folha', () => {
   const { buyer, player } = setup();
   const fee = transferContext(state, player, buyer).minimumFee;
   state = {
@@ -172,12 +181,18 @@ it('conclui a compra com todo o caixa e registra o primeiro salário como dívid
       },
     },
   };
-  act({ type: 'offer', playerId: player.id, fee });
-  const agreement = state.negotiations.at(-1)!;
-  act({ type: 'salary', negotiationId: agreement.id, salary: agreement.minimumSalary! });
-  expect(state.players.byId[player.id]?.clubId).toBe(buyer.id);
-  expect(state.clubs.byId[buyer.id]?.balance.cents).toBe(0);
-  expect(state.debts[buyer.id]).toBeGreaterThan(0);
+  expect(
+    executeCommand(
+      state,
+      { type: 'offer', playerId: player.id, fee },
+      'host',
+      now,
+      stableId(199, 1),
+    ).ok,
+  ).toBe(false);
+  expect(state.players.byId[player.id]?.clubId).toBe(player.clubId);
+  expect(state.clubs.byId[buyer.id]?.balance.cents).toBe(fee);
+  expect(state.debts[buyer.id] ?? 0).toBe(0);
 });
 
 it('revisa a oferta sem reiniciar o prazo e preserva a resposta anterior', () => {

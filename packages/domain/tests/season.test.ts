@@ -12,7 +12,7 @@ import { IDS, unwrap } from '../../../tests/fixtures/domain.js';
 
 const NOW = Date.parse('2026-10-26T15:00:00Z');
 describe('ciclo completo da temporada', () => {
-  it('disputa todas as rodadas e copas, depois aplica acessos e descensos e envelhece atletas', () => {
+  it('disputa todas as rodadas e copas, depois aplica acessos e descensos e envelhece atletas', async () => {
     let state = unwrap(
       createWorld({
         id: IDS.league,
@@ -24,8 +24,10 @@ describe('ciclo completo da temporada', () => {
     );
     const previousClubs = state.clubs.byId;
     const originalPlayer = state.players.byId[state.players.ids[0] ?? ''];
-    for (let index = 0; index < 366 && state.status === 'active'; index++)
+    for (let index = 0; index < 366 && state.status === 'active'; index++) {
+      if (index % 8 === 0) await new Promise<void>((resolve) => setImmediate(resolve));
       state = unwrap(playNextBatch(state, NOW));
+    }
     expect(state.status).toBe('finished');
     expect(pendingFixtures(state)).toHaveLength(0);
     expect(state.cups.every((node) => node.winnerId !== null)).toBe(true);
@@ -62,6 +64,8 @@ describe('ciclo completo da temporada', () => {
             })),
         })),
         cups: state.cups,
+        ...(state.regionalQualifiers ? { regionalQualifiers: state.regionalQualifiers } : {}),
+        ...(state.europeanLeagues ? { europeanLeagues: state.europeanLeagues } : {}),
         ...(state.competitionNotes ? { competitionNotes: state.competitionNotes } : {}),
       },
     ]);
@@ -83,5 +87,5 @@ describe('ciclo completo da temporada', () => {
     expect(next.fixtures.every((fixture) => fixture.scheduledAt > state.lastProcessedAt)).toBe(
       true,
     );
-  }, 60000);
+  }, 120000);
 });

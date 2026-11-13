@@ -36,7 +36,7 @@ describe('illustrated player portraits', () => {
 it('uses measured source colors, baldness and individual overrides', () => {
   const id = (n: number) => '00000020-0000-4000-8000-' + n.toString(16).padStart(12, '0');
   expect(importedAppearance(id(348263))).toMatchObject({
-    skinTone: '#E3AF84',
+    skinTone: '#C98D60',
     hairColor: '#D9BE7E',
     hairStyle: 'short',
     beardStyle: 'none',
@@ -44,11 +44,11 @@ it('uses measured source colors, baldness and individual overrides', () => {
   expect(importedAppearance(id(131789))).toMatchObject({
     skinTone: '#C98D60',
     hairColor: '#2A1A0F',
-    hairStyle: 'curly',
-    beardStyle: 'stubble',
+    hairStyle: 'short',
+    beardStyle: 'full',
   });
   expect(importedAppearance(id(403315))).toMatchObject({
-    skinTone: '#E3AF84',
+    skinTone: '#C98D60',
     hairStyle: 'curly',
     beardStyle: 'full',
   });

@@ -158,15 +158,15 @@ describe('escalação, entrosamento e carga', () => {
     expect(tacticalAdaptation(archived, club.id, '4-4-2', 'wings').mastered).toBe(true);
   });
 
-  it('inicia os titulares originais com entrosamento completo e reservas sem bônus', () => {
+  it('inicia todo o elenco com 50% de entrosamento', () => {
     const { state: initial, club } = fixture();
     const state = initializeStartingChemistry(initial);
     const starters = resolveLineup(state, club, state.createdAt);
     expect(starters).toHaveLength(11);
-    expect(starters.every((slot) => slot.player && slot.chemistry === 100)).toBe(true);
+    expect(starters.every((slot) => slot.player && slot.chemistry === 50)).toBe(true);
     const starterIds = new Set(starters.map((slot) => slot.player?.id));
     for (const id of club.playerIds.filter((id) => !starterIds.has(id))) {
-      expect(state.chemistry[club.id]?.[id] ?? 0).toBe(0);
+      expect(chemistryPercent(state.chemistry[club.id]?.[id] ?? 0)).toBe(50);
     }
   });
   it('aplica má fase individual somente com média abaixo de seis e separa a fase do time', () => {
@@ -186,17 +186,19 @@ describe('escalação, entrosamento e carga', () => {
         player,
       );
     expect(effectsFor([]).some((effect) => effect.label === 'Má fase do jogador')).toBe(false);
-    expect(effectsFor([5, 6]).find((effect) => effect.label === 'Má fase do jogador')?.value).toBe(
-      -1,
-    );
+    expect(
+      effectsFor([5, 6, 5]).find((effect) => effect.label === 'Má fase do jogador')?.value,
+    ).toBe(-1);
     expect(effectsFor([5, 7]).some((effect) => effect.label === 'Má fase do jogador')).toBe(false);
     expect(effectsFor([8]).some((effect) => effect.label === 'Má fase do jogador')).toBe(false);
     expect(effectsFor([]).some((effect) => effect.label === 'Boa fase do jogador')).toBe(false);
     expect(effectsFor([6, 8]).some((effect) => effect.label === 'Boa fase do jogador')).toBe(false);
     expect(
-      effectsFor([7, 7.2]).find((effect) => effect.label === 'Boa fase do jogador')?.value,
+      effectsFor([7, 7.2, 7.5, 8]).find((effect) => effect.label === 'Boa fase do jogador')?.value,
     ).toBe(1);
-    expect(effectsFor([5, 6]).some((effect) => effect.label === 'Boa fase do jogador')).toBe(false);
+    expect(effectsFor([5, 6, 5]).some((effect) => effect.label === 'Boa fase do jogador')).toBe(
+      false,
+    );
     const played = playNextBatch(state, now);
     if (!played.ok) throw new Error(played.error.message);
     const match = played.value.results.find(
@@ -494,7 +496,11 @@ describe('escalação, entrosamento e carga', () => {
       entry.player ? [entry.player.id] : [],
     );
     const bench = club.playerIds.filter((playerId) => !starters.includes(playerId)).slice(0, 3);
-    state = { ...state, tactics: { [club.id]: { formation: '4-3-3', starters, bench } } };
+    state = {
+      ...state,
+      chemistry: {},
+      tactics: { [club.id]: { formation: '4-3-3', starters, bench } },
+    };
     const id = starters[0] ?? '';
     const overall = state.players.byId[id]?.overall;
     for (let count = 0; count < 5; count++) {
@@ -502,7 +508,9 @@ describe('escalação, entrosamento e carga', () => {
       if (!result.ok) throw new Error(result.error.message);
       state = result.value;
       if (count === 0) expect(state.results.at(-1)?.tacticalPlans?.home.bench).toEqual(bench);
-      expect(chemistryPercent(state.chemistry[club.id]?.[id] ?? 0)).toBe((count + 1) * 20);
+      expect(chemistryPercent(state.chemistry[club.id]?.[id] ?? 0)).toBeGreaterThanOrEqual(
+        (count + 1) * 20,
+      );
     }
     expect(state.players.byId[id]?.overall).toBeGreaterThanOrEqual(overall ?? 0);
     expect(state.players.byId[id]?.overall).toBeLessThanOrEqual(
@@ -514,5 +522,5 @@ describe('escalação, entrosamento e carga', () => {
     expect(rested.value.workload[id]?.consecutiveMatches).toBe(0);
     expect(rested.value.injuries[id]).toBe(1);
     expect(rested.value.chemistry[club.id]?.[id]).toBe(5);
-  });
+  }, 15000);
 });

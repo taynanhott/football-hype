@@ -32,9 +32,11 @@ const primaryData = environment.DATASET_FILE
       )
     : undefined;
 const dataProvider = primaryData;
+const testClockStartedAt = Date.now();
+const testClockEpoch = environment.TEST_NOW ? Date.parse(environment.TEST_NOW) : undefined;
 const service = new LeagueService(
   repository,
-  environment.TEST_NOW ? () => Date.parse(environment.TEST_NOW ?? '') : Date.now,
+  testClockEpoch === undefined ? Date.now : () => testClockEpoch + Date.now() - testClockStartedAt,
   dataProvider,
 );
 const origins = new Set([

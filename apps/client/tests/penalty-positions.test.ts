@@ -3,6 +3,23 @@ import { penaltyPositions } from '@football/shared';
 import { buildPlayback, samplePlayback } from '../src/three/match-playback';
 
 describe('posicionamento nos pênaltis', () => {
+  it('separa os jogadores que chegam juntos ao limite da área sem alterar o cobrador e o goleiro', () => {
+    const positions = Object.fromEntries(
+      Array.from({ length: 22 }, (_, i) => [String(i), { x: 0, z: 44 }]),
+    );
+    const arranged = penaltyPositions(positions, '0', '1', { x: 0, z: 39 });
+    const waiting = Object.entries(arranged)
+      .filter(([id]) => id !== '0' && id !== '1')
+      .map(([, p]) => p);
+    for (const [index, point] of waiting.entries()) {
+      expect(Math.abs(point.z)).toBeLessThanOrEqual(28);
+      for (const other of waiting.slice(index + 1))
+        expect(Math.hypot(point.x - other.x, point.z - other.z)).toBeGreaterThanOrEqual(2);
+    }
+    expect(arranged['0']).toEqual({ x: 0, z: 39 });
+    expect(arranged['1']).toEqual({ x: 0, z: 49.5 });
+    expect(penaltyPositions(positions, '0', '1', { x: 0, z: 39 })).toEqual(arranged);
+  });
   const home = ['taker', 'home-keeper', 'home-defender'];
   const away = ['keeper', 'away-defender'];
   for (const direction of [1, -1]) {

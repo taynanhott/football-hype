@@ -25,25 +25,52 @@ export function defaultFinancialPlan(state: WorldState, club: ClubSnapshot) {
 export function operatingReserve(state: WorldState, club: ClubSnapshot) {
   return Math.min(
     Math.max(0, club.balance.cents),
-    monthlyStructureCost(state, club) + (state.debts[club.id] ?? 0),
+    clubPayroll(state, club) + monthlyStructureCost(state, club) + (state.debts[club.id] ?? 0),
   );
 }
 export function financialLimits(
   state: WorldState,
   club: ClubSnapshot,
-  _fee = 0,
-  _negotiationId?: string,
+  fee = 0,
+  negotiationId?: string,
 ) {
-  void _fee;
-  void _negotiationId;
   const savedPlan = state.management?.financialPlans?.[club.id];
   const plan = savedPlan ?? defaultFinancialPlan(state, club);
   const cash = Math.max(0, club.balance.cents);
   const payroll = clubPayroll(state, club);
   const operations = monthlyStructureCost(state, club) + (state.debts[club.id] ?? 0);
-  const reserve = 0;
-  const transfer = Math.max(0, Math.min(plan?.transfer ?? cash, cash));
-  const salary = Math.max(0, plan ? plan.salaries - payroll : cash);
+  const reserve = operatingReserve(state, club);
+  const pending = state.negotiations.filter(
+    (offer) =>
+      offer.buyerId === club.id &&
+      offer.id !== negotiationId &&
+      (offer.status === 'review' || offer.status === 'salary') &&
+      (offer.expiresAt ?? Infinity) > state.lastProcessedAt,
+  );
+  const incoming = (state.management?.offers ?? []).filter(
+    (offer) =>
+      offer.buyerId === club.id &&
+      offer.id !== negotiationId &&
+      offer.status === 'pending' &&
+      (offer.offeredAt ?? state.lastProcessedAt) + 14 * 86400000 > state.lastProcessedAt,
+  );
+  const reservedFees =
+    pending.reduce((sum, offer) => sum + offer.fee, 0) +
+    incoming.reduce((sum, offer) => sum + offer.fee, 0);
+  const reservedSalaries =
+    pending.reduce((sum, offer) => sum + (offer.offeredSalary ?? offer.minimumSalary ?? 0), 0) +
+    incoming.reduce((sum, offer) => sum + offer.salary, 0);
+  const transfer = Math.max(
+    0,
+    Math.min(plan.transfer - reservedFees, cash - reserve - reservedFees),
+  );
+  const salary = Math.max(
+    0,
+    Math.min(
+      plan.salaries - payroll - reservedSalaries,
+      cash - reserve - reservedFees - fee - reservedSalaries,
+    ),
+  );
   return {
     configured: Boolean(savedPlan),
     operations,

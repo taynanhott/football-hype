@@ -11,14 +11,14 @@ test('mantém atributos na carta e separa nome, retrato e condição dos reserva
   await page.evaluate(() => {
     location.hash = '/squad';
   });
-  const card = page.locator('.squad-office-player .player-card').first();
+  await page.locator('.squad-planning-list-row').first().click();
+  const card = page.locator('.squad-modal-player-card .player-card').first();
   await card.click();
   for (const viewport of [
     { width: 1280, height: 800 },
     { width: 390, height: 844 },
   ]) {
     await page.setViewportSize(viewport);
-    if (viewport.width < 761) await page.locator('.squad-card-category').first().click();
     await card.scrollIntoViewIfNeeded();
     expect(
       await card
@@ -31,9 +31,12 @@ test('mantém atributos na carta e separa nome, retrato e condição dos reserva
     ).toBe(true);
     await card.screenshot({ path: `test-results/roster-card-${viewport.width}.png` });
   }
+  await page.keyboard.press('Escape');
   await page.evaluate(() => {
     location.hash = '/lineup';
   });
+  await page.locator('.reserve-section.related summary').click();
+  await page.locator('.reserve-section.unrelated summary').click();
   await expect(page.locator('.reserve-mini').first()).toBeVisible();
   for (const viewport of [
     { width: 390, height: 844 },

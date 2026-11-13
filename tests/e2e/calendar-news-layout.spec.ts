@@ -22,9 +22,12 @@ test('calendário cabe no mobile e noticiário rola com os controles', async ({ 
     const ownId = state.participants.find(
       (p: { userId: string }) => p.userId === store.userId,
     ).clubId;
-    const seller = Object.values(state.clubs.byId).find(
-      (c) => (c as { id: string }).id !== ownId,
-    ) as { id: string; playerIds: string[] };
+    const newsPlayers = (
+      Object.values(state.players.byId) as { id: string; clubId: string | null }[]
+    ).filter((p: { clubId: string | null }) => p.clubId && p.clubId !== ownId) as {
+      id: string;
+      clubId: string;
+    }[];
     useGameStore.setState({
       snapshot: {
         ...snapshot,
@@ -32,9 +35,9 @@ test('calendário cabe no mobile e noticiário rola com os controles', async ({ 
           ...state,
           negotiations: Array.from({ length: 40 }, (_, i) => ({
             id: 'news-' + i,
-            playerId: seller.playerIds[0],
+            playerId: newsPlayers[i]!.id,
             buyerId: ownId,
-            sellerId: seller.id,
+            sellerId: newsPlayers[i]!.clubId,
             fee: 100000,
             interest: 50,
             status: 'review',

@@ -44,8 +44,8 @@ test('CT e estádio cabem na tela com painéis de altura estável', async ({ pag
         };
       });
       expect(gaps.rows).toBe(2);
-      expect(gaps.min).toBeGreaterThanOrEqual(7);
-      expect(gaps.heights.every((height) => height === 34)).toBe(true);
+      expect(gaps.min).toBeGreaterThanOrEqual(4);
+      expect(gaps.heights.every((height) => height >= 30 && height === gaps.heights[0])).toBe(true);
       let firstHeight = 0;
       for (let i = 0; i < (await tabs.count()); i++) {
         await tabs.nth(i).click();

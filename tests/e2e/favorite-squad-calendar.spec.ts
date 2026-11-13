@@ -28,17 +28,20 @@ test('favoritos neutros, propostas contidas e calendário compacto no desktop', 
   await page.evaluate(() => {
     location.hash = '/squad';
   });
-  await page.getByRole('button', { name: 'Cartas', exact: true }).click();
-  const category = page.locator('.squad-card-category').first();
-  if ((await category.getAttribute('aria-expanded')) !== 'true') await category.click();
-  const card = page.locator('.squad-office-player:visible').first();
-  await card.getByRole('checkbox', { name: 'No mercado', exact: true }).check();
-  const loan = card.getByRole('button', { name: /Disponível para empréstimo/ });
-  if (await loan.isEnabled()) await loan.click();
+  await page.locator('.squad-planning-list-row').first().click();
+  const card = page.locator('dialog.squad-roster-management-modal');
+  await card.getByRole('button', { name: 'Transferências', exact: true }).click();
+  await card.getByRole('button', { name: 'No mercado', exact: true }).click();
+  await expect(card.getByRole('button', { name: 'No mercado', exact: true })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  await card.locator('.squad-inline-offers').scrollIntoViewIfNeeded();
   const bounds = await card.boundingBox();
-  const proposal = await card.locator('.player-policy-offers').boundingBox();
+  const proposal = await card.locator('.squad-inline-offers').boundingBox();
   expect(proposal!.y + proposal!.height).toBeLessThanOrEqual(bounds!.y + bounds!.height - 5);
   await page.screenshot({ path: '.test-temp/squad-proposal-final.png' });
+  await page.keyboard.press('Escape');
   await page.evaluate(() => {
     location.hash = '/market';
   });

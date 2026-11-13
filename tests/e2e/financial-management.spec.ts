@@ -2,39 +2,50 @@ import { test, expect } from '@playwright/test';
 
 test('salva limites financeiros e aplica a verba salarial no mercado', async ({ page }) => {
   await page.goto('/');
-  await page.getByRole('button', { name: 'Começar minha história' }).click();
+  await page.getByRole('button', { name: /Nova carreira solo/ }).click();
+  await page.getByRole('button', { name: 'Iniciar carreira', exact: true }).click();
   await page.getByRole('link', { name: 'Finanças', exact: true }).click();
-  await expect(
-    page.getByRole('heading', { name: 'Distribuição do caixa', exact: true }),
-  ).toBeVisible();
-  await expect(page.locator('.financial-pie svg')).toBeVisible();
-  await expect(page.locator('.financial-bars')).toBeVisible();
-  await expect(page.getByText('Lucro médio por mês', { exact: true })).toBeVisible();
-  await page.getByRole('slider', { name: 'Transferências', exact: true }).fill('0');
-  await page
-    .getByRole('slider', { name: 'Transferências', exact: true })
-    .dispatchEvent('pointerup');
-  await expect(page.getByText('Salvo automaticamente', { exact: true })).toBeVisible();
-  await page.getByRole('slider', { name: 'Teto da folha mensal', exact: true }).fill('0');
-  await page
-    .getByRole('slider', { name: 'Teto da folha mensal', exact: true })
-    .dispatchEvent('pointerup');
-  await expect(page.getByText('Salvo automaticamente', { exact: true })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Salvar limites financeiros' })).toHaveCount(0);
-  await expect(page.locator('.finance-ledger table')).toHaveCount(0);
-  await page.locator('.finance-ledger summary').click();
-  await expect(page.locator('.finance-ledger table')).toBeVisible();
+  const budget = page.getByRole('slider', { name: 'Dividir orçamento entre salários e compras' });
+  await expect(budget).toBeEnabled();
+  await budget.fill('0');
+  await budget.dispatchEvent('pointerup');
+  await expect(page.locator('.save-queue-status')).toContainText('sincronizada');
   await page.getByRole('link', { name: 'Transferências', exact: true }).click();
-  await page.locator('.market-player .negotiate-button:enabled').first().click();
-  await expect(
-    page.getByRole('slider', { name: 'Salário mensal em reais', exact: true }),
-  ).toHaveAttribute('max', '0');
-  await expect(page.getByRole('button', { name: 'Apresentar salário e assinar' })).toBeDisabled();
-  await page.getByRole('button', { name: 'Fechar negociação' }).click();
+  const playerId = await page.evaluate(async () => {
+    const path = '/src/store/game-store.ts';
+    const { useGameStore } = await import(path);
+    const store = useGameStore.getState();
+    const player = (
+      Object.values(store.snapshot.state.players.byId) as {
+        id: string;
+        clubId: string | null;
+        academyClubId?: string;
+      }[]
+    ).find(
+      (p: { clubId: string | null; academyClubId?: string }) =>
+        p.clubId === null && !p.academyClubId,
+    ) as { id: string };
+    store.send({ type: 'sign-free', playerId: player.id, salary: 5000 });
+    return player.id;
+  });
+  await expect
+    .poll(() =>
+      page.evaluate(async () => {
+        const path = '/src/store/game-store.ts';
+        const { useGameStore } = await import(path);
+        return useGameStore.getState().error;
+      }),
+    )
+    .toContain('orçamento');
+  expect(
+    await page.evaluate(async (id) => {
+      const path = '/src/store/game-store.ts';
+      const { useGameStore } = await import(path);
+      return useGameStore.getState().snapshot.state.players.byId[id].clubId;
+    }, playerId),
+  ).toBeNull();
   await page.getByRole('link', { name: 'Finanças', exact: true }).click();
-  await expect(page.getByRole('slider', { name: 'Teto da folha mensal', exact: true })).toHaveValue(
-    '0',
-  );
+  await expect(budget).toHaveValue('0');
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });

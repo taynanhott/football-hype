@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   createWorld,
+  realizeCompetitionDraws,
   continentalPlaces,
   regionalPromotions,
   standings,
@@ -25,10 +26,23 @@ const world = () =>
   );
 describe('regras personalizadas da imagem', () => {
   it('gera 38 rodadas nas três séries e Copa do Brasil de 32 com final em ida e volta', () => {
-    const state = world();
+    const initial = world();
+    const state = {
+      ...initial,
+      ...seasonSchedule(Object.values(initial.clubs.byId), now, {
+        libertadores: [],
+        sulAmericana: [],
+      }),
+    };
     for (const id of ['serie-a', 'serie-b', 'serie-c'])
       expect(state.fixtures.filter((f) => f.competitionId === id)).toHaveLength(380);
-    const cup = state.cups.filter((n) => n.competitionId === 'copa-brasil');
+    const draw = state.competitionDraws!.find((d) => d.competitionId === 'copa-brasil')!;
+    expect(draw.completedAt).toBeUndefined();
+    // The bracket may already exist as a hidden preview until the persisted draw.
+    expect(draw.participantIds).toHaveLength(32);
+    const cup = realizeCompetitionDraws(state, draw.scheduledAt).cups.filter(
+      (n) => n.competitionId === 'copa-brasil',
+    );
     expect(cup).toHaveLength(31);
     expect(cup.filter((n) => n.round === 0)).toHaveLength(16);
     expect(cup.filter((n) => n.round < 4).every((n) => n.legs === 1)).toBe(true);

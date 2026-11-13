@@ -259,11 +259,8 @@ export function LineupEditor({ snapshot, club, center }: ViewProps) {
       lastAttempt.current === draftKey
     )
       return;
-    const timer = setTimeout(() => {
-      lastAttempt.current = draftKey;
-      send({ type: 'lineup', ...(JSON.parse(draftKey) as Lineup) });
-    }, 350);
-    return () => clearTimeout(timer);
+    lastAttempt.current = draftKey;
+    send({ type: 'lineup', ...(JSON.parse(draftKey) as Lineup) });
   }, [pending, busy, connected, error, draftKey, ids.length, send]);
   const sectors = [
     { name: 'Ataque', positions: ['LW', 'RW', 'SS', 'ST'] },

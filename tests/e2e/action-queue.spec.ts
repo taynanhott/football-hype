@@ -1,7 +1,8 @@
+import { finishRound } from './round-completion';
 import { expect, test } from '@playwright/test';
 
 test('ações respondem localmente e são confirmadas em ordem pela sala', async ({ page }) => {
-  test.setTimeout(45000);
+  test.setTimeout(150000);
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('/');
@@ -17,8 +18,8 @@ test('ações respondem localmente e são confirmadas em ordem pela sala', async
     const clubId = before.snapshot.state.participants.find(
       (member: { userId: string }) => member.userId === before.userId,
     ).clubId;
-    before.send({ type: 'home-ticket-price', priceCents: 5000 });
-    before.send({ type: 'home-ticket-price', priceCents: 7500 });
+    before.send({ type: 'home-ticket-price', priceCents: 50 });
+    before.send({ type: 'home-ticket-price', priceCents: 100 });
     const after = useGameStore.getState();
     return {
       price: after.snapshot.state.homeTicketPrices[clubId],
@@ -26,10 +27,10 @@ test('ações respondem localmente e são confirmadas em ordem pela sala', async
       pending: after.pendingActions,
     };
   });
-  expect(instant).toEqual({ price: 7500, busy: false, pending: 2 });
+  expect(instant).toEqual({ price: 100, busy: false, pending: 2 });
   await expect(page.locator('.save-queue-status')).toHaveText('✓ Carreira sincronizada');
   await page.reload();
-  await page.locator('.saved-leagues button').first().click();
+  await page.locator('.career-save-open').first().click();
   await expect(page.locator('.save-queue-status')).toHaveText('✓ Carreira sincronizada', {
     timeout: 20000,
   });
@@ -42,7 +43,7 @@ test('ações respondem localmente e são confirmadas em ordem pela sala', async
     ).clubId;
     return current.snapshot.state.homeTicketPrices[clubId];
   });
-  expect(persisted).toBe(7500);
+  expect(persisted).toBe(100);
   const beforeRound = await page.evaluate(async () => {
     const modulePath = '/src/store/game-store.ts';
     const { useGameStore } = await import(modulePath);
@@ -50,16 +51,20 @@ test('ações respondem localmente e são confirmadas em ordem pela sala', async
     return { round: state.round, nextScheduledAt: state.nextScheduledAt };
   });
   await page.getByRole('button', { name: 'Avançar rodada', exact: true }).click();
+  await page.getByRole('button', { name: 'Sim, avançar', exact: true }).click();
   await expect
-    .poll(async () =>
-      page.evaluate(async () => {
-        const modulePath = '/src/store/game-store.ts';
-        const { useGameStore } = await import(modulePath);
-        return useGameStore.getState().snapshot.state.round;
-      }),
+    .poll(
+      async () =>
+        page.evaluate(async () => {
+          const modulePath = '/src/store/game-store.ts';
+          const { useGameStore } = await import(modulePath);
+          return useGameStore.getState().snapshot.state.round;
+        }),
+      { timeout: 120000 },
     )
     .toBe(beforeRound.round + 1);
   await expect(page.locator('.save-queue-status')).toHaveText('✓ Carreira sincronizada');
+  await finishRound(page, beforeRound.round + 1);
   const searches: string[] = [];
   page.on('request', (request) => {
     if (request.url().includes('/players?')) searches.push(request.url());
@@ -67,7 +72,9 @@ test('ações respondem localmente e são confirmadas em ordem pela sala', async
   await page.getByRole('link', { name: 'Transferências', exact: true }).click();
   await page.getByPlaceholder('Nome ou sobrenome…').fill('Caio');
   await page.getByPlaceholder('Nome ou sobrenome…').press('Enter');
-  await expect(page.locator('.market-player').first()).toContainText(/Caio/i);
+  await expect(page.locator('.market-league-offers > .incoming-offer').first()).toContainText(
+    /Caio/i,
+  );
   expect(searches).toEqual([]);
   expect(errors).toEqual([]);
 });

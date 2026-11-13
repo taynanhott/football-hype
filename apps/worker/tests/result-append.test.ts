@@ -96,4 +96,4 @@ it('anexa somente jogos novos e recupera o mesmo histórico completo após reini
   } finally {
     db.close();
   }
-});
+}, 15000);

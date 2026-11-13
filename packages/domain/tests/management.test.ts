@@ -1,6 +1,6 @@
 import { averageMonthlySalary } from '../src/game/player-contracts.js';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { worldStateSchema, roundMoney, type WorldState } from '@football/shared';
+import { worldStateSchema, type WorldState } from '@football/shared';
 import {
   createWorld,
   stableId,
@@ -51,9 +51,7 @@ function act(command: Parameters<typeof executeCommand>[1]) {
 describe('gestão financeira mensal', () => {
   it('cobra somente ao cruzar dia 1 de Brasília, repete meses saltados e não duplica', () => {
     const club = own(),
-      wages = roundMoney(
-        club.playerIds.reduce((sum, id) => sum + state.players.byId[id]!.salary.cents, 0),
-      ),
+      wages = club.playerIds.reduce((sum, id) => sum + state.players.byId[id]!.salary.cents, 0),
       maintenance = maintenanceBreakdown(state, club).reduce((sum, item) => sum + item.cost, 0);
     expect(
       settleMonthly(state, Date.parse('2026-02-01T02:59:59Z')).management?.charges ?? [],
@@ -61,7 +59,7 @@ describe('gestão financeira mensal', () => {
     const settled = settleMonthly(state, Date.parse('2026-03-01T03:00:00Z'));
     expect(settled.management?.charges?.filter((c) => c.clubId === club.id)).toHaveLength(2);
     expect(settled.clubs.byId[club.id]!.balance.cents).toBe(
-      roundMoney(Math.max(0, club.balance.cents - 2 * (wages + maintenance))),
+      Math.max(0, club.balance.cents - 2 * (wages + maintenance)),
     );
     expect(
       settleMonthly(settled, Date.parse('2026-03-01T03:00:00Z')).management?.charges,
@@ -304,7 +302,7 @@ describe('contratação direta de jogadores livres', () => {
     state = act({ type: 'sign-free', playerId: player.id, salary });
     expect(state.players.byId[player.id]!.clubId).toBe(club.id);
     expect(state.players.byId[player.id]!.salary.cents).toBe(salary);
-    expect(state.clubs.byId[club.id]!.balance.cents).toBe(roundMoney(previousBalance - salary));
+    expect(state.clubs.byId[club.id]!.balance.cents).toBe(previousBalance - salary);
     expect(state.negotiations).toHaveLength(1);
     expect(state.negotiations[0]).toMatchObject({
       fee: 0,
@@ -313,7 +311,7 @@ describe('contratação direta de jogadores livres', () => {
     });
     expect(worldStateSchema.safeParse(state).success).toBe(true);
   });
-  it('persiste a contraproposta salarial e permite contratação sem caixa', () => {
+  it('persiste a contraproposta salarial e recusa contratação sem caixa', () => {
     const club = own(),
       player = Object.values(state.players.byId).find((p) => p.clubId === null)!;
     const salary = signingSalary(
@@ -349,7 +347,7 @@ describe('contratação direta de jogadores livres', () => {
         now,
         stableId(94, 2),
       ).ok,
-    ).toBe(true);
+    ).toBe(false);
     expect(state.negotiations).toHaveLength(0);
     expect(state.players.byId[player.id]!.clubId).toBeNull();
     expect(

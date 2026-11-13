@@ -238,7 +238,7 @@ export function projectTicketDemand(
   // Larger stadiums retain an advantage with diminishing financial returns.
   const capacityYield = Math.min(1, Math.pow(7200 / Math.max(1, capacity), 0.8));
   // Ticket income is the paid admission price multiplied by attendance.
-  const ticketRevenue = roundMoney(attendance * priceCents);
+  const ticketRevenue = attendance * priceCents;
   const consumptionRevenue = ceilMoney(
     (attendance * GAMEPLAY.baseTicketCents * commerce * capacityYield) /
       GAMEPLAY.commerceRateDivisor /

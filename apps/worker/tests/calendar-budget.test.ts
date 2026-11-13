@@ -68,6 +68,7 @@ describe('temporada com a base real: um dia e dez treinadores', () => {
       };
       await repo.create(state);
       await service.snapshot(state.id, 'coach-0', 'cloudflare', false);
+      await new Promise<void>((resolve) => setImmediate(resolve));
       writes = 0;
       queries = 0;
       const wall = performance.now();
@@ -82,6 +83,7 @@ describe('temporada com a base real: um dia e dez treinadores', () => {
         clock = next;
         const before = performance.now();
         await service.tick();
+        await new Promise<void>((resolve) => setImmediate(resolve));
         maxTickMs = Math.max(maxTickMs, performance.now() - before);
         alarms++;
         const after = (await repo.load(state.id, { eventPatches: false }))!.state;
@@ -93,6 +95,9 @@ describe('temporada com a base real: um dia e dez treinadores', () => {
       const calendarQueries = queries;
       const actionStart = performance.now();
       for (let i = 0; i < 10; i++) {
+        // This intentionally long SQLite workload must let the test runner
+        // receive progress messages between coaches instead of starving its RPC.
+        await new Promise<void>((resolve) => setImmediate(resolve));
         const participant = final.participants[i]!;
         const playerId = final.clubs.byId[participant.clubId]!.playerIds[0]!;
         for (let edit = 0; edit < 100; edit++) {
@@ -166,5 +171,5 @@ describe('temporada com a base real: um dia e dez treinadores', () => {
     } finally {
       db.close();
     }
-  }, 120000);
+  }, 180000);
 });

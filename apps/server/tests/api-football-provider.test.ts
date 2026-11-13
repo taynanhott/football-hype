@@ -130,7 +130,7 @@ describe('API quota and saved default', () => {
       if (result.ok) expect(result.value.clubs.ids).toEqual(base.clubs.ids);
     }
   });
-  it('makes no new calls on career reads or repeated creation', async () => {
+  it('spends one call per distinct career and none on reads or advancing', async () => {
     const { provider, request } = await setup();
     const service = new LeagueService(new LocalLeagueRepository(undefined), () => now, provider);
     const identity = { userId: 'api-test', name: 'Teste', guest: true };
@@ -139,9 +139,12 @@ describe('API quota and saved default', () => {
     const id = await service.create(identity, { name: 'Teste', mode: 'offline' });
     await service.snapshot(id, identity.userId);
     await service.list(identity.userId);
-    expect(await service.create(identity, { name: 'Teste', mode: 'offline' })).toBe(id);
+    const second = await service.create(identity, { name: 'Teste', mode: 'offline' });
+    expect(second).not.toBe(id);
+    const callsAfterCreation = request.mock.calls.length;
     await service.command(id, identity.userId, { type: 'advance' });
-    expect(request).toHaveBeenCalledTimes(1);
+    expect(request).toHaveBeenCalledTimes(callsAfterCreation);
+    expect(callsAfterCreation).toBe(2);
   });
   it('never exceeds 100 locally even if a higher cap is supplied', async () => {
     const { provider, request, directory } = await setup(undefined, 999);

@@ -2,6 +2,7 @@ import { beforeEach, describe, it, expect } from 'vitest';
 import { type WorldState } from '@football/shared';
 import {
   createWorld,
+  advanceGameDays,
   stableId,
   executeCommand,
   applyEvent,
@@ -14,13 +15,14 @@ import {
   recordFinancialHistory,
   transferContext,
 } from '../src/index.js';
-import { unwrap } from '../../../tests/fixtures/domain.js';
+import { unwrap, withTransferReserves } from '../../../tests/fixtures/domain.js';
 const now = Date.parse('2026-01-15T15:00:00Z');
 let state: WorldState;
 beforeEach(() => {
   state = unwrap(
     createWorld({ id: stableId(95, 1), name: 'Finanças', mode: 'offline', userId: 'host', now }),
   );
+  state = withTransferReserves(state);
 });
 const own = () => state.clubs.byId[state.participants[0]!.clubId]!;
 function act(command: Parameters<typeof executeCommand>[1]) {
@@ -33,6 +35,38 @@ function act(command: Parameters<typeof executeCommand>[1]) {
 }
 
 describe('limites financeiros autoritativos', () => {
+  it('reserva propostas concorrentes e libera apenas a própria reserva ao concluir', () => {
+    const club = own();
+    const player = Object.values(state.players.byId).find((p) => p.clubId === null)!;
+    const payroll = clubPayroll(state, club);
+    state = act({ type: 'financial-plan', transfer: 100000000, salaries: payroll + 10000000 });
+    const before = financialLimits(state, own());
+    const id = stableId(97, 90);
+    state = {
+      ...state,
+      negotiations: [
+        {
+          id,
+          playerId: player.id,
+          buyerId: club.id,
+          fee: 20000000,
+          offeredSalary: null,
+          minimumSalary: 1000000,
+          interest: 50,
+          status: 'salary',
+          offeredAt: state.lastProcessedAt,
+        },
+      ],
+    };
+    expect(financialLimits(state, own()).transfer).toBe(before.transfer - 20000000);
+    expect(financialLimits(state, own()).salary).toBe(before.salary - 1000000);
+    expect(financialLimits(state, own(), 20000000, id).transfer).toBe(before.transfer);
+    const expired = {
+      ...state,
+      negotiations: state.negotiations.map((n) => ({ ...n, expiresAt: state.lastProcessedAt })),
+    };
+    expect(financialLimits(expired, own()).transfer).toBe(before.transfer);
+  });
   it('preserva uma proposta de HC$ 3.800 sem arredondar para HC$ 4.000', () => {
     const player = Object.values(state.players.byId).find((p) => p.clubId === null)!;
     state = act({ type: 'offer', playerId: player.id, fee: 380000 });
@@ -116,8 +150,9 @@ describe('limites financeiros autoritativos', () => {
     state = act({ type: 'financial-plan', transfer, salaries });
     state = act({ type: 'offer', playerId: player.id, fee });
     expect(financialLimits(state, own()).transfer).toBe(10000000);
+    state = advanceGameDays(state, state.lastProcessedAt + 7 * 86400000);
     const negotiation = state.negotiations.at(-1)!;
-    state = act({ type: 'salary', negotiationId: negotiation.id, salary });
+    state = act({ type: 'salary', negotiationId: negotiation.id, salary, years: 1 });
     expect(state.management?.financialPlans?.[club.id]?.transfer).toBe(10000000);
     expect(financialLimits(state, own()).salary).toBe(10000000);
   });
@@ -259,12 +294,14 @@ describe('economia das estruturas e reservas', () => {
       expect(upgradePrice(4, target)).toBeGreaterThan(upgradePrice(3, target));
     }
   });
-  it('permite alocar todo o caixa para compras, sem descontar despesas futuras', () => {
+  it('protege folha, manutenção e dívidas mesmo com todo o caixa alocado para compras', () => {
     const club = own();
     state = act({ type: 'financial-plan', transfer: club.balance.cents, salaries: 0 });
-    expect(financialLimits(state, club).transfer).toBe(club.balance.cents);
+    expect(financialLimits(state, club).transfer).toBeLessThanOrEqual(
+      club.balance.cents - clubPayroll(state, club) - monthlyStructureCost(state, club),
+    );
     const indebted = { ...state, debts: { ...state.debts, [club.id]: club.balance.cents } };
-    expect(financialLimits(indebted, club).transfer).toBe(club.balance.cents);
+    expect(financialLimits(indebted, club).transfer).toBe(0);
     expect(financialLimits(state, club).salary).toBe(0);
   });
   it('o gráfico da temporada não mistura exercícios diferentes', async () => {

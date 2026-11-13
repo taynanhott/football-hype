@@ -917,6 +917,15 @@ export function spatialMatch(
           8 * movementFitness(target.player),
         );
         poses[target.player.id] = { ...target.point };
+        if (
+          allActive().some(
+            (player) =>
+              player.id !== target.player.id && distance(poses[player.id]!, target.point) < 1.85,
+          )
+        )
+          separate(carrier.id);
+        target.point = { ...poses[target.player.id]! };
+        target.length = distance(ball, target.point);
       }
       const lofted = crossing || (target.length > 25 && random() < 0.65);
       const arc = crossing ? 5.5 : lofted ? Math.min(5, target.length * 0.1) : through ? 0.45 : 0.2;

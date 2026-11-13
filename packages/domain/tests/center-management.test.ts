@@ -162,7 +162,8 @@ describe('gerenciamento do centro', () => {
     };
     state = unwrap(playNextBatch(state, now));
     expect(state.players.byId[id]!.overall).toBe(p.overall);
-    expect(center().operations?.individual).toHaveLength(0);
+    expect(center().operations?.individual).toHaveLength(1);
+    expect(center().operations?.individual?.[0]?.pausedAt).toBeDefined();
     expect(worldStateSchema.safeParse(state).success).toBe(true);
   });
   it('aplica carga e tratamento médico sem criar valores fracionários inválidos', () => {

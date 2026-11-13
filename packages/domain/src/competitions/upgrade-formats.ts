@@ -88,7 +88,9 @@ export function upgradeUnstartedCompetitions(state: WorldState): WorldState {
   }
   cups = cups.map((node) => {
     if (
-      !['libertadores', 'copa-brasil', ...regional].includes(node.competitionId) ||
+      // Copa do Brasil keeps the persisted season's leg format. In particular,
+      // a valid two-leg final must not invalidate the calendar on every advance.
+      !['libertadores', ...regional].includes(node.competitionId) ||
       node.winnerId ||
       played.has(node.id) ||
       played.has(`${node.id}:first`)

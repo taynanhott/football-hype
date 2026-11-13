@@ -5,7 +5,7 @@ import {
   countryCodeSchema,
   divisionSchema,
   entityIdSchema,
-  gameMoneySchema,
+  moneySchema,
   nameSchema,
   uniqueIdsSchema,
 } from './primitives.js';
@@ -32,7 +32,7 @@ export const clubSchema = z
     country: countryCodeSchema,
     division: divisionSchema,
     leagueStrength: z.number().int().min(1).max(100).optional(),
-    balance: gameMoneySchema,
+    balance: moneySchema,
     playerIds: uniqueIdsSchema,
     stadiumId: entityIdSchema,
     trainingCenterId: entityIdSchema,

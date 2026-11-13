@@ -11,6 +11,8 @@ export default defineConfig({
   test: {
     environment: 'node',
     include: ['packages/**/*.test.ts', 'apps/**/*.test.ts'],
+    // Full career fixtures load large squads; bound concurrency on laptops and CI.
+    maxWorkers: 2,
     clearMocks: true,
     restoreMocks: true,
     coverage: {

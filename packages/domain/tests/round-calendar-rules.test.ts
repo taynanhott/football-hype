@@ -27,7 +27,8 @@ describe('regras compactas de torneio e datas exclusivas', () => {
       for (let round = 0; round < 3; round++) expect(knockoutLegs(id, round, 2)).toBe(1);
     }
     expect(knockoutLegs('pre-libertadores', 0, 0)).toBe(2);
-    for (let round = 0; round < 5; round++) expect(knockoutLegs('copa-brasil', round, 4)).toBe(1);
+    for (let round = 0; round < 5; round++)
+      expect(knockoutLegs('copa-brasil', round, 4)).toBe(round === 4 ? 2 : 1);
     expect(knockoutLegs('intercontinental', 0, 0)).toBe(1);
   });
   it('permite torneios paralelos sem repetir um clube no mesmo dia e mantém rodadas juntas', () => {

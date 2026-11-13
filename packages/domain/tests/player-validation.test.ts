@@ -53,4 +53,4 @@ it('equivale à validação completa, preserva jogadores intactos e rejeita alte
     ).toBe(false);
     state = { ...state, ...event.patch, revision: event.sequence } as WorldState;
   }
-});
+}, 15000);

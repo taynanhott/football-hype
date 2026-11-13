@@ -78,7 +78,7 @@ describe('regulamentos oficiais 2026', () => {
     expect(nodes.filter((n) => n.legs === 2).every((n) => n.round >= 4 && n.round <= 7)).toBe(true);
     expect(nodes.at(-1)?.legs).toBe(1);
   });
-  it('Sul-Americana espera os terceiros da Libertadores e cria playoffs com vaga direta dos líderes', () => {
+  it('Sul-Americana classifica os dois primeiros por grupo para as oitavas', () => {
     const world = base();
     const ids = world.clubs.ids.slice(0, 64);
     const dates = Array.from({ length: 6 }, (_, i) => now + i * 86400000);
@@ -92,12 +92,10 @@ describe('regulamentos oficiais 2026', () => {
     };
     const qualified = qualifyCupGroups(state);
     const nodes = qualified.cups.filter((n) => n.competitionId === 'sul-americana');
-    expect(nodes.filter((n) => n.label === 'Playoff das oitavas')).toHaveLength(8);
-    expect(nodes.filter((n) => n.round === 1)).toHaveLength(8);
-    expect(
-      nodes.filter((n) => n.round === 1).every((n) => n.homeId && n.awayId === null && n.rightId),
-    ).toBe(true);
-    expect(nodes.filter((n) => n.round === 4)[0]?.legs).toBe(1);
+    expect(nodes.filter((n) => n.label?.startsWith('Playoff'))).toHaveLength(0);
+    expect(nodes.filter((n) => n.round === 0)).toHaveLength(8);
+    expect(nodes.filter((n) => n.round === 0).every((n) => n.homeId && n.awayId)).toBe(true);
+    expect(nodes.filter((n) => n.round === 3)[0]?.legs).toBe(1);
   });
   it('reinicia resultados e calendário preservando clube e elenco', () => {
     const state = base();
@@ -105,7 +103,7 @@ describe('regulamentos oficiais 2026', () => {
     expect(next.round).toBe(0);
     expect(next.results).toEqual([]);
     expect(next.players.ids).toEqual(state.players.ids);
-    expect(next.competitionRulesVersion).toBe(202604);
+    expect(next.competitionRulesVersion).toBe(202611);
     expect(next.fixtures.filter((f) => f.competitionId === 'serie-c')).toHaveLength(380);
     expect(next.fixtures.filter((f) => f.competitionId === 'serie-d').length).toBeGreaterThan(0);
     expect(next.fixtures.some((f) => f.competitionId.startsWith('estadual'))).toBe(false);

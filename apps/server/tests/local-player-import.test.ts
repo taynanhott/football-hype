@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { stableId } from '@football/domain';
+import { stableId, playNextBatch } from '@football/domain';
 import { worldDatasetSchema } from '@football/shared';
 import { convertLocalPlayers } from '../src/providers/local-player-import.js';
 import { FileDataProvider } from '../src/repositories/file-data-provider.js';
@@ -148,10 +148,27 @@ describe('base local fornecida', () => {
         break;
     }
     expect(snapshot.state.results.some((r) => r.fixtureId.startsWith('serie-a:'))).toBe(true);
-    expect(snapshot.state.results.some((r) => r.fixtureId.startsWith('serie-b:'))).toBe(true);
+    // Série B starts in March; exercise its first match without simulating the
+    // unrelated competitions between January and March in an import test.
+    const serieB = snapshot.state.fixtures.find((f) => f.competitionId === 'serie-b')!;
+    const played = playNextBatch(
+      {
+        ...snapshot.state,
+        fixtures: [serieB],
+        cups: [],
+        competitionDraws: [],
+        regionalQualifiers: [],
+        results: [],
+        lastProcessedAt: serieB.scheduledAt - 86400000,
+      },
+      now,
+    );
+    expect(played.ok).toBe(true);
+    if (!played.ok) throw new Error(played.error.message);
+    expect(played.value.results.some((r) => r.fixtureId === serieB.id)).toBe(true);
     expect(request).not.toHaveBeenCalled();
     expect(worldDatasetSchema.safeParse(JSON.parse(await readFile(file, 'utf8'))).success).toBe(
       true,
     );
-  }, 20000);
+  }, 45000);
 });

@@ -1,5 +1,7 @@
 # Publicação de produção — 13/11/2026
 
+Atualização posterior: [correções, validação aprovada e nova publicação](deployment-fixes-2026-11-13.md). O registro abaixo descreve a publicação inicial.
+
 Todas as seis alterações pendentes foram publicadas nos Workers existentes: sincronização de snapshots serializada por liga durante reconexão e comandos simultâneos, estado de avanço com proteção contra cliques duplicados, indicador de progresso e remoção do redimensionamento automático da tela financeira.
 
 - Backend: `60790935-7abd-413a-8848-88369483eb4c`.

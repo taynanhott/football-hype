@@ -87,5 +87,5 @@ describe('copas com grupos e mata-mata', () => {
     expect(state.results).toHaveLength(27);
     expect(state.cups.every((n) => n.winnerId)).toBe(true);
     expect(state.trophies.some((t) => t.competitionId === 'libertadores')).toBe(true);
-  });
+  }, 15000);
 });

@@ -8,7 +8,7 @@ import {
   advanceGameDays,
 } from '../src/index.js';
 import { loanTerms, loanWage, returnLoans, settleMonthly } from '../src/game/management.js';
-import { unwrap } from '../../../tests/fixtures/domain.js';
+import { unwrap, withTransferReserves } from '../../../tests/fixtures/domain.js';
 
 const now = Date.parse('2026-01-15T15:00:00Z');
 let state: WorldState;
@@ -22,6 +22,7 @@ beforeEach(() => {
       now,
     }),
   );
+  state = withTransferReserves(state);
 });
 function act(command: GameCommand) {
   state = unwrap(
@@ -52,6 +53,10 @@ function target() {
 describe('empréstimos', () => {
   it('não libera negociação bloqueada por empréstimo sem estar no mercado', () => {
     const { buyer, seller, player } = target();
+    state.participants = [
+      ...state.participants,
+      { userId: 'seller', clubId: seller.id, ready: false },
+    ];
     const weakBuyer = { ...buyer, leagueStrength: 0 };
     state.clubs = {
       ...state.clubs,

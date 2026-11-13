@@ -1,4 +1,3 @@
-import { roundMoney } from '../config/money-precision.js';
 import { z } from 'zod';
 import { lineupSchema, lineupPresetSchema } from './tactics.js';
 import { clubSchema } from './club.js';
@@ -94,7 +93,7 @@ export const matchResultSchema = z.strictObject({
   attendance: countSchema,
   // Historical prices must retain their original value, even after pricing rules change.
   ticketPriceCents: countSchema.optional(),
-  revenue: gameAmountSchema,
+  revenue: countSchema,
   seed: z.number().int(),
   startedAt: countSchema.optional(),
   durationMs: z
@@ -428,7 +427,7 @@ export const worldStateSchema = z.strictObject({
     })
     .optional(),
   development: z.record(entityIdSchema, z.number().nonnegative()),
-  debts: z.record(entityIdSchema, gameAmountSchema),
+  debts: z.record(entityIdSchema, countSchema),
   lastProcessedAt: countSchema,
   nextScheduledAt: countSchema,
   seasonClock: z.literal(1).optional(),
@@ -543,9 +542,9 @@ export const worldStateSchema = z.strictObject({
           z.object({
             clubId: entityIdSchema,
             month: z.string(),
-            wages: gameAmountSchema,
-            maintenance: gameAmountSchema,
-            unpaid: gameAmountSchema,
+            wages: countSchema,
+            maintenance: countSchema,
+            unpaid: countSchema,
           }),
         )
         .optional(),
@@ -560,15 +559,15 @@ export const worldStateSchema = z.strictObject({
           z.object({
             clubId: entityIdSchema,
             month: z.string().regex(/^\d{4}-\d{2}$/),
-            income: gameAmountSchema,
-            expenses: gameAmountSchema,
-            fixedCosts: gameAmountSchema,
+            income: countSchema,
+            expenses: countSchema,
+            fixedCosts: countSchema,
             season: countSchema.optional(),
           }),
         )
         .optional(),
       historyStartedAtRevision: countSchema.optional(),
-      wageDebts: z.record(entityIdSchema, gameAmountSchema).optional(),
+      wageDebts: z.record(entityIdSchema, countSchema).optional(),
     })
     .optional(),
   dataSource: z.string().max(200).optional(),
@@ -594,17 +593,11 @@ export const gameEventSchema = z.strictObject({
     'tickets.updated',
   ]),
   message: z.string().max(500),
-  amount: z
-    .number()
-    .int()
-    .transform((value) => roundMoney(value)),
+  amount: z.number().int().min(-Number.MAX_SAFE_INTEGER).max(Number.MAX_SAFE_INTEGER),
   balances: z
     .record(
       entityIdSchema,
-      z
-        .number()
-        .int()
-        .transform((value) => roundMoney(value)),
+      z.number().int().min(-Number.MAX_SAFE_INTEGER).max(Number.MAX_SAFE_INTEGER),
     )
     .optional(),
   patch: worldStateSchema.partial().extend({
