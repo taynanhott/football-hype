@@ -38,6 +38,7 @@ type GameStore = {
   userId: string;
   connected: boolean;
   busy: boolean;
+  advancing: boolean;
   loadingMessage: string | null;
   loadingActivity: 'travel' | 'training' | 'calendar' | null;
   pendingActions: number;
@@ -120,6 +121,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   userId: '',
   connected: false,
   busy: false,
+  advancing: false,
   loadingMessage: null,
   loadingActivity: null,
   pendingActions: 0,
@@ -145,6 +147,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       room: null,
       connected: false,
       pendingActions: 0,
+      advancing: false,
     });
     try {
       await previous?.leave();
@@ -237,6 +240,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
             set({
               snapshot: view.snapshot,
               pendingActions: view.pendingActions,
+              advancing: view.advancing,
               busy: view.busy || (view.advancing && get().loadingActivity === 'travel'),
               ...(!view.advancing ? { loadingActivity: null } : {}),
             });
@@ -500,11 +504,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
       error: null,
       busy: false,
       pendingActions: 0,
+      advancing: false,
     });
     void room?.leave();
   },
   send: (command) => {
     if (!get().room || !get().connected || !actions) return;
+    if ((command.type === 'advance' || command.type === 'new-season') && get().advancing) return;
     try {
       set({ error: null });
       const requestId = crypto.randomUUID();

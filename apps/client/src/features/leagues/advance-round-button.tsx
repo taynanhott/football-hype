@@ -12,19 +12,31 @@ export function AdvanceRoundButton({
 }) {
   const [open, setOpen] = useState(false);
   const send = useGameStore((state) => state.send);
+  const advancing = useGameStore((state) => state.advancing);
   return (
     <>
       <button
         className="primary advance-round-button"
-        disabled={disabled}
+        disabled={disabled || advancing}
+        aria-busy={advancing}
         onClick={() => setOpen(true)}
       >
-        {newSeason ? 'Iniciar nova temporada' : 'Avançar rodada'}
-        <Icon name="arrow" />
+        {advancing
+          ? newSeason
+            ? 'Iniciando temporada...'
+            : 'Avançando rodada...'
+          : newSeason
+            ? 'Iniciar nova temporada'
+            : 'Avançar rodada'}
+        {advancing ? (
+          <span className="career-save-spinner" aria-hidden="true" />
+        ) : (
+          <Icon name="arrow" />
+        )}
       </button>
       {open && (
         <RoundConfirmation
-          disabled={disabled}
+          disabled={disabled || advancing}
           newSeason={newSeason}
           onClose={() => setOpen(false)}
           onConfirm={() => {

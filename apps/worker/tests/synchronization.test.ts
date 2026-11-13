@@ -307,6 +307,47 @@ describe('sincronização do Worker com dez conexões', () => {
       await hub.webSocketMessage(resumed as never, JSON.stringify({ type: 'sync' }));
       await drain();
       expect(resumed.messages.filter((m) => m.type === 'snapshot')).toHaveLength(1);
+      // Hold a background delivery across an await, as gzip does in production.
+      // A simultaneous command must not overtake it and corrupt the delta base.
+      let releaseSnapshot!: () => void;
+      let snapshotStarted!: () => void;
+      const started = new Promise<void>((resolve) => {
+        snapshotStarted = resolve;
+      });
+      const held = new Promise<void>((resolve) => {
+        releaseSnapshot = resolve;
+      });
+      const originalSnapshot = service.snapshot.bind(service);
+      const snapshotSpy = vi.spyOn(service, 'snapshot').mockImplementationOnce(async (...args) => {
+        const value = await originalSnapshot(...args);
+        snapshotStarted();
+        await held;
+        return value;
+      });
+      const commandSpy = vi.spyOn(service, 'command');
+      await hub.webSocketMessage(resumed as never, JSON.stringify({ type: 'sync' }));
+      await started;
+      const concurrentCommand = hub.webSocketMessage(
+        resumed as never,
+        JSON.stringify({
+          type: 'command',
+          data: {
+            requestId: randomUUID(),
+            command: { type: 'home-ticket-price', priceCents: 20000 },
+          },
+        }),
+      );
+      try {
+        // Let the command handler reach the lane if it is incorrectly independent.
+        await new Promise((resolve) => setTimeout(resolve, 20));
+        expect(commandSpy).not.toHaveBeenCalled();
+      } finally {
+        releaseSnapshot();
+        await concurrentCommand;
+        await drain();
+        snapshotSpy.mockRestore();
+        commandSpy.mockRestore();
+      }
       const meter = (hub as unknown as { meter: { totals: Record<string, number> } }).meter;
       writeFileSync(
         new URL('../../../docs/socket-resource-benchmark.json', import.meta.url),

@@ -29682,7 +29682,7 @@ dialog[open] .chat-header > button[aria-label^='Fechar'] {
 
 @media (min-width: 1100px) {
   .finance-hub.finance-equal-columns {
-    min-height: calc((100dvh - 20px) / var(--finance-scale, 1));
+    min-height: calc(100dvh - 20px);
   }
 }
 
@@ -30001,9 +30001,6 @@ dialog.modal.ledger-book-modal[open] {
   }
 }
 
-.ledger-book-modal {
-  zoom: calc(1 / var(--finance-scale, 1));
-}
 @media (min-width: 901px) {
   dialog[open].game-details-modal.compact-match-preview {
     padding: 14px 36px;

@@ -1,4 +1,3 @@
-import { useLayoutEffect, useRef } from 'react';
 import { TicketPricing } from './ticket-pricing';
 import { GeneratedPerson } from '../../ui/person-avatar';
 import {
@@ -19,82 +18,6 @@ function FinancialDirector() {
   return <GeneratedPerson name="Helena Duarte, gestora financeira" outfit="#406f72" />;
 }
 export function Finance({ snapshot, club }: ViewProps) {
-  const panelRef = useRef<HTMLDivElement>(null);
-  useLayoutEffect(() => {
-    const panel = panelRef.current;
-    if (!panel) return;
-    let frame = 0;
-    let fitting = false;
-    let disposed = false;
-    const fit = () => {
-      if (fitting) return;
-      fitting = true;
-      const applyScale = (value: number) => {
-        panel.style.zoom = String(value);
-        panel.style.setProperty('--finance-scale', String(value));
-      };
-      applyScale(1);
-      if (window.innerWidth >= 1100) {
-        const available = Math.max(
-          100,
-          window.innerHeight -
-            panel.getBoundingClientRect().top -
-            Math.max(
-              24,
-              parseFloat(
-                getComputedStyle(panel.closest('.main-content') ?? panel.parentElement!)
-                  .paddingBottom,
-              ) + 8,
-            ),
-        );
-        if (panel.getBoundingClientRect().height > available + 1) {
-          let low = 0.3,
-            high = 1;
-          for (let attempt = 0; attempt < 8; attempt++) {
-            const mid = (low + high) / 2;
-            applyScale(mid);
-            if (panel.getBoundingClientRect().height > available + 1) high = mid;
-            else low = mid;
-          }
-          applyScale(low);
-        }
-      }
-      fitting = false;
-    };
-    const schedule = () => {
-      cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(fit);
-    };
-    const observer = new MutationObserver(schedule);
-    observer.observe(panel, {
-      childList: true,
-      subtree: true,
-      characterData: true,
-      attributes: true,
-      attributeFilter: ['open'],
-    });
-    window.addEventListener('resize', schedule);
-    panel.addEventListener('load', schedule, true);
-    // Font metrics must be settled before revealing the fitted desktop panel.
-    if (window.innerWidth >= 1100 && document.fonts.status !== 'loaded') {
-      panel.style.visibility = 'hidden';
-      document.fonts.ready.then(() => {
-        if (disposed) return;
-        fit();
-        panel.style.visibility = '';
-      });
-    } else {
-      fit();
-    }
-    return () => {
-      disposed = true;
-      panel.style.visibility = '';
-      cancelAnimationFrame(frame);
-      observer.disconnect();
-      window.removeEventListener('resize', schedule);
-      panel.removeEventListener('load', schedule, true);
-    };
-  }, []);
   const state = snapshot.state,
     send = useGameStore((s) => s.send),
     busy = useGameStore((s) => s.busy);
@@ -164,7 +87,7 @@ export function Finance({ snapshot, club }: ViewProps) {
       'Uma contratação compromete o caixa hoje e aumenta a folha dos próximos meses. Use a sobra salarial como limite.',
     );
   return (
-    <div ref={panelRef} className="finance-hub finance-equal-columns">
+    <div className="finance-hub finance-equal-columns">
       <div className="finance-fill-column finance-fill-overview">
         <header className="finance-hero">
           <div className="finance-hero-copy">

@@ -230,7 +230,11 @@ export class GameHubV2 extends DurableObject<Env> {
         try {
           const dirty = [...this.dirtySockets];
           this.dirtySockets.clear();
-          for (const [socket, identity] of dirty) await this.snapshot(socket, identity);
+          for (const [socket, identity] of dirty)
+            // Compression yields to other events. Keep the entire delivery in
+            // the command lane so another command cannot send a newer base
+            // before this snapshot finishes and then overwrite `sent`.
+            await this.serial(() => this.snapshot(socket, identity), 'snapshot', identity.leagueId);
         } finally {
           this.prepared.clear();
           this.flushing = false;
